@@ -125,6 +125,85 @@ canvas { display:block; }
 }
 #exitBtnFloat:hover { transform:scale(1.06); }
 
+/* ========== ЭКРАН АВТОРИЗАЦИИ ========== */
+#authScreen {
+  position:fixed; top:0; left:0; width:100%; height:100%;
+  background: linear-gradient(135deg, #0a0618, #1a0535, #0d0d2b);
+  display:flex; align-items:center; justify-content:center; z-index:1200;
+}
+.auth-panel {
+  background:rgba(0,0,0,0.82); border:2px solid #6c5ce7; border-radius:20px;
+  padding:40px 44px; width:420px; text-align:center; backdrop-filter:blur(14px);
+}
+.auth-panel .logo-title { font-size:42px; font-weight:900; color:#a29bfe;
+  text-shadow:0 0 40px #6c5ce7; letter-spacing:4px; margin-bottom:4px; }
+.auth-panel .logo-sub { font-size:13px; color:#6c5ce7; letter-spacing:8px; margin-bottom:28px; }
+.auth-tabs { display:flex; gap:0; margin-bottom:24px; border-radius:10px; overflow:hidden; border:1px solid #6c5ce7; }
+.auth-tab {
+  flex:1; padding:10px; font-size:14px; font-weight:bold; cursor:pointer;
+  background:rgba(108,92,231,0.1); color:#888; transition:all 0.2s;
+  border:none;
+}
+.auth-tab.active { background:rgba(108,92,231,0.5); color:#fff; }
+.auth-input {
+  width:100%; padding:12px 14px; border:2px solid rgba(108,92,231,0.4); border-radius:10px;
+  background:rgba(255,255,255,0.07); color:#fff; font-size:14px; outline:none;
+  margin-bottom:12px; transition:border-color 0.2s;
+}
+.auth-input:focus { border-color:#a29bfe; }
+.auth-btn {
+  width:100%; padding:13px; border:none; border-radius:10px; font-size:15px;
+  font-weight:bold; cursor:pointer; background:linear-gradient(135deg,#6c5ce7,#a29bfe);
+  color:#fff; transition:all 0.3s; text-transform:uppercase; letter-spacing:1px; margin-top:4px;
+}
+.auth-btn:hover { transform:scale(1.03); box-shadow:0 0 25px rgba(108,92,231,0.6); }
+.auth-error { color:#ff6b6b; font-size:13px; margin-bottom:8px; min-height:18px; }
+.auth-note { font-size:12px; color:#555; margin-top:14px; }
+
+/* ========== МЕНЮ ПАУЗЫ ========== */
+#pauseMenu {
+  position:fixed; top:0; left:0; width:100%; height:100%;
+  background:rgba(0,0,0,0.75); display:none; align-items:center; justify-content:center;
+  z-index:500; backdrop-filter:blur(6px);
+}
+#pauseMenu.show { display:flex; }
+.pause-panel {
+  background:rgba(10,6,24,0.97); border:2px solid #6c5ce7; border-radius:20px;
+  padding:40px 50px; text-align:center; min-width:320px;
+}
+.pause-panel h2 { color:#a29bfe; font-size:28px; margin-bottom:24px; letter-spacing:3px; }
+.pause-btn {
+  width:100%; padding:13px; margin:6px 0; border:none; border-radius:10px;
+  font-size:15px; font-weight:bold; cursor:pointer; transition:all 0.2s;
+}
+.pause-btn.prim { background:linear-gradient(135deg,#6c5ce7,#a29bfe); color:#fff; }
+.pause-btn.prim:hover { transform:scale(1.03); box-shadow:0 0 20px rgba(108,92,231,0.5); }
+.pause-btn.sec { background:rgba(255,255,255,0.08); color:#ccc; border:1px solid rgba(255,255,255,0.15); }
+.pause-btn.sec:hover { background:rgba(255,255,255,0.15); color:#fff; }
+.pause-btn.dng { background:rgba(231,76,60,0.25); color:#ff6b6b; border:1px solid rgba(231,76,60,0.4); }
+.pause-btn.dng:hover { background:rgba(231,76,60,0.4); }
+
+/* ========== НАСТРОЙКИ ========== */
+#settingsModal .modal { min-width:520px; }
+.settings-section { margin-bottom:20px; }
+.settings-section h3 { color:#a29bfe; font-size:15px; margin-bottom:12px; padding-bottom:6px; border-bottom:1px solid rgba(108,92,231,0.3); }
+.settings-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.settings-row label { font-size:14px; color:#ddd; }
+.settings-row input[type=range] { width:150px; accent-color:#6c5ce7; }
+.settings-row select { 
+  background:rgba(255,255,255,0.08); border:1px solid rgba(108,92,231,0.4);
+  color:#fff; padding:5px 10px; border-radius:6px; font-size:13px; outline:none;
+}
+.settings-row .toggle-btn {
+  padding:5px 14px; border-radius:6px; font-size:13px; font-weight:bold; cursor:pointer;
+  border:none; transition:all 0.2s;
+}
+.settings-row .toggle-btn.on { background:rgba(0,184,148,0.4); color:#00b894; }
+.settings-row .toggle-btn.off { background:rgba(255,255,255,0.1); color:#888; }
+
 /* ========== ЭКРАН СОЗДАНИЯ ПЕРСОНАЖА ========== */
 #createScreen {
   position:fixed; top:0; left:0; width:100%; height:100%;
@@ -623,15 +702,43 @@ canvas { display:block; }
 </head>
 <body>
 
+<!-- ========== ЭКРАН АВТОРИЗАЦИИ ========== -->
+<div id="authScreen">
+  <div class="auth-panel">
+    <div class="logo-title">⚡ FANTAZIA</div>
+    <div class="logo-sub">R P   3 D</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">🔑 Войти</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">✨ Регистрация</button>
+    </div>
+    <div id="authError" class="auth-error"></div>
+    <div id="loginForm">
+      <input class="auth-input" id="loginUsername" type="text" placeholder="Имя пользователя" maxlength="20">
+      <input class="auth-input" id="loginPassword" type="password" placeholder="Пароль" maxlength="30">
+      <button class="auth-btn" onclick="doLogin()">▶ ВОЙТИ</button>
+    </div>
+    <div id="registerForm" style="display:none">
+      <input class="auth-input" id="regUsername" type="text" placeholder="Имя пользователя" maxlength="20">
+      <input class="auth-input" id="regPassword" type="password" placeholder="Пароль" maxlength="30">
+      <input class="auth-input" id="regPassword2" type="password" placeholder="Повторите пароль" maxlength="30">
+      <button class="auth-btn" onclick="doRegister()">✨ СОЗДАТЬ АККАУНТ</button>
+    </div>
+    <div class="auth-note">Данные хранятся локально в браузере</div>
+  </div>
+</div>
+
 <!-- ========== ЭКРАН СЕРВЕРА ========== -->
-<div id="serverScreen">
+<div id="serverScreen" style="display:none">
   <div style="text-align:center">
     <div class="logo-title">⚡ FANTAZIA RP</div>
     <div class="logo-sub">3 D   O N L I N E</div>
     <div class="server-panel">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
         <h2 style="color:#a29bfe;margin:0">🌐 Список серверов</h2>
-        <span style="font-size:12px;color:#888">Выберите сервер для входа</span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span id="loggedInUser" style="font-size:12px;color:#a29bfe"></span>
+          <button class="sv-btn secondary" style="flex:0;padding:5px 12px;font-size:11px" onclick="logoutUser()">Выйти</button>
+        </div>
       </div>
       <div class="server-list" id="serverList">
         <!-- заполняется JS -->
@@ -646,6 +753,13 @@ canvas { display:block; }
         <div style="display:flex;gap:8px">
           <input type="text" id="newServerDesc" placeholder="Описание (необязательно)" maxlength="60" style="flex:1;padding:8px 12px;border:2px solid #6c5ce7;border-radius:8px;background:rgba(255,255,255,0.08);color:#fff;font-size:13px;outline:none;">
           <button class="sv-btn primary" style="flex:0 0 auto;padding:8px 18px" onclick="createServer()">✔</button>
+        </div>
+        <div style="margin-top:10px;border-top:1px solid rgba(108,92,231,0.3);padding-top:10px">
+          <div style="font-size:12px;color:#888;margin-bottom:6px">🔑 Войти по коду комнаты:</div>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="joinCodeInput" placeholder="Код (напр. ABC123)" maxlength="6" style="flex:1;padding:8px 12px;border:2px solid #6c5ce7;border-radius:8px;background:rgba(255,255,255,0.08);color:#fff;font-size:13px;outline:none;text-transform:uppercase">
+            <button class="sv-btn primary" style="flex:0 0 auto;padding:8px 18px" onclick="joinByCode()">▶</button>
+          </div>
         </div>
       </div>
     </div>
@@ -767,6 +881,8 @@ canvas { display:block; }
     <div class="side-btn" onclick="togglePanel('cars')" title="Выбор авто">🚗</div>
     <div class="side-btn" onclick="toggleVoice()" title="Голос (V)" id="voiceBtn">🎙️</div>
     <div class="side-btn" onclick="openRewardModal()" title="Ежедневная награда" id="rewardBtn" style="position:relative">🎁<span id="rewardDot" style="position:absolute;top:4px;right:4px;width:8px;height:8px;background:#e74c3c;border-radius:50%;display:none"></span></div>
+    <div class="side-btn" onclick="loadSettingsUI();document.getElementById('settingsModal').classList.add('show');document.exitPointerLock()" title="Настройки">⚙️</div>
+    <div class="side-btn" onclick="openPauseMenu()" title="Пауза [ESC]">⏸</div>
   </div>
 
   <!-- Уведомления -->
@@ -1012,6 +1128,95 @@ canvas { display:block; }
   </div>
 </div>
 
+<!-- ========== МЕНЮ ПАУЗЫ ========== -->
+<div id="pauseMenu">
+  <div class="pause-panel">
+    <h2>⏸ ПАУЗА</h2>
+    <button class="pause-btn prim" onclick="resumeGame()">▶ Продолжить</button>
+    <button class="pause-btn sec" onclick="resumeGame();togglePanel('players')">👥 Игроки онлайн</button>
+    <button class="pause-btn sec" onclick="openSettingsFromPause()">⚙️ Настройки</button>
+    <button class="pause-btn sec" onclick="resumeGame();openRewardModal()">🎁 Ежедневная награда</button>
+    <button class="pause-btn dng" onclick="backToServers()">🚪 Выйти на главную</button>
+  </div>
+</div>
+
+<!-- ========== НАСТРОЙКИ ========== -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal" style="min-width:520px">
+    <button class="modal-close" onclick="closeModal('settingsModal')">&times;</button>
+    <h2>⚙️ Настройки</h2>
+    <div class="settings-section">
+      <h3>🖥️ Графика</h3>
+      <div class="settings-row">
+        <label>Качество теней</label>
+        <select id="set_shadowQuality" onchange="applySetting('shadowQuality',this.value)">
+          <option value="off">Выкл</option>
+          <option value="low">Низкое</option>
+          <option value="high" selected>Высокое</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <label>Туман</label>
+        <button id="set_fog" class="toggle-btn on" onclick="toggleSetting('fog')">ВКЛ</button>
+      </div>
+      <div class="settings-row">
+        <label>Антиалиасинг</label>
+        <button id="set_aa" class="toggle-btn on" onclick="toggleSetting('aa')">ВКЛ</button>
+      </div>
+    </div>
+    <div class="settings-section">
+      <h3>🎮 Управление</h3>
+      <div class="settings-row">
+        <label>Чувствительность мыши</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="range" id="set_mouseSens" min="1" max="10" value="4" oninput="applySetting('mouseSens',this.value)">
+          <span id="set_mouseSensVal" style="color:#a29bfe;font-size:13px;width:20px">4</span>
+        </div>
+      </div>
+      <div class="settings-row">
+        <label>Скорость камеры (колёсико)</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="range" id="set_zoomSpeed" min="1" max="10" value="5" oninput="applySetting('zoomSpeed',this.value)">
+          <span id="set_zoomSpeedVal" style="color:#a29bfe;font-size:13px;width:20px">5</span>
+        </div>
+      </div>
+      <div class="settings-row">
+        <label>Режим камеры (F5)</label>
+        <select id="set_camMode" onchange="setCameraMode(this.value)">
+          <option value="third">3-е лицо</option>
+          <option value="first">1-е лицо</option>
+        </select>
+      </div>
+    </div>
+    <div class="settings-section">
+      <h3>🔊 Звук</h3>
+      <div class="settings-row">
+        <label>Музыка лифта</label>
+        <button id="set_elevMusic" class="toggle-btn on" onclick="toggleSetting('elevMusic')">ВКЛ</button>
+      </div>
+      <div class="settings-row">
+        <label>Звуки интерфейса</label>
+        <button id="set_uiSounds" class="toggle-btn on" onclick="toggleSetting('uiSounds')">ВКЛ</button>
+      </div>
+    </div>
+    <div class="settings-section">
+      <h3>💬 Чат и соцсети</h3>
+      <div class="settings-row">
+        <label>Показывать имена игроков</label>
+        <button id="set_nameTags" class="toggle-btn on" onclick="toggleSetting('nameTags')">ВКЛ</button>
+      </div>
+      <div class="settings-row">
+        <label>Радиус местного чата</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="range" id="set_localRange" min="10" max="80" value="30" oninput="applySetting('localRange',this.value)">
+          <span id="set_localRangeVal" style="color:#a29bfe;font-size:13px;width:30px">30</span>
+        </div>
+      </div>
+    </div>
+    <button class="modal-btn success" onclick="saveSettings()" style="width:100%;padding:12px;margin-top:4px">✅ Сохранить настройки</button>
+  </div>
+</div>
+
 <!-- ========== СКРИПТЫ ========== -->
 <script src="/socket.io/socket.io.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -1141,9 +1346,8 @@ let currentEditorCat = 'body';
 window.addEventListener('load', () => {
   setTimeout(() => {
     document.getElementById('loadScreen').style.display = 'none';
-    document.getElementById('serverScreen').style.display = 'flex';
-    initServerBrowser();
-    checkRewardDot();
+    loadSavedSettings();
+    initAuth();
   }, 1500);
 });
 
@@ -1491,7 +1695,7 @@ function buildShoppingMeadow() {
 }
 
 function buildGrandMall() {
-  const MX = 10, MZ = -50, MW = 52, MH = 18, MD = 44;
+  const MX = 85, MZ = -85, MW = 52, MH = 18, MD = 44;
   // Main body
   const mallGeo = new THREE.BoxGeometry(MW, MH, MD);
   const mallMat = new THREE.MeshLambertMaterial({ color: 0xdde3ec });
@@ -1577,75 +1781,75 @@ function spawnMallNPCs(cx, cz) {
 }
 
 function buildResidentialArea() {
-  createBuilding(50, 40, 16, 24, 12, 0x7F8C8D, '🏢 ДОМ АВРОРА', 'apartment');
-  createBuilding(50, 65, 16, 20, 12, 0x95A5A6, '🏢 ДОМ БРИЗ', 'apartment');
-  createBuilding(75, 40, 14, 18, 10, 0x636E72, '🏢 ДОМ ВОСХОД', 'apartment');
-  createBuilding(75, 65, 14, 22, 10, 0x546E7A, '🏢 ДОМ ГОРИЗОНТ', 'apartment');
-  createBuilding(50, 90, 16, 28, 12, 0x607D8B, '🏢 ДОМ ДЕЛЬФИН', 'apartment');
-  createBuilding(75, 90, 12, 20, 10, 0x455A64, '🏢 ДОМ ЗЕНИТ', 'apartment');
-  // Частные дома
+  createBuilding(80, 70, 16, 24, 12, 0x7F8C8D, '🏢 ДОМ АВРОРА', 'apartment');
+  createBuilding(80, 100, 16, 20, 12, 0x95A5A6, '🏢 ДОМ БРИЗ', 'apartment');
+  createBuilding(110, 70, 14, 18, 10, 0x636E72, '🏢 ДОМ ВОСХОД', 'apartment');
+  createBuilding(110, 100, 14, 22, 10, 0x546E7A, '🏢 ДОМ ГОРИЗОНТ', 'apartment');
+  createBuilding(80, 130, 16, 28, 12, 0x607D8B, '🏢 ДОМ ДЕЛЬФИН', 'apartment');
+  createBuilding(110, 130, 12, 20, 10, 0x455A64, '🏢 ДОМ ЗЕНИТ', 'apartment');
+  // Частные дома — вдали от дорог
   for (let i = 0; i < 4; i++) {
-    createBuilding(100, 40 + i*18, 10, 6, 8,
+    createBuilding(145, 70 + i*22, 10, 6, 8,
       [0xC0392B, 0x2980B9, 0x27AE60, 0xF1C40F][i], `🏡 Коттедж ${i+1}`, 'house');
   }
   // Ещё частные дома
   for (let i = 0; i < 3; i++) {
-    createBuilding(120, 40 + i*20, 11, 6, 8,
+    createBuilding(170, 70 + i*24, 11, 6, 8,
       [0xE91E63, 0x00BCD4, 0x8BC34A][i], `🏡 Вилла ${i+1}`, 'house');
   }
   // Детский сад
-  createBuilding(100, 95, 14, 5, 12, 0xFFF9C4, '🧸 ДЕТСКИЙ САД', 'office');
+  createBuilding(145, 138, 14, 5, 12, 0xFFF9C4, '🧸 ДЕТСКИЙ САД', 'office');
   // Магазин продуктов в жилом квартале
-  createBuilding(50, 108, 10, 5, 8, 0x81C784, '🛒 ПРОДУКТЫ', 'shop_food');
+  createBuilding(80, 155, 10, 5, 8, 0x81C784, '🛒 ПРОДУКТЫ', 'shop_food');
   // NPC жильцы
   for (let i = 0; i < 5; i++) spawnNPC(48 + i*10, 0, 28, 'shopper');
 }
 
 function buildEntertainmentDistrict() {
-  createBuilding(40, -40, 18, 8, 14, 0x8E44AD, '🎵 CLUB FANTAZIA', 'club');
-  createBuilding(40, -65, 16, 9, 12, 0xD35400, '🏋️ СПОРТЗАЛ', 'gym');
-  createBuilding(65, -40, 14, 10, 12, 0x2C3E50, '🎬 КИНО', 'cinema');
-  createBuilding(65, -65, 12, 7, 10, 0xC0392B, '🍽️ РЕСТОРАН', 'restaurant');
-  createBuilding(85, -40, 10, 7, 8, 0xE91E63, '🎤 КАРА-ОКЕ', 'karaoke');
-  createBuilding(40, -88, 18, 7, 14, 0xFF7043, '🎳 БОУЛИНГ', 'cinema');
-  createBuilding(65, -88, 14, 6, 12, 0x5C6BC0, '🎱 БИЛЬЯРД', 'club');
-  createBuilding(85, -65, 10, 5, 8, 0xFFA726, '🍕 PIZZA 24/7', 'shop_food');
-  for (let i = 0; i < 5; i++) spawnNPC(40+i*10, 0, -28, 'shopper');
+  createBuilding(75, -75, 18, 8, 14, 0x8E44AD, '🎵 CLUB FANTAZIA', 'club');
+  createBuilding(75, -105, 16, 9, 12, 0xD35400, '🏋️ СПОРТЗАЛ', 'gym');
+  createBuilding(105, -75, 14, 10, 12, 0x2C3E50, '🎬 КИНО', 'cinema');
+  createBuilding(105, -105, 12, 7, 10, 0xC0392B, '🍽️ РЕСТОРАН', 'restaurant');
+  createBuilding(130, -75, 10, 7, 8, 0xE91E63, '🎤 КАРА-ОКЕ', 'karaoke');
+  createBuilding(75, -130, 18, 7, 14, 0xFF7043, '🎳 БОУЛИНГ', 'cinema');
+  createBuilding(105, -130, 14, 6, 12, 0x5C6BC0, '🎱 БИЛЬЯРД', 'club');
+  createBuilding(130, -105, 10, 5, 8, 0xFFA726, '🍕 PIZZA 24/7', 'shop_food');
+  for (let i = 0; i < 5; i++) spawnNPC(80+i*12, 0, -68, 'shopper');
 }
 function buildBusinessDistrict() {
-  // Небоскрёбы делового центра
-  createBuilding(-50, -70, 12, 35, 12, 0x34495E, '🏦 БАНК', 'bank');
-  createBuilding(-70, -70, 10, 28, 10, 0x2C3E50, '🏢 ОФИС 1', 'office');
-  createBuilding(-30, -70, 10, 30, 10, 0x1A237E, '🏢 ОФИС 2', 'office');
-  createBuilding(-90, -70, 12, 32, 10, 0x263238, '🏢 БАШНЯ ЗАПАД', 'office');
-  createBuilding(-10, -70, 11, 26, 10, 0x1B2631, '🏢 PREMIUM CENTER', 'office');
+  // Небоскрёбы делового центра — вдали от центральных дорог
+  createBuilding(-90, -90, 12, 35, 12, 0x34495E, '🏦 БАНК', 'bank');
+  createBuilding(-115, -90, 10, 28, 10, 0x2C3E50, '🏢 ОФИС 1', 'office');
+  createBuilding(-70, -90, 10, 30, 10, 0x1A237E, '🏢 ОФИС 2', 'office');
+  createBuilding(-140, -90, 12, 32, 10, 0x263238, '🏢 БАШНЯ ЗАПАД', 'office');
+  createBuilding(-45, -90, 11, 26, 10, 0x1B2631, '🏢 PREMIUM CENTER', 'office');
   // Полиция
-  createBuilding(-70, -45, 14, 8, 10, 0x0D47A1, '🚔 ПОЛИЦИЯ', 'job_police');
+  createBuilding(-115, -65, 14, 8, 10, 0x0D47A1, '🚔 ПОЛИЦИЯ', 'job_police');
   // Больница
-  createBuilding(-30, -45, 14, 10, 12, 0xFFFFFF, '🏥 БОЛЬНИЦА', 'job_doctor');
+  createBuilding(-70, -65, 14, 10, 12, 0xFFFFFF, '🏥 БОЛЬНИЦА', 'job_doctor');
   // Такси
-  createBuilding(-50, -45, 10, 6, 8, 0xF1C40F, '🚕 ТАКСИ', 'job_taxi');
+  createBuilding(-90, -65, 10, 6, 8, 0xF1C40F, '🚕 ТАКСИ', 'job_taxi');
   // Автосервис
-  createBuilding(-85, -45, 12, 7, 10, 0x607D8B, '🔧 АВТОСЕРВИС', 'job_mechanic');
+  createBuilding(-140, -65, 12, 7, 10, 0x607D8B, '🔧 АВТОСЕРВИС', 'job_mechanic');
   // Суд
-  createBuilding(-10, -45, 16, 12, 12, 0xECEFF1, '⚖️ СУД', 'office');
+  createBuilding(-45, -65, 16, 12, 12, 0xECEFF1, '⚖️ СУД', 'office');
   // Почта
-  createBuilding(-95, -45, 10, 6, 8, 0xF57F17, '📮 ПОЧТА', 'office');
+  createBuilding(-155, -65, 10, 6, 8, 0xF57F17, '📮 ПОЧТА', 'office');
   // Мэрия
   const mayorBody = new THREE.Mesh(new THREE.BoxGeometry(24,14,18),
     new THREE.MeshLambertMaterial({color:0xF5F5F5}));
-  mayorBody.position.set(-50,-95,7); scene.add(mayorBody);
+  mayorBody.position.set(-90,-120,7); scene.add(mayorBody);
   const mayorRoof = new THREE.Mesh(new THREE.CylinderGeometry(4,4,8,8),
     new THREE.MeshLambertMaterial({color:0xB0BEC5}));
-  mayorRoof.position.set(-50,-88,0); scene.add(mayorRoof);
+  mayorRoof.position.set(-90,-113,0); scene.add(mayorRoof);
   const columns = new THREE.MeshLambertMaterial({color:0xFFFFFF});
   for (let ci = -8; ci <= 8; ci += 4) {
     const col = new THREE.Mesh(new THREE.CylinderGeometry(0.45,0.45,14,8), columns);
-    col.position.set(-50+ci,-88,15); scene.add(col);
+    col.position.set(-90+ci,-113,15); scene.add(col);
   }
-  interactables.push({position:{x:-50,y:0,z:-79}, type:'office', name:'🏛️ МЭРИЯ', range:7});
+  interactables.push({position:{x:-90,y:0,z:-104}, type:'office', name:'🏛️ МЭРИЯ', range:7});
   // NPC деловые
-  for (let i = 0; i < 5; i++) spawnNPC(-70+i*12, 0, -82, 'guard');
+  for (let i = 0; i < 5; i++) spawnNPC(-115+i*15, 0, -108, 'guard');
 }
 
 function buildPark() {
@@ -3596,7 +3800,20 @@ function initControls() {
     }
 
     if (e.code === 'Escape') {
-      closeAllModals();
+      if (document.getElementById('pauseMenu').classList.contains('show')) {
+        resumeGame();
+      } else {
+        // Close modals first, then pause
+        const anyOpen = document.querySelectorAll('.modal-overlay.show').length > 0;
+        if (anyOpen) { closeAllModals(); }
+        else if (localPlayer) { openPauseMenu(); }
+        else { closeAllModals(); }
+      }
+    }
+
+    if (e.code === 'F5') {
+      e.preventDefault();
+      toggleCameraMode();
     }
 
     if (e.code === 'KeyE') {
@@ -5478,8 +5695,9 @@ function animate() {
   // Гравитация
   velocity.y -= CONFIG.GRAVITY;
   mesh.position.y += velocity.y;
-  if (mesh.position.y <= 0) {
-    mesh.position.y = 0;
+  const groundY = isInsideBuilding ? currentFloor * 3.5 : 0;
+  if (mesh.position.y <= groundY) {
+    mesh.position.y = groundY;
     velocity.y = 0;
     isGrounded = true;
   }
@@ -5493,10 +5711,28 @@ function animate() {
   // --- Камера ---
   const camDist = CONFIG.CAMERA_DISTANCE;
   const camH = CONFIG.CAMERA_HEIGHT;
-  camera.position.x = mesh.position.x + Math.sin(cameraAngleH) * camDist * Math.cos(cameraAngleV);
-  camera.position.z = mesh.position.z + Math.cos(cameraAngleH) * camDist * Math.cos(cameraAngleV);
-  camera.position.y = mesh.position.y + camH + Math.sin(cameraAngleV) * camDist;
-  camera.lookAt(mesh.position.x, mesh.position.y + 1.5, mesh.position.z);
+  if (window.cameraMode === 'first') {
+    // 1-е лицо: камера внутри головы персонажа
+    const headY = mesh.position.y + 2.3;
+    camera.position.set(
+      mesh.position.x - Math.sin(cameraAngleH) * 0.1,
+      headY,
+      mesh.position.z - Math.cos(cameraAngleH) * 0.1
+    );
+    camera.lookAt(
+      mesh.position.x + Math.sin(cameraAngleH) * 10,
+      headY + Math.sin(cameraAngleV) * 10,
+      mesh.position.z + Math.cos(cameraAngleH) * 10
+    );
+    // Скрыть тело в 1-м лице
+    mesh.visible = false;
+  } else {
+    mesh.visible = true;
+    camera.position.x = mesh.position.x + Math.sin(cameraAngleH) * camDist * Math.cos(cameraAngleV);
+    camera.position.z = mesh.position.z + Math.cos(cameraAngleH) * camDist * Math.cos(cameraAngleV);
+    camera.position.y = mesh.position.y + camH + Math.sin(cameraAngleV) * camDist;
+    camera.lookAt(mesh.position.x, mesh.position.y + 1.5, mesh.position.z);
+  }
 
   // --- Удалённые игроки: интерполяция ---
   Object.values(remotePlayers).forEach(rp => {
@@ -5605,11 +5841,43 @@ function getServers() {
   return [...DEFAULT_SERVERS, ...custom];
 }
 
+function joinByCode() {
+  const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
+  if (!code || code.length < 4) { showNotification('Введите код комнаты!', 'error'); return; }
+  const stored = localStorage.getItem('fz_servers');
+  const custom = stored ? JSON.parse(stored) : [];
+  const found = custom.find(s => s.roomCode === code);
+  if (found) {
+    selectedServer = found;
+    document.getElementById('createServerBox').style.display = 'none';
+    showNotification(`✅ Сервер найден: ${found.name}`, 'success');
+    refreshServers();
+    joinSelectedServer();
+  } else {
+    showNotification(`❌ Сервер с кодом ${code} не найден`, 'error');
+  }
+}
+
+function logoutUser() {
+  localStorage.removeItem('fz_currentUser');
+  currentUser = null;
+  document.getElementById('serverScreen').style.display = 'none';
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('loginUsername').value = '';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('authError').textContent = '';
+  switchAuthTab('login');
+}
+
 function initServerBrowser() {
   refreshServers();
+  // Show logged-in user
+  const el = document.getElementById('loggedInUser');
+  if (el && currentUser) el.textContent = '👤 ' + (currentUser.displayName || currentUser.username);
   // Auto-select first
   const servers = getServers();
   if (servers.length) { selectedServer = servers[0]; }
+  checkRewardDot();
 }
 
 function refreshServers() {
@@ -5630,7 +5898,7 @@ function refreshServers() {
     entry.innerHTML = `
       <div style="flex:1">
         <div class="sv-name">${sv.name}</div>
-        <div class="sv-info">${sv.desc || ''}</div>
+        <div class="sv-info">${sv.desc || ''}${sv.roomCode ? ` · <span style="color:#a29bfe;font-weight:bold">Код: ${sv.roomCode}</span>` : ''}</div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
           <div style="flex:1;height:4px;background:rgba(255,255,255,0.1);border-radius:2px">
             <div style="width:${fillPct}%;height:100%;background:${fillPct>75?'#e74c3c':fillPct>40?'#f1c40f':'#00b894'};border-radius:2px"></div>
@@ -5821,7 +6089,233 @@ function claimAnnualReward() {
 
 // =================== ПОКАЗ/СКРЫТИЕ КНОПКИ ВЫЙТИ — уже встроено в enterBuilding/exitBuilding выше ===================
 
-// =================== CanvasRenderingContext2D roundRect polyfill ===================
+// =================== АВТОРИЗАЦИЯ ===================
+let currentUser = null;
+
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) => {
+    t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register'));
+  });
+  document.getElementById('loginForm').style.display = tab==='login' ? 'block' : 'none';
+  document.getElementById('registerForm').style.display = tab==='register' ? 'block' : 'none';
+  document.getElementById('authError').textContent = '';
+}
+
+function getAccounts() {
+  try { return JSON.parse(localStorage.getItem('fz_accounts') || '{}'); } catch(e) { return {}; }
+}
+function saveAccounts(acc) {
+  localStorage.setItem('fz_accounts', JSON.stringify(acc));
+}
+
+function doLogin() {
+  const u = document.getElementById('loginUsername').value.trim();
+  const p = document.getElementById('loginPassword').value;
+  const err = document.getElementById('authError');
+  if (!u || !p) { err.textContent = '❗ Заполните все поля'; return; }
+  const accounts = getAccounts();
+  if (!accounts[u.toLowerCase()]) { err.textContent = '❌ Аккаунт не найден'; return; }
+  if (accounts[u.toLowerCase()].password !== btoa(p)) { err.textContent = '❌ Неверный пароль'; return; }
+  currentUser = { username: u, displayName: accounts[u.toLowerCase()].displayName || u };
+  localStorage.setItem('fz_currentUser', JSON.stringify(currentUser));
+  showAuthSuccess();
+}
+
+function doRegister() {
+  const u = document.getElementById('regUsername').value.trim();
+  const p = document.getElementById('regPassword').value;
+  const p2 = document.getElementById('regPassword2').value;
+  const err = document.getElementById('authError');
+  if (!u || !p || !p2) { err.textContent = '❗ Заполните все поля'; return; }
+  if (u.length < 3) { err.textContent = '❗ Имя минимум 3 символа'; return; }
+  if (p.length < 4) { err.textContent = '❗ Пароль минимум 4 символа'; return; }
+  if (p !== p2) { err.textContent = '❌ Пароли не совпадают'; return; }
+  const accounts = getAccounts();
+  if (accounts[u.toLowerCase()]) { err.textContent = '❌ Имя занято'; return; }
+  accounts[u.toLowerCase()] = { password: btoa(p), displayName: u, createdAt: new Date().toISOString() };
+  saveAccounts(accounts);
+  currentUser = { username: u, displayName: u };
+  localStorage.setItem('fz_currentUser', JSON.stringify(currentUser));
+  showAuthSuccess();
+}
+
+function showAuthSuccess() {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('serverScreen').style.display = 'flex';
+  initServerBrowser();
+  checkRewardDot();
+  // Pre-fill player name
+  if (currentUser) {
+    const inp = document.getElementById('playerName');
+    if (inp) inp.value = currentUser.displayName || '';
+  }
+}
+
+function initAuth() {
+  // Try auto-login from saved session
+  try {
+    const saved = localStorage.getItem('fz_currentUser');
+    if (saved) {
+      const u = JSON.parse(saved);
+      const accounts = getAccounts();
+      if (u && u.username && accounts[u.username.toLowerCase()]) {
+        currentUser = u;
+        showAuthSuccess();
+        return;
+      }
+    }
+  } catch(e) {}
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('serverScreen').style.display = 'none';
+}
+
+// =================== МЕНЮ ПАУЗЫ ===================
+let gamePaused = false;
+
+function openPauseMenu() {
+  gamePaused = true;
+  document.getElementById('pauseMenu').classList.add('show');
+  document.exitPointerLock();
+}
+
+function resumeGame() {
+  gamePaused = false;
+  document.getElementById('pauseMenu').classList.remove('show');
+  closeAllModals();
+  if (localPlayer) {
+    renderer.domElement.requestPointerLock();
+  }
+}
+
+function openSettingsFromPause() {
+  document.getElementById('pauseMenu').classList.remove('show');
+  loadSettingsUI();
+  document.getElementById('settingsModal').classList.add('show');
+}
+
+function backToServers() {
+  gamePaused = false;
+  document.getElementById('pauseMenu').classList.remove('show');
+  document.exitPointerLock();
+  // Reset game state
+  if (socket) { try { socket.disconnect(); } catch(e) {} }
+  localPlayer = null;
+  Object.keys(remotePlayers).forEach(id => { if (remotePlayers[id].mesh) scene.remove(remotePlayers[id].mesh); });
+  remotePlayers = {};
+  document.getElementById('hud').style.display = 'none';
+  document.getElementById('serverScreen').style.display = 'flex';
+  refreshServers();
+}
+
+// =================== НАСТРОЙКИ ===================
+const SETTINGS = {
+  shadowQuality: 'high',
+  fog: true,
+  aa: true,
+  mouseSens: 4,
+  zoomSpeed: 5,
+  elevMusic: true,
+  uiSounds: true,
+  nameTags: true,
+  localRange: 30,
+  camMode: 'third'
+};
+
+function loadSettingsUI() {
+  document.getElementById('set_shadowQuality').value = SETTINGS.shadowQuality;
+  document.getElementById('set_mouseSens').value = SETTINGS.mouseSens;
+  document.getElementById('set_mouseSensVal').textContent = SETTINGS.mouseSens;
+  document.getElementById('set_zoomSpeed').value = SETTINGS.zoomSpeed;
+  document.getElementById('set_zoomSpeedVal').textContent = SETTINGS.zoomSpeed;
+  document.getElementById('set_localRange').value = SETTINGS.localRange;
+  document.getElementById('set_localRangeVal').textContent = SETTINGS.localRange;
+  ['fog','aa','elevMusic','uiSounds','nameTags'].forEach(k => {
+    const btn = document.getElementById('set_'+k);
+    if (btn) { btn.textContent = SETTINGS[k] ? 'ВКЛ' : 'ВЫКЛ'; btn.className = 'toggle-btn ' + (SETTINGS[k] ? 'on' : 'off'); }
+  });
+  document.getElementById('set_camMode').value = SETTINGS.camMode;
+}
+
+function applySetting(key, val) {
+  SETTINGS[key] = isNaN(val) ? val : Number(val);
+  const valEl = document.getElementById('set_'+key+'Val');
+  if (valEl) valEl.textContent = val;
+  if (key === 'mouseSens') CONFIG.MOUSE_SENSITIVITY = SETTINGS.mouseSens * 0.0005;
+  if (key === 'localRange') CONFIG.VOICE_RANGE = SETTINGS.localRange;
+}
+
+function toggleSetting(key) {
+  SETTINGS[key] = !SETTINGS[key];
+  const btn = document.getElementById('set_'+key);
+  if (btn) { btn.textContent = SETTINGS[key] ? 'ВКЛ' : 'ВЫКЛ'; btn.className = 'toggle-btn ' + (SETTINGS[key] ? 'on' : 'off'); }
+  if (key === 'fog') scene.fog = SETTINGS.fog ? new THREE.Fog(0x87CEEB, 100, 300) : null;
+  if (key === 'nameTags') {
+    Object.values(remotePlayers).forEach(rp => { if (rp.mesh?.userData?.nameTag) rp.mesh.userData.nameTag.visible = SETTINGS.nameTags; });
+  }
+}
+
+function saveSettings() {
+  localStorage.setItem('fz_settings', JSON.stringify(SETTINGS));
+  closeModal('settingsModal');
+  showNotification('✅ Настройки сохранены!', 'success');
+}
+
+function loadSavedSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem('fz_settings'));
+    if (s) Object.assign(SETTINGS, s);
+    CONFIG.MOUSE_SENSITIVITY = SETTINGS.mouseSens * 0.0005;
+    window.cameraMode = SETTINGS.camMode || 'third';
+  } catch(e) {}
+}
+
+// =================== ПЕРЕКЛЮЧЕНИЕ КАМЕРЫ ===================
+window.cameraMode = 'third';
+
+function toggleCameraMode() {
+  window.cameraMode = window.cameraMode === 'third' ? 'first' : 'third';
+  SETTINGS.camMode = window.cameraMode;
+  document.getElementById('set_camMode').value = window.cameraMode;
+  showNotification(window.cameraMode === 'first' ? '👁️ Вид от первого лица' : '🎥 Вид от третьего лица', 'info');
+}
+
+function setCameraMode(mode) {
+  window.cameraMode = mode;
+  SETTINGS.camMode = mode;
+}
+
+// =================== РЕАЛЬНЫЕ СЕРВЕРЫ (с кодом подключения) ===================
+function createServer() {
+  const name = document.getElementById('newServerName').value.trim();
+  if (!name) { alert('Введите название сервера!'); return; }
+  const desc = document.getElementById('newServerDesc').value.trim();
+  const stored = localStorage.getItem('fz_servers');
+  const custom = stored ? JSON.parse(stored) : [];
+  // Генерируем уникальный код комнаты
+  const roomCode = Math.random().toString(36).substr(2,6).toUpperCase();
+  const newSv = {
+    id: 'custom_' + Date.now(),
+    name: name,
+    desc: desc || 'Пользовательский сервер',
+    players: 0, maxPlayers: 20,
+    ping: Math.floor(Math.random() * 30) + 5,
+    roomCode: roomCode,
+    owner: currentUser ? currentUser.displayName : 'Аноним',
+    createdAt: new Date().toISOString()
+  };
+  custom.push(newSv);
+  localStorage.setItem('fz_servers', JSON.stringify(custom));
+  document.getElementById('newServerName').value = '';
+  document.getElementById('newServerDesc').value = '';
+  document.getElementById('createServerBox').style.display = 'none';
+  refreshServers();
+  selectedServer = newSv;
+  showNotification(`🎮 Сервер создан! Код: ${roomCode}`, 'success');
+}
+
+// =================== ИНИЦИАЛИЗАЦИЯ ===================
+// Патч startGame для использования имени из аккаунта
+
 if (!CanvasRenderingContext2D.prototype.roundRect) {
   CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r) {
     if (typeof r === 'number') r = {tl:r,tr:r,br:r,bl:r};
