@@ -1,7 +1,0 @@
-{
-  "name": "fantazia-rp-3d",
-  "version": "1.0.0",
-  "dependencies": {
-    "socket.io": "^4.7.5"
-  }
-}
