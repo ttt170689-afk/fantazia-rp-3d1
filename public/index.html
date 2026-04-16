@@ -6864,5 +6864,74 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
   };
 }
 </script>
+
+<script>
+// ===== FIX CONTROL =====
+const keys = {};
+document.addEventListener('keydown', (e)=>keys[e.key.toLowerCase()] = true);
+document.addEventListener('keyup', (e)=>keys[e.key.toLowerCase()] = false);
+
+// ===== BASIC PLAYER MOCK (if not exists) =====
+if (typeof player === 'undefined') {
+  window.player = { position: new THREE.Vector3(0,1.8,0), velocity:new THREE.Vector3() };
+}
+
+// ===== PORTAL =====
+let portal;
+function createPortal(scene){
+  portal = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.5,1.5,3,32),
+    new THREE.MeshBasicMaterial({color:0x9900ff})
+  );
+  portal.position.set(2,1.5,2);
+  scene.add(portal);
+}
+
+// ===== UPDATE LOOP HOOK =====
+function updateExtras(camera){
+  const speed = keys['shift'] ? 0.15 : 0.08;
+
+  if(keys['w']) player.position.z -= speed;
+  if(keys['s']) player.position.z += speed;
+  if(keys['a']) player.position.x -= speed;
+  if(keys['d']) player.position.x += speed;
+
+  if(portal){
+    const dist = player.position.distanceTo(portal.position);
+    if(dist < 2){
+      document.getElementById('survivalPortal').classList.add('show');
+    }
+  }
+
+  if(player.position.y < 1.8){
+    player.position.y = 1.8;
+  }
+
+  if(camera){
+    camera.position.copy(player.position);
+    camera.position.y += 1.6;
+  }
+}
+
+// ===== ROLES =====
+function chooseSurvivalRole(role){
+  if(role==='player'){
+    alert("Ты выживший!");
+  } else {
+    document.getElementById('killerSelectScreen').classList.add('show');
+  }
+}
+
+// ===== BUILDING FIX =====
+function enterBuilding(){
+  player.position.set(0,1.8,0);
+  player.velocity = new THREE.Vector3(0,0,0);
+}
+
+function exitBuilding(){
+  player.position.set(0,1.8,5);
+}
+</script>
+
 </body>
 </html>
