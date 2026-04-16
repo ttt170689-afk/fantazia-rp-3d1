@@ -6150,11 +6150,12 @@ const DEFAULT_SERVERS = [
   { id:'creative',  name:'🏗️ Creative World',           desc:'Строй без ограничений · Казань',    maxPlayers:30,  ping:38 },
   { id:'newbie',    name:'🐣 Сервер новичков',           desc:'Обучение и помощь · Москва',       maxPlayers:50,  ping:14 },
   { id:'vip',       name:'👑 VIP Lounge',               desc:'Только для VIP-игроков · Екатеринбург', maxPlayers:20, ping:29 },
+  { id:'temka',     name:'🏠 Temka Home',               desc:'Сервер Тёмки · Событие Jason Day 🎃',  maxPlayers:16, ping:7  },
 ];
 
 // Динамически симулируем онлайн-игроков
 function getRealisticPlayers(serverId) {
-  const base = { main:72, pvp:31, rp:55, survival:8, eu1:28, eu2:19, hardcore:14, creative:11, newbie:33, vip:7 };
+  const base = { main:72, pvp:31, rp:55, survival:8, eu1:28, eu2:19, hardcore:14, creative:11, newbie:33, vip:7, temka:12 };
   const b = base[serverId] || 5;
   return Math.max(1, b + Math.floor(Math.sin(Date.now()/120000 + b) * 5));
 }
@@ -6246,6 +6247,11 @@ function refreshServers() {
 
 function joinSelectedServer() {
   if (!selectedServer) { alert('Выберите сервер!'); return; }
+  if (selectedServer.id === 'temka') {
+    document.getElementById('serverScreen').style.display = 'none';
+    showJasonDayPortal();
+    return;
+  }
   if (selectedServer.id === 'survival') {
     document.getElementById('serverScreen').style.display = 'none';
     showSurvivalPortal();
@@ -6887,30 +6893,10 @@ function createPortal(scene){
   scene.add(portal);
 }
 
-// ===== UPDATE LOOP HOOK =====
+// ===== UPDATE LOOP HOOK (движение теперь полностью в основном animate()) =====
 function updateExtras(camera){
-  const speed = keys['shift'] ? 0.15 : 0.08;
-
-  if(keys['w']) player.position.z -= speed;
-  if(keys['s']) player.position.z += speed;
-  if(keys['a']) player.position.x -= speed;
-  if(keys['d']) player.position.x += speed;
-
-  if(portal){
-    const dist = player.position.distanceTo(portal.position);
-    if(dist < 2){
-      document.getElementById('survivalPortal').classList.add('show');
-    }
-  }
-
-  if(player.position.y < 1.8){
-    player.position.y = 1.8;
-  }
-
-  if(camera){
-    camera.position.copy(player.position);
-    camera.position.y += 1.6;
-  }
+  // Этот хук больше не переопределяет движение.
+  // Основное движение с учётом поворота камеры обрабатывается в animate().
 }
 
 // ===== ROLES =====
