@@ -118,7 +118,129 @@ canvas { display:block; }
   padding:12px; min-height:80px;
 }
 
-/* ========== ЭТАЖИ + ВЫХОД ========== */
+/* ========== РЕЖИМ ВЫЖИВАНИЯ — ПОРТАЛ ========== */
+#survivalPortal {
+  position:fixed; top:0; left:0; width:100%; height:100%;
+  background:#000; display:none; align-items:center; justify-content:center;
+  z-index:1150; overflow:hidden;
+}
+#survivalPortal.show { display:flex; }
+#portalCanvas {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  pointer-events:none;
+}
+.survival-content {
+  position:relative; z-index:2; text-align:center;
+  display:flex; flex-direction:column; align-items:center;
+}
+.survival-title {
+  font-size:64px; font-weight:900; letter-spacing:6px;
+  color:#ff4757; text-shadow:0 0 60px #ff000088, 0 0 120px #ff000044;
+  margin-bottom:8px; animation: survPulse 2s infinite;
+}
+.survival-sub {
+  font-size:18px; color:#ff6b81; letter-spacing:10px; margin-bottom:48px;
+  text-shadow:0 0 20px #ff475788;
+}
+@keyframes survPulse {
+  0%,100% { text-shadow:0 0 60px #ff000099,0 0 120px #ff000044; }
+  50% { text-shadow:0 0 100px #ff0000cc,0 0 180px #ff000077; }
+}
+.survival-role-btns {
+  display:flex; gap:32px; margin-bottom:40px;
+}
+.surv-role-btn {
+  width:220px; padding:28px 20px; border-radius:20px; border:2px solid;
+  cursor:pointer; transition:all 0.3s; text-align:center;
+  font-weight:bold; font-size:16px;
+  display:flex; flex-direction:column; align-items:center; gap:12px;
+}
+.surv-role-btn.player-btn {
+  background:rgba(0,184,148,0.12); border-color:#00b894;
+  color:#00b894;
+}
+.surv-role-btn.player-btn:hover {
+  background:rgba(0,184,148,0.28); box-shadow:0 0 40px rgba(0,184,148,0.5);
+  transform:translateY(-4px) scale(1.04);
+}
+.surv-role-btn.killer-btn {
+  background:rgba(231,76,60,0.12); border-color:#e74c3c;
+  color:#e74c3c;
+}
+.surv-role-btn.killer-btn:hover {
+  background:rgba(231,76,60,0.28); box-shadow:0 0 40px rgba(231,76,60,0.5);
+  transform:translateY(-4px) scale(1.04);
+}
+.surv-role-btn .role-icon { font-size:52px; }
+.surv-role-btn .role-name { font-size:20px; font-weight:900; letter-spacing:2px; }
+.surv-role-btn .role-desc { font-size:13px; opacity:0.8; }
+.surv-back-btn {
+  padding:10px 28px; border-radius:10px; border:1px solid rgba(255,255,255,0.2);
+  background:rgba(255,255,255,0.07); color:#aaa; cursor:pointer; font-size:14px;
+  transition:all 0.2s;
+}
+.surv-back-btn:hover { background:rgba(255,255,255,0.14); color:#fff; }
+
+/* Выбор убийцы */
+#killerSelectScreen {
+  position:fixed; top:0; left:0; width:100%; height:100%;
+  background:rgba(0,0,0,0.94); display:none; align-items:center; justify-content:center;
+  z-index:1160; backdrop-filter:blur(8px);
+}
+#killerSelectScreen.show { display:flex; }
+.killer-panel {
+  background:rgba(15,5,5,0.97); border:2px solid #e74c3c; border-radius:20px;
+  padding:36px 44px; max-width:700px; width:100%; text-align:center;
+  box-shadow:0 0 80px rgba(231,76,60,0.3);
+}
+.killer-panel h2 {
+  color:#e74c3c; font-size:28px; letter-spacing:4px; margin-bottom:6px;
+  text-shadow:0 0 30px #e74c3c88;
+}
+.killer-panel .kp-sub { font-size:13px; color:#888; margin-bottom:28px; letter-spacing:2px; }
+.killer-grid {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px;
+  margin-bottom:24px;
+}
+.killer-card {
+  border-radius:14px; border:2px solid rgba(231,76,60,0.3); padding:20px 12px;
+  cursor:pointer; transition:all 0.3s; background:rgba(231,76,60,0.07);
+  position:relative; display:flex; flex-direction:column; align-items:center; gap:8px;
+}
+.killer-card:hover:not(.locked) {
+  border-color:#e74c3c; background:rgba(231,76,60,0.2);
+  box-shadow:0 0 30px rgba(231,76,60,0.4); transform:translateY(-3px);
+}
+.killer-card.selected-killer {
+  border-color:#f1c40f; background:rgba(241,196,15,0.15);
+  box-shadow:0 0 30px rgba(241,196,15,0.4);
+}
+.killer-card.locked { opacity:0.6; cursor:not-allowed; filter:grayscale(30%); }
+.killer-card .kc-icon { font-size:48px; }
+.killer-card .kc-name { font-size:15px; font-weight:bold; color:#fff; }
+.killer-card .kc-price {
+  font-size:12px; font-weight:bold;
+  padding:3px 10px; border-radius:20px;
+}
+.killer-card .kc-price.free { color:#00b894; background:rgba(0,184,148,0.15); }
+.killer-card .kc-price.coins { color:#f1c40f; background:rgba(241,196,15,0.12); }
+.killer-card .kc-lock {
+  position:absolute; top:8px; right:8px; font-size:16px; opacity:0.7;
+}
+.killer-card .kc-desc { font-size:11px; color:#888; text-align:center; }
+.killer-confirm-btn {
+  width:100%; padding:14px; border:none; border-radius:12px; font-size:16px;
+  font-weight:bold; cursor:pointer; transition:all 0.3s;
+  background:linear-gradient(135deg,#e74c3c,#c0392b); color:#fff;
+  text-transform:uppercase; letter-spacing:2px;
+}
+.killer-confirm-btn:hover { transform:scale(1.03); box-shadow:0 0 30px rgba(231,76,60,0.6); }
+.killer-confirm-btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
+.killer-coins-info {
+  font-size:13px; color:#888; margin-bottom:16px;
+}
+.killer-coins-info span { color:#f1c40f; font-weight:bold; }
+
 #exitBtnFloat {
   position:fixed; top:12px; right:210px; z-index:400; display:none;
   padding:9px 20px; border-radius:10px; font-size:14px; font-weight:bold;
@@ -782,6 +904,42 @@ canvas { display:block; }
 </head>
 <body>
 
+<!-- ========== РЕЖИМ ВЫЖИВАНИЯ — ПОРТАЛ ========== -->
+<div id="survivalPortal">
+  <canvas id="portalCanvas"></canvas>
+  <div class="survival-content">
+    <div class="survival-title">☠ ВЫЖИВАНИЕ</div>
+    <div class="survival-sub">С У Р В А Й В А Л</div>
+    <div class="survival-role-btns">
+      <div class="surv-role-btn player-btn" onclick="chooseSurvivalRole('player')">
+        <div class="role-icon">🏃</div>
+        <div class="role-name">ИГРОК</div>
+        <div class="role-desc">Выживи и убеги<br>от убийцы</div>
+      </div>
+      <div class="surv-role-btn killer-btn" onclick="chooseSurvivalRole('killer')">
+        <div class="role-icon">🔪</div>
+        <div class="role-name">УБИЙЦА</div>
+        <div class="role-desc">Охоться на всех<br>игроков</div>
+      </div>
+    </div>
+    <button class="surv-back-btn" onclick="closeSurvivalPortal()">← Назад к серверам</button>
+  </div>
+</div>
+
+<!-- ========== ВЫБОР УБИЙЦЫ ========== -->
+<div id="killerSelectScreen">
+  <div class="killer-panel">
+    <button class="modal-close" onclick="closeKillerSelect()" style="float:right">&times;</button>
+    <h2>🔪 ВЫБОР УБИЙЦЫ</h2>
+    <div class="kp-sub">ВЫБЕРИТЕ СВОЕГО ПЕРСОНАЖА</div>
+    <div class="killer-coins-info">Ваши монетки: <span id="killerCoinsDisplay">0</span> 🪙</div>
+    <div class="killer-grid" id="killerGrid"></div>
+    <button class="killer-confirm-btn" id="killerConfirmBtn" onclick="confirmKillerChoice()" disabled>
+      🔪 ВОЙТИ КАК УБИЙЦА
+    </button>
+  </div>
+</div>
+
 <!-- ========== ЭКРАН АВТОРИЗАЦИИ ========== -->
 <div id="authScreen">
   <div class="auth-panel">
@@ -1317,7 +1475,7 @@ const CONFIG = {
   MOUSE_SENSITIVITY: 0.002,
   CAMERA_DISTANCE: 8,
   CAMERA_HEIGHT: 4,
-  WORLD_SIZE: 400,
+  WORLD_SIZE: 600,
   SEND_RATE: 50,
   VOICE_RANGE: 30
 };
@@ -1993,40 +2151,40 @@ function buildNorthernDistrict() {
   for (let i = 0; i < 10; i++) {
     createTree(75 + Math.random()*30, 145 + Math.random()*20);
   }
-  // Школа
-  createBuilding(120, 130, 22, 9, 16, 0xFFF176, '🏫 ШКОЛА №1', 'office');
-  createBuilding(120, 158, 18, 7, 14, 0xFFE082, '📚 БИБЛИОТЕКА', 'office');
+  // Школа — сдвинута восточнее (x=148), чтобы не пересекаться с ДОМ ЗЕНИТ (x=104-116)
+  createBuilding(148, 130, 22, 9, 16, 0xFFF176, '🏫 ШКОЛА №1', 'office');
+  createBuilding(148, 158, 18, 7, 14, 0xFFE082, '📚 БИБЛИОТЕКА', 'office');
   // NPC на улице
   for (let i = 0; i < 5; i++) spawnNPC(30 + i*12, 0, 118, 'shopper');
 }
 
 function buildSouthernIndustrialZone() {
-  // Промышленная зона — z=-100..-150
-  createBuilding(-40, -100, 20, 12, 16, 0x546E7A, '🏭 ЗАВОД №1', 'office');
-  createBuilding(-70, -100, 18, 14, 14, 0x455A64, '🏭 ЗАВОД №2', 'office');
-  createBuilding(-100, -100, 16, 10, 14, 0x37474F, '🏭 СКЛАД', 'office');
-  createBuilding(-40, -125, 22, 16, 18, 0x263238, '🏗️ ПРОИЗВОДСТВО', 'office');
-  createBuilding(-75, -125, 14, 8, 12, 0x4E342E, '⚙️ МАСТЕРСКАЯ', 'job_mechanic');
-  createBuilding(-105, -125, 10, 6, 10, 0x33691E, '🚚 ГАРАЖ', 'job_mechanic');
+  // Промышленная зона — z=-120..-165 (сдвинута южнее, чтобы не пересекаться с бизнес-районом z=-65..-96)
+  createBuilding(-40, -122, 20, 12, 16, 0x546E7A, '🏭 ЗАВОД №1', 'office');
+  createBuilding(-70, -122, 18, 14, 14, 0x455A64, '🏭 ЗАВОД №2', 'office');
+  createBuilding(-100, -122, 16, 10, 14, 0x37474F, '🏭 СКЛАД', 'office');
+  createBuilding(-40, -148, 22, 16, 18, 0x263238, '🏗️ ПРОИЗВОДСТВО', 'office');
+  createBuilding(-75, -148, 14, 8, 12, 0x4E342E, '⚙️ МАСТЕРСКАЯ', 'job_mechanic');
+  createBuilding(-105, -148, 10, 6, 10, 0x33691E, '🚚 ГАРАЖ', 'job_mechanic');
   // Трубы заводов
   const chimneyMat = new THREE.MeshLambertMaterial({ color: 0x555555 });
-  [[-35,-98],[-45,-98],[-68,-98],[-75,-98],[-100,-98]].forEach(([cx,cz]) => {
+  [[-35,-118],[-45,-118],[-68,-118],[-75,-118],[-100,-118]].forEach(([cx,cz]) => {
     const chimney = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.7,10,8), chimneyMat);
     chimney.position.set(cx,5,cz); scene.add(chimney);
     const smoke = new THREE.Mesh(new THREE.SphereGeometry(1.2,8,8),
       new THREE.MeshBasicMaterial({ color:0x888888, transparent:true, opacity:0.4 }));
     smoke.position.set(cx,12,cz); scene.add(smoke);
   });
-  // Промышленный забор
+  // Промышленный забор — вынесен на северный край промзоны (z=-109), не мешает бизнес-кварталу
   const fenceMat = new THREE.MeshLambertMaterial({ color: 0x888888 });
   for (let fx = -120; fx < -20; fx += 5) {
     const post = new THREE.Mesh(new THREE.BoxGeometry(0.2,2.5,0.2), fenceMat);
-    post.position.set(fx, 1.25, -88); scene.add(post);
+    post.position.set(fx, 1.25, -109); scene.add(post);
     const rail = new THREE.Mesh(new THREE.BoxGeometry(5,0.1,0.1), fenceMat);
-    rail.position.set(fx+2.5, 2, -88); scene.add(rail);
+    rail.position.set(fx+2.5, 2, -109); scene.add(rail);
   }
   // NPC-рабочие
-  for (let i = 0; i < 4; i++) spawnNPC(-40 + i*10, 0, -112, 'guard');
+  for (let i = 0; i < 4; i++) spawnNPC(-40 + i*10, 0, -134, 'guard');
 }
 
 function buildEasternDistrict() {
@@ -5985,6 +6143,7 @@ const DEFAULT_SERVERS = [
   { id:'main',      name:'🌟 Fantazia RP — Главный',   desc:'Официальный сервер · Москва',      maxPlayers:100, ping:12 },
   { id:'pvp',       name:'⚔️ Fantazia PvP — Арена',    desc:'Быстрые PvP-сражения · Москва',    maxPlayers:50,  ping:18 },
   { id:'rp',        name:'🎭 RolePlay Classic',         desc:'Классический RP · Санкт-Петербург', maxPlayers:80,  ping:31 },
+  { id:'survival',  name:'☠️ Режим Выживания',          desc:'Игроки против Убийцы · Москва',    maxPlayers:12,  ping:9  },
   { id:'eu1',       name:'🇩🇪 Fantazia EU #1',          desc:'Европейский сервер · Германия',    maxPlayers:60,  ping:54 },
   { id:'eu2',       name:'🇳🇱 Fantazia EU #2',          desc:'Европейский сервер · Нидерланды',  maxPlayers:60,  ping:67 },
   { id:'hardcore',  name:'💀 Hardcore Mode',            desc:'Без возрождения · Москва',          maxPlayers:40,  ping:22 },
@@ -5995,7 +6154,7 @@ const DEFAULT_SERVERS = [
 
 // Динамически симулируем онлайн-игроков
 function getRealisticPlayers(serverId) {
-  const base = { main:72, pvp:31, rp:55, eu1:28, eu2:19, hardcore:14, creative:11, newbie:33, vip:7 };
+  const base = { main:72, pvp:31, rp:55, survival:8, eu1:28, eu2:19, hardcore:14, creative:11, newbie:33, vip:7 };
   const b = base[serverId] || 5;
   return Math.max(1, b + Math.floor(Math.sin(Date.now()/120000 + b) * 5));
 }
@@ -6087,6 +6246,11 @@ function refreshServers() {
 
 function joinSelectedServer() {
   if (!selectedServer) { alert('Выберите сервер!'); return; }
+  if (selectedServer.id === 'survival') {
+    document.getElementById('serverScreen').style.display = 'none';
+    showSurvivalPortal();
+    return;
+  }
   document.getElementById('serverScreen').style.display = 'none';
   document.getElementById('createScreen').style.display = 'flex';
   showNotification(`Подключение к: ${selectedServer.name}`, 'info');
@@ -6323,6 +6487,198 @@ function toggleChatPanel() {
   const hidden = panel.classList.toggle('chat-hidden');
   btn.textContent = hidden ? '💬 ▲' : '💬 ✕';
   btn.title = hidden ? 'Показать чат' : 'Скрыть чат';
+}
+
+// =================== РЕЖИМ ВЫЖИВАНИЯ ===================
+const KILLERS = [
+  { id:'ghost',   name:'Призрак',  icon:'👻', coinPrice:0,    desc:'Начальный убийца',    free:true },
+  { id:'jason',   name:'Джейсон',  icon:'🪓', coinPrice:10000, desc:'Легендарный маньяк из Пятницы 13-го', free:false },
+];
+
+let selectedKiller = null;
+let survivalRole = null;
+let portalAnimId = null;
+
+function showSurvivalPortal() {
+  const portal = document.getElementById('survivalPortal');
+  portal.classList.add('show');
+  startPortalAnimation();
+  showNotification('☠️ Режим выживания — выбери свою роль!', 'info');
+}
+
+function closeSurvivalPortal() {
+  document.getElementById('survivalPortal').classList.remove('show');
+  stopPortalAnimation();
+  document.getElementById('serverScreen').style.display = 'flex';
+  refreshServers();
+}
+
+function chooseSurvivalRole(role) {
+  survivalRole = role;
+  if (role === 'player') {
+    document.getElementById('survivalPortal').classList.remove('show');
+    stopPortalAnimation();
+    document.getElementById('createScreen').style.display = 'flex';
+    showNotification('🏃 Ты — Игрок. Выживи любой ценой!', 'success');
+  } else {
+    openKillerSelect();
+  }
+}
+
+function openKillerSelect() {
+  document.getElementById('killerSelectScreen').classList.add('show');
+  document.getElementById('killerCoinsDisplay').textContent = localCoins;
+  renderKillerGrid();
+}
+
+function closeKillerSelect() {
+  document.getElementById('killerSelectScreen').classList.remove('show');
+  selectedKiller = null;
+  document.getElementById('killerConfirmBtn').disabled = true;
+}
+
+function renderKillerGrid() {
+  const grid = document.getElementById('killerGrid');
+  grid.innerHTML = '';
+  KILLERS.forEach(k => {
+    const owned = k.free || localCoins >= k.coinPrice;
+    const canAfford = k.free || localCoins >= k.coinPrice;
+    const card = document.createElement('div');
+    card.className = 'killer-card' + (!canAfford ? ' locked' : '') + (selectedKiller === k.id ? ' selected-killer' : '');
+    card.innerHTML = `
+      ${!canAfford ? '<div class="kc-lock">🔒</div>' : ''}
+      <div class="kc-icon">${k.icon}</div>
+      <div class="kc-name">${k.name}</div>
+      <div class="kc-price ${k.free ? 'free' : 'coins'}">${k.free ? 'БЕСПЛАТНО' : '🪙 ' + k.coinPrice.toLocaleString()}</div>
+      <div class="kc-desc">${k.desc}</div>
+    `;
+    if (canAfford) {
+      card.onclick = () => selectKiller(k.id);
+    } else {
+      card.title = `Нужно ${k.coinPrice.toLocaleString()} монеток`;
+    }
+    grid.appendChild(card);
+  });
+}
+
+function selectKiller(killerId) {
+  selectedKiller = killerId;
+  document.querySelectorAll('.killer-card').forEach(c => c.classList.remove('selected-killer'));
+  const idx = KILLERS.findIndex(k => k.id === killerId);
+  const cards = document.querySelectorAll('.killer-card');
+  if (cards[idx]) cards[idx].classList.add('selected-killer');
+  document.getElementById('killerConfirmBtn').disabled = false;
+}
+
+function confirmKillerChoice() {
+  if (!selectedKiller) return;
+  const k = KILLERS.find(x => x.id === selectedKiller);
+  if (!k) return;
+  if (!k.free && localCoins < k.coinPrice) {
+    showNotification(`❌ Не хватает монеток! Нужно ${k.coinPrice.toLocaleString()} 🪙`, 'error');
+    return;
+  }
+  if (!k.free) {
+    localCoins -= k.coinPrice;
+    updateCoinsDisplay();
+    saveCoinsLocal();
+  }
+  document.getElementById('killerSelectScreen').classList.remove('show');
+  document.getElementById('survivalPortal').classList.remove('show');
+  stopPortalAnimation();
+  document.getElementById('createScreen').style.display = 'flex';
+  showNotification(`🔪 Ты — ${k.name}! Охоться на выживших!`, 'error');
+  // Помечаем роль убийцы для будущего использования
+  window.survivalKillerChosen = selectedKiller;
+}
+
+// ---- Анимация портала ----
+function startPortalAnimation() {
+  const canvas = document.getElementById('portalCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  let t = 0;
+  function draw() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    // Тёмный фон
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+
+    // Частицы крови/огня
+    const cx = W/2, cy = H/2;
+    for (let i = 0; i < 80; i++) {
+      const angle = (i/80)*Math.PI*2 + t*0.3;
+      const r1 = 180 + Math.sin(t*2 + i*0.4)*30;
+      const r2 = r1 + Math.sin(t*3 + i*0.7)*20;
+      const x1 = cx + Math.cos(angle)*r1;
+      const y1 = cy + Math.sin(angle)*r1 * 0.7;
+      const x2 = cx + Math.cos(angle)*r2;
+      const y2 = cy + Math.sin(angle)*r2 * 0.7;
+      const alpha = 0.3 + Math.sin(t*4 + i)*0.3;
+      ctx.strokeStyle = `rgba(${180+Math.sin(i)*50},${20+Math.sin(i*2)*15},${20},${alpha})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    }
+
+    // Кольца портала
+    for (let ring = 0; ring < 5; ring++) {
+      const ringR = 80 + ring*40 + Math.sin(t*1.5 + ring)*15;
+      const alpha = (0.8 - ring*0.14) * (0.6 + Math.sin(t*2)*0.4);
+      const hue = 0 + ring*10;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, ringR, ringR*0.65, 0, 0, Math.PI*2);
+      ctx.strokeStyle = `hsla(${hue},90%,40%,${alpha})`;
+      ctx.lineWidth = 3 - ring*0.4;
+      ctx.stroke();
+    }
+
+    // Центр портала — чёрная дыра с кровавым свечением
+    const grd = ctx.createRadialGradient(cx, cy, 10, cx, cy, 140);
+    grd.addColorStop(0, 'rgba(0,0,0,1)');
+    grd.addColorStop(0.5, 'rgba(80,0,0,0.7)');
+    grd.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.beginPath(); ctx.ellipse(cx, cy, 140, 90, 0, 0, Math.PI*2);
+    ctx.fillStyle = grd; ctx.fill();
+
+    // Молнии
+    for (let li = 0; li < 6; li++) {
+      if (Math.sin(t*7 + li*1.3) > 0.4) {
+        const a = Math.random()*Math.PI*2;
+        const startR = 75;
+        const endR = 120 + Math.random()*60;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(a)*startR, cy + Math.sin(a)*startR*0.65);
+        ctx.lineTo(cx + Math.cos(a+0.3)*endR, cy + Math.sin(a+0.3)*endR*0.65);
+        ctx.strokeStyle = `rgba(255,80,80,${0.4+Math.random()*0.4})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    }
+
+    // Летящие черепа (частицы)
+    for (let s = 0; s < 12; s++) {
+      const px = (cx - 300 + ((s*137 + t*30) % 600));
+      const py = (cy - 200 + Math.sin(t*1.5 + s*0.8)*150 + s*30);
+      const alpha = 0.15 + Math.sin(t*2 + s)*0.1;
+      ctx.font = `${18 + Math.sin(t+s)*4}px serif`;
+      ctx.globalAlpha = alpha;
+      ctx.fillText('💀', px, py);
+    }
+    ctx.globalAlpha = 1;
+
+    t += 0.016;
+    portalAnimId = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+function stopPortalAnimation() {
+  if (portalAnimId) { cancelAnimationFrame(portalAnimId); portalAnimId = null; }
 }
 
 function initAuth() {
