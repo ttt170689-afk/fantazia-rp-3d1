@@ -1087,6 +1087,7 @@ canvas { display:block; }
       <div class="auth-success-name" id="authSuccessName"></div>
       <div class="auth-success-email" id="authSuccessEmail"></div>
       <div class="auth-ov-text" style="margin-top:8px;color:#7c5cfc;">Добро пожаловать в FANTAZIA!</div>
+      <div class="auth-ov-text" id="authRedirectMsg" style="margin-top:6px;color:#00b894;font-size:13px;display:none;">✅ Успешно! Перенаправляем в игру...</div>
     </div>
 
     <!-- Logo -->
@@ -6597,6 +6598,11 @@ function handleGoogleCredential(response) {
   document.getElementById('authSuccessName').textContent  = name;
   document.getElementById('authSuccessEmail').textContent = email;
   document.getElementById('authSuccessOverlay').classList.add('show');
+  // Показываем "Успешно перенаправляем" через 900ms
+  setTimeout(() => {
+    const msg = document.getElementById('authRedirectMsg');
+    if (msg) msg.style.display = 'block';
+  }, 900);
   setTimeout(showAuthSuccess, 1800);
 }
 
@@ -6637,6 +6643,10 @@ function signInWithGoogle() {
         });
         const w = window.open('https://accounts.google.com/o/oauth2/v2/auth?'+p,'google_oauth','width=480,height=600');
         if (!w) alert('Разрешите всплывающие окна в браузере для авторизации.');
+        else {
+          // Ждём postMessage от попапа (когда он получит токен)
+          window._googleOAuthWin = w;
+        }
       }
     });
   } else {
@@ -6651,6 +6661,87 @@ function signInWithGoogle() {
     }, 1200);
   }
 }
+
+// ===== ОБРАБОТКА POPUP OAUTH REDIRECT =====
+// Если страница открыта как popup (с access_token в хэше) — отправляем данные в родителя и закрываемся
+(function handleOAuthPopupRedirect() {
+  const hash = window.location.hash;
+  if (!hash) return;
+  const params = new URLSearchParams(hash.substring(1));
+  const accessToken = params.get('access_token');
+  if (!accessToken) return;
+
+  // Мы в попап-окне — показываем сообщение и закрываемся
+  if (window.opener) {
+    // Покажем красивое сообщение перед закрытием
+    document.addEventListener('DOMContentLoaded', () => {
+      document.body.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+          height:100vh;background:linear-gradient(135deg,#0a0618,#1a0535);color:#fff;font-family:sans-serif;text-align:center;gap:16px;">
+          <div style="font-size:52px;">✅</div>
+          <div style="font-size:22px;font-weight:bold;color:#a29bfe;">Авторизация успешна!</div>
+          <div style="font-size:15px;color:#00b894;">✅ Успешно перенаправляем в игру...</div>
+          <div style="font-size:13px;color:#888;margin-top:8px;">Это окно закроется автоматически</div>
+        </div>`;
+    });
+    // Получаем профиль через Google UserInfo API
+    fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    })
+    .then(r => r.json())
+    .then(profile => {
+      window.opener.postMessage({ type: 'GOOGLE_OAUTH_SUCCESS', profile }, '*');
+    })
+    .catch(() => {
+      window.opener.postMessage({ type: 'GOOGLE_OAUTH_SUCCESS', profile: { sub: 'unknown', name: 'Player', email: '' } }, '*');
+    })
+    .finally(() => {
+      setTimeout(() => window.close(), 1500);
+    });
+  }
+})();
+
+// Слушаем сообщение от popup-окна OAuth
+window.addEventListener('message', function(event) {
+  if (!event.data || event.data.type !== 'GOOGLE_OAUTH_SUCCESS') return;
+  if (window._googleOAuthWin) {
+    try { window._googleOAuthWin.close(); } catch(e) {}
+    window._googleOAuthWin = null;
+  }
+
+  const profile = event.data.profile || {};
+  const googleId = profile.sub || ('g_' + Date.now());
+  const name     = profile.name || profile.email?.split('@')[0] || 'Player';
+  const email    = profile.email || '';
+  const picture  = profile.picture || '';
+  const accounts = getAccounts();
+  const activeTab = document.getElementById('registerForm').style.display !== 'none' ? 'register' : 'login';
+
+  if (activeTab === 'register') {
+    if (accounts[googleId]) {
+      document.getElementById('authError').textContent = '⚠️ Аккаунт уже существует — используйте вкладку «Войти»';
+      return;
+    }
+    accounts[googleId] = { displayName: name, email, picture, provider: 'google', createdAt: new Date().toISOString() };
+  } else {
+    if (!accounts[googleId]) {
+      // Автоматически создаём аккаунт если первый раз
+      accounts[googleId] = { displayName: name, email, picture, provider: 'google', createdAt: new Date().toISOString() };
+    }
+    accounts[googleId].displayName = name;
+    accounts[googleId].picture = picture;
+  }
+  saveAccounts(accounts);
+  currentUser = { username: googleId, displayName: name, email, picture };
+  localStorage.setItem('fz_currentUser', JSON.stringify(currentUser));
+
+  document.getElementById('authSuccessName').textContent  = name;
+  document.getElementById('authSuccessEmail').textContent = email;
+  document.getElementById('authSuccessOverlay').classList.add('show');
+  const msg = document.getElementById('authRedirectMsg');
+  setTimeout(() => { if (msg) msg.style.display = 'block'; }, 900);
+  setTimeout(showAuthSuccess, 1800);
+});
 
 // Заглушка — больше не используется, но не удаляем чтобы не ломать старые вызовы
 function doLogin()    { document.getElementById('authError').textContent = '🔑 Используйте кнопку «Войти через Google»'; }
