@@ -7362,7 +7362,7 @@ function claimJasonQuest(id, coins) {
 // We patch updateMinimap to also draw egg positions
 const _origUpdateMinimap = typeof updateMinimap === 'function' ? updateMinimap : null;
 
-
+if (!CanvasRenderingContext2D.prototype.roundRect) {
   CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r) {
     if (typeof r === 'number') r = {tl:r,tr:r,br:r,bl:r};
     this.beginPath();
