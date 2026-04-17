@@ -6536,7 +6536,7 @@ function saveAccounts(acc) {
   localStorage.setItem('fz_accounts', JSON.stringify(acc));
 }
 
-// Декодируем JWT-токен Google без сторонних библиотек
+// Декодируем JWT-токен Google без сторонних библиотек (используется для legacy)
 function parseJWT(token) {
   try {
     const base64 = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
@@ -6544,34 +6544,68 @@ function parseJWT(token) {
   } catch(e) { return null; }
 }
 
-// Общий callback — вызывается и при входе, и при регистрации
+// (legacy callback — не используется с TokenClient, оставлен для совместимости)
 function handleGoogleCredential(response) {
   document.getElementById('authLoadingOverlay').classList.remove('show');
-  const err = document.getElementById('authError');
   if (!response || !response.credential) {
-    err.textContent = '❌ Не удалось получить данные Google'; return;
+    document.getElementById('authError').textContent = '❌ Ошибка авторизации'; return;
   }
-  const payload = parseJWT(response.credential);
-  if (!payload) { err.textContent = '❌ Ошибка токена Google'; return; }
+  const p = parseJWT(response.credential);
+  if (!p) { document.getElementById('authError').textContent = '❌ Ошибка токена'; return; }
+  handleUserInfo({ sub: p.sub, email: p.email, name: p.name, picture: p.picture });
+}
 
-  const googleId   = payload.sub;
-  const email      = payload.email || '';
-  const name       = payload.name  || email.split('@')[0] || 'Player';
-  const picture    = payload.picture || '';
-  const accounts   = getAccounts();
-  const activeTab  = document.getElementById('registerForm').style.display !== 'none' ? 'register' : 'login';
+// ── Google OAuth через TokenClient (работает всегда, открывает popup) ──
+let _gsiTokenClient = null;
+
+function renderGoogleButtons() {
+  if (typeof google === 'undefined' || !google.accounts) {
+    setTimeout(renderGoogleButtons, 500); return;
+  }
+  // Инициализируем TokenClient — он открывает настоящий Google popup
+  _gsiTokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: 'openid email profile',
+    callback: async (tokenResponse) => {
+      const overlay = document.getElementById('authLoadingOverlay');
+      if (tokenResponse.error) {
+        overlay.classList.remove('show');
+        document.getElementById('authError').textContent = '❌ Авторизация отменена или ошибка: ' + tokenResponse.error;
+        return;
+      }
+      try {
+        const resp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: 'Bearer ' + tokenResponse.access_token }
+        });
+        const user = await resp.json();
+        overlay.classList.remove('show');
+        handleUserInfo(user);
+      } catch(e) {
+        overlay.classList.remove('show');
+        document.getElementById('authError').textContent = '❌ Не удалось получить данные профиля';
+      }
+    }
+  });
+}
+
+// Обрабатываем данные пользователя после получения от Google
+function handleUserInfo(user) {
+  const err      = document.getElementById('authError');
+  const googleId = user.sub;
+  const email    = user.email   || '';
+  const name     = user.name    || email.split('@')[0] || 'Player';
+  const picture  = user.picture || '';
+  const accounts = getAccounts();
+  const activeTab = document.getElementById('registerForm').style.display !== 'none' ? 'register' : 'login';
 
   if (activeTab === 'register') {
     if (accounts[googleId]) {
       err.textContent = '⚠️ Аккаунт уже существует — используйте вкладку «Войти»';
       return;
     }
-    accounts[googleId] = {
-      displayName: name, email, picture,
-      provider: 'google', createdAt: new Date().toISOString()
-    };
+    accounts[googleId] = { displayName:name, email, picture, provider:'google', createdAt:new Date().toISOString() };
     saveAccounts(accounts);
-    currentUser = { username: googleId, displayName: name, email, picture };
+    currentUser = { username:googleId, displayName:name, email, picture };
     localStorage.setItem('fz_currentUser', JSON.stringify(currentUser));
   } else {
     if (!accounts[googleId]) {
@@ -6581,59 +6615,31 @@ function handleGoogleCredential(response) {
     accounts[googleId].displayName = name;
     accounts[googleId].picture     = picture;
     saveAccounts(accounts);
-    currentUser = { username: googleId, displayName: name, email, picture };
+    currentUser = { username:googleId, displayName:name, email, picture };
     localStorage.setItem('fz_currentUser', JSON.stringify(currentUser));
   }
-
-  // Показываем Fantazia success overlay, затем переходим в игру
+  // Показываем успех, затем переходим в игру
   document.getElementById('authSuccessName').textContent  = name;
   document.getElementById('authSuccessEmail').textContent = email;
   document.getElementById('authSuccessOverlay').classList.add('show');
   setTimeout(showAuthSuccess, 1800);
 }
 
-// Инициализируем GSI — используем кастомную кнопку Fantazia
-function renderGoogleButtons() {
-  if (typeof google === 'undefined' || !google.accounts) {
-    setTimeout(renderGoogleButtons, 500); return;
-  }
-  google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    callback: handleGoogleCredential,
-    ux_mode: 'popup',
-    cancel_on_tap_outside: true
-  });
-}
-
 // Кастомная кнопка Google (Fantazia-стиль)
 function signInWithGoogle() {
-  document.getElementById('authLoadingOverlay').classList.add('show');
-  if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-    google.accounts.id.prompt((n) => {
-      if (n.isNotDisplayed() || n.isSkippedMoment()) {
-        document.getElementById('authLoadingOverlay').classList.remove('show');
-        // Fallback: открываем OAuth popup
-        const cid = GOOGLE_CLIENT_ID;
-        if (!cid || cid.includes('YOUR_CLIENT_ID')) {
-          alert('⚡ Вставь реальный Google Client ID в переменную GOOGLE_CLIENT_ID');
-          return;
-        }
-        const p = new URLSearchParams({
-          client_id: cid,
-          redirect_uri: location.origin + location.pathname,
-          response_type: 'token',
-          scope: 'openid email profile'
-        });
-        const w = window.open('https://accounts.google.com/o/oauth2/v2/auth?'+p,'google_oauth','width=480,height=600');
-        if (!w) alert('Разрешите всплывающие окна для авторизации.');
-      }
-    });
-  } else {
-    setTimeout(() => {
-      document.getElementById('authLoadingOverlay').classList.remove('show');
-      alert('⚡ Кнопка работает!\n\nДля реальной авторизации:\n1. Зайди на console.cloud.google.com\n2. Создай OAuth 2.0 Client ID\n3. Вставь его в переменную GOOGLE_CLIENT_ID');
-    }, 900);
+  document.getElementById('authError').textContent = '';
+  if (!_gsiTokenClient) {
+    // GSI ещё не загрузился — инициализируем и повторяем
+    renderGoogleButtons();
+    setTimeout(signInWithGoogle, 600);
+    return;
   }
+  document.getElementById('authLoadingOverlay').classList.add('show');
+  // Небольшая задержка чтобы overlay успел показаться, потом открываем popup
+  setTimeout(() => {
+    document.getElementById('authLoadingOverlay').classList.remove('show');
+    _gsiTokenClient.requestAccessToken({ prompt: 'select_account' });
+  }, 300);
 }
 
 // Заглушка — больше не используется, но не удаляем чтобы не ломать старые вызовы
