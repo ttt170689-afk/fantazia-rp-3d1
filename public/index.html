@@ -2599,16 +2599,25 @@ function spawnNPC(x, y, z, role) {
   });
   // Arms
   const armM = new THREE.MeshLambertMaterial({color:sc});
+  const _npcArms = [];
   [-0.55,0.55].forEach(ax => {
     const arm = new THREE.Mesh(new THREE.BoxGeometry(0.22,0.8,0.22), armM);
-    arm.position.set(ax,1.3,0); g.add(arm);
+    arm.position.set(ax,1.3,0); g.add(arm); _npcArms.push(arm);
   });
+  g.userData.leftArm  = _npcArms[0];
+  g.userData.rightArm = _npcArms[1];
   // Legs
   const legM = new THREE.MeshLambertMaterial({color:0x2c3e50});
+  const _npcLegs = [];
   [-0.18,0.18].forEach(lx => {
     const leg = new THREE.Mesh(new THREE.BoxGeometry(0.28,0.9,0.28), legM);
-    leg.position.set(lx,0.45,0); g.add(leg);
+    leg.position.set(lx,0.45,0); g.add(leg); _npcLegs.push(leg);
   });
+  g.userData.leftLeg   = _npcLegs[0];
+  g.userData.rightLeg  = _npcLegs[1];
+  g.userData.body      = body;
+  g.userData.head      = head;
+  g.userData.npcBaseY  = 1.3;
 
   // Police hat for guards
   if (role === 'guard') {
@@ -3748,33 +3757,72 @@ function animateCharacter(character, animation, time, delta) {
   const t = time * speed;
 
   switch(animation) {
-    case 'walk':
-      leftArm.rotation.x = Math.sin(t) * 0.5;
-      rightArm.rotation.x = -Math.sin(t) * 0.5;
-      leftLeg.rotation.x = -Math.sin(t) * 0.5;
-      rightLeg.rotation.x = Math.sin(t) * 0.5;
-      body.position.y = 1.4 + Math.abs(Math.sin(t*2)) * 0.05;
+    case 'walk': {
+      const sw = Math.sin(t);
+      // Руки раскачиваются с лёгким разворотом
+      leftArm.rotation.x  =  sw * 0.68;
+      leftArm.rotation.z  =  sw * 0.10;
+      rightArm.rotation.x = -sw * 0.68;
+      rightArm.rotation.z = -sw * 0.10;
+      // Ноги — широкий шаг
+      leftLeg.rotation.x  = -sw * 0.68;
+      rightLeg.rotation.x =  sw * 0.68;
+      leftLeg.rotation.z  = 0;
+      rightLeg.rotation.z = 0;
+      // Тело подпрыгивает и скручивается
+      body.position.y = 1.4 + Math.abs(Math.sin(t * 2)) * 0.08;
+      body.rotation.x = 0;
+      body.rotation.y = sw * 0.07;
+      // Голова покачивается в такт шагам
+      head.rotation.x = Math.sin(t * 2) * 0.028;
+      head.rotation.y = -sw * 0.07;
       break;
-    case 'run':
-      leftArm.rotation.x = Math.sin(t*1.5) * 0.8;
-      rightArm.rotation.x = -Math.sin(t*1.5) * 0.8;
-      leftLeg.rotation.x = -Math.sin(t*1.5) * 0.8;
-      rightLeg.rotation.x = Math.sin(t*1.5) * 0.8;
-      body.position.y = 1.4 + Math.abs(Math.sin(t*3)) * 0.1;
-      body.rotation.x = Math.sin(t*1.5) * 0.05;
+    }
+    case 'run': {
+      const sr = Math.sin(t * 1.5);
+      // Мощная раскачка рук при беге
+      leftArm.rotation.x  =  sr * 1.15;
+      leftArm.rotation.z  =  sr * 0.20;
+      rightArm.rotation.x = -sr * 1.15;
+      rightArm.rotation.z = -sr * 0.20;
+      // Активный бег ногами
+      leftLeg.rotation.x  = -sr * 1.15;
+      rightLeg.rotation.x =  sr * 1.15;
+      leftLeg.rotation.z  = 0;
+      rightLeg.rotation.z = 0;
+      // Сильный подпрыг + наклон вперёд + скручивание торса
+      body.position.y = 1.4 + Math.abs(Math.sin(t * 3)) * 0.14;
+      body.rotation.x = -0.15;
+      body.rotation.y = sr * 0.10;
+      // Голова слегка наклонена вперёд, покачивается
+      head.rotation.x =  0.11;
+      head.rotation.y = -sr * 0.07;
       break;
+    }
     case 'dance':
       applyDance(character, currentDance || 'disco', t);
       break;
     case 'idle':
-    default:
-      leftArm.rotation.x = 0;
-      rightArm.rotation.x = 0;
-      leftLeg.rotation.x = 0;
+    default: {
+      // Дыхание: плавный подъём груди
+      const breathe = Math.sin(t * 0.45);
+      body.position.y = 1.4 + breathe * 0.026;
+      body.rotation.x = breathe * 0.009;
+      body.rotation.y = 0;
+      // Руки слегка покачиваются, немного разведены
+      leftArm.rotation.x  = Math.sin(t * 0.42 + 0.3) * 0.045;
+      leftArm.rotation.z  =  0.06;
+      rightArm.rotation.x = Math.sin(t * 0.42 + 0.3) * 0.045;
+      rightArm.rotation.z = -0.06;
+      leftLeg.rotation.x  = 0;
       rightLeg.rotation.x = 0;
-      body.position.y = 1.4 + Math.sin(t*0.5) * 0.02;
-      head.rotation.y = Math.sin(t * 0.3) * 0.05;
+      leftLeg.rotation.z  = 0;
+      rightLeg.rotation.z = 0;
+      // Голова лениво оглядывается
+      head.rotation.y = Math.sin(t * 0.28) * 0.10;
+      head.rotation.x = Math.sin(t * 0.18) * 0.03;
       break;
+    }
   }
 }
 
@@ -5573,15 +5621,24 @@ function spawnInteriorNPC(x, floorY, z, role, add) {
     e.position.set(ex, floorY+2.1, 0.28); g.add(e);
   });
   const armM = new THREE.MeshLambertMaterial({color:sc});
+  const _iArms = [];
   [-0.52,0.52].forEach(ax => {
     const arm = new THREE.Mesh(new THREE.BoxGeometry(0.2,0.75,0.2), armM);
-    arm.position.set(ax, floorY+1.25, 0); g.add(arm);
+    arm.position.set(ax, floorY+1.25, 0); g.add(arm); _iArms.push(arm);
   });
+  g.userData.leftArm  = _iArms[0];
+  g.userData.rightArm = _iArms[1];
   const legM = new THREE.MeshLambertMaterial({color:0x2c3e50});
+  const _iLegs = [];
   [-0.16,0.16].forEach(lx => {
     const leg = new THREE.Mesh(new THREE.BoxGeometry(0.25,0.85,0.25), legM);
-    leg.position.set(lx, floorY+0.42, 0); g.add(leg);
+    leg.position.set(lx, floorY+0.42, 0); g.add(leg); _iLegs.push(leg);
   });
+  g.userData.leftLeg  = _iLegs[0];
+  g.userData.rightLeg = _iLegs[1];
+  g.userData.body     = body;
+  g.userData.head     = head;
+  g.userData.npcBaseY = floorY + 1.25;
   // Name badge
   const roles = { shopper:'👤 Покупатель', guard:'🛡️ Охранник', clerk:'🏷️ Продавец', chef:'👨‍🍳 Повар' };
   const nc = document.createElement('canvas'); nc.width=180; nc.height=36;
@@ -6460,6 +6517,28 @@ if (keys['d']) mesh.position.add(right.clone().multiplyScalar(speed));
       const t = animationTime * 4;
       npc.mesh.userData.policeLight1.visible = Math.sin(t) > 0;
       npc.mesh.userData.policeLight2.visible = Math.sin(t) <= 0;
+    }
+  });
+
+  // --- Анимация конечностей NPC (ходьба/дыхание) ---
+  npcs.forEach(npc => {
+    const ud = npc.mesh.userData;
+    if (!ud.leftArm) return;
+    const nt  = animationTime;
+    const ns  = Math.sin(nt * 8);
+    const baseY = ud.npcBaseY || 1.3;
+    // Руки и ноги — лёгкая ходьба
+    ud.leftArm.rotation.x  =  ns * 0.52;
+    ud.leftArm.rotation.z  =  ns * 0.09;
+    ud.rightArm.rotation.x = -ns * 0.52;
+    ud.rightArm.rotation.z = -ns * 0.09;
+    ud.leftLeg.rotation.x  = -ns * 0.52;
+    ud.rightLeg.rotation.x =  ns * 0.52;
+    // Тело слегка подпрыгивает
+    ud.body.position.y = baseY + Math.abs(Math.sin(nt * 16)) * 0.05;
+    // Голова покачивается
+    if (ud.head) {
+      ud.head.rotation.y = Math.sin(nt * 1.8 + npc.walkAngle) * 0.07;
     }
   });
 
