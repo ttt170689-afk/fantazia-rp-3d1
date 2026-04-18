@@ -6309,19 +6309,11 @@ forward.normalize();
 let right = new THREE.Vector3();
 right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
 
-if (keys['KeyW']) {
-  mesh.position.add(forward.clone().multiplyScalar(speed));
-}
-if (keys['KeyS']) {
-  mesh.position.add(forward.clone().multiplyScalar(-speed));
-}
-if (keys['KeyA']) {
-  mesh.position.add(right.clone().multiplyScalar(-speed));
-}
-if (keys['KeyD']) {
-  mesh.position.add(right.clone().multiplyScalar(speed));
-}
-
+if (keys['w']) mesh.position.add(forward.clone().multiplyScalar(speed));
+if (keys['s']) mesh.position.add(forward.clone().multiplyScalar(-speed));
+if (keys['a']) mesh.position.add(right.clone().multiplyScalar(-speed));
+if (keys['d']) mesh.position.add(right.clone().multiplyScalar(speed));
+    
     // Мобильный джойстик
     if (joystickActive) {
       moveX += joystickDelta.x;
