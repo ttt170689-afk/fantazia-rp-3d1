@@ -268,6 +268,30 @@ app.post('/api/admin/teleport', (req, res) => {
   res.json({ ok: true, message: `${playerName} телепортирован` });
 });
 
+app.post('/api/admin/privilege', (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  const { playerName, type, enabled } = req.body;
+  if (!playerName || !type) return res.status(400).json({ error: 'Не указан игрок или тип привилегии' });
+
+  // Если это деньги — используем givemoney логику
+  if (type === 'money') {
+    const target = Object.values(players).find(p => p.name.toLowerCase() === playerName.toLowerCase());
+    if (!target) return res.status(404).json({ error: 'Игрок не в сети' });
+    target.money = Math.max(0, target.money + 100000);
+    updateMoney(target.id);
+    notify(target.id, `💰 +100,000$ (Admin)`, 'money');
+    return res.json({ ok: true, message: `${playerName}: +100,000$ → теперь ${target.money}$` });
+  }
+
+  // Для god/noclip/fly/speed — шлём событие клиенту
+  const target = Object.values(players).find(p => p.name.toLowerCase() === playerName.toLowerCase());
+  if (!target) return res.status(404).json({ error: 'Игрок не в сети' });
+  io.to(target.id).emit('adminPrivilege', { type, enabled: enabled !== false });
+  notify(target.id, `⚡ Привилегия [${type}] ${enabled !== false ? 'активирована' : 'снята'} администратором`, 'success');
+  console.log(`[PRIV] ${type} → ${playerName} (enabled=${enabled !== false})`);
+  res.json({ ok: true, message: `${playerName}: привилегия [${type}] ${enabled !== false ? 'выдана' : 'снята'}` });
+});
+
 // Отправить сообщение игроку
 app.post('/api/admin/message', (req, res) => {
   if (!checkAdmin(req, res)) return;
