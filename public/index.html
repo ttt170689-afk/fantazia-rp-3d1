@@ -1669,7 +1669,56 @@ canvas { display:block; }
 </div>
 
 <!-- ========== СКРИПТЫ ========== -->
-<script src="/socket.io/socket.io.js"></script>
+<!-- socket.io stub — работает без сервера (локальный режим) -->
+<script>
+window.io = function(url, opts) {
+  const handlers = {};
+  const stub = {
+    on: function(ev, fn) { if (!handlers[ev]) handlers[ev] = []; handlers[ev].push(fn); return stub; },
+    emit: function(ev, data) {
+      // When registerPlayer is sent, respond with a fake 'registered' event
+      if (ev === 'registerPlayer') {
+        setTimeout(function() {
+          const fakePlayer = {
+            id: 'local-player',
+            name: (data && data.name) ? data.name : 'Player',
+            position: { x: 0, y: 0, z: 10 },
+            money: 1000,
+            health: 100,
+            level: 1,
+            xp: 0,
+            job: null,
+            pet: null,
+            inventory: [],
+            apartment: null,
+            friends: [],
+            appearance: {
+              skinColor: (data && data.skinColor) ? data.skinColor : '#FFD1A4',
+              shirtColor: (data && data.shirtColor) ? data.shirtColor : '#3498DB',
+              pantsColor: (data && data.pantsColor) ? data.pantsColor : '#2C3E50',
+              hairColor: (data && data.hairColor) ? data.hairColor : '#4A2F1B',
+              hairStyle: (data && data.hairStyle != null) ? data.hairStyle : 0
+            }
+          };
+          var fns = handlers['registered'] || [];
+          fns.forEach(function(fn){ try { fn({ player: fakePlayer, chatHistory: [], players: {} }); } catch(e){ console.error(e); } });
+        }, 100);
+      }
+      return stub;
+    },
+    off: function() { return stub; },
+    connected: false,
+    id: 'local-' + Math.random().toString(36).slice(2)
+  };
+  // fire connect
+  setTimeout(function() {
+    stub.connected = true;
+    var fns = handlers['connect'] || [];
+    fns.forEach(function(fn){ try { fn(); } catch(e){} });
+  }, 100);
+  return stub;
+};
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 // ============================================================
@@ -3863,6 +3912,7 @@ function initSocket(name) {
     console.log('Подключено к серверу!');
     socket.emit('registerPlayer', {
       name,
+      email: (typeof currentUser !== 'undefined' && currentUser) ? (currentUser.email || '') : '',
       skinColor: document.getElementById('skinColor').value,
       shirtColor: document.getElementById('shirtColor').value,
       pantsColor: document.getElementById('pantsColor').value,
@@ -3889,6 +3939,13 @@ function initSocket(name) {
     // Инициализация монеток
     document.getElementById('coinsDisplay').textContent = localCoins;
     showNotification('Добро пожаловать в Fantazia RP 3D!', 'success');
+    if (data.isAdmin) {
+      localPlayer.isAdmin = true;
+      window.isAdminFly    = false;
+      window.isAdminNoclip = false;
+      showAdminHUD();
+      showNotification('👑 ADMIN MODE АКТИВЕН', 'success');
+    }
   });
 
   socket.on('playerList', (list) => {
@@ -4012,6 +4069,16 @@ function initSocket(name) {
   });
 
   socket.on('notification', (data) => showNotification(data.text, data.type));
+
+  socket.on('adminTeleport', (data) => {
+    if (!localPlayer || !localPlayer.mesh) return;
+    localPlayer.mesh.position.set(data.x, 0, data.z);
+    showNotification(`📍 Телепортирован (${data.x}, ${data.z})`, 'info');
+  });
+
+  socket.on('worldEvent', (ev) => {
+    showWorldEventBanner(ev.title, ev.description, ev.type);
+  });
 
   socket.on('appearanceUpdate', (appearance) => {
     localPlayer.appearance = appearance;
@@ -4663,7 +4730,257 @@ function showNotification(text, type) {
   setTimeout(() => div.remove(), 3000);
 }
 
-// =================== ЗДОРОВЬЕ ===================
+function showNotification(text, type) {
+  const container = document.getElementById('notifications');
+  const div = document.createElement('div');
+  div.className = 'notification ' + (type || 'info');
+  div.textContent = text;
+  container.appendChild(div);
+  setTimeout(() => div.remove(), 3000);
+}
+
+// =================== WORLD EVENT BANNER ===================
+function showWorldEventBanner(title, description, type) {
+  let banner = document.getElementById('worldEventBanner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'worldEventBanner';
+    banner.style.cssText = `
+      position:fixed;top:80px;left:50%;transform:translateX(-50%);
+      background:linear-gradient(135deg,#1a0535cc,#0a0618ee);
+      border:2px solid #a29bfe;border-radius:16px;padding:18px 32px;
+      text-align:center;z-index:9999;backdrop-filter:blur(12px);
+      box-shadow:0 0 40px #6c5ce755;min-width:320px;max-width:500px;
+      animation:fadeInDown .4s ease;
+    `;
+    document.body.appendChild(banner);
+  }
+  const colors = { info:'#a29bfe', success:'#00b894', error:'#e17055', warning:'#fdcb6e' };
+  banner.innerHTML = `
+    <div style="font-size:13px;color:${colors[type]||'#a29bfe'};letter-spacing:3px;margin-bottom:6px">📢 СОБЫТИЕ</div>
+    <div style="font-size:20px;font-weight:bold;color:#fff;margin-bottom:6px">${title}</div>
+    ${description ? `<div style="font-size:13px;color:#ccc">${description}</div>` : ''}
+  `;
+  banner.style.display = 'block';
+  clearTimeout(banner._timer);
+  banner._timer = setTimeout(() => { if(banner) banner.style.display='none'; }, 6000);
+}
+
+// =================== ADMIN HUD ===================
+function showAdminHUD() {
+  if (document.getElementById('adminHUD')) return;
+
+  const hud = document.createElement('div');
+  hud.id = 'adminHUD';
+  hud.style.cssText = `
+    position:fixed;top:10px;left:50%;transform:translateX(-50%);
+    background:rgba(10,6,24,0.92);border:1.5px solid #a29bfe;
+    border-radius:12px;padding:6px 16px;z-index:9000;
+    display:flex;gap:8px;align-items:center;backdrop-filter:blur(8px);
+    font-family:'Segoe UI',sans-serif;font-size:13px;
+  `;
+  hud.innerHTML = `
+    <span style="color:#f1c40f;font-weight:bold">👑 ADMIN</span>
+    <button id="btnAdminPanel" style="background:#6c5ce7;color:#fff;border:none;border-radius:7px;padding:4px 10px;cursor:pointer;font-size:12px">⚙️ Панель</button>
+    <button id="btnAdminFly" style="background:#2d3436;color:#a29bfe;border:1px solid #6c5ce7;border-radius:7px;padding:4px 10px;cursor:pointer;font-size:12px">🛸 Лети</button>
+    <button id="btnAdminNoclip" style="background:#2d3436;color:#a29bfe;border:1px solid #6c5ce7;border-radius:7px;padding:4px 10px;cursor:pointer;font-size:12px">👻 Нокл</button>
+    <span id="adminCoords" style="color:#636e72;font-size:11px">x:0 z:0</span>
+  `;
+  document.body.appendChild(hud);
+
+  document.getElementById('btnAdminPanel').onclick = toggleAdminPanel;
+  document.getElementById('btnAdminFly').onclick = () => {
+    window.isAdminFly = !window.isAdminFly;
+    document.getElementById('btnAdminFly').style.background = window.isAdminFly ? '#6c5ce7' : '#2d3436';
+    showNotification(window.isAdminFly ? '🛸 Полёт включён (SPACE=вверх, SHIFT=вниз)' : '🛸 Полёт выключен', 'info');
+  };
+  document.getElementById('btnAdminNoclip').onclick = () => {
+    window.isAdminNoclip = !window.isAdminNoclip;
+    document.getElementById('btnAdminNoclip').style.background = window.isAdminNoclip ? '#6c5ce7' : '#2d3436';
+    showNotification(window.isAdminNoclip ? '👻 Ноклип включён' : '👻 Ноклип выключен', 'info');
+  };
+
+  // Обновлять координаты
+  setInterval(() => {
+    if (!localPlayer || !localPlayer.mesh) return;
+    const m = localPlayer.mesh;
+    const coordEl = document.getElementById('adminCoords');
+    if (coordEl) coordEl.textContent = `x:${Math.round(m.position.x)} y:${Math.round(m.position.y)} z:${Math.round(m.position.z)}`;
+  }, 300);
+
+  buildAdminPanel();
+}
+
+function buildAdminPanel() {
+  if (document.getElementById('adminPanel')) return;
+  const panel = document.createElement('div');
+  panel.id = 'adminPanel';
+  panel.style.cssText = `
+    position:fixed;top:50px;right:16px;width:300px;
+    background:rgba(10,6,24,0.97);border:1.5px solid #6c5ce7;
+    border-radius:16px;z-index:8999;display:none;
+    font-family:'Segoe UI',sans-serif;overflow:hidden;
+    box-shadow:0 8px 40px #6c5ce755;
+  `;
+  panel.innerHTML = `
+    <div style="background:#6c5ce7;padding:10px 16px;font-weight:bold;color:#fff;font-size:14px;display:flex;justify-content:space-between;align-items:center">
+      👑 Админ-панель
+      <span onclick="toggleAdminPanel()" style="cursor:pointer;opacity:.7">✕</span>
+    </div>
+
+    <!-- Вкладки -->
+    <div style="display:flex;background:#0d0f1a;border-bottom:1px solid #2d2f45">
+      ${['💰 Деньги','🌍 Мир','🧑 NPC','🌀 Порталы'].map((t,i)=>`
+        <button onclick="adminTab(${i})" id="aTab${i}" style="flex:1;background:${i===0?'#1a1e35':'transparent'};color:${i===0?'#a29bfe':'#636e72'};border:none;padding:8px 4px;cursor:pointer;font-size:11px;transition:.2s">${t}</button>
+      `).join('')}
+    </div>
+
+    <!-- Деньги -->
+    <div id="aPage0" style="padding:14px">
+      <div style="color:#a29bfe;font-size:11px;margin-bottom:8px">Игрок (или "all"):</div>
+      <input id="aMoneyTarget" placeholder="Имя игрока / all" style="width:100%;background:#1a1e35;border:1px solid #6c5ce7;color:#fff;border-radius:7px;padding:7px 10px;font-size:13px;margin-bottom:8px;box-sizing:border-box">
+      <div style="color:#a29bfe;font-size:11px;margin-bottom:6px">Сумма (+ дать / – забрать):</div>
+      <input id="aMoneyAmount" type="number" value="1000" style="width:100%;background:#1a1e35;border:1px solid #6c5ce7;color:#fff;border-radius:7px;padding:7px 10px;font-size:13px;margin-bottom:8px;box-sizing:border-box">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+        <button onclick="adminGiveMoney(1)" style="background:#00b894;color:#fff;border:none;border-radius:7px;padding:8px;cursor:pointer;font-size:12px">➕ Дать</button>
+        <button onclick="adminGiveMoney(-1)" style="background:#e17055;color:#fff;border:none;border-radius:7px;padding:8px;cursor:pointer;font-size:12px">➖ Забрать</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px">
+        ${[1000,10000,100000].map(v=>`<button onclick="document.getElementById('aMoneyAmount').value=${v}" style="background:#2d3436;color:#a29bfe;border:1px solid #6c5ce7;border-radius:6px;padding:5px;cursor:pointer;font-size:11px">${v>=1000?v/1000+'K':v}</button>`).join('')}
+      </div>
+      <div style="margin-top:10px;color:#a29bfe;font-size:11px">Быстро себе:</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:4px">
+        ${[10000,50000,999999].map(v=>`<button onclick="adminGiveSelf(${v})" style="background:#1a1e35;color:#f1c40f;border:1px solid #6c5ce755;border-radius:6px;padding:6px;cursor:pointer;font-size:11px">+${v>=1000?v/1000+'K':v}</button>`).join('')}
+      </div>
+    </div>
+
+    <!-- Мир -->
+    <div id="aPage1" style="padding:14px;display:none">
+      <div style="color:#a29bfe;font-size:12px;font-weight:bold;margin-bottom:10px">🌤 Погода</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px">
+        ${[['☀️','sunny'],['⛅','cloudy'],['🌧️','rainy']].map(([e,v])=>`
+          <button onclick="adminSetWeather('${v}')" style="background:#1a1e35;color:#fff;border:1px solid #6c5ce755;border-radius:8px;padding:8px;cursor:pointer;font-size:13px">${e}<br><span style='font-size:10px;color:#a29bfe'>${v}</span></button>
+        `).join('')}
+      </div>
+      <div style="color:#a29bfe;font-size:12px;font-weight:bold;margin-bottom:8px">🕐 Время</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">
+        ${[['☀️ День','day'],['🌙 Ночь','night']].map(([e,v])=>`
+          <button onclick="adminSetTime('${v}')" style="background:#1a1e35;color:#fff;border:1px solid #6c5ce755;border-radius:8px;padding:8px;cursor:pointer;font-size:13px">${e}</button>
+        `).join('')}
+      </div>
+      <div style="color:#a29bfe;font-size:12px;font-weight:bold;margin-bottom:8px">📢 Событие для всех</div>
+      <input id="aEventTitle" placeholder="Заголовок события" style="width:100%;background:#1a1e35;border:1px solid #6c5ce7;color:#fff;border-radius:7px;padding:7px 10px;font-size:12px;margin-bottom:6px;box-sizing:border-box">
+      <input id="aEventDesc" placeholder="Описание (необязательно)" style="width:100%;background:#1a1e35;border:1px solid #6c5ce755;color:#ccc;border-radius:7px;padding:7px 10px;font-size:12px;margin-bottom:8px;box-sizing:border-box">
+      <button onclick="adminBroadcast()" style="width:100%;background:#6c5ce7;color:#fff;border:none;border-radius:8px;padding:9px;cursor:pointer;font-size:13px;font-weight:bold">📢 Отправить всем</button>
+    </div>
+
+    <!-- NPC -->
+    <div id="aPage2" style="padding:14px;display:none">
+      <div style="color:#a29bfe;font-size:11px;margin-bottom:6px">Имя NPC:</div>
+      <input id="aNpcName" placeholder="Имя NPC" style="width:100%;background:#1a1e35;border:1px solid #6c5ce7;color:#fff;border-radius:7px;padding:7px 10px;font-size:13px;margin-bottom:8px;box-sizing:border-box">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+        <div><div style="color:#a29bfe;font-size:10px;margin-bottom:4px">X позиция</div><input id="aNpcX" type="number" value="0" style="width:100%;background:#1a1e35;border:1px solid #6c5ce755;color:#fff;border-radius:7px;padding:6px;font-size:12px;box-sizing:border-box"></div>
+        <div><div style="color:#a29bfe;font-size:10px;margin-bottom:4px">Z позиция</div><input id="aNpcZ" type="number" value="0" style="width:100%;background:#1a1e35;border:1px solid #6c5ce755;color:#fff;border-radius:7px;padding:6px;font-size:12px;box-sizing:border-box"></div>
+      </div>
+      <button onclick="adminUseMyPos('npc')" style="width:100%;background:#2d3436;color:#a29bfe;border:1px solid #6c5ce755;border-radius:7px;padding:6px;cursor:pointer;font-size:11px;margin-bottom:8px">📍 Использовать мою позицию</button>
+      <button onclick="adminSpawnNPC()" style="width:100%;background:#00b894;color:#fff;border:none;border-radius:8px;padding:9px;cursor:pointer;font-size:13px;font-weight:bold">🧑 Создать NPC</button>
+    </div>
+
+    <!-- Порталы -->
+    <div id="aPage3" style="padding:14px;display:none">
+      <div style="color:#a29bfe;font-size:11px;margin-bottom:6px">Название портала:</div>
+      <input id="aPortalName" placeholder="Название" style="width:100%;background:#1a1e35;border:1px solid #6c5ce7;color:#fff;border-radius:7px;padding:7px 10px;font-size:13px;margin-bottom:8px;box-sizing:border-box">
+      <div style="color:#a29bfe;font-size:10px;font-weight:bold;margin-bottom:6px">ОТКУДА (вход):</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+        <input id="aPortalFX" type="number" placeholder="X" value="0" style="background:#1a1e35;border:1px solid #6c5ce755;color:#fff;border-radius:7px;padding:6px;font-size:12px;box-sizing:border-box">
+        <input id="aPortalFZ" type="number" placeholder="Z" value="0" style="background:#1a1e35;border:1px solid #6c5ce755;color:#fff;border-radius:7px;padding:6px;font-size:12px;box-sizing:border-box">
+      </div>
+      <button onclick="adminUseMyPos('portalFrom')" style="width:100%;background:#2d3436;color:#a29bfe;border:1px solid #6c5ce755;border-radius:7px;padding:5px;cursor:pointer;font-size:11px;margin-bottom:8px">📍 Моя позиция = вход</button>
+      <div style="color:#a29bfe;font-size:10px;font-weight:bold;margin-bottom:6px">КУДА (выход):</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+        <input id="aPortalTX" type="number" placeholder="X" value="50" style="background:#1a1e35;border:1px solid #6c5ce755;color:#fff;border-radius:7px;padding:6px;font-size:12px;box-sizing:border-box">
+        <input id="aPortalTZ" type="number" placeholder="Z" value="50" style="background:#1a1e35;border:1px solid #6c5ce755;color:#fff;border-radius:7px;padding:6px;font-size:12px;box-sizing:border-box">
+      </div>
+      <button onclick="adminUseMyPos('portalTo')" style="width:100%;background:#2d3436;color:#a29bfe;border:1px solid #6c5ce755;border-radius:7px;padding:5px;cursor:pointer;font-size:11px;margin-bottom:8px">📍 Моя позиция = выход</button>
+      <button onclick="adminAddPortal()" style="width:100%;background:#6c5ce7;color:#fff;border:none;border-radius:8px;padding:9px;cursor:pointer;font-size:13px;font-weight:bold">🌀 Создать портал</button>
+    </div>
+  `;
+  document.body.appendChild(panel);
+}
+
+function toggleAdminPanel() {
+  const p = document.getElementById('adminPanel');
+  if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+
+function adminTab(idx) {
+  for (let i = 0; i < 4; i++) {
+    document.getElementById('aPage' + i).style.display = i === idx ? 'block' : 'none';
+    const t = document.getElementById('aTab' + i);
+    t.style.background = i === idx ? '#1a1e35' : 'transparent';
+    t.style.color = i === idx ? '#a29bfe' : '#636e72';
+  }
+}
+
+function adminGiveMoney(sign) {
+  const target = document.getElementById('aMoneyTarget').value.trim() || localPlayer.name;
+  const amount = (Number(document.getElementById('aMoneyAmount').value) || 0) * sign;
+  socket.emit('adminCommand', { cmd: 'giveMoney', target, amount });
+}
+
+function adminGiveSelf(amount) {
+  socket.emit('adminCommand', { cmd: 'giveMoney', target: localPlayer.name, amount });
+}
+
+function adminSetWeather(w) {
+  socket.emit('adminCommand', { cmd: 'setWeather', weather: w });
+}
+
+function adminSetTime(t) {
+  socket.emit('adminCommand', { cmd: 'setTime', time: t });
+}
+
+function adminBroadcast() {
+  const title = document.getElementById('aEventTitle').value.trim();
+  const description = document.getElementById('aEventDesc').value.trim();
+  if (!title) { showNotification('Введи заголовок события!', 'error'); return; }
+  socket.emit('adminCommand', { cmd: 'broadcast', title, description, eventType: 'info' });
+  document.getElementById('aEventTitle').value = '';
+  document.getElementById('aEventDesc').value = '';
+}
+
+function adminSpawnNPC() {
+  const name = document.getElementById('aNpcName').value.trim() || 'NPC';
+  const x = Number(document.getElementById('aNpcX').value) || 0;
+  const z = Number(document.getElementById('aNpcZ').value) || 0;
+  socket.emit('adminCommand', { cmd: 'spawnNPC', name, x, z });
+}
+
+function adminAddPortal() {
+  const name   = document.getElementById('aPortalName').value.trim() || 'Портал';
+  const fromX  = Number(document.getElementById('aPortalFX').value) || 0;
+  const fromZ  = Number(document.getElementById('aPortalFZ').value) || 0;
+  const toX    = Number(document.getElementById('aPortalTX').value) || 0;
+  const toZ    = Number(document.getElementById('aPortalTZ').value) || 0;
+  socket.emit('adminCommand', { cmd: 'addPortal', name, fromX, fromZ, toX, toZ });
+}
+
+function adminUseMyPos(target) {
+  if (!localPlayer || !localPlayer.mesh) return;
+  const x = Math.round(localPlayer.mesh.position.x);
+  const z = Math.round(localPlayer.mesh.position.z);
+  if (target === 'npc') {
+    document.getElementById('aNpcX').value = x;
+    document.getElementById('aNpcZ').value = z;
+  } else if (target === 'portalFrom') {
+    document.getElementById('aPortalFX').value = x;
+    document.getElementById('aPortalFZ').value = z;
+  } else if (target === 'portalTo') {
+    document.getElementById('aPortalTX').value = x;
+    document.getElementById('aPortalTZ').value = z;
+  }
+  showNotification(`📍 Позиция установлена: ${x}, ${z}`, 'info');
+}
 function updateHealthBar() {
   const pct = (localPlayer.health / localPlayer.maxHealth) * 100;
   document.getElementById('healthBar').style.width = pct + '%';
@@ -6055,8 +6372,8 @@ function animate() {
       const newX = mesh.position.x + dx;
       const newZ = mesh.position.z + dz;
 
-      if (!checkCollision(newX, mesh.position.z)) mesh.position.x = newX;
-      if (!checkCollision(mesh.position.x, newZ)) mesh.position.z = newZ;
+      if (window.isAdminNoclip || !checkCollision(newX, mesh.position.z)) mesh.position.x = newX;
+      if (window.isAdminNoclip || !checkCollision(mesh.position.x, newZ)) mesh.position.z = newZ;
 
       // Поворот персонажа в сторону движения
       const targetAngle = Math.atan2(dx, dz);
@@ -6072,16 +6389,26 @@ function animate() {
       velocity.y = CONFIG.JUMP_FORCE;
       isGrounded = false;
     }
+    // ── ADMIN FLY MODE ──
+    if (window.isAdminFly) {
+      velocity.y = 0;
+      if (keys['Space'])  mesh.position.y += 0.18;
+      if (keys['ShiftLeft'] || keys['ShiftRight']) mesh.position.y -= 0.18;
+    }
   }
 
   // Гравитация
-  velocity.y -= CONFIG.GRAVITY;
-  mesh.position.y += velocity.y;
-  const groundY = isInsideBuilding ? currentFloor * 3.5 : 0;
-  if (mesh.position.y <= groundY) {
-    mesh.position.y = groundY;
-    velocity.y = 0;
-    isGrounded = true;
+  if (!window.isAdminFly) {
+    velocity.y -= CONFIG.GRAVITY;
+    mesh.position.y += velocity.y;
+    const groundY = isInsideBuilding ? currentFloor * 3.5 : 0;
+    if (mesh.position.y <= groundY) {
+      mesh.position.y = groundY;
+      velocity.y = 0;
+      isGrounded = true;
+    }
+  } else {
+    isGrounded = false;
   }
 
   // --- Анимация персонажа ---
