@@ -57,6 +57,7 @@ app.get('/api/players', (req, res) => {
 // ======================================================
 
 const ADMIN_PASSWORD = 'fnfpoppy567765';
+const ADMIN_EMAIL    = 'ttt170689@gmail.com';
 
 function checkAdmin(req, res) {
   const pwd = req.body?.adminPassword || req.query?.adminPassword;
@@ -151,6 +152,122 @@ app.post('/api/admin/kick', (req, res) => {
   res.json({ ok: true, message: `${playerName} кикнут` });
 });
 
+// ── Дать / забрать деньги ─────────────────────────────
+app.post('/api/admin/givemoney', (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  const { playerName, amount } = req.body;
+  if (!playerName) return res.status(400).json({ error: 'Не указан игрок' });
+  const amt = Number(amount) || 0;
+  if (playerName.toLowerCase() === 'all') {
+    Object.values(players).forEach(p => {
+      p.money = Math.max(0, p.money + amt);
+      updateMoney(p.id);
+      notify(p.id, `💰 ${amt >= 0 ? '+' : ''}${amt}$ (от Admin)`, 'money');
+    });
+    return res.json({ ok: true, message: `Все игроки: ${amt >= 0 ? '+' : ''}${amt}$` });
+  }
+  const target = Object.values(players).find(p => p.name.toLowerCase() === playerName.toLowerCase());
+  if (!target) return res.status(404).json({ error: 'Игрок не в сети' });
+  target.money = Math.max(0, target.money + amt);
+  updateMoney(target.id);
+  notify(target.id, `💰 ${amt >= 0 ? '+' : ''}${amt}$ (от Admin)`, 'money');
+  res.json({ ok: true, message: `${playerName}: ${amt >= 0 ? '+' : ''}${amt}$ → теперь ${target.money}$` });
+});
+
+app.post('/api/admin/setmoney', (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  const { playerName, amount } = req.body;
+  if (!playerName) return res.status(400).json({ error: 'Не указан игрок' });
+  const target = Object.values(players).find(p => p.name.toLowerCase() === playerName.toLowerCase());
+  if (!target) return res.status(404).json({ error: 'Игрок не в сети' });
+  target.money = Math.max(0, Number(amount) || 0);
+  updateMoney(target.id);
+  notify(target.id, `💰 Баланс установлен: ${target.money}$ (Admin)`, 'money');
+  res.json({ ok: true, message: `${playerName} → ${target.money}$` });
+});
+
+app.post('/api/admin/broadcast', (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  const { title, description, eventType } = req.body;
+  if (!title) return res.status(400).json({ error: 'Не указан заголовок' });
+  const ev = { title, description: description || '', type: eventType || 'info', createdAt: new Date().toISOString() };
+  io.emit('worldEvent', ev);
+  broadcastSystemMessage(`[СОБЫТИЕ] ${title}`);
+  worldEvents.push(ev);
+  if (worldEvents.length > 100) worldEvents.shift();
+  res.json({ ok: true, message: 'Событие отправлено всем' });
+});
+
+app.get('/api/admin/worldevents', (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  res.json({ ok: true, events: worldEvents.slice(-50) });
+});
+
+app.post('/api/admin/setworld', (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  const { weather, time } = req.body;
+  if (weather) worldState.weather = weather;
+  if (time)    worldState.time    = time;
+  io.emit('worldUpdate', worldState);
+  res.json({ ok: true, message: `Мир: погода=${worldState.weather}, время=${worldState.time}` });
+});
+
+app.get('/api/admin/npcs', (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  res.json({ ok: true, npcs: Object.values(npcs) });
+});
+
+app.post('/api/admin/spawnNPC', (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  const { name, x, z, npcType } = req.body;
+  const npc = { id: generateId(), name: sanitizeText(name) || 'NPC', x: Number(x) || 0, z: Number(z) || 0, type: npcType || 'citizen', createdAt: new Date().toISOString() };
+  npcs[npc.id] = npc;
+  io.emit('spawnNPC', npc);
+  res.json({ ok: true, message: `NPC "${npc.name}" создан`, npc });
+});
+
+app.post('/api/admin/removeNPC', (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  const { npcId } = req.body;
+  if (!npcs[npcId]) return res.status(404).json({ error: 'NPC не найден' });
+  delete npcs[npcId];
+  io.emit('removeNPC', { id: npcId });
+  res.json({ ok: true, message: 'NPC удалён' });
+});
+
+app.get('/api/admin/portals', (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  res.json({ ok: true, portals: Object.values(portals) });
+});
+
+app.post('/api/admin/addPortal', (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  const { name, fromX, fromZ, toX, toZ } = req.body;
+  const portal = { id: generateId(), name: sanitizeText(name) || 'Портал', fromX: Number(fromX) || 0, fromZ: Number(fromZ) || 0, toX: Number(toX) || 0, toZ: Number(toZ) || 0, createdAt: new Date().toISOString() };
+  portals[portal.id] = portal;
+  io.emit('addPortal', portal);
+  res.json({ ok: true, message: `Портал "${portal.name}" создан`, portal });
+});
+
+app.post('/api/admin/removePortal', (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  const { portalId } = req.body;
+  if (!portals[portalId]) return res.status(404).json({ error: 'Портал не найден' });
+  delete portals[portalId];
+  io.emit('removePortal', { id: portalId });
+  res.json({ ok: true, message: 'Портал удалён' });
+});
+
+app.post('/api/admin/teleport', (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  const { playerName, x, z } = req.body;
+  if (!playerName) return res.status(400).json({ error: 'Не указан игрок' });
+  const target = Object.values(players).find(p => p.name.toLowerCase() === playerName.toLowerCase());
+  if (!target) return res.status(404).json({ error: 'Игрок не в сети' });
+  io.to(target.id).emit('adminTeleport', { x: Number(x) || 0, z: Number(z) || 0 });
+  res.json({ ok: true, message: `${playerName} телепортирован` });
+});
+
 // Отправить сообщение игроку
 app.post('/api/admin/message', (req, res) => {
   if (!checkAdmin(req, res)) return;
@@ -186,8 +303,11 @@ app.post('/api/admin/message', (req, res) => {
 // ======================================================
 
 const players = {};
-const bans = {};          // ← хранилище банов
+const bans = {};
 const friendships = {};
+const npcs = {};
+const portals = {};
+const worldEvents = [];
 const chatHistory = [];
 const MAX_CHAT_HISTORY = 100;
 
@@ -517,7 +637,9 @@ io.on('connection', (socket) => {
         pet: null,
         inventory: [],
         online: true,
-        joinedAt: Date.now()
+        joinedAt: Date.now(),
+        isAdmin: (data.email || '') === ADMIN_EMAIL,
+        email: data.email || ''
       };
 
       players[socket.id] = player;
@@ -530,7 +652,10 @@ io.on('connection', (socket) => {
         petTypes,
         apartments,
         worldState,
-        chatHistory: chatHistory.slice(-50)
+        chatHistory: chatHistory.slice(-50),
+        isAdmin: player.isAdmin,
+        npcs: Object.values(npcs),
+        portals: Object.values(portals)
       });
 
       broadcastSystemMessage(`${player.name} присоединился к игре!`);
@@ -1052,6 +1177,96 @@ io.on('connection', (socket) => {
   // ----------------------------------------------------
   socket.on('pingCheck', () => {
     socket.emit('pongCheck', { time: Date.now() });
+  });
+
+  // ----------------------------------------------------
+  // ADMIN IN-GAME COMMANDS (только для аккаунта temka)
+  // ----------------------------------------------------
+  socket.on('adminCommand', (data = {}) => {
+    const player = players[socket.id];
+    if (!player || !player.isAdmin) {
+      notify(socket.id, '⛔ Нет прав администратора', 'error');
+      return;
+    }
+    switch (data.cmd) {
+      case 'giveMoney': {
+        const amt = Number(data.amount) || 0;
+        const tName = (data.target || '').toLowerCase();
+        const targets = tName === 'all'
+          ? Object.values(players)
+          : [Object.values(players).find(p => p.name.toLowerCase() === tName) || player];
+        targets.filter(Boolean).forEach(t => {
+          t.money = Math.max(0, t.money + amt);
+          updateMoney(t.id);
+          if (t.id !== socket.id)
+            notify(t.id, `💰 ${amt >= 0 ? '+' : ''}${amt}$ (Admin)`, 'money');
+        });
+        notify(socket.id, `✅ Деньги выданы (${amt >= 0 ? '+' : ''}${amt}$)`, 'success');
+        break;
+      }
+      case 'broadcast': {
+        const ev = { title: data.title || '📢 Событие', description: data.description || '', type: data.eventType || 'info', createdAt: new Date().toISOString() };
+        io.emit('worldEvent', ev);
+        broadcastSystemMessage(`[СОБЫТИЕ] ${ev.title}`);
+        worldEvents.push(ev);
+        if (worldEvents.length > 100) worldEvents.shift();
+        break;
+      }
+      case 'setWeather': {
+        worldState.weather = data.weather || 'sunny';
+        io.emit('worldUpdate', worldState);
+        notify(socket.id, `☁️ Погода: ${worldState.weather}`, 'success');
+        break;
+      }
+      case 'setTime': {
+        worldState.time = data.time || 'day';
+        io.emit('worldUpdate', worldState);
+        notify(socket.id, `🕐 Время: ${worldState.time}`, 'success');
+        break;
+      }
+      case 'spawnNPC': {
+        const npc = { id: generateId(), name: sanitizeText(data.name) || 'NPC', x: Number(data.x) || 0, z: Number(data.z) || 0, type: data.npcType || 'citizen', createdAt: new Date().toISOString() };
+        npcs[npc.id] = npc;
+        io.emit('spawnNPC', npc);
+        notify(socket.id, `🧑 NPC "${npc.name}" создан`, 'success');
+        break;
+      }
+      case 'removeNPC': {
+        if (npcs[data.npcId]) {
+          delete npcs[data.npcId];
+          io.emit('removeNPC', { id: data.npcId });
+          notify(socket.id, '🗑 NPC удалён', 'info');
+        }
+        break;
+      }
+      case 'addPortal': {
+        const portal = { id: generateId(), name: sanitizeText(data.name) || 'Портал', fromX: Number(data.fromX) || 0, fromZ: Number(data.fromZ) || 0, toX: Number(data.toX) || 0, toZ: Number(data.toZ) || 0, createdAt: new Date().toISOString() };
+        portals[portal.id] = portal;
+        io.emit('addPortal', portal);
+        notify(socket.id, `🌀 Портал "${portal.name}" создан`, 'success');
+        break;
+      }
+      case 'removePortal': {
+        if (portals[data.portalId]) {
+          delete portals[data.portalId];
+          io.emit('removePortal', { id: data.portalId });
+          notify(socket.id, '🗑 Портал удалён', 'info');
+        }
+        break;
+      }
+      case 'setHealth': {
+        player.health = Math.max(0, Math.min(player.maxHealth, Number(data.amount) || 100));
+        updateStats(socket.id);
+        notify(socket.id, `❤️ HP установлено: ${player.health}`, 'success');
+        break;
+      }
+      case 'setLevel': {
+        player.level = Math.max(1, Number(data.amount) || 1);
+        updateStats(socket.id);
+        notify(socket.id, `⭐ Уровень: ${player.level}`, 'success');
+        break;
+      }
+    }
   });
 
   // ----------------------------------------------------
