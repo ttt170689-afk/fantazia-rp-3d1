@@ -7701,36 +7701,7 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
 }
 </script>
 
-<script>
-// ===== FIX CONTROL =====
-const keys = {};
-document.addEventListener('keydown', (e)=>keys[e.key.toLowerCase()] = true);
-document.addEventListener('keyup', (e)=>keys[e.key.toLowerCase()] = false);
-
-// ===== BASIC PLAYER MOCK (if not exists) =====
-if (typeof player === 'undefined') {
-  window.player = { position: new THREE.Vector3(0,1.8,0), velocity:new THREE.Vector3() };
-}
-
-// ===== PORTAL =====
-let portal;
-function createPortal(scene){
-  portal = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.5,1.5,3,32),
-    new THREE.MeshBasicMaterial({color:0x9900ff})
-  );
-  portal.position.set(2,1.5,2);
-  scene.add(portal);
-}
-
-// ===== UPDATE LOOP HOOK (движение теперь полностью в основном animate()) =====
-function updateExtras(camera){
-  // Этот хук больше не переопределяет движение.
-  // Основное движение с учётом поворота камеры обрабатывается в animate().
-}
-
-// (duplicate stubs removed — real implementations are above)
-</script>
+<!-- Управление полностью обрабатывается в основном скрипте (initControls / animate) -->
 
 </body>
 </html>
