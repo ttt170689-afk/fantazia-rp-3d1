@@ -6301,10 +6301,26 @@ function animate() {
     const isSprint = keys['ShiftLeft'] || keys['ShiftRight'] || mobileSprintOn;
     const speed = isSprint ? CONFIG.SPRINT_SPEED : CONFIG.MOVE_SPEED;
 
-    if (keys['KeyW']) moveZ -= 1;
-    if (keys['KeyS']) moveZ += 1;
-    if (keys['KeyA']) moveX -= 1;
-    if (keys['KeyD']) moveX += 1;
+let forward = new THREE.Vector3();
+camera.getWorldDirection(forward);
+forward.y = 0;
+forward.normalize();
+
+let right = new THREE.Vector3();
+right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
+
+if (keys['KeyW']) {
+  mesh.position.add(forward.clone().multiplyScalar(speed));
+}
+if (keys['KeyS']) {
+  mesh.position.add(forward.clone().multiplyScalar(-speed));
+}
+if (keys['KeyA']) {
+  mesh.position.add(right.clone().multiplyScalar(-speed));
+}
+if (keys['KeyD']) {
+  mesh.position.add(right.clone().multiplyScalar(speed));
+}
 
     // Мобильный джойстик
     if (joystickActive) {
