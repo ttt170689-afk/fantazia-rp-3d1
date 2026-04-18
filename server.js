@@ -38,6 +38,7 @@ app.get('/api/health', (req, res) => {
     uptime: process.uptime()
   });
 });
+
 app.get('/api/players', (req, res) => {
   const list = Object.values(players).map(p => ({
     id: p.id,
@@ -50,11 +51,142 @@ app.get('/api/players', (req, res) => {
   }));
   res.json({ ok: true, players: list, online: list.length });
 });
+
+// ======================================================
+// ADMIN API
+// ======================================================
+
+const ADMIN_PASSWORD = 'fnfpoppy567765';
+
+function checkAdmin(req, res) {
+  const pwd = req.body?.adminPassword || req.query?.adminPassword;
+  if (pwd !== ADMIN_PASSWORD) {
+    res.status(403).json({ error: 'Неверный пароль администратора' });
+    return false;
+  }
+  return true;
+}
+
+// Получить список банов
+app.get('/api/admin/bans', (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  res.json({ ok: true, bans: Object.values(bans) });
+});
+
+// Забанить игрока
+app.post('/api/admin/ban', (req, res) => {
+  if (!checkAdmin(req, res)) return;
+
+  const { playerName, reason, durationHours, adminName } = req.body;
+  if (!playerName) return res.status(400).json({ error: 'Не указано имя игрока' });
+
+  // Найти игрока онлайн и кикнуть его
+  const target = Object.values(players).find(
+    p => p.name.toLowerCase() === playerName.toLowerCase()
+  );
+
+  const hours = Number(durationHours) || 0;
+  const expiresAt = hours > 0 ? Date.now() + hours * 3600000 : null;
+
+  bans[playerName.toLowerCase()] = {
+    playerName,
+    reason: reason || 'Нарушение правил',
+    durationHours: hours,
+    bannedAt: new Date().toISOString(),
+    bannedBy: adminName || 'Admin',
+    expiresAt
+  };
+
+  if (target) {
+    notify(target.id, `🔨 Вы забанены. Причина: ${reason || 'Нарушение правил'}`, 'error');
+    setTimeout(() => {
+      io.to(target.id).emit('forceDisconnect', { reason: `Бан: ${reason || 'Нарушение правил'}` });
+      io.sockets.sockets.get(target.id)?.disconnect(true);
+    }, 2000);
+    console.log(`[BAN] ${playerName} забанен администратором ${adminName}`);
+  }
+
+  res.json({ ok: true, message: `${playerName} забанен${target ? ' и кикнут' : ''}` });
+});
+
+// Разбанить игрока
+app.post('/api/admin/unban', (req, res) => {
+  if (!checkAdmin(req, res)) return;
+
+  const { playerName } = req.body;
+  if (!playerName) return res.status(400).json({ error: 'Не указано имя игрока' });
+
+  const key = playerName.toLowerCase();
+  if (!bans[key]) {
+    return res.status(404).json({ error: 'Игрок не найден в списке банов' });
+  }
+
+  delete bans[key];
+  console.log(`[UNBAN] ${playerName} разбанен`);
+  res.json({ ok: true, message: `${playerName} разбанен` });
+});
+
+// Кикнуть игрока
+app.post('/api/admin/kick', (req, res) => {
+  if (!checkAdmin(req, res)) return;
+
+  const { playerName, reason, adminName } = req.body;
+  if (!playerName) return res.status(400).json({ error: 'Не указано имя игрока' });
+
+  const target = Object.values(players).find(
+    p => p.name.toLowerCase() === playerName.toLowerCase()
+  );
+
+  if (!target) {
+    return res.status(404).json({ error: 'Игрок не в сети' });
+  }
+
+  notify(target.id, `👟 Вы кикнуты. Причина: ${reason || 'Без причины'}`, 'error');
+  setTimeout(() => {
+    io.to(target.id).emit('forceDisconnect', { reason: `Кик: ${reason || 'Без причины'}` });
+    io.sockets.sockets.get(target.id)?.disconnect(true);
+  }, 2000);
+
+  console.log(`[KICK] ${playerName} кикнут администратором ${adminName}`);
+  res.json({ ok: true, message: `${playerName} кикнут` });
+});
+
+// Отправить сообщение игроку
+app.post('/api/admin/message', (req, res) => {
+  if (!checkAdmin(req, res)) return;
+
+  const { playerName, message, adminName } = req.body;
+  if (!playerName || !message) return res.status(400).json({ error: 'Не указан игрок или сообщение' });
+
+  const target = Object.values(players).find(
+    p => p.name.toLowerCase() === playerName.toLowerCase()
+  );
+
+  if (!target) {
+    return res.status(404).json({ error: 'Игрок не в сети' });
+  }
+
+  const msg = {
+    id: generateId(),
+    sender: `[ADMIN] ${adminName || 'Admin'}`,
+    text: message,
+    type: 'admin',
+    time: Date.now()
+  };
+
+  io.to(target.id).emit('chatMessage', msg);
+  notify(target.id, `📢 Сообщение от администратора: ${message}`, 'info');
+
+  console.log(`[MSG] Сообщение для ${playerName} от ${adminName}: ${message}`);
+  res.json({ ok: true, message: 'Сообщение отправлено' });
+});
+
 // ======================================================
 // ДАННЫЕ
 // ======================================================
 
 const players = {};
+const bans = {};          // ← хранилище банов
 const friendships = {};
 const chatHistory = [];
 const MAX_CHAT_HISTORY = 100;
@@ -264,14 +396,6 @@ function addExp(socketId, amount) {
   updateStats(socketId);
 }
 
-function findItemInShop(itemId) {
-  for (const category of Object.keys(shopItems)) {
-    const item = shopItems[category].find(i => i.id === itemId);
-    if (item) return { item, category };
-  }
-  return null;
-}
-
 // ======================================================
 // ТАЙМЕРЫ
 // ======================================================
@@ -319,6 +443,18 @@ setInterval(() => {
   io.emit('worldUpdate', worldState);
 }, 420000);
 
+// Очистка истёкших банов каждые 10 минут
+setInterval(() => {
+  const now = Date.now();
+  Object.keys(bans).forEach(key => {
+    const ban = bans[key];
+    if (ban.expiresAt && ban.expiresAt <= now) {
+      delete bans[key];
+      console.log(`[BAN] Бан игрока ${ban.playerName} истёк — автоматически снят`);
+    }
+  });
+}, 600000);
+
 // ======================================================
 // SOCKET.IO
 // ======================================================
@@ -331,10 +467,34 @@ io.on('connection', (socket) => {
   // ----------------------------------------------------
   socket.on('registerPlayer', (data = {}) => {
     try {
+      const playerName = sanitizeText(data.name) || `Player_${socket.id.slice(0, 4)}`;
+
+      // ── Проверка бана ──────────────────────────────
+      const banRecord = bans[playerName.toLowerCase()];
+      if (banRecord) {
+        const expired = banRecord.expiresAt && banRecord.expiresAt <= Date.now();
+        if (expired) {
+          delete bans[playerName.toLowerCase()];
+        } else {
+          const until = banRecord.expiresAt
+            ? `до ${new Date(banRecord.expiresAt).toLocaleString('ru-RU')}`
+            : 'навсегда';
+          socket.emit('banned', {
+            reason: banRecord.reason,
+            until,
+            bannedBy: banRecord.bannedBy
+          });
+          socket.disconnect(true);
+          console.log(`[BAN] ${playerName} попытался зайти — заблокирован`);
+          return;
+        }
+      }
+      // ───────────────────────────────────────────────
+
       const player = {
         id: socket.id,
         socketId: socket.id,
-        name: sanitizeText(data.name) || `Player_${socket.id.slice(0, 4)}`,
+        name: playerName,
         position: { x: 0, y: 0, z: 0 },
         rotation: { y: 0 },
         appearance: {
@@ -951,6 +1111,7 @@ server.listen(PORT, '0.0.0.0', () => {
 ║                                              ║
 ║   Главная страница: /                        ║
 ║   Health API: /api/health                    ║
+║   Admin API:  /api/admin/*                   ║
 ╚══════════════════════════════════════════════╝
   `);
 });
