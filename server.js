@@ -38,7 +38,18 @@ app.get('/api/health', (req, res) => {
     uptime: process.uptime()
   });
 });
-
+app.get('/api/players', (req, res) => {
+  const list = Object.values(players).map(p => ({
+    id: p.id,
+    name: p.name,
+    job: p.job,
+    level: p.level,
+    money: p.money,
+    health: p.health,
+    joinedAt: p.joinedAt
+  }));
+  res.json({ ok: true, players: list, online: list.length });
+});
 // ======================================================
 // ДАННЫЕ
 // ======================================================
