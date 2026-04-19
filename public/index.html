@@ -6353,53 +6353,57 @@ function animate() {
   const mesh = localPlayer.mesh;
 
   // --- Движение ---
-  if ((isPointerLocked || joystickActive) && !currentDance) {
-    let moveX = 0, moveZ = 0;
-    const isSprint = keys['ShiftLeft'] || keys['ShiftRight'] || mobileSprintOn;
-    const speed = isSprint ? CONFIG.SPRINT_SPEED : CONFIG.MOVE_SPEED;
+if (isPointerLocked || joystickActive && !currentDance) {
 
-let forward = new THREE.Vector3();
-camera.getWorldDirection(forward);
-forward.y = 0;
-forward.normalize();
+  const isSprint = keys['shift'] || keys['shiftleft'] || keys['shiftright'] || mobileSprintOn;
+  const speed = isSprint ? CONFIG.SPRINT_SPEED : CONFIG.MOVE_SPEED;
 
-let right = new THREE.Vector3();
-right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
+  const forward = new THREE.Vector3();
+  camera.getWorldDirection(forward);
+  forward.y = 0;
+  forward.normalize();
 
-if (keys['w']) mesh.position.add(forward.clone().multiplyScalar(speed));
-if (keys['s']) mesh.position.add(forward.clone().multiplyScalar(-speed));
-if (keys['a']) mesh.position.add(right.clone().multiplyScalar(-speed));
-if (keys['d']) mesh.position.add(right.clone().multiplyScalar(speed));
-    
-    // Мобильный джойстик
-    if (joystickActive) {
-      moveX += joystickDelta.x;
-      moveZ += joystickDelta.y;
+  const right = new THREE.Vector3();
+  right.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+
+  let direction = new THREE.Vector3();
+
+  // клавиатура
+  if (keys['w']) direction.add(forward);
+  if (keys['s']) direction.sub(forward);
+  if (keys['a']) direction.sub(right);
+  if (keys['d']) direction.add(right);
+
+  // джойстик
+  if (joystickActive) {
+    direction.add(forward.clone().multiplyScalar(-joystickDelta.y));
+    direction.add(right.clone().multiplyScalar(joystickDelta.x));
+  }
+
+  if (direction.length() > 0) {
+    direction.normalize();
+
+    const move = direction.clone().multiplyScalar(speed);
+
+    const newX = mesh.position.x + move.x;
+    const newZ = mesh.position.z + move.z;
+
+    if (window.isAdminNoclip || !checkCollision(newX, mesh.position.z)) {
+      mesh.position.x = newX;
     }
 
-    if (moveX !== 0 || moveZ !== 0) {
-      const angle = cameraAngleH;
-      const sin = Math.sin(angle);
-      const cos = Math.cos(angle);
-      // W = forward (into camera direction), S = backward, A = left, D = right
-      const dx = (moveX * cos + moveZ * sin) * speed;
-      const dz = (moveX * sin - moveZ * cos) * speed;
-
-      const newX = mesh.position.x + dx;
-      const newZ = mesh.position.z + dz;
-
-      if (window.isAdminNoclip || !checkCollision(newX, mesh.position.z)) mesh.position.x = newX;
-      if (window.isAdminNoclip || !checkCollision(mesh.position.x, newZ)) mesh.position.z = newZ;
-
-      // Поворот персонажа в сторону движения
-      const targetAngle = Math.atan2(dx, dz);
-      mesh.rotation.y = targetAngle;
-
-      localPlayer.currentAnimation = isSprint ? 'run' : 'walk';
-    } else {
-      localPlayer.currentAnimation = 'idle';
+    if (window.isAdminNoclip || !checkCollision(mesh.position.x, newZ)) {
+      mesh.position.z = newZ;
     }
 
+    const angle = Math.atan2(direction.x, direction.z);
+    mesh.rotation.y = angle;
+
+    localPlayer.currentAnimation = isSprint ? 'run' : 'walk';
+  } else {
+    localPlayer.currentAnimation = 'idle';
+  }
+}
     // Прыжок
     if (keys['Space'] && isGrounded) {
       velocity.y = CONFIG.JUMP_FORCE;
