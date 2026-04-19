@@ -6352,31 +6352,57 @@ function animate() {
 
   const mesh = localPlayer.mesh;
 
-  // --- Движение ---
-  if ((isPointerLocked || joystickActive) && !currentDance) {
-    let moveX = 0, moveZ = 0;
-    const isSprint = keys['ShiftLeft'] || keys['ShiftRight'] || mobileSprintOn;
-    const speed = isSprint ? CONFIG.SPRINT_SPEED : CONFIG.MOVE_SPEED;
+  // ===== клавиши (один раз!) =====
+const keys = {};
 
-let forward = new THREE.Vector3();
-camera.getWorldDirection(forward);
-forward.y = 0;
-forward.normalize();
+document.addEventListener('keydown', (e) => {
+  keys[e.key.toLowerCase()] = true;
+});
 
-let right = new THREE.Vector3();
-right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
+document.addEventListener('keyup', (e) => {
+  keys[e.key.toLowerCase()] = false;
+});
 
-if (keys['w']) mesh.position.add(forward.clone().multiplyScalar(speed));
-if (keys['s']) mesh.position.add(forward.clone().multiplyScalar(-speed));
-if (keys['a']) mesh.position.add(right.clone().multiplyScalar(-speed));
-if (keys['d']) mesh.position.add(right.clone().multiplyScalar(speed));
-    
-    // Мобильный джойстик
-    if (joystickActive) {
-      moveX += joystickDelta.x;
-      moveZ += joystickDelta.y;
-    }
 
+// ===== функция движения =====
+function updateMovement(delta) {
+  if (!localPlayer || !localPlayer.mesh) return;
+
+  const mesh = localPlayer.mesh;
+
+  const isSprint = keys['shift'];
+  const speed = isSprint ? CONFIG.SPRINT_SPEED : CONFIG.MOVE_SPEED;
+
+  // направление вперёд (куда смотрит камера)
+  const forward = new THREE.Vector3();
+  camera.getWorldDirection(forward);
+  forward.y = 0;
+  forward.normalize();
+
+  // направление вправо
+  const right = new THREE.Vector3();
+  right.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+
+  // собираем направление
+  let direction = new THREE.Vector3();
+
+  if (keys['w']) direction.add(forward);
+  if (keys['s']) direction.add(forward.clone().multiplyScalar(-1));
+  if (keys['a']) direction.add(right.clone().multiplyScalar(-1));
+  if (keys['d']) direction.add(right);
+
+  // если есть движение
+  if (direction.length() > 0) {
+    direction.normalize();
+
+    // движение
+    mesh.position.add(direction.multiplyScalar(speed * delta));
+
+    // поворот персонажа по направлению движения
+    const angle = Math.atan2(direction.x, direction.z);
+    mesh.rotation.y = angle;
+  }
+}
     if (moveX !== 0 || moveZ !== 0) {
       const angle = cameraAngleH;
       const sin = Math.sin(angle);
