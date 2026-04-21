@@ -763,6 +763,97 @@ canvas { display:block; }
   background:linear-gradient(135deg,#e74c3c,#c0392b); color:#fff; cursor:pointer;
 }
 
+/* ========== ИНТЕРЬЕР МАШИНЫ (вид от 1-го лица) ========== */
+#carInteriorOverlay {
+  position:fixed; top:0; left:0; width:100%; height:100%;
+  pointer-events:none; z-index:92; display:none;
+}
+#carInteriorOverlay.active { display:block; }
+#carPillarL {
+  position:absolute; top:0; left:0; width:13%; height:62%;
+  background:linear-gradient(135deg,#111 60%,#1c1c1c);
+  clip-path:polygon(0 0,100% 0,55% 100%,0 100%);
+}
+#carPillarR {
+  position:absolute; top:0; right:0; width:13%; height:62%;
+  background:linear-gradient(225deg,#111 60%,#1c1c1c);
+  clip-path:polygon(0 0,100% 0,100% 100%,45% 100%);
+}
+#carRoofBar {
+  position:absolute; top:0; left:0; width:100%; height:9%;
+  background:linear-gradient(180deg,#0a0a0a,#1a1a1a);
+}
+#carVisor {
+  position:absolute; top:9%; left:13%; width:74%; height:6%;
+  background:linear-gradient(180deg,rgba(0,80,120,0.5),rgba(0,80,120,0.1));
+}
+#carDashboard {
+  position:absolute; bottom:0; left:0; width:100%; height:26%;
+  background:linear-gradient(180deg,#1a1a1a 0%,#111 50%,#0a0a0a 100%);
+  border-top:2px solid rgba(255,255,255,0.08);
+  overflow:hidden;
+}
+#carDashInner {
+  position:absolute; top:0; left:5%; width:90%; height:100%;
+  display:flex; align-items:flex-start; justify-content:center;
+  padding-top:4px;
+}
+#carSteeringWheel {
+  width:110px; height:110px; position:relative;
+  transform-origin:center center;
+  transition:transform 0.05s linear;
+  filter:drop-shadow(0 0 8px rgba(0,0,0,0.8));
+}
+#carRearMirror {
+  position:absolute; top:10%; left:50%; transform:translateX(-50%);
+  width:160px; height:34px;
+  background:linear-gradient(180deg,#111,#222);
+  border:2px solid #333; border-radius:4px;
+  overflow:hidden; display:flex; align-items:center; justify-content:center;
+}
+#carRearMirrorScreen {
+  width:100%; height:100%;
+  background:linear-gradient(135deg,rgba(20,40,60,0.9),rgba(10,20,30,0.95));
+  display:flex; align-items:center; justify-content:center;
+  font-size:10px; color:rgba(100,180,255,0.4); letter-spacing:1px;
+}
+#carSpeedInner {
+  position:absolute; right:8%; bottom:15%;
+  width:70px; height:70px; border-radius:50%;
+  background:rgba(0,0,0,0.9); border:2px solid rgba(108,92,231,0.6);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  box-shadow:0 0 15px rgba(108,92,231,0.3), inset 0 0 20px rgba(0,0,0,0.5);
+}
+#carSpeedInner .sp-val { font-size:20px; font-weight:900; color:#a29bfe; line-height:1; }
+#carSpeedInner .sp-unit { font-size:8px; color:#666; }
+#carTacho {
+  position:absolute; left:8%; bottom:15%;
+  width:60px; height:60px; border-radius:50%;
+  background:rgba(0,0,0,0.9); border:2px solid rgba(231,76,60,0.5);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  box-shadow:0 0 12px rgba(231,76,60,0.2), inset 0 0 15px rgba(0,0,0,0.5);
+}
+#carTacho .tc-val { font-size:16px; font-weight:900; color:#e74c3c; line-height:1; }
+#carTacho .tc-unit { font-size:7px; color:#555; }
+#carGear {
+  position:absolute; right:20%; bottom:20%;
+  font-size:22px; font-weight:900; color:#00b894;
+  text-shadow:0 0 10px rgba(0,184,148,0.5);
+  font-family:'Courier New',monospace;
+}
+#carWindshieldTint {
+  position:absolute; top:9%; left:13%; width:74%; height:53%;
+  background:linear-gradient(180deg,rgba(0,100,180,0.04),rgba(0,80,150,0.02));
+  pointer-events:none;
+}
+#carGlassEffect {
+  position:absolute; top:9%; left:13%; width:74%; height:53%;
+  background:
+    radial-gradient(ellipse 30% 20% at 25% 60%, rgba(255,255,255,0.03) 0%, transparent 100%),
+    radial-gradient(ellipse 40% 30% at 75% 40%, rgba(255,255,255,0.02) 0%, transparent 100%);
+  pointer-events:none;
+}
+
 /* ========== МОНЕТКИ ========== */
 .stat-box.coins { border-color:rgba(241,196,15,0.5); }
 .stat-box.coins .icon { color:#f1c40f; }
@@ -1419,6 +1510,43 @@ canvas { display:block; }
 <div id="vignetteOverlay"></div>
 <div id="bloomOverlay"></div>
 
+<!-- ========== ИНТЕРЬЕР МАШИНЫ (вид от 1-го лица) ========== -->
+<div id="carInteriorOverlay">
+  <div id="carRoofBar"></div>
+  <div id="carVisor"></div>
+  <div id="carPillarL"></div>
+  <div id="carPillarR"></div>
+  <div id="carWindshieldTint"></div>
+  <div id="carGlassEffect"></div>
+  <div id="carRearMirror">
+    <div id="carRearMirrorScreen">ЗАДИ</div>
+  </div>
+  <div id="carDashboard">
+    <div id="carDashInner">
+      <svg id="carSteeringWheel" viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="55" cy="55" r="48" fill="none" stroke="#222" stroke-width="10"/>
+        <circle cx="55" cy="55" r="48" fill="none" stroke="#3a3a3a" stroke-width="7"/>
+        <line x1="55" y1="7" x2="55" y2="35" stroke="#2a2a2a" stroke-width="8" stroke-linecap="round"/>
+        <line x1="55" y1="75" x2="30" y2="98" stroke="#2a2a2a" stroke-width="8" stroke-linecap="round"/>
+        <line x1="55" y1="75" x2="80" y2="98" stroke="#2a2a2a" stroke-width="8" stroke-linecap="round"/>
+        <circle cx="55" cy="55" r="16" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+        <circle cx="55" cy="55" r="8" fill="#111"/>
+        <text x="55" y="59" text-anchor="middle" fill="#555" font-size="8" font-family="Arial" font-weight="bold">FZ</text>
+        <path d="M 20 30 Q 40 20 60 25" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="4" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div id="carSpeedInner">
+      <span class="sp-val" id="carSpeedInnerVal">0</span>
+      <span class="sp-unit">км/ч</span>
+    </div>
+    <div id="carTacho">
+      <span class="tc-val" id="carTachoVal">0</span>
+      <span class="tc-unit">об/мин</span>
+    </div>
+    <div id="carGear">D</div>
+  </div>
+</div>
+
 <!-- ========== МОДАЛЬНЫЕ ОКНА ========== -->
 <!-- Работы -->
 <div class="modal-overlay" id="jobsModal">
@@ -1756,6 +1884,8 @@ let mobileSprintOn = false;
 let cars = [];
 let localCar = null;
 let carSpeed = 0;
+let carGhostMesh = null;   // клон водителя внутри машины
+let carSteerAngle = 0;     // угол поворота руля
 let carTurn = 0;
 const CAR_TYPES = [
   { id:'sedan',   name:'Седан',       emoji:'🚗', color:0xe74c3c, maxSpeed:0.35, accel:0.012, handleColor:0xc0392b },
@@ -2865,23 +2995,89 @@ function handleCarInteraction() {
 function enterCar(car) {
   localCar = car;
   carSpeed = 0;
+  carSteerAngle = 0;
+  // Скрываем персонажа — он теперь сидит внутри машины как клон
   localPlayer.mesh.visible = false;
-  document.getElementById('carHUD').style.display = 'flex';
+
+  // Создаём клон-водителя внутри машины
+  createCarDriverGhost(car);
+
+  // Показываем HUD машины
+  document.getElementById('carHUD').style.display = 'none'; // спидометр теперь внутри кабины
   document.getElementById('carNameHud').textContent = car.cfg.name;
   const enterCarBtn = document.getElementById('enterCarBtn');
   if (enterCarBtn) enterCarBtn.style.display = 'none';
-  showNotification(`Вы в ${car.cfg.name}. [F] выйти`, 'info');
+
+  // Показываем интерьер кабины
+  const overlay = document.getElementById('carInteriorOverlay');
+  if (overlay) {
+    overlay.classList.add('active');
+    // Цвет панели под цвет машины
+    const carHex = '#' + car.cfg.color.toString(16).padStart(6,'0');
+    const dash = document.getElementById('carDashboard');
+    if (dash) {
+      dash.style.background = `linear-gradient(180deg, color-mix(in srgb, ${carHex} 20%, #1a1a1a) 0%, #111 60%, #0a0a0a 100%)`;
+    }
+  }
+  showNotification(`🚗 Вы в ${car.cfg.name} · [F] выйти`, 'info');
+}
+
+function createCarDriverGhost(car) {
+  // Удалить старый клон если есть
+  if (carGhostMesh) { scene.remove(carGhostMesh); carGhostMesh = null; }
+  if (!localPlayer || !localPlayer.appearance) return;
+
+  // Клонируем внешность
+  const ghost = createCharacter(localPlayer.appearance, false);
+
+  // Сажаем в позу водителя: ноги согнуты, тело прямо
+  const ud = ghost.userData;
+  if (ud.leftLeg)  { ud.leftLeg.rotation.x  = -1.5; ud.leftLeg.position.y  = 0.15; ud.leftLeg.position.z  = 0.3; }
+  if (ud.rightLeg) { ud.rightLeg.rotation.x = -1.5; ud.rightLeg.position.y = 0.15; ud.rightLeg.position.z = 0.3; }
+  if (ud.leftArm)  { ud.leftArm.rotation.x  = -0.8; ud.leftArm.rotation.z  =  0.3; ud.leftArm.position.z  = 0.2; }
+  if (ud.rightArm) { ud.rightArm.rotation.x = -0.8; ud.rightArm.rotation.z = -0.3; ud.rightArm.position.z = 0.2; }
+  if (ud.body)     { ud.body.rotation.x = 0.05; }
+
+  // Позиция внутри машины
+  const isLimo = car.type === 'limo', isTruck = car.type === 'truck', isVan = car.type === 'van';
+  const H = isTruck || isVan ? 2.2 : 1.4;
+  const D = isLimo ? 2.2 : 1.8;
+
+  ghost.position.set(0, H * 0.45 - 0.55, D * 0.15);
+  ghost.rotation.y = Math.PI; // лицом вперёд
+
+  // Добавляем как дочерний объект машины
+  car.mesh.add(ghost);
+  carGhostMesh = ghost;
 }
 
 function exitCar() {
   if (!localCar) return;
+
+  // Убрать клон из машины
+  if (carGhostMesh) {
+    localCar.mesh.remove(carGhostMesh);
+    scene.remove(carGhostMesh);
+    carGhostMesh = null;
+  }
+
+  // Выход рядом с машиной (влево от направления движения)
+  const carDir = new THREE.Vector3(Math.sin(localCar.mesh.rotation.y), 0, Math.cos(localCar.mesh.rotation.y));
+  const sideOffset = new THREE.Vector3(-carDir.z, 0, carDir.x).multiplyScalar(2.5);
   localPlayer.mesh.position.set(
-    localCar.mesh.position.x + 3,
+    localCar.mesh.position.x + sideOffset.x,
     0,
-    localCar.mesh.position.z
+    localCar.mesh.position.z + sideOffset.z
   );
   localPlayer.mesh.visible = true;
-  localCar = null; carSpeed = 0;
+  localCar = null;
+  carSpeed = 0;
+  carSteerAngle = 0;
+
+  // Скрываем интерьер
+  const overlay = document.getElementById('carInteriorOverlay');
+  if (overlay) overlay.classList.remove('active');
+
   document.getElementById('carHUD').style.display = 'none';
 }
 
@@ -2893,13 +3089,20 @@ function updateCarDriving(delta) {
 
   // Acceleration
   if (keys['KeyW']) carSpeed = Math.min(carSpeed + accel, cfg.maxSpeed);
-  else if (keys['KeyS']) carSpeed = Math.max(carSpeed - accel, -cfg.maxSpeed*0.4);
+  else if (keys['KeyS']) carSpeed = Math.max(carSpeed - accel, -cfg.maxSpeed * 0.4);
   else carSpeed *= 0.92;
 
   // Steering
-  const steerAmount = 0.04 * Math.min(Math.abs(carSpeed)/0.1, 1);
-  if (keys['KeyA']) car.mesh.rotation.y += steerAmount * Math.sign(carSpeed);
-  if (keys['KeyD']) car.mesh.rotation.y -= steerAmount * Math.sign(carSpeed);
+  const steerAmount = 0.04 * Math.min(Math.abs(carSpeed) / 0.1, 1);
+  if (keys['KeyA']) {
+    car.mesh.rotation.y += steerAmount * Math.sign(carSpeed);
+    carSteerAngle = Math.max(carSteerAngle - 4, -35);
+  } else if (keys['KeyD']) {
+    car.mesh.rotation.y -= steerAmount * Math.sign(carSpeed);
+    carSteerAngle = Math.min(carSteerAngle + 4, 35);
+  } else {
+    carSteerAngle *= 0.82; // плавный возврат руля
+  }
 
   // Handbrake
   if (keys['Space']) carSpeed *= 0.85;
@@ -2908,16 +3111,53 @@ function updateCarDriving(delta) {
   car.mesh.position.x += Math.sin(car.mesh.rotation.y) * carSpeed;
   car.mesh.position.z += Math.cos(car.mesh.rotation.y) * carSpeed;
 
-  // Camera follows car
-  const camDist = 10;
-  const camH = 5;
-  camera.position.x = car.mesh.position.x + Math.sin(cameraAngleH)*camDist;
-  camera.position.z = car.mesh.position.z + Math.cos(cameraAngleH)*camDist;
-  camera.position.y = car.mesh.position.y + camH;
-  camera.lookAt(car.mesh.position.x, car.mesh.position.y+1, car.mesh.position.z);
+  // Синхронизируем позицию игрока с машиной
+  localPlayer.mesh.position.set(car.mesh.position.x, 0, car.mesh.position.z);
 
-  // Speedometer
-  document.getElementById('speedDisplay').textContent = Math.abs(Math.round(carSpeed*300));
+  // ===== КАМЕРА ОТ 1-ГО ЛИЦА ВНУТРИ МАШИНЫ =====
+  const isLimo = car.type === 'limo', isTruck = car.type === 'truck', isVan = car.type === 'van';
+  const H = isTruck || isVan ? 2.2 : 1.4;
+  const D = isLimo ? 2.2 : 1.8;
+
+  const carFwd   = new THREE.Vector3(Math.sin(car.mesh.rotation.y), 0, Math.cos(car.mesh.rotation.y));
+  const carRight = new THREE.Vector3(Math.cos(car.mesh.rotation.y), 0, -Math.sin(car.mesh.rotation.y));
+
+  // Позиция глаз водителя: чуть левее центра, вперёд, на высоте кабины
+  const eyeOffset = carFwd.clone().multiplyScalar(D * 0.18)
+    .add(carRight.clone().multiplyScalar(-0.3));
+  const eyeH = car.mesh.position.y + H * 0.5 + (isTruck || isVan ? 0.85 : 0.78);
+
+  camera.position.set(
+    car.mesh.position.x + eyeOffset.x,
+    eyeH,
+    car.mesh.position.z + eyeOffset.z
+  );
+
+  // Смотрим вперёд с учётом вертикального угла мыши
+  const lookDist = 30;
+  camera.lookAt(
+    camera.position.x + carFwd.x * lookDist,
+    eyeH + Math.sin(cameraAngleV) * lookDist,
+    camera.position.z + carFwd.z * lookDist
+  );
+
+  // Обновляем руль в HTML-оверлее
+  const sw = document.getElementById('carSteeringWheel');
+  if (sw) sw.style.transform = `rotate(${carSteerAngle}deg)`;
+
+  // Спидометр внутри кабины
+  const kmh = Math.abs(Math.round(carSpeed * 300));
+  const speedEl = document.getElementById('carSpeedInnerVal');
+  if (speedEl) speedEl.textContent = kmh;
+
+  // Тахометр (имитация)
+  const rpm = Math.round(800 + kmh * 28 + Math.sin(Date.now() * 0.003) * 80);
+  const tachoEl = document.getElementById('carTachoVal');
+  if (tachoEl) tachoEl.textContent = (rpm / 1000).toFixed(1);
+
+  // Передача
+  const gearEl = document.getElementById('carGear');
+  if (gearEl) gearEl.textContent = carSpeed < -0.01 ? 'R' : carSpeed > 0.01 ? 'D' : 'N';
 
   // Rotate wheels
   car.mesh.children.forEach(child => {
@@ -4810,6 +5050,31 @@ function showAdminHUD() {
   `;
   document.body.appendChild(hud);
 
+  // ---- КНОПКА АНИМИРОВАТЬ слева ----
+  const animBtn = document.createElement('div');
+  animBtn.id = 'adminAnimateBtn';
+  animBtn.style.cssText = `
+    position:fixed;left:10px;top:50%;transform:translateY(-50%);
+    z-index:9001;display:flex;flex-direction:column;align-items:center;
+    cursor:pointer;user-select:none;
+  `;
+  animBtn.innerHTML = `
+    <div id="animateBtnInner" onclick="toggleAnimatePanel()" style="
+      background:linear-gradient(135deg,#6c5ce7,#a29bfe);
+      border:none;border-radius:14px;padding:10px 8px;
+      color:#fff;font-size:12px;font-weight:bold;letter-spacing:1px;
+      writing-mode:vertical-lr;text-orientation:mixed;
+      box-shadow:0 4px 20px #6c5ce766;
+      transition:all 0.2s;
+      display:flex;flex-direction:column;align-items:center;gap:8px;
+    " onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">
+      <span style="font-size:18px;writing-mode:horizontal-tb">🎭</span>
+      <span>А</span><span>Н</span><span>И</span><span>М</span><span>И</span><span>Р</span><span>О</span><span>В</span><span>А</span><span>Т</span><span>Ь</span>
+    </div>
+  `;
+  document.body.appendChild(animBtn);
+  buildAnimatePanel();
+
   document.getElementById('btnAdminPanel').onclick = toggleAdminPanel;
   document.getElementById('btnAdminFly').onclick = () => {
     window.isAdminFly = !window.isAdminFly;
@@ -5003,6 +5268,544 @@ function adminUseMyPos(target) {
   }
   showNotification(`📍 Позиция установлена: ${x}, ${z}`, 'info');
 }
+
+// =================== ADMIN ANIMATE PANEL ===================
+window._animPanelVisible = false;
+window._animCustom = {
+  leftArm:  { rx:0, rz:0 },
+  rightArm: { rx:0, rz:0 },
+  leftLeg:  { rx:0 },
+  rightLeg: { rx:0 },
+  head:     { rx:0, ry:0 },
+  body:     { rx:0, ry:0 },
+  eyeScaleY: 1,
+  eyeOffsetY: 0,
+  mouthScaleX: 1,
+  mouthOffsetY: 0,
+  hairSway: 0,
+};
+window._animLoopActive = false;
+window._animLoopId = null;
+window._animPreviewLoopId = null;
+
+function buildAnimatePanel() {
+  if (document.getElementById('animatePanel')) return;
+  const panel = document.createElement('div');
+  panel.id = 'animatePanel';
+  panel.style.cssText = `
+    position:fixed;left:65px;top:50%;transform:translateY(-50%);
+    width:340px;max-height:88vh;overflow-y:auto;
+    background:rgba(8,5,20,0.97);border:1.5px solid #a29bfe;
+    border-radius:18px;z-index:9000;display:none;
+    font-family:'Segoe UI',sans-serif;font-size:13px;color:#dfe6e9;
+    box-shadow:0 8px 50px #6c5ce755;scrollbar-width:thin;scrollbar-color:#6c5ce7 transparent;
+  `;
+  panel.innerHTML = `
+    <div style="background:linear-gradient(135deg,#6c5ce7,#a29bfe);padding:11px 16px;font-weight:bold;color:#fff;font-size:15px;display:flex;justify-content:space-between;align-items:center;border-radius:16px 16px 0 0;position:sticky;top:0;z-index:2;">
+      🎭 АНИМАТОР ПЕРСОНАЖА
+      <span onclick="toggleAnimatePanel()" style="cursor:pointer;font-size:18px;opacity:.8;line-height:1">✕</span>
+    </div>
+
+    <!-- Кому применять -->
+    <div style="padding:12px 14px;border-bottom:1px solid #2d2f45;">
+      <div style="font-size:11px;color:#a29bfe;margin-bottom:7px;font-weight:bold">🎯 ПРИМЕНИТЬ К:</div>
+      <div style="display:flex;gap:6px">
+        <button onclick="setAnimTarget('me')" id="aTargetMe" style="flex:1;background:#6c5ce7;color:#fff;border:none;border-radius:8px;padding:7px;cursor:pointer;font-size:12px;font-weight:bold">🧍 Мой персонаж</button>
+        <button onclick="setAnimTarget('all')" id="aTargetAll" style="flex:1;background:#2d3436;color:#a29bfe;border:1px solid #6c5ce755;border-radius:8px;padding:7px;cursor:pointer;font-size:12px">🌐 Все игроки</button>
+      </div>
+    </div>
+
+    <!-- Превью персонажа -->
+    <div style="padding:12px 14px;border-bottom:1px solid #2d2f45;text-align:center;">
+      <canvas id="animPreviewCanvas" width="140" height="200" style="border-radius:10px;border:1.5px solid #6c5ce7;background:linear-gradient(180deg,#1a1a2e,#16213e)"></canvas>
+      <div style="font-size:10px;color:#636e72;margin-top:4px">Превью позы</div>
+    </div>
+
+    <!-- Быстрые позы -->
+    <div style="padding:12px 14px;border-bottom:1px solid #2d2f45">
+      <div style="font-size:11px;color:#a29bfe;margin-bottom:8px;font-weight:bold">⚡ БЫСТРЫЕ ПОЗЫ</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px">
+        <button onclick="applyPose('tpose')"    class="apose-btn">✋ Т-Поза</button>
+        <button onclick="applyPose('handsup')"  class="apose-btn">🙌 Руки ↑</button>
+        <button onclick="applyPose('wave')"     class="apose-btn">👋 Привет</button>
+        <button onclick="applyPose('sit')"      class="apose-btn">🪑 Сесть</button>
+        <button onclick="applyPose('lean')"     class="apose-btn">↗ Наклон</button>
+        <button onclick="applyPose('bow')"      class="apose-btn">🙇 Поклон</button>
+        <button onclick="applyPose('dance')"    class="apose-btn">💃 Танец</button>
+        <button onclick="applyPose('point')"    class="apose-btn">👉 Указать</button>
+        <button onclick="applyPose('reset')"    class="apose-btn" style="background:#e17055;color:#fff;border-color:#e17055">🔄 Сброс</button>
+      </div>
+    </div>
+
+    <!-- РУКИ -->
+    <div style="padding:12px 14px;border-bottom:1px solid #2d2f45">
+      <div style="font-size:11px;color:#a29bfe;margin-bottom:8px;font-weight:bold">💪 РУКИ</div>
+      <div class="anim-row"><label>Лев. рука X</label><input type="range" min="-180" max="180" value="0" oninput="animSlider('leftArm','rx',this.value)" id="s_larm_rx"><span id="v_larm_rx">0°</span></div>
+      <div class="anim-row"><label>Лев. рука Z</label><input type="range" min="-180" max="180" value="0" oninput="animSlider('leftArm','rz',this.value)" id="s_larm_rz"><span id="v_larm_rz">0°</span></div>
+      <div class="anim-row"><label>Пр. рука X</label><input type="range" min="-180" max="180" value="0" oninput="animSlider('rightArm','rx',this.value)" id="s_rarm_rx"><span id="v_rarm_rx">0°</span></div>
+      <div class="anim-row"><label>Пр. рука Z</label><input type="range" min="-180" max="180" value="0" oninput="animSlider('rightArm','rz',this.value)" id="s_rarm_rz"><span id="v_rarm_rz">0°</span></div>
+    </div>
+
+    <!-- НОГИ -->
+    <div style="padding:12px 14px;border-bottom:1px solid #2d2f45">
+      <div style="font-size:11px;color:#a29bfe;margin-bottom:8px;font-weight:bold">🦵 НОГИ</div>
+      <div class="anim-row"><label>Лев. нога X</label><input type="range" min="-90" max="90" value="0" oninput="animSlider('leftLeg','rx',this.value)" id="s_lleg_rx"><span id="v_lleg_rx">0°</span></div>
+      <div class="anim-row"><label>Пр. нога X</label><input type="range" min="-90" max="90" value="0" oninput="animSlider('rightLeg','rx',this.value)" id="s_rleg_rx"><span id="v_rleg_rx">0°</span></div>
+    </div>
+
+    <!-- ГОЛОВА -->
+    <div style="padding:12px 14px;border-bottom:1px solid #2d2f45">
+      <div style="font-size:11px;color:#a29bfe;margin-bottom:8px;font-weight:bold">🗣 ГОЛОВА</div>
+      <div class="anim-row"><label>Наклон (X)</label><input type="range" min="-60" max="60" value="0" oninput="animSlider('head','rx',this.value)" id="s_head_rx"><span id="v_head_rx">0°</span></div>
+      <div class="anim-row"><label>Поворот (Y)</label><input type="range" min="-90" max="90" value="0" oninput="animSlider('head','ry',this.value)" id="s_head_ry"><span id="v_head_ry">0°</span></div>
+    </div>
+
+    <!-- ТЕЛО -->
+    <div style="padding:12px 14px;border-bottom:1px solid #2d2f45">
+      <div style="font-size:11px;color:#a29bfe;margin-bottom:8px;font-weight:bold">🫀 ТЕЛО</div>
+      <div class="anim-row"><label>Наклон (X)</label><input type="range" min="-60" max="60" value="0" oninput="animSlider('body','rx',this.value)" id="s_body_rx"><span id="v_body_rx">0°</span></div>
+      <div class="anim-row"><label>Поворот (Y)</label><input type="range" min="-90" max="90" value="0" oninput="animSlider('body','ry',this.value)" id="s_body_ry"><span id="v_body_ry">0°</span></div>
+    </div>
+
+    <!-- ГЛАЗА -->
+    <div style="padding:12px 14px;border-bottom:1px solid #2d2f45">
+      <div style="font-size:11px;color:#a29bfe;margin-bottom:8px;font-weight:bold">👁 ГЛАЗА</div>
+      <div class="anim-row"><label>Размер</label><input type="range" min="10" max="250" value="100" oninput="animEyes('scale',this.value)" id="s_eye_scale"><span id="v_eye_scale">100%</span></div>
+      <div class="anim-row"><label>Смещение ↕</label><input type="range" min="-10" max="10" value="0" oninput="animEyes('offset',this.value)" id="s_eye_offset"><span id="v_eye_offset">0</span></div>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button onclick="setEyeExpression('normal')"  class="apose-btn" style="font-size:16px">👁</button>
+        <button onclick="setEyeExpression('happy')"   class="apose-btn" style="font-size:16px">😊</button>
+        <button onclick="setEyeExpression('angry')"   class="apose-btn" style="font-size:16px">😠</button>
+        <button onclick="setEyeExpression('sad')"     class="apose-btn" style="font-size:16px">😢</button>
+        <button onclick="setEyeExpression('closed')"  class="apose-btn" style="font-size:16px">😌</button>
+        <button onclick="setEyeExpression('wink')"    class="apose-btn" style="font-size:16px">😉</button>
+      </div>
+    </div>
+
+    <!-- РОТ -->
+    <div style="padding:12px 14px;border-bottom:1px solid #2d2f45">
+      <div style="font-size:11px;color:#a29bfe;margin-bottom:8px;font-weight:bold">😮 РОТ</div>
+      <div class="anim-row"><label>Ширина</label><input type="range" min="20" max="200" value="100" oninput="animMouth('scale',this.value)" id="s_mouth_scale"><span id="v_mouth_scale">100%</span></div>
+      <div class="anim-row"><label>Смещение ↕</label><input type="range" min="-10" max="10" value="0" oninput="animMouth('offset',this.value)" id="s_mouth_offset"><span id="v_mouth_offset">0</span></div>
+      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+        <button onclick="setMouthExpression('smile')"   class="apose-btn" style="font-size:16px">😄</button>
+        <button onclick="setMouthExpression('open')"    class="apose-btn" style="font-size:16px">😮</button>
+        <button onclick="setMouthExpression('sad')"     class="apose-btn" style="font-size:16px">☹️</button>
+        <button onclick="setMouthExpression('neutral')" class="apose-btn" style="font-size:16px">😐</button>
+      </div>
+    </div>
+
+    <!-- ВОЛОСЫ -->
+    <div style="padding:12px 14px;border-bottom:1px solid #2d2f45">
+      <div style="font-size:11px;color:#a29bfe;margin-bottom:8px;font-weight:bold">💇 ВОЛОСЫ</div>
+      <div class="anim-row"><label>Качание</label><input type="range" min="0" max="100" value="0" oninput="animHair('sway',this.value)" id="s_hair_sway"><span id="v_hair_sway">0</span></div>
+      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+        <button onclick="setHairStyle(0)" class="apose-btn">✂️ Стиль 1</button>
+        <button onclick="setHairStyle(1)" class="apose-btn">💈 Стиль 2</button>
+        <button onclick="setHairStyle(2)" class="apose-btn">🎯 Стиль 3</button>
+      </div>
+    </div>
+
+    <!-- Анимация-петля -->
+    <div style="padding:12px 14px;">
+      <div style="font-size:11px;color:#a29bfe;margin-bottom:8px;font-weight:bold">🔄 ЗАЦИКЛИТЬ АНИМАЦИЮ</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        <button onclick="startAnimLoop('bounce')"  class="apose-btn">🏀 Подпрыг</button>
+        <button onclick="startAnimLoop('sway')"    class="apose-btn">🌊 Покачив.</button>
+        <button onclick="startAnimLoop('wave')"    class="apose-btn">👋 Машет</button>
+        <button onclick="startAnimLoop('spin')"    class="apose-btn">🌀 Вращение</button>
+      </div>
+      <button onclick="stopAnimLoop()" style="width:100%;background:#e17055;color:#fff;border:none;border-radius:8px;padding:8px;cursor:pointer;font-size:12px;font-weight:bold">⏹ Остановить петлю</button>
+    </div>
+  `;
+
+  // Стили
+  const style = document.createElement('style');
+  style.textContent = `
+    .apose-btn {
+      flex:1;background:#1a1e35;color:#a29bfe;border:1px solid #6c5ce755;
+      border-radius:7px;padding:6px 4px;cursor:pointer;font-size:11px;
+      transition:all 0.15s;text-align:center;
+    }
+    .apose-btn:hover { background:#6c5ce7;color:#fff;border-color:#a29bfe; }
+    .anim-row {
+      display:flex;align-items:center;gap:8px;margin-bottom:6px;
+    }
+    .anim-row label { width:90px;font-size:11px;color:#dfe6e9;flex-shrink:0; }
+    .anim-row input[type=range] { flex:1;accent-color:#6c5ce7; }
+    .anim-row span { width:32px;text-align:right;font-size:11px;color:#a29bfe; }
+    #animatePanel::-webkit-scrollbar { width:4px; }
+    #animatePanel::-webkit-scrollbar-thumb { background:#6c5ce7;border-radius:2px; }
+  `;
+  document.head.appendChild(style);
+  document.body.appendChild(panel);
+
+  // Запустить превью
+  startAnimPreview();
+}
+
+function toggleAnimatePanel() {
+  const p = document.getElementById('animatePanel');
+  if (!p) return;
+  window._animPanelVisible = !window._animPanelVisible;
+  p.style.display = window._animPanelVisible ? 'block' : 'none';
+  if (window._animPanelVisible) startAnimPreview();
+}
+
+window._animTarget = 'me'; // 'me' or 'all'
+function setAnimTarget(t) {
+  window._animTarget = t;
+  document.getElementById('aTargetMe').style.background = t === 'me' ? '#6c5ce7' : '#2d3436';
+  document.getElementById('aTargetMe').style.color = t === 'me' ? '#fff' : '#a29bfe';
+  document.getElementById('aTargetAll').style.background = t === 'all' ? '#6c5ce7' : '#2d3436';
+  document.getElementById('aTargetAll').style.color = t === 'all' ? '#fff' : '#a29bfe';
+}
+
+function animSlider(part, axis, val) {
+  const deg = Number(val);
+  const rad = deg * Math.PI / 180;
+  window._animCustom[part][axis] = rad;
+  document.getElementById(`v_${part.replace('leftArm','larm').replace('rightArm','rarm').replace('leftLeg','lleg').replace('rightLeg','rleg').replace('head','head').replace('body','body')}_${axis}`).textContent = deg + '°';
+  applyAnimCustom();
+  updateAnimPreview();
+}
+
+function animEyes(type, val) {
+  if (type === 'scale') {
+    window._animCustom.eyeScaleY = Number(val) / 100;
+    document.getElementById('v_eye_scale').textContent = val + '%';
+  } else {
+    window._animCustom.eyeOffsetY = Number(val) * 0.01;
+    document.getElementById('v_eye_offset').textContent = val;
+  }
+  applyAnimCustom();
+  updateAnimPreview();
+}
+
+function animMouth(type, val) {
+  if (type === 'scale') {
+    window._animCustom.mouthScaleX = Number(val) / 100;
+    document.getElementById('v_mouth_scale').textContent = val + '%';
+  } else {
+    window._animCustom.mouthOffsetY = Number(val) * 0.01;
+    document.getElementById('v_mouth_offset').textContent = val;
+  }
+  applyAnimCustom();
+  updateAnimPreview();
+}
+
+function animHair(type, val) {
+  window._animCustom.hairSway = Number(val) / 100;
+  document.getElementById('v_hair_sway').textContent = val;
+  applyAnimCustom();
+  updateAnimPreview();
+}
+
+function applyAnimCustom() {
+  const targets = getAnimTargets();
+  targets.forEach(mesh => {
+    if (!mesh || !mesh.userData) return;
+    const c = window._animCustom;
+    if (mesh.userData.leftArm)  { mesh.userData.leftArm.rotation.x  = c.leftArm.rx;  mesh.userData.leftArm.rotation.z  = c.leftArm.rz; }
+    if (mesh.userData.rightArm) { mesh.userData.rightArm.rotation.x = c.rightArm.rx; mesh.userData.rightArm.rotation.z = c.rightArm.rz; }
+    if (mesh.userData.leftLeg)  { mesh.userData.leftLeg.rotation.x  = c.leftLeg.rx; }
+    if (mesh.userData.rightLeg) { mesh.userData.rightLeg.rotation.x = c.rightLeg.rx; }
+    if (mesh.userData.head)     { mesh.userData.head.rotation.x = c.head.rx; mesh.userData.head.rotation.y = c.head.ry; }
+    if (mesh.userData.body)     { mesh.userData.body.rotation.x = c.body.rx; mesh.userData.body.rotation.y = c.body.ry; }
+    // Eyes
+    if (mesh.userData.leftEye)  { mesh.userData.leftEye.scale.y  = c.eyeScaleY; mesh.userData.leftEye.position.y  += c.eyeOffsetY * 0.01; }
+    if (mesh.userData.rightEye) { mesh.userData.rightEye.scale.y = c.eyeScaleY; mesh.userData.rightEye.position.y += c.eyeOffsetY * 0.01; }
+    // Mouth
+    if (mesh.userData.mouth)    { mesh.userData.mouth.scale.x = c.mouthScaleX; }
+    // Hair
+    if (mesh.userData.hair && c.hairSway > 0) {
+      mesh.userData.hair.rotation.z = Math.sin(Date.now() * 0.003) * c.hairSway * 0.3;
+    }
+  });
+}
+
+function getAnimTargets() {
+  const meshes = [];
+  if (window._animTarget === 'me' && localPlayer && localPlayer.mesh) {
+    meshes.push(localPlayer.mesh);
+  } else if (window._animTarget === 'all') {
+    if (localPlayer && localPlayer.mesh) meshes.push(localPlayer.mesh);
+    Object.values(remotePlayers).forEach(rp => { if (rp.mesh) meshes.push(rp.mesh); });
+  }
+  return meshes;
+}
+
+const ANIM_POSES = {
+  tpose:    { leftArm:{rx:0,rz:-Math.PI/2}, rightArm:{rx:0,rz:Math.PI/2}, leftLeg:{rx:0}, rightLeg:{rx:0}, head:{rx:0,ry:0}, body:{rx:0,ry:0} },
+  handsup:  { leftArm:{rx:-Math.PI*0.85,rz:-0.15}, rightArm:{rx:-Math.PI*0.85,rz:0.15}, leftLeg:{rx:0}, rightLeg:{rx:0}, head:{rx:-0.25,ry:0}, body:{rx:0,ry:0} },
+  wave:     { leftArm:{rx:0,rz:0}, rightArm:{rx:-Math.PI*0.7,rz:0.5}, leftLeg:{rx:0}, rightLeg:{rx:0}, head:{rx:0,ry:0.3}, body:{rx:0,ry:0} },
+  sit:      { leftArm:{rx:0,rz:-0.2}, rightArm:{rx:0,rz:0.2}, leftLeg:{rx:Math.PI/2}, rightLeg:{rx:Math.PI/2}, head:{rx:0.1,ry:0}, body:{rx:0.15,ry:0} },
+  lean:     { leftArm:{rx:-0.3,rz:-0.3}, rightArm:{rx:-0.3,rz:0.3}, leftLeg:{rx:0}, rightLeg:{rx:0}, head:{rx:0,ry:0}, body:{rx:0.35,ry:0} },
+  bow:      { leftArm:{rx:0,rz:-0.4}, rightArm:{rx:0,rz:0.4}, leftLeg:{rx:0}, rightLeg:{rx:0}, head:{rx:0.7,ry:0}, body:{rx:0.8,ry:0} },
+  dance:    { leftArm:{rx:-Math.PI/3,rz:-0.6}, rightArm:{rx:-Math.PI/4,rz:0.8}, leftLeg:{rx:0.3}, rightLeg:{rx:-0.2}, head:{rx:-0.1,ry:0.3}, body:{rx:0.1,ry:0.2} },
+  point:    { leftArm:{rx:0,rz:0}, rightArm:{rx:-0.5,rz:Math.PI/4}, leftLeg:{rx:0}, rightLeg:{rx:0}, head:{rx:0,ry:0.4}, body:{rx:0,ry:0.2} },
+  reset:    { leftArm:{rx:0,rz:0}, rightArm:{rx:0,rz:0}, leftLeg:{rx:0}, rightLeg:{rx:0}, head:{rx:0,ry:0}, body:{rx:0,ry:0} },
+};
+
+function applyPose(name) {
+  const pose = ANIM_POSES[name];
+  if (!pose) return;
+  // Update internal state
+  Object.assign(window._animCustom.leftArm, pose.leftArm);
+  Object.assign(window._animCustom.rightArm, pose.rightArm);
+  window._animCustom.leftLeg.rx  = pose.leftLeg.rx;
+  window._animCustom.rightLeg.rx = pose.rightLeg.rx;
+  Object.assign(window._animCustom.head, pose.head);
+  Object.assign(window._animCustom.body, pose.body);
+  // Sync sliders
+  const toD = r => Math.round(r * 180 / Math.PI);
+  setSliderVal('s_larm_rx','v_larm_rx', toD(pose.leftArm.rx));
+  setSliderVal('s_larm_rz','v_larm_rz', toD(pose.leftArm.rz));
+  setSliderVal('s_rarm_rx','v_rarm_rx', toD(pose.rightArm.rx));
+  setSliderVal('s_rarm_rz','v_rarm_rz', toD(pose.rightArm.rz));
+  setSliderVal('s_lleg_rx','v_lleg_rx', toD(pose.leftLeg.rx));
+  setSliderVal('s_rleg_rx','v_rleg_rx', toD(pose.rightLeg.rx));
+  setSliderVal('s_head_rx','v_head_rx', toD(pose.head.rx));
+  setSliderVal('s_head_ry','v_head_ry', toD(pose.head.ry));
+  setSliderVal('s_body_rx','v_body_rx', toD(pose.body.rx));
+  setSliderVal('s_body_ry','v_body_ry', toD(pose.body.ry));
+  applyAnimCustom();
+  updateAnimPreview();
+  showNotification(`🎭 Поза "${name}" применена!`, 'info');
+}
+
+function setSliderVal(sliderId, labelId, deg) {
+  const s = document.getElementById(sliderId);
+  const l = document.getElementById(labelId);
+  if (s) s.value = deg;
+  if (l) l.textContent = deg + '°';
+}
+
+function setEyeExpression(type) {
+  const targets = getAnimTargets();
+  targets.forEach(mesh => {
+    if (!mesh || !mesh.userData) return;
+    const { leftEye, rightEye } = mesh.userData;
+    if (!leftEye || !rightEye) return;
+    // Reset
+    leftEye.scale.set(1,1,1); rightEye.scale.set(1,1,1);
+    leftEye.visible = true; rightEye.visible = true;
+    switch(type) {
+      case 'happy':   leftEye.scale.y = 0.5; rightEye.scale.y = 0.5; break;
+      case 'angry':   leftEye.scale.y = 0.4; rightEye.scale.y = 0.4; leftEye.rotation.z = 0.4; rightEye.rotation.z = -0.4; break;
+      case 'sad':     leftEye.scale.y = 0.55; rightEye.scale.y = 0.55; leftEye.rotation.z = -0.3; rightEye.rotation.z = 0.3; break;
+      case 'closed':  leftEye.scale.y = 0.1; rightEye.scale.y = 0.1; break;
+      case 'wink':    leftEye.scale.y = 0.1; rightEye.scale.y = 1; break;
+      default: break; // normal
+    }
+  });
+  updateAnimPreview();
+}
+
+function setMouthExpression(type) {
+  const targets = getAnimTargets();
+  targets.forEach(mesh => {
+    if (!mesh || !mesh.userData || !mesh.userData.mouth) return;
+    const m = mesh.userData.mouth;
+    m.scale.set(1,1,1);
+    switch(type) {
+      case 'smile':   m.scale.x = 1.4; m.scale.y = 0.7; break;
+      case 'open':    m.scale.y = 3; break;
+      case 'sad':     m.scale.x = 1.2; m.scale.y = 0.7; m.rotation.z = Math.PI; break;
+      case 'neutral': m.scale.x = 0.8; m.scale.y = 0.5; break;
+    }
+  });
+  updateAnimPreview();
+}
+
+function setHairStyle(style) {
+  if (!localPlayer || !localPlayer.mesh) return;
+  const mesh = localPlayer.mesh;
+  if (mesh.userData.hair) {
+    mesh.remove(mesh.userData.hair);
+  }
+  const app = localPlayer.appearance || {};
+  const hairColor = new THREE.Color(app.hairColor || 0x4a3728);
+  let hair;
+  if (style === 0) {
+    hair = new THREE.Mesh(new THREE.BoxGeometry(0.75,0.25,0.75), new THREE.MeshLambertMaterial({color:hairColor}));
+    hair.position.y = 2.75;
+  } else if (style === 1) {
+    hair = new THREE.Mesh(new THREE.BoxGeometry(0.8,0.6,0.8), new THREE.MeshLambertMaterial({color:hairColor}));
+    hair.position.y = 2.65;
+  } else {
+    hair = new THREE.Mesh(new THREE.BoxGeometry(0.2,0.8,0.6), new THREE.MeshLambertMaterial({color:hairColor}));
+    hair.position.y = 2.9;
+  }
+  hair.castShadow = true;
+  mesh.add(hair);
+  mesh.userData.hair = hair;
+  updateAnimPreview();
+  showNotification('💇 Стиль волос изменён!', 'info');
+}
+
+// === Looping animations ===
+function startAnimLoop(type) {
+  stopAnimLoop();
+  window._animLoopActive = true;
+  let t0 = Date.now();
+  function loop() {
+    if (!window._animLoopActive) return;
+    const t = (Date.now() - t0) / 1000;
+    const targets = getAnimTargets();
+    targets.forEach(mesh => {
+      if (!mesh || !mesh.userData) return;
+      const { leftArm, rightArm, leftLeg, rightLeg, body, head } = mesh.userData;
+      if (!leftArm) return;
+      switch(type) {
+        case 'bounce':
+          leftArm.rotation.x  =  Math.sin(t * 4) * 0.5;
+          rightArm.rotation.x = -Math.sin(t * 4) * 0.5;
+          leftLeg.rotation.x  = -Math.sin(t * 4) * 0.3;
+          rightLeg.rotation.x =  Math.sin(t * 4) * 0.3;
+          if (body) body.position.y = 1.4 + Math.abs(Math.sin(t * 4)) * 0.15;
+          break;
+        case 'sway':
+          if (body) body.rotation.z = Math.sin(t * 2) * 0.18;
+          if (head) head.rotation.y = Math.sin(t * 1.5) * 0.25;
+          leftArm.rotation.z  = -0.1 + Math.sin(t * 2) * 0.2;
+          rightArm.rotation.z =  0.1 - Math.sin(t * 2) * 0.2;
+          break;
+        case 'wave':
+          rightArm.rotation.x = -Math.PI * 0.5;
+          rightArm.rotation.z =  0.2 + Math.sin(t * 5) * 0.45;
+          if (head) head.rotation.y = Math.sin(t * 2) * 0.15;
+          break;
+        case 'spin':
+          mesh.rotation.y = t * 2;
+          leftArm.rotation.z  = -Math.PI / 2.5;
+          rightArm.rotation.z =  Math.PI / 2.5;
+          break;
+      }
+    });
+    window._animLoopId = requestAnimationFrame(loop);
+  }
+  loop();
+  showNotification(`🔄 Анимация "${type}" запущена!`, 'info');
+}
+
+function stopAnimLoop() {
+  window._animLoopActive = false;
+  if (window._animLoopId) { cancelAnimationFrame(window._animLoopId); window._animLoopId = null; }
+}
+
+// === Animate preview canvas ===
+function startAnimPreview() {
+  if (window._animPreviewLoopId) cancelAnimationFrame(window._animPreviewLoopId);
+  function drawPreview() {
+    window._animPreviewLoopId = requestAnimationFrame(drawPreview);
+    updateAnimPreview();
+  }
+  drawPreview();
+}
+
+function updateAnimPreview() {
+  const canvas = document.getElementById('animPreviewCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = 140, H = 200;
+  ctx.clearRect(0,0,W,H);
+
+  // Background
+  const bg = ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#1a1a2e'); bg.addColorStop(1,'#16213e');
+  ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+
+  // Get colors from localPlayer or defaults
+  const app = (localPlayer && localPlayer.appearance) || {};
+  const skin  = app.skinColor  || '#d4a574';
+  const shirt = app.shirtColor || '#3a7bd5';
+  const pants = app.pantsColor || '#2c3e50';
+  const hair  = app.hairColor  || '#4a3728';
+
+  const c = window._animCustom;
+  const cx = W/2;
+
+  // Shadow
+  ctx.fillStyle = 'rgba(100,90,231,0.12)';
+  ctx.beginPath(); ctx.ellipse(cx,H-8,22,5,0,0,Math.PI*2); ctx.fill();
+
+  // Legs with rotation hint
+  ctx.save();
+  ctx.fillStyle = pants;
+  // Left leg
+  ctx.save();
+  ctx.translate(cx-8, 158);
+  ctx.rotate(c.leftLeg.rx * 0.5);
+  ctx.fillRect(-6,-32,12,32); // leg
+  ctx.fillStyle='#222'; ctx.fillRect(-7,0,14,8); // shoe
+  ctx.restore();
+  // Right leg
+  ctx.save();
+  ctx.translate(cx+8, 158);
+  ctx.rotate(c.rightLeg.rx * 0.5);
+  ctx.fillStyle = pants;
+  ctx.fillRect(-6,-32,12,32);
+  ctx.fillStyle='#222'; ctx.fillRect(-7,0,14,8);
+  ctx.restore();
+
+  // Body with lean
+  ctx.save();
+  ctx.translate(cx, 126);
+  ctx.rotate(c.body.rx * 0.4);
+  ctx.fillStyle = shirt;
+  ctx.beginPath(); ctx.roundRect(-18,-30,36,52,3); ctx.fill();
+  // Neck
+  ctx.fillStyle = skin;
+  ctx.fillRect(-5,-38,10,10);
+  ctx.restore();
+
+  // Left arm
+  ctx.save();
+  ctx.translate(cx-22, 100);
+  ctx.rotate(-c.leftArm.rz * 0.6 + c.leftArm.rx * 0.4);
+  ctx.fillStyle = skin;
+  ctx.beginPath(); ctx.roundRect(-5,0,10,32,3); ctx.fill();
+  ctx.restore();
+
+  // Right arm
+  ctx.save();
+  ctx.translate(cx+22, 100);
+  ctx.rotate(-c.rightArm.rz * 0.6 - c.rightArm.rx * 0.4);
+  ctx.fillStyle = skin;
+  ctx.beginPath(); ctx.roundRect(-5,0,10,32,3); ctx.fill();
+  ctx.restore();
+
+  // Head
+  ctx.save();
+  ctx.translate(cx, 76);
+  ctx.rotate(c.head.ry * 0.3);
+  // Head box
+  ctx.fillStyle = skin;
+  ctx.beginPath(); ctx.roundRect(-16,-16,32,32,4); ctx.fill();
+  // Hair
+  ctx.fillStyle = hair;
+  ctx.beginPath(); ctx.roundRect(-17,-18,34,12,[4,4,0,0]); ctx.fill();
+  // Eyes with expression
+  const eyeSY = c.eyeScaleY;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.ellipse(-7,-4,5,5*eyeSY,0,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(7,-4,5,5*eyeSY,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#111';
+  ctx.beginPath(); ctx.ellipse(-6.5,-4,3,3*eyeSY,0,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(7.5,-4,3,3*eyeSY,0,0,Math.PI*2); ctx.fill();
+  // Mouth
+  ctx.strokeStyle='#b05050'; ctx.lineWidth=1.8;
+  ctx.save();
+  ctx.translate(0, 7 + c.mouthOffsetY * 10);
+  ctx.scale(c.mouthScaleX, 1);
+  ctx.beginPath(); ctx.arc(0,0,6,0.1,Math.PI-0.1); ctx.stroke();
+  ctx.restore();
+  ctx.restore();
+
+  ctx.restore();
+}
+
 function updateHealthBar() {
   const pct = (localPlayer.health / localPlayer.maxHealth) * 100;
   document.getElementById('healthBar').style.width = pct + '%';
