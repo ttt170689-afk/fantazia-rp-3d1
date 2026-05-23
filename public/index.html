@@ -1469,23 +1469,26 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
     <div class="dance-btn" onclick="stopDance()">❌ Стоп</div>
   </div>
 
-  <!-- Боковые кнопки -->
-  <div class="side-buttons">
-    <div class="side-btn" onclick="togglePanel('jobs')" title="Работы">💼</div>
-    <div class="side-btn" onclick="togglePanel('shop')" title="Магазин">🛒</div>
-    <div class="side-btn" onclick="togglePanel('inventory')" title="Инвентарь">🎒</div>
-    <div class="side-btn" onclick="togglePanel('apartment')" title="Квартира">🏠</div>
-    <div class="side-btn" onclick="togglePanel('pets')" title="Питомцы">🐾</div>
-    <div class="side-btn" onclick="togglePanel('friends')" title="Друзья">👥</div>
-    <div class="side-btn" onclick="togglePanel('players')" title="Игроки">📋</div>
-    <div class="side-btn" onclick="toggleDanceBar()" title="Танцы">💃</div>
-    <div class="side-btn" onclick="openSkinEditor()" title="Редактор скина [B]">👗</div>
-    <div class="side-btn" onclick="togglePanel('cars')" title="Выбор авто">🚗</div>
-    <div class="side-btn" onclick="toggleVoice()" title="Голос (V)" id="voiceBtn">🎙️</div>
-    <div class="side-btn" onclick="openRewardModal()" title="Ежедневная награда" id="rewardBtn" style="position:relative">🎁<span id="rewardDot" style="position:absolute;top:4px;right:4px;width:8px;height:8px;background:#e74c3c;border-radius:50%;display:none"></span></div>
-    <div class="side-btn" onclick="openQuestsPanel()" title="Задания ивента Jason Day" style="position:relative;">📋<span id="questsDot" style="position:absolute;top:4px;right:4px;width:8px;height:8px;background:#ff9800;border-radius:50%;display:none;"></span></div>
-    <div class="side-btn" onclick="loadSettingsUI();document.getElementById('settingsModal').classList.add('show');document.exitPointerLock()" title="Настройки">⚙️</div>
-    <div class="side-btn" onclick="openPauseMenu()" title="Пауза [ESC]">⏸</div>
+  <!-- Боковое меню (коллапс) -->
+  <div id="sideMenuWrap" style="position:absolute;right:10px;top:200px;display:flex;flex-direction:column;align-items:flex-end;gap:0;z-index:300;">
+    <div id="sideMenuToggle" onclick="toggleSideMenu()" title="Меню" style="width:50px;height:50px;border-radius:14px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;box-shadow:0 4px 18px rgba(108,92,231,0.55);transition:transform 0.18s cubic-bezier(0.34,1.56,0.64,1);user-select:none;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">☰</div>
+    <div id="sideMenuPanel" style="display:none;margin-top:8px;background:rgba(10,8,28,0.92);border:1.5px solid rgba(108,92,231,0.5);border-radius:18px;padding:10px;backdrop-filter:blur(14px);box-shadow:0 8px 32px rgba(108,92,231,0.25);grid-template-columns:1fr 1fr;gap:8px;width:118px;">
+      <div class="side-btn" onclick="togglePanel('jobs')" title="Работы">💼</div>
+      <div class="side-btn" onclick="togglePanel('shop')" title="Магазин">🛒</div>
+      <div class="side-btn" onclick="togglePanel('inventory')" title="Инвентарь">🎒</div>
+      <div class="side-btn" onclick="togglePanel('apartment')" title="Квартира">🏠</div>
+      <div class="side-btn" onclick="togglePanel('pets')" title="Питомцы">🐾</div>
+      <div class="side-btn" onclick="togglePanel('friends')" title="Друзья">👥</div>
+      <div class="side-btn" onclick="togglePanel('players')" title="Игроки">📋</div>
+      <div class="side-btn" onclick="toggleDanceBar()" title="Танцы">💃</div>
+      <div class="side-btn" onclick="openSkinEditor()" title="Редактор скина [B]">👗</div>
+      <div class="side-btn" onclick="togglePanel('cars')" title="Выбор авто">🚗</div>
+      <div class="side-btn" onclick="toggleVoice()" title="Голос (V)" id="voiceBtn">🎙️</div>
+      <div class="side-btn" onclick="openRewardModal()" title="Ежедневная награда" id="rewardBtn" style="position:relative">🎁<span id="rewardDot" style="position:absolute;top:4px;right:4px;width:8px;height:8px;background:#e74c3c;border-radius:50%;display:none"></span></div>
+      <div class="side-btn" onclick="openQuestsPanel()" title="Задания ивента Jason Day" style="position:relative;">📋<span id="questsDot" style="position:absolute;top:4px;right:4px;width:8px;height:8px;background:#ff9800;border-radius:50%;display:none;"></span></div>
+      <div class="side-btn" onclick="loadSettingsUI();document.getElementById('settingsModal').classList.add('show');document.exitPointerLock()" title="Настройки">⚙️</div>
+      <div class="side-btn" onclick="openPauseMenu()" title="Пауза [ESC]">⏸</div>
+    </div>
   </div>
 
   <!-- Кнопки действий: войти в здание / сесть в машину -->
@@ -5149,29 +5152,7 @@ function showAdminHUD() {
   `;
   document.body.appendChild(hud);
 
-  // ---- КНОПКА АНИМИРОВАТЬ слева ----
-  const animBtn = document.createElement('div');
-  animBtn.id = 'adminAnimateBtn';
-  animBtn.style.cssText = `
-    position:fixed;left:10px;top:50%;transform:translateY(-50%);
-    z-index:9001;display:flex;flex-direction:column;align-items:center;
-    cursor:pointer;user-select:none;
-  `;
-  animBtn.innerHTML = `
-    <div id="animateBtnInner" onclick="toggleAnimatePanel()" style="
-      background:linear-gradient(135deg,#6c5ce7,#a29bfe);
-      border:none;border-radius:14px;padding:10px 8px;
-      color:#fff;font-size:12px;font-weight:bold;letter-spacing:1px;
-      writing-mode:vertical-lr;text-orientation:mixed;
-      box-shadow:0 4px 20px #6c5ce766;
-      transition:all 0.2s;
-      display:flex;flex-direction:column;align-items:center;gap:8px;
-    " onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">
-      <span style="font-size:18px;writing-mode:horizontal-tb">🎭</span>
-      <span>А</span><span>Н</span><span>И</span><span>М</span><span>И</span><span>Р</span><span>О</span><span>В</span><span>А</span><span>Т</span><span>Ь</span>
-    </div>
-  `;
-  document.body.appendChild(animBtn);
+  // Кнопка АНИМИРОВАТЬ удалена по запросу пользователя
   buildAnimatePanel();
 
   document.getElementById('btnAdminPanel').onclick = toggleAdminPanel;
@@ -8714,4 +8695,30 @@ document.getElementById('changelogBtn').onclick = function(){
   var m=document.getElementById('changelogModal');
   m.style.display='flex'; m.classList.add('show');
 };
+
+// Side menu toggle
+function toggleSideMenu() {
+  var panel = document.getElementById('sideMenuPanel');
+  var toggle = document.getElementById('sideMenuToggle');
+  var isOpen = panel.style.display === 'grid';
+  if (isOpen) {
+    panel.style.display = 'none';
+    toggle.textContent = '☰';
+  } else {
+    panel.style.display = 'grid';
+    toggle.textContent = '✕';
+  }
+}
+// Close side menu when clicking outside
+document.addEventListener('click', function(e){
+  var wrap = document.getElementById('sideMenuWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    var panel = document.getElementById('sideMenuPanel');
+    var toggle = document.getElementById('sideMenuToggle');
+    if (panel && panel.style.display === 'grid') {
+      panel.style.display = 'none';
+      toggle.textContent = '☰';
+    }
+  }
+});
 </script>
