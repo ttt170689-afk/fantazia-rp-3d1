@@ -2156,6 +2156,23 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
 
   <!-- Список игроков -->
   <div id="playerListPanel"></div>
+
+  <!-- ===== FANTAZIA PASS HUD WIDGET ===== -->
+  <div id="fpWidget" onclick="openFPassPanel()" title="Fantazia Pass">
+    <div class="fpw-top">
+      <div class="fpw-logo">⚡ <span>FANTAZIA</span> PASS</div>
+      <div class="fpw-season">СЕЗОН 1</div>
+    </div>
+    <div class="fpw-mid">
+      <div class="fpw-level" id="fpwLevel">1</div>
+      <div class="fpw-xpwrap">
+        <div class="fpw-xpbar"><div class="fpw-xpfill" id="fpwXpFill"></div></div>
+        <div class="fpw-xptext" id="fpwXpText">0 / 250</div>
+      </div>
+      <div class="fpw-level fpw-level-next" id="fpwLevelNext">2</div>
+    </div>
+    <div class="fpw-plus-hint" id="fpwPlusHint">✨ Fantazia+</div>
+  </div>
 </div>
 
 <!-- ========== JASON DAY QUESTS PANEL ========== -->
@@ -2181,6 +2198,55 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
   <!-- Список заданий -->
   <div style="font-size:12px;color:#aaa;margin-bottom:8px;letter-spacing:1px;">ЗАДАНИЯ</div>
   <div id="questList" style="display:flex;flex-direction:column;gap:7px;"></div>
+</div>
+
+<!-- ========== FANTAZIA PASS PANEL ========== -->
+<div id="fpassPanel" style="display:none">
+  <div class="fpp-inner">
+
+    <!-- Закрыть -->
+    <button class="fpp-close" onclick="closeFPassPanel()">✕</button>
+
+    <!-- Шапка -->
+    <div class="fpp-header">
+      <div class="fpp-header-title">⚡ FANTAZIA <em>PASS</em></div>
+      <div class="fpp-header-sub">СЕЗОН 1 &nbsp;·&nbsp; <span id="fppXpInfo">0 / 250 XP</span></div>
+      <div class="fpp-header-bar"><div class="fpp-header-fill" id="fppHeaderFill"></div></div>
+    </div>
+
+    <!-- Тело: персонаж + ряды -->
+    <div class="fpp-body">
+
+      <!-- Персонаж слева -->
+      <div class="fpp-char-col">
+        <div class="fpp-season-label">СЕЗОН<br><span>1</span></div>
+        <canvas id="fppCharCanvas" width="80" height="140"></canvas>
+        <div class="fpp-level-badge" id="fppLevelBadge">Ур. <span>1</span></div>
+      </div>
+
+      <!-- Ряды наград -->
+      <div class="fpp-rows">
+
+        <!-- Fantazia+ ряд (верх) -->
+        <div class="fpp-row-label fpp-plus-label">✨ FANTAZIA+</div>
+        <div class="fpp-row" id="fppRowPlus"></div>
+
+        <div class="fpp-row-divider"></div>
+
+        <!-- Бесплатный ряд (низ) -->
+        <div class="fpp-row-label fpp-free-label">🎁 БЕСПЛАТНО</div>
+        <div class="fpp-row" id="fppRowFree"></div>
+
+      </div>
+    </div>
+
+    <!-- Кнопка XP (тест) -->
+    <div class="fpp-footer">
+      <div class="fpp-xp-total">🏆 Уровень <span id="fppLevelNum">1</span> · <span id="fppXpTotal">0</span> XP набрано</div>
+      <button class="fpp-add-xp-btn" onclick="addFPassXP(50)">+50 XP (тест)</button>
+    </div>
+
+  </div>
 </div>
 
 <!-- ========== ИНТЕРЬЕР HUD ========== -->
@@ -9269,6 +9335,378 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
 
 <!-- Управление полностью обрабатывается в основном скрипте (initControls / animate) -->
 
+<style>
+/* ===== FANTAZIA PASS WIDGET ===== */
+#fpWidget {
+  position:fixed; bottom:20px; right:20px; z-index:500;
+  width:240px; cursor:pointer;
+  background:linear-gradient(135deg,#0d0820,#1a0f40);
+  border-radius:16px; padding:12px 14px 10px;
+  border:2px solid rgba(108,92,231,.7);
+  box-shadow:0 0 30px rgba(108,92,231,.35), 0 0 0 1px rgba(162,155,254,.1);
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s;
+  user-select:none;
+  animation:fpwPulse 3s ease-in-out infinite alternate;
+}
+#fpWidget:hover { transform:scale(1.04); box-shadow:0 0 50px rgba(108,92,231,.6); }
+@keyframes fpwPulse{from{border-color:rgba(108,92,231,.6)}to{border-color:rgba(162,155,254,.95)}}
+.fpw-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.fpw-logo {
+  font-family:'Orbitron',sans-serif; font-size:11px; font-weight:900;
+  color:#a29bfe; letter-spacing:2px;
+}
+.fpw-logo span { color:#fff; }
+.fpw-season { font-size:10px; color:rgba(162,155,254,.5); letter-spacing:2px; }
+.fpw-mid { display:flex; align-items:center; gap:8px; }
+.fpw-level {
+  width:28px; height:28px; border-radius:8px; flex-shrink:0;
+  background:linear-gradient(135deg,#6c5ce7,#a29bfe);
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:900; color:#fff;
+  box-shadow:0 0 12px rgba(108,92,231,.6);
+}
+.fpw-level-next { background:rgba(255,255,255,.08); box-shadow:none; color:rgba(255,255,255,.3); }
+.fpw-xpwrap { flex:1; display:flex; flex-direction:column; gap:3px; }
+.fpw-xpbar {
+  height:8px; background:rgba(255,255,255,.08); border-radius:4px; overflow:hidden;
+}
+.fpw-xpfill {
+  height:100%; width:0%;
+  background:linear-gradient(90deg,#6c5ce7,#a29bfe);
+  border-radius:4px; transition:width .5s cubic-bezier(.4,0,.2,1);
+  box-shadow:0 0 8px rgba(162,155,254,.7);
+}
+.fpw-xptext { font-size:10px; color:rgba(162,155,254,.6); text-align:center; }
+.fpw-plus-hint {
+  margin-top:8px; text-align:center; font-size:10px; letter-spacing:2px;
+  color:rgba(162,155,254,.5); border-top:1px solid rgba(108,92,231,.2); padding-top:6px;
+  animation:fpwHint 2s ease-in-out infinite alternate;
+}
+@keyframes fpwHint{from{opacity:.4}to{opacity:.9}}
+
+/* ===== FANTAZIA PASS PANEL ===== */
+#fpassPanel {
+  position:fixed; inset:0; z-index:8000;
+  background:rgba(0,0,0,.75); backdrop-filter:blur(12px);
+  display:flex; align-items:center; justify-content:center;
+}
+.fpp-inner {
+  position:relative;
+  background:linear-gradient(160deg,#07041a,#110830);
+  border:2px solid rgba(108,92,231,.7);
+  border-radius:24px; padding:0;
+  width:min(90vw, 860px); max-height:90vh;
+  overflow:hidden;
+  box-shadow:0 0 80px rgba(108,92,231,.4);
+  animation:fppIn .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes fppIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+.fpp-close {
+  position:absolute; top:14px; right:16px; z-index:2;
+  background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15);
+  color:#aaa; font-size:16px; width:32px; height:32px; border-radius:8px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:all .2s;
+}
+.fpp-close:hover { background:rgba(255,255,255,.2); color:#fff; }
+
+/* Header */
+.fpp-header {
+  background:linear-gradient(135deg,rgba(108,92,231,.25),rgba(162,155,254,.1));
+  padding:20px 28px 16px;
+  border-bottom:1px solid rgba(108,92,231,.3);
+}
+.fpp-header-title {
+  font-family:'Orbitron',sans-serif; font-size:22px; font-weight:900;
+  color:#fff; letter-spacing:4px;
+}
+.fpp-header-title em { color:#a29bfe; font-style:normal; }
+.fpp-header-sub { font-size:12px; color:rgba(162,155,254,.6); margin:6px 0 10px; letter-spacing:2px; }
+.fpp-header-bar {
+  height:10px; background:rgba(255,255,255,.07); border-radius:5px; overflow:hidden;
+}
+.fpp-header-fill {
+  height:100%; width:0%;
+  background:linear-gradient(90deg,#5b3ef5,#a29bfe,#e0d7ff);
+  border-radius:5px; transition:width .6s ease;
+  box-shadow:0 0 12px rgba(162,155,254,.8);
+}
+
+/* Body */
+.fpp-body {
+  display:flex; gap:0; padding:0;
+}
+
+/* Character column */
+.fpp-char-col {
+  flex:0 0 110px; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:10px; padding:20px 16px;
+  background:rgba(108,92,231,.06);
+  border-right:1px solid rgba(108,92,231,.2);
+}
+.fpp-season-label {
+  font-size:10px; color:rgba(162,155,254,.5); letter-spacing:2px;
+  text-align:center; line-height:1.6;
+}
+.fpp-season-label span { font-size:28px; font-family:'Orbitron',sans-serif; font-weight:900; color:#a29bfe; display:block; }
+.fpp-level-badge {
+  background:linear-gradient(135deg,#6c5ce7,#a29bfe);
+  padding:4px 14px; border-radius:20px; font-size:12px; font-weight:700; color:#fff;
+  box-shadow:0 0 14px rgba(108,92,231,.5);
+}
+
+/* Rows */
+.fpp-rows {
+  flex:1; padding:18px 20px 14px; overflow-x:auto;
+  scrollbar-width:thin; scrollbar-color:#6c5ce7 transparent;
+}
+.fpp-row-label {
+  font-size:10px; letter-spacing:3px; font-weight:800; margin-bottom:10px;
+}
+.fpp-plus-label { color:#a29bfe; }
+.fpp-free-label { color:rgba(255,255,255,.4); }
+.fpp-row {
+  display:flex; gap:10px; margin-bottom:6px;
+  flex-wrap:nowrap;
+}
+.fpp-row-divider {
+  height:1px; background:rgba(108,92,231,.25); margin:14px 0 12px;
+}
+
+/* Reward slot */
+.fpp-slot {
+  flex:0 0 86px; height:100px; border-radius:14px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:6px; cursor:pointer; position:relative; overflow:hidden;
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s;
+  border:2px solid transparent;
+}
+.fpp-slot:hover { transform:translateY(-4px); }
+.fpp-slot.locked {
+  background:rgba(255,255,255,.04);
+  border-color:rgba(255,255,255,.08);
+}
+.fpp-slot.locked .fpp-slot-ico { filter:grayscale(1) opacity(.3); }
+.fpp-slot.unlocked {
+  background:rgba(108,92,231,.12);
+  border-color:rgba(108,92,231,.5);
+  box-shadow:0 0 18px rgba(108,92,231,.2);
+}
+.fpp-slot.unlocked:hover { box-shadow:0 0 30px rgba(108,92,231,.45); }
+.fpp-slot.claimed {
+  background:rgba(0,184,148,.08);
+  border-color:rgba(0,184,148,.4);
+}
+.fpp-slot.plus-slot.unlocked {
+  background:rgba(162,155,254,.1);
+  border-color:rgba(162,155,254,.6);
+  box-shadow:0 0 20px rgba(162,155,254,.25);
+}
+.fpp-slot.plus-slot.claimed {
+  background:rgba(162,155,254,.08);
+  border-color:rgba(162,155,254,.3);
+}
+.fpp-slot-lvl {
+  position:absolute; top:5px; left:7px;
+  font-size:9px; font-weight:700; color:rgba(255,255,255,.35); letter-spacing:1px;
+}
+.fpp-slot-ico { font-size:28px; line-height:1; }
+.fpp-slot-name { font-size:10px; color:rgba(255,255,255,.6); text-align:center; line-height:1.3; padding:0 4px; }
+.fpp-slot-claim {
+  position:absolute; inset:0; background:rgba(108,92,231,.85);
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:700; color:#fff; opacity:0;
+  transition:opacity .2s; border-radius:12px;
+}
+.fpp-slot.unlocked:hover .fpp-slot-claim { opacity:1; }
+.fpp-slot.claimed .fpp-slot-claim { display:none; }
+.fpp-slot-check {
+  position:absolute; top:5px; right:7px; font-size:13px; display:none;
+}
+.fpp-slot.claimed .fpp-slot-check { display:block; }
+
+/* Footer */
+.fpp-footer {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 24px; border-top:1px solid rgba(108,92,231,.2);
+  background:rgba(108,92,231,.05);
+}
+.fpp-xp-total { font-size:12px; color:rgba(162,155,254,.6); }
+.fpp-add-xp-btn {
+  padding:8px 18px; border:none; border-radius:10px; font-size:12px;
+  font-weight:700; cursor:pointer;
+  background:linear-gradient(135deg,#6c5ce7,#a29bfe); color:#fff;
+  transition:transform .2s, box-shadow .2s;
+}
+.fpp-add-xp-btn:hover { transform:scale(1.06); box-shadow:0 0 16px rgba(108,92,231,.5); }
+</style>
+
+<script>
+// ===== FANTAZIA PASS LOGIC =====
+const FP_XP_PER_LEVEL = 250;
+const FP_MAX_LEVEL = 8;
+
+const FP_REWARDS_FREE = [
+  { lvl:1, ico:'🪙', name:'100 монеток',    coins:100 },
+  { lvl:2, ico:'🎭', name:'Эмот "Привет"',  emote:'wave2' },
+  { lvl:3, ico:'💃', name:'Танец Диско',     emote:'disco2' },
+  { lvl:4, ico:'🪙', name:'300 монеток',    coins:300 },
+  { lvl:5, ico:'👕', name:'Футболка FZ',    item:'shirt_fz' },
+  { lvl:6, ico:'🪙', name:'600 монеток',    coins:600 },
+  { lvl:7, ico:'🎆', name:'Шлейф "Звёзды"', item:'trail_stars' },
+  { lvl:8, ico:'🏆', name:'Титул "Сезон 1"', item:'title_s1' },
+];
+const FP_REWARDS_PLUS = [
+  { lvl:1, ico:'⚡', name:'Светящиеся глаза', item:'eyes_glow' },
+  { lvl:2, ico:'🚘', name:'Авто "Fantazia"',  item:'car_fz' },
+  { lvl:3, ico:'✨', name:'Аура "Violet"',    item:'aura_violet' },
+  { lvl:4, ico:'🪙', name:'1000 монеток',     coins:1000 },
+  { lvl:5, ico:'🎭', name:'Мифик-эмот',       emote:'myth1' },
+  { lvl:6, ico:'👑', name:'VIP-доступ',       item:'vip' },
+  { lvl:7, ico:'🔥', name:'RGB-эффект',       item:'rgb_fx' },
+  { lvl:8, ico:'🌌', name:'Animated Tag',     item:'tag_anim' },
+];
+
+function getFPData() {
+  return {
+    xp:    parseInt(localStorage.getItem('fz_fp_xp')    || '0'),
+    level: parseInt(localStorage.getItem('fz_fp_level') || '1'),
+    plus:  localStorage.getItem('fz_fp_plus') === '1',
+  };
+}
+function saveFPData(d) {
+  localStorage.setItem('fz_fp_xp',    d.xp);
+  localStorage.setItem('fz_fp_level', d.level);
+}
+
+function addFPassXP(amount) {
+  let d = getFPData();
+  d.xp += amount;
+  while (d.level < FP_MAX_LEVEL && d.xp >= FP_XP_PER_LEVEL) {
+    d.xp -= FP_XP_PER_LEVEL;
+    d.level++;
+    showNotification('🏆 Fantazia Pass: уровень ' + d.level + '!', 'levelup');
+  }
+  if (d.level >= FP_MAX_LEVEL) d.xp = Math.min(d.xp, FP_XP_PER_LEVEL);
+  saveFPData(d);
+  updateFPWidget();
+  updateFPPanel();
+}
+
+function updateFPWidget() {
+  const d = getFPData();
+  const w = document.getElementById('fpWidget');
+  if (!w) return;
+  const pct = Math.min(100, (d.xp / FP_XP_PER_LEVEL) * 100);
+  document.getElementById('fpwLevel').textContent = d.level;
+  document.getElementById('fpwLevelNext').textContent = d.level < FP_MAX_LEVEL ? d.level + 1 : '★';
+  document.getElementById('fpwXpFill').style.width = pct + '%';
+  document.getElementById('fpwXpText').textContent = d.xp + ' / ' + FP_XP_PER_LEVEL;
+}
+
+function openFPassPanel() {
+  document.getElementById('fpassPanel').style.display = 'flex';
+  document.exitPointerLock();
+  drawFPChar();
+  updateFPPanel();
+}
+function closeFPassPanel() {
+  document.getElementById('fpassPanel').style.display = 'none';
+  if (typeof localPlayer !== 'undefined' && localPlayer && typeof renderer !== 'undefined')
+    renderer.domElement.requestPointerLock();
+}
+document.getElementById('fpassPanel').addEventListener('click', function(e){
+  if (e.target === this) closeFPassPanel();
+});
+
+function drawFPChar() {
+  const cv = document.getElementById('fppCharCanvas');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  ctx.clearRect(0,0,80,140);
+  // Тело персонажа (мини)
+  ctx.fillStyle='#FFD1A4'; ctx.fillRect(24,10,32,28); // голова
+  ctx.fillStyle='#333';    ctx.fillRect(28,8,24,6);   // волосы
+  ctx.fillStyle='#000';    ctx.fillRect(30,20,6,6);   // глаза
+  ctx.fillRect(44,20,6,6);
+  ctx.fillStyle='#e8a090'; ctx.fillRect(34,30,12,4);  // рот
+  ctx.fillStyle='#a29bfe'; ctx.fillRect(20,38,40,36); // торс
+  ctx.fillStyle='#6c5ce7'; ctx.fillRect(16,44,12,24); // лев рука
+  ctx.fillRect(52,44,12,24);
+  ctx.fillStyle='#2d1b69'; ctx.fillRect(24,74,14,40); // лев нога
+  ctx.fillRect(42,74,14,40);
+  ctx.fillStyle='#1a0f40'; ctx.fillRect(24,108,14,12);// обувь
+  ctx.fillRect(42,108,14,12);
+  // Аура
+  ctx.save();
+  ctx.globalAlpha = 0.18 + 0.12*Math.sin(Date.now()/400);
+  ctx.strokeStyle='#a29bfe'; ctx.lineWidth=4; ctx.shadowBlur=16; ctx.shadowColor='#a29bfe';
+  ctx.beginPath(); ctx.ellipse(40,70,34,56,0,0,Math.PI*2); ctx.stroke();
+  ctx.restore();
+}
+
+// Animate char aura
+setInterval(()=>{ if(document.getElementById('fpassPanel').style.display!=='none') drawFPChar(); }, 50);
+
+function updateFPPanel() {
+  const d = getFPData();
+  const pct = Math.min(100, (d.xp / FP_XP_PER_LEVEL) * 100);
+
+  const xpInfo = document.getElementById('fppXpInfo');
+  if (xpInfo) xpInfo.textContent = d.xp + ' / ' + FP_XP_PER_LEVEL + ' XP';
+  const fill = document.getElementById('fppHeaderFill');
+  if (fill) fill.style.width = pct + '%';
+  const lvlNum = document.getElementById('fppLevelNum');
+  if (lvlNum) lvlNum.textContent = d.level;
+  const xpTotal = document.getElementById('fppXpTotal');
+  if (xpTotal) xpTotal.textContent = (d.level - 1) * FP_XP_PER_LEVEL + d.xp;
+  const badge = document.getElementById('fppLevelBadge');
+  if (badge) badge.innerHTML = 'Ур. <span>' + d.level + '</span>';
+
+  renderFPRow('fppRowFree', FP_REWARDS_FREE, d, false);
+  renderFPRow('fppRowPlus', FP_REWARDS_PLUS, d, true);
+}
+
+function renderFPRow(containerId, rewards, d, isPlus) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  rewards.forEach(r => {
+    const unlocked = d.level >= r.lvl;
+    const claimKey = 'fz_fp_' + (isPlus ? 'plus' : 'free') + '_' + r.lvl;
+    const claimed  = localStorage.getItem(claimKey) === '1';
+    const slot = document.createElement('div');
+    slot.className = 'fpp-slot' +
+      (isPlus ? ' plus-slot' : '') +
+      (claimed ? ' claimed' : unlocked ? ' unlocked' : ' locked');
+    slot.innerHTML = `
+      <div class="fpp-slot-lvl">${r.lvl}</div>
+      <div class="fpp-slot-ico">${r.ico}</div>
+      <div class="fpp-slot-name">${r.name}</div>
+      <div class="fpp-slot-claim">Забрать!</div>
+      <div class="fpp-slot-check">✅</div>
+    `;
+    if (unlocked && !claimed) {
+      slot.addEventListener('click', () => claimFPReward(r, isPlus, claimKey));
+    }
+    container.appendChild(slot);
+  });
+}
+
+function claimFPReward(r, isPlus, claimKey) {
+  localStorage.setItem(claimKey, '1');
+  if (r.coins) {
+    if (typeof localCoins !== 'undefined') { localCoins += r.coins; if(typeof updateCoinsDisplay==='function') updateCoinsDisplay(); }
+    showNotification('🎁 Получено: ' + r.coins + ' 🪙', 'levelup');
+  } else {
+    showNotification('🎁 Получено: ' + r.ico + ' ' + r.name, 'levelup');
+  }
+  updateFPPanel();
+}
+
+// Init on load
+window.addEventListener('load', () => { updateFPWidget(); });
+</script>
 </body>
 </html>
 
