@@ -169,6 +169,35 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
   border-color:rgba(108,92,231,.2);
   color:rgba(255,255,255,.8);
 }
+.ls-pass-btn{
+  width:100%; padding:14px; border:none; border-radius:14px;
+  font-size:14px; font-weight:700; cursor:pointer; letter-spacing:.5px;
+  margin-top:4px;
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease;
+}
+.ls-pass-btn:hover{ transform:scale(1.04); }
+.ls-pass-btn-free{
+  background:rgba(255,255,255,.1);
+  color:rgba(255,255,255,.75);
+  border:1.5px solid rgba(255,255,255,.2);
+}
+.ls-pass-btn-free:hover{
+  background:rgba(255,255,255,.18);
+  color:#fff;
+}
+.ls-pass-btn-premium{
+  background:linear-gradient(135deg,#5b3ef5,#a29bfe);
+  color:#fff;
+  box-shadow:0 0 30px rgba(108,92,231,.5);
+  animation:lsPassBtnGlow 2.5s ease-in-out infinite alternate;
+}
+.ls-pass-btn-premium:hover{
+  box-shadow:0 0 50px rgba(108,92,231,.8);
+}
+@keyframes lsPassBtnGlow{
+  from{box-shadow:0 0 20px rgba(108,92,231,.4)}
+  to{box-shadow:0 0 45px rgba(162,155,254,.7)}
+}
 
 /* Refresh button nicer */
 .sv-btn.refresh-btn {
@@ -1877,6 +1906,7 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
             <li>💃 Базовые танцы</li>
             <li>🌀 Анимированные загрузки</li>
           </ul>
+          <button class="ls-pass-btn ls-pass-btn-free" onclick="openServerModal()">▶ Играть бесплатно</button>
         </div>
         <div class="ls-pass-card ls-pass-premium">
           <div class="ls-pass-badge ls-pass-badge-gold">FANTAZIA+</div>
@@ -1892,6 +1922,7 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
             <li>👑 Animated Nametag</li>
             <li>🌃 Rooftop Lounge доступ</li>
           </ul>
+          <button class="ls-pass-btn ls-pass-btn-premium" onclick="openServerModal()">✨ Получить Fantazia+</button>
         </div>
       </div>
     </div>
