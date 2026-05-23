@@ -15,6 +15,100 @@
 body { overflow:hidden; background:#000; font-family:'Segoe UI',Arial,sans-serif; color:#fff; }
 canvas { display:block; }
 
+/* ========== UI УЛУЧШЕНИЯ (hover scale + round corners) ========== */
+button, .sv-btn, .modal-btn, .hair-btn, .dance-btn, .side-btn,
+.inv-tab, .chat-type-btn, .surv-back-btn, .killer-confirm-btn,
+.auth-google-btn, .auth-tab-fz, #startBtn, #joinBtn {
+  transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.18s ease,
+              background 0.25s ease !important;
+}
+button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
+.hair-btn:hover, .dance-btn:hover, .side-btn:hover,
+.inv-tab:hover, .chat-type-btn:hover, .surv-back-btn:hover,
+.auth-google-btn:hover, .auth-tab-fz:hover, #startBtn:hover {
+  transform: scale(1.06) !important;
+}
+.killer-confirm-btn:hover:not(:disabled) { transform: scale(1.04) !important; }
+.sv-btn.primary:hover { transform: scale(1.06) !important; }
+/* Rounded corners upgrade */
+.server-panel { border-radius: 24px !important; }
+.modal { border-radius: 22px !important; }
+.create-panel { border-radius: 24px !important; }
+.auth-card { border-radius: 26px !important; }
+.killer-panel { border-radius: 24px !important; }
+.inv-slot { border-radius: 14px !important; }
+.reward-day { border-radius: 14px !important; }
+.server-entry { border-radius: 16px !important; }
+#chatPanel { border-radius: 18px !important; }
+.stat-box { border-radius: 16px !important; }
+.notification { border-radius: 14px !important; }
+/* Changelog button */
+#changelogBtn {
+  flex:0; padding:10px 16px; border:none; border-radius:12px; font-size:13px;
+  font-weight:bold; cursor:pointer;
+  background:linear-gradient(135deg,#2d1b69,#6c5ce7);
+  color:#a29bfe; border:1px solid rgba(162,155,254,0.4);
+  display:flex; align-items:center; gap:6px;
+  white-space:nowrap;
+}
+#changelogBtn:hover { box-shadow:0 0 18px rgba(108,92,231,0.5); }
+/* Changelog modal */
+#changelogModal {
+  position:fixed; inset:0; background:rgba(0,0,0,0.65);
+  display:none; align-items:center; justify-content:center;
+  z-index:9999; backdrop-filter:blur(6px);
+}
+#changelogModal.show { display:flex; }
+.changelog-box {
+  background:linear-gradient(160deg,#0d0b22,#160d36);
+  border:2px solid rgba(108,92,231,0.6); border-radius:24px;
+  padding:32px 36px; max-width:480px; width:90%;
+  box-shadow:0 0 60px rgba(108,92,231,0.3);
+}
+.changelog-box h2 {
+  color:#a29bfe; font-size:22px; margin-bottom:4px;
+  display:flex; align-items:center; gap:10px;
+}
+.changelog-box .cl-version {
+  font-size:11px; color:#6c5ce7; letter-spacing:3px; margin-bottom:20px;
+}
+.cl-section { margin-bottom:16px; }
+.cl-section-title {
+  font-size:12px; letter-spacing:2px; color:#6c5ce7; margin-bottom:8px; font-weight:bold;
+}
+.cl-item {
+  display:flex; align-items:flex-start; gap:10px;
+  padding:8px 12px; margin:5px 0;
+  background:rgba(108,92,231,0.08); border-radius:10px;
+  border:1px solid rgba(108,92,231,0.2); font-size:13px; color:#ccc; line-height:1.5;
+}
+.cl-item .cl-badge {
+  flex-shrink:0; font-size:10px; font-weight:bold; padding:2px 8px; border-radius:20px;
+  margin-top:2px;
+}
+.cl-badge.new { background:rgba(0,184,148,0.2); color:#00b894; border:1px solid #00b89455; }
+.cl-badge.fix { background:rgba(108,92,231,0.2); color:#a29bfe; border:1px solid #a29bfe55; }
+.cl-badge.ui  { background:rgba(241,196,15,0.15); color:#f1c40f; border:1px solid #f1c40f55; }
+.changelog-close {
+  width:100%; padding:12px; margin-top:8px; border:none; border-radius:12px;
+  background:linear-gradient(135deg,#6c5ce7,#a29bfe); color:#fff;
+  font-size:14px; font-weight:bold; cursor:pointer;
+}
+/* Refresh button nicer */
+.sv-btn.refresh-btn {
+  background:rgba(108,92,231,0.15); color:#a29bfe;
+  border:1px solid rgba(108,92,231,0.4) !important;
+  flex:0 !important; padding:12px 18px !important;
+  display:flex; align-items:center; gap:6px;
+}
+.sv-btn.refresh-btn:hover {
+  background:rgba(108,92,231,0.3) !important;
+  box-shadow:0 0 16px rgba(108,92,231,0.4);
+}
+.refresh-spin { display:inline-block; transition:transform 0.6s ease; }
+.sv-btn.refresh-btn:hover .refresh-spin { transform:rotate(360deg); }
+
 /* ========== ГЛАВНОЕ МЕНЮ — СЕРВЕР БРАУЗЕР ========== */
 #serverScreen {
   position:fixed; top:0; left:0; width:100%; height:100%;
@@ -1252,7 +1346,12 @@ canvas { display:block; }
       <div class="server-actions">
         <button class="sv-btn primary" onclick="joinSelectedServer()" id="joinBtn">▶ Войти</button>
         <button class="sv-btn secondary" onclick="toggleCreateServer()">➕ Создать</button>
-        <button class="sv-btn secondary" onclick="refreshServers()">🔄</button>
+        <button class="sv-btn refresh-btn" onclick="(function(b){b.querySelector('.refresh-spin').style.transform='rotate(360deg)';setTimeout(()=>b.querySelector('.refresh-spin').style.transform='',650);refreshServers();})(this)">
+          <span class="refresh-spin">🔄</span> Обновить
+        </button>
+        <button id="changelogBtn" onclick="document.getElementById('changelogModal').classList.add('show')">
+          📋 Что нового
+        </button>
       </div>
       <div id="createServerBox">
         <input type="text" id="newServerName" placeholder="Название сервера" maxlength="32">
@@ -8571,3 +8670,48 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
 
 </body>
 </html>
+
+<!-- ========== CHANGELOG MODAL ========== -->
+<div id="changelogModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.65);display:none;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(6px);">
+  <div class="changelog-box">
+    <h2>📋 Что нового</h2>
+    <div class="cl-version">FANTAZIA RP 3D — UI UPDATE</div>
+    <div class="cl-section">
+      <div class="cl-section-title">✨ ДОБАВЛЕНО</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span>Кнопка <b>«🔄 Обновить»</b> — обновляет список серверов с анимацией иконки</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span>Кнопка <b>«📋 Что нового»</b> — открывает это окно изменений</div>
+    </div>
+    <div class="cl-section">
+      <div class="cl-section-title">🎨 UI УЛУЧШЕНИЯ</div>
+      <div class="cl-item"><span class="cl-badge ui">UI</span>Все кнопки плавно <b>увеличиваются</b> при наведении (scale + пружинная анимация)</div>
+      <div class="cl-item"><span class="cl-badge ui">UI</span>Скруглены углы у панелей: сервер-браузер, модалки, карточки, чат, стат-боксы</div>
+      <div class="cl-item"><span class="cl-badge ui">UI</span>Кнопка обновления получила фиолетовый акцент и спин-анимацию иконки</div>
+      <div class="cl-item"><span class="cl-badge ui">UI</span>Переходы на кнопках сделаны плавнее через cubic-bezier (пружинный эффект)</div>
+    </div>
+    <div class="cl-section">
+      <div class="cl-section-title">🔧 ИСПРАВЛЕНО</div>
+      <div class="cl-item"><span class="cl-badge fix">FIX</span>Иконка 🔄 была без текста — теперь подписана «Обновить» для ясности</div>
+      <div class="cl-item"><span class="cl-badge fix">FIX</span>Hover-эффект кнопок унифицирован — единый стиль для всех элементов</div>
+    </div>
+    <button class="changelog-close" onclick="document.getElementById('changelogModal').classList.remove('show');document.getElementById('changelogModal').style.display='none'">
+      ✓ Понятно
+    </button>
+  </div>
+</div>
+<script>
+// Changelog modal open/close helpers
+document.getElementById('changelogModal').addEventListener('click', function(e){
+  if(e.target===this){ this.style.display='none'; this.classList.remove('show'); }
+});
+document.addEventListener('keydown', function(e){
+  if(e.key==='Escape'){
+    var m=document.getElementById('changelogModal');
+    if(m.style.display!=='none'){ m.style.display='none'; m.classList.remove('show'); }
+  }
+});
+// Override changelogBtn onclick to also set display:flex
+document.getElementById('changelogBtn').onclick = function(){
+  var m=document.getElementById('changelogModal');
+  m.style.display='flex'; m.classList.add('show');
+};
+</script>
