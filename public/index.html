@@ -95,6 +95,81 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
   background:linear-gradient(135deg,#6c5ce7,#a29bfe); color:#fff;
   font-size:14px; font-weight:bold; cursor:pointer;
 }
+/* ---- FEATURES TICKER ---- */
+.ls-ticker-wrap {
+  width:100%; overflow:hidden;
+  padding:18px 0;
+  background:linear-gradient(90deg,rgba(108,92,231,.08) 0%,rgba(162,155,254,.06) 50%,rgba(108,92,231,.08) 100%);
+  border-top:1px solid rgba(108,92,231,.25);
+  border-bottom:1px solid rgba(108,92,231,.25);
+  position:relative;
+}
+.ls-ticker-wrap::before,.ls-ticker-wrap::after{
+  content:'';position:absolute;top:0;width:100px;height:100%;z-index:2;pointer-events:none;
+}
+.ls-ticker-wrap::before{left:0;background:linear-gradient(90deg,#07051a,transparent);}
+.ls-ticker-wrap::after{right:0;background:linear-gradient(-90deg,#07051a,transparent);}
+.ls-ticker-track{display:flex;width:max-content;animation:lsTicker 90s linear infinite;}
+.ls-ticker-track:hover{animation-play-state:paused;}
+.ls-ticker-inner{display:flex;align-items:center;gap:18px;white-space:nowrap;padding-right:18px;}
+.ls-ticker-inner span{font-size:13px;color:rgba(162,155,254,.75);font-weight:500;letter-spacing:.3px;}
+.ltdot{color:rgba(108,92,231,.5)!important;font-size:18px!important;}
+@keyframes lsTicker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ---- FANTAZIA PASS ---- */
+.ls-pass-sec{
+  background:radial-gradient(ellipse 80% 60% at 50% 50%,rgba(108,92,231,.1) 0%,transparent 70%);
+}
+.ls-pass-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:28px;
+  margin-top:52px;width:100%;max-width:680px;
+}
+@media(max-width:600px){.ls-pass-grid{grid-template-columns:1fr;}}
+.ls-pass-card{
+  border-radius:24px;padding:32px 28px;
+  display:flex;flex-direction:column;gap:20px;
+  position:relative;overflow:hidden;
+}
+.ls-pass-free{
+  background:rgba(255,255,255,.04);
+  border:1.5px solid rgba(255,255,255,.15);
+}
+.ls-pass-premium{
+  background:linear-gradient(160deg,rgba(108,92,231,.18),rgba(162,155,254,.08));
+  border:1.5px solid rgba(162,155,254,.5);
+  box-shadow:0 0 60px rgba(108,92,231,.25);
+}
+.ls-pass-badge{
+  display:inline-block;padding:4px 14px;border-radius:20px;
+  font-size:11px;font-weight:800;letter-spacing:3px;
+  background:rgba(255,255,255,.1);color:rgba(255,255,255,.5);
+  border:1px solid rgba(255,255,255,.2);
+  width:fit-content;
+}
+.ls-pass-badge-gold{
+  background:linear-gradient(135deg,rgba(162,155,254,.3),rgba(108,92,231,.3));
+  color:#a29bfe;border-color:rgba(162,155,254,.5);
+  animation:lsPassGlow 2.5s ease-in-out infinite alternate;
+}
+@keyframes lsPassGlow{from{box-shadow:0 0 0 rgba(162,155,254,0)}to{box-shadow:0 0 20px rgba(162,155,254,.4)}}
+.ls-pass-title{
+  font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;color:#fff;
+}
+.ls-pass-title em{color:#a29bfe;font-style:normal;}
+.ls-pass-list{list-style:none;display:flex;flex-direction:column;gap:10px;}
+.ls-pass-list li{
+  font-size:13px;color:rgba(255,255,255,.65);
+  padding:8px 12px;border-radius:10px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.07);
+  line-height:1.4;
+}
+.ls-pass-premium .ls-pass-list li{
+  background:rgba(108,92,231,.08);
+  border-color:rgba(108,92,231,.2);
+  color:rgba(255,255,255,.8);
+}
+
 /* Refresh button nicer */
 .sv-btn.refresh-btn {
   background:rgba(108,92,231,0.15); color:#a29bfe;
@@ -1586,6 +1661,238 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
         <div class="ls-card"><div class="ls-card-ico">🪓</div><div class="ls-card-h">Jason Day</div><div class="ls-card-p">Собирай яйца Джейсона или охоться на выживших. Выполняй задания и получай редкие награды.</div></div>
         <div class="ls-card"><div class="ls-card-ico">⚔️</div><div class="ls-card-h">Выживание</div><div class="ls-card-p">Режим выживания с уникальными персонажами-убийцами. Выбери роль и борись за победу.</div></div>
         <div class="ls-card"><div class="ls-card-ico">🎁</div><div class="ls-card-h">Ежедневки</div><div class="ls-card-p">Заходи каждый день и получай монеты, аксессуары и особые привилегии.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ TICKER ══════════ -->
+  <div class="ls-ticker-wrap">
+    <div class="ls-ticker-track">
+      <div class="ls-ticker-inner">
+        <span>🌃 Neon City</span><span class="ltdot">·</span><span>🌧 Realistic Weather</span><span class="ltdot">·</span><span>🚗 Deep Car Tuning</span><span class="ltdot">·</span><span>🏎 Drift System</span><span class="ltdot">·</span><span>💨 Burnout Effects</span><span class="ltdot">·</span><span>✨ Underglow Neon</span><span class="ltdot">·</span><span>🏠 Luxury Apartments</span><span class="ltdot">·</span><span>🌆 Penthouses</span><span class="ltdot">·</span><span>🎮 Gaming Rooms</span><span class="ltdot">·</span><span>🚪 Garages</span><span class="ltdot">·</span><span>📱 Smartphone System</span><span class="ltdot">·</span><span>💬 SMS</span><span class="ltdot">·</span><span>📞 Calls</span><span class="ltdot">·</span><span>🗺 Map App</span><span class="ltdot">·</span><span>🎵 Music Player</span><span class="ltdot">·</span><span>🛒 Marketplace</span><span class="ltdot">·</span><span>👥 Friends System</span><span class="ltdot">·</span><span>💍 Relationships</span><span class="ltdot">·</span><span>👑 Gangs</span><span class="ltdot">·</span><span>🎉 Parties</span><span class="ltdot">·</span><span>🎧 Nightclubs</span><span class="ltdot">·</span><span>💰 Businesses</span><span class="ltdot">·</span><span>☕ Cafés</span><span class="ltdot">·</span><span>🎰 Casinos</span><span class="ltdot">·</span><span>🚕 Taxi Job</span><span class="ltdot">·</span><span>🔧 Mechanic Job</span><span class="ltdot">·</span><span>👮 Police Job</span><span class="ltdot">·</span><span>🎧 DJ Job</span><span class="ltdot">·</span><span>👗 Fashion System</span><span class="ltdot">·</span><span>👟 Rare Sneakers</span><span class="ltdot">·</span><span>⌚ Watches</span><span class="ltdot">·</span><span>😎 Masks</span><span class="ltdot">·</span><span>✨ Auras</span><span class="ltdot">·</span><span>⚡ Glowing Eyes</span><span class="ltdot">·</span><span>🎭 Emotes</span><span class="ltdot">·</span><span>💃 Dances</span><span class="ltdot">·</span><span>🚬 Smoking Emote</span><span class="ltdot">·</span><span>🤝 Handshake</span><span class="ltdot">·</span><span>📸 Photo Mode</span><span class="ltdot">·</span><span>📷 Selfies</span><span class="ltdot">·</span><span>🌇 Cinematic Filters</span><span class="ltdot">·</span><span>🎵 Car Radio</span><span class="ltdot">·</span><span>🔊 3D Voice Chat</span><span class="ltdot">·</span><span>🏆 Fantazia Pass</span><span class="ltdot">·</span><span>🌌 Fantazia+</span><span class="ltdot">·</span><span>💎 Premium Rewards</span><span class="ltdot">·</span><span>🚘 Exclusive Cars</span><span class="ltdot">·</span><span>✨ Animated Cosmetics</span><span class="ltdot">·</span><span>👑 VIP Club</span><span class="ltdot">·</span><span>🌃 Rooftop Lounges</span><span class="ltdot">·</span><span>🌧 Rain Reflections</span><span class="ltdot">·</span><span>✨ Bloom Effects</span><span class="ltdot">·</span><span>🎨 Stylish UI</span><span class="ltdot">·</span><span>🧠 Hidden Secrets</span><span class="ltdot">·</span><span>🚪 Secret Clubs</span><span class="ltdot">·</span><span>🕶 Mysterious NPCs</span><span class="ltdot">·</span><span>🗝 Hidden Rooms</span><span class="ltdot">·</span><span>🎯 Daily Missions</span><span class="ltdot">·</span><span>🏁 Racing Events</span><span class="ltdot">·</span><span>🚓 Police Chases</span><span class="ltdot">·</span><span>💵 Economy System</span><span class="ltdot">·</span><span>🏦 Bank Accounts</span><span class="ltdot">·</span><span>💳 Cards</span><span class="ltdot">·</span><span>🏪 Player Businesses</span><span class="ltdot">·</span><span>🎁 Daily Rewards</span><span class="ltdot">·</span><span>🌀 Loading Animations</span><span class="ltdot">·</span><span>🖥 Custom HUD</span><span class="ltdot">·</span><span>👑 Animated Nametags</span><span class="ltdot">·</span><span>🔥 RGB Effects</span><span class="ltdot">·</span><span>🎆 Trails</span><span class="ltdot">·</span><span>✨ Mythic Cosmetics</span><span class="ltdot">·</span><span>🎬 Live Events</span><span class="ltdot">·</span><span>🌙 Night Atmosphere</span><span class="ltdot">·</span><span>🚦 Traffic NPCs</span><span class="ltdot">·</span><span>🚶 Walking NPCs</span><span class="ltdot">·</span><span>🛍 Shopping Malls</span><span class="ltdot">·</span><span>🏢 Skyscrapers</span><span class="ltdot">·</span><span>🚇 Metro System</span><span class="ltdot">·</span><span>🎰 Arcade Zones</span><span class="ltdot">·</span><span>🎡 Entertainment Parks</span><span class="ltdot">·</span><span>🛥 Yachts</span><span class="ltdot">·</span><span>🚁 Helicopters</span><span class="ltdot">·</span><span>🏖 Beach Areas</span><span class="ltdot">·</span><span>🌴 Palm Streets</span><span class="ltdot">·</span><span>🎤 Concerts</span><span class="ltdot">·</span><span>🎥 Cinema</span><span class="ltdot">·</span><span>🪩 Dance Clubs</span><span class="ltdot">·</span><span>🎯 Achievement System</span><span class="ltdot">·</span><span>🧩 Secret Easter Eggs</span><span class="ltdot">·</span><span>📺 Giant City Screens</span><span class="ltdot">·</span><span>🚘 Car Meets</span><span class="ltdot">·</span><span>🏎 Street Racing</span><span class="ltdot">·</span><span>🌌 Rich Neon Nightlife</span>
+      </div>
+      <div class="ls-ticker-inner" aria-hidden="true">
+        <span>🌃 Neon City</span><span class="ltdot">·</span><span>🌧 Realistic Weather</span><span class="ltdot">·</span><span>🚗 Deep Car Tuning</span><span class="ltdot">·</span><span>🏎 Drift System</span><span class="ltdot">·</span><span>💨 Burnout Effects</span><span class="ltdot">·</span><span>✨ Underglow Neon</span><span class="ltdot">·</span><span>🏠 Luxury Apartments</span><span class="ltdot">·</span><span>🌆 Penthouses</span><span class="ltdot">·</span><span>🎮 Gaming Rooms</span><span class="ltdot">·</span><span>🚪 Garages</span><span class="ltdot">·</span><span>📱 Smartphone System</span><span class="ltdot">·</span><span>💬 SMS</span><span class="ltdot">·</span><span>📞 Calls</span><span class="ltdot">·</span><span>🗺 Map App</span><span class="ltdot">·</span><span>🎵 Music Player</span><span class="ltdot">·</span><span>🛒 Marketplace</span><span class="ltdot">·</span><span>👥 Friends System</span><span class="ltdot">·</span><span>💍 Relationships</span><span class="ltdot">·</span><span>👑 Gangs</span><span class="ltdot">·</span><span>🎉 Parties</span><span class="ltdot">·</span><span>🎧 Nightclubs</span><span class="ltdot">·</span><span>💰 Businesses</span><span class="ltdot">·</span><span>☕ Cafés</span><span class="ltdot">·</span><span>🎰 Casinos</span><span class="ltdot">·</span><span>🚕 Taxi Job</span><span class="ltdot">·</span><span>🔧 Mechanic Job</span><span class="ltdot">·</span><span>👮 Police Job</span><span class="ltdot">·</span><span>🎧 DJ Job</span><span class="ltdot">·</span><span>👗 Fashion System</span><span class="ltdot">·</span><span>👟 Rare Sneakers</span><span class="ltdot">·</span><span>⌚ Watches</span><span class="ltdot">·</span><span>😎 Masks</span><span class="ltdot">·</span><span>✨ Auras</span><span class="ltdot">·</span><span>⚡ Glowing Eyes</span><span class="ltdot">·</span><span>🎭 Emotes</span><span class="ltdot">·</span><span>💃 Dances</span><span class="ltdot">·</span><span>🚬 Smoking Emote</span><span class="ltdot">·</span><span>🤝 Handshake</span><span class="ltdot">·</span><span>📸 Photo Mode</span><span class="ltdot">·</span><span>📷 Selfies</span><span class="ltdot">·</span><span>🌇 Cinematic Filters</span><span class="ltdot">·</span><span>🎵 Car Radio</span><span class="ltdot">·</span><span>🔊 3D Voice Chat</span><span class="ltdot">·</span><span>🏆 Fantazia Pass</span><span class="ltdot">·</span><span>🌌 Fantazia+</span><span class="ltdot">·</span><span>💎 Premium Rewards</span><span class="ltdot">·</span><span>🚘 Exclusive Cars</span><span class="ltdot">·</span><span>✨ Animated Cosmetics</span><span class="ltdot">·</span><span>👑 VIP Club</span><span class="ltdot">·</span><span>🌃 Rooftop Lounges</span><span class="ltdot">·</span><span>🌧 Rain Reflections</span><span class="ltdot">·</span><span>✨ Bloom Effects</span><span class="ltdot">·</span><span>🎨 Stylish UI</span><span class="ltdot">·</span><span>🧠 Hidden Secrets</span><span class="ltdot">·</span><span>🚪 Secret Clubs</span><span class="ltdot">·</span><span>🕶 Mysterious NPCs</span><span class="ltdot">·</span><span>🗝 Hidden Rooms</span><span class="ltdot">·</span><span>🎯 Daily Missions</span><span class="ltdot">·</span><span>🏁 Racing Events</span><span class="ltdot">·</span><span>🚓 Police Chases</span><span class="ltdot">·</span><span>💵 Economy System</span><span class="ltdot">·</span><span>🏦 Bank Accounts</span><span class="ltdot">·</span><span>💳 Cards</span><span class="ltdot">·</span><span>🏪 Player Businesses</span><span class="ltdot">·</span><span>🎁 Daily Rewards</span><span class="ltdot">·</span><span>🌀 Loading Animations</span><span class="ltdot">·</span><span>🖥 Custom HUD</span><span class="ltdot">·</span><span>👑 Animated Nametags</span><span class="ltdot">·</span><span>🔥 RGB Effects</span><span class="ltdot">·</span><span>🎆 Trails</span><span class="ltdot">·</span><span>✨ Mythic Cosmetics</span><span class="ltdot">·</span><span>🎬 Live Events</span><span class="ltdot">·</span><span>🌙 Night Atmosphere</span><span class="ltdot">·</span><span>🚦 Traffic NPCs</span><span class="ltdot">·</span><span>🚶 Walking NPCs</span><span class="ltdot">·</span><span>🛍 Shopping Malls</span><span class="ltdot">·</span><span>🏢 Skyscrapers</span><span class="ltdot">·</span><span>🚇 Metro System</span><span class="ltdot">·</span><span>🎰 Arcade Zones</span><span class="ltdot">·</span><span>🎡 Entertainment Parks</span><span class="ltdot">·</span><span>🛥 Yachts</span><span class="ltdot">·</span><span>🚁 Helicopters</span><span class="ltdot">·</span><span>🏖 Beach Areas</span><span class="ltdot">·</span><span>🌴 Palm Streets</span><span class="ltdot">·</span><span>🎤 Concerts</span><span class="ltdot">·</span><span>🎥 Cinema</span><span class="ltdot">·</span><span>🪩 Dance Clubs</span><span class="ltdot">·</span><span>🎯 Achievement System</span><span class="ltdot">·</span><span>🧩 Secret Easter Eggs</span><span class="ltdot">·</span><span>📺 Giant City Screens</span><span class="ltdot">·</span><span>🚘 Car Meets</span><span class="ltdot">·</span><span>🏎 Street Racing</span><span class="ltdot">·</span><span>🌌 Rich Neon Nightlife</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ ЖИВОЙ ГОРОД ══════════ -->
+  <div class="ls-sec-divider"></div>
+  <section class="ls-sec">
+    <div class="ls-sec-glow-r"></div>
+    <div class="ls-sec-inner">
+      <div class="ls-tag">🌃 Город</div>
+      <div class="ls-sec-title">Живой <em>неоновый город</em></div>
+      <div class="ls-sec-desc">Огромный мегаполис с дождём, отражениями, bloom-эффектами, движущимися NPC и атмосферой настоящего ночного города.</div>
+      <div class="ls-cards ls-cards-4">
+        <div class="ls-card"><div class="ls-card-ico">🌧</div><div class="ls-card-h">Живая погода</div><div class="ls-card-p">Реалистичный дождь с отражениями на асфальте, туман, смена времени суток.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🏢</div><div class="ls-card-h">Небоскрёбы</div><div class="ls-card-p">Огромные здания, пентхаусы на крышах, роoftop-лаунжи с видом на ночной город.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🛍</div><div class="ls-card-h">Торговые моллы</div><div class="ls-card-p">Целые торговые центры для шопинга, встреч и RP-сцен с друзьями.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🚇</div><div class="ls-card-h">Метро</div><div class="ls-card-p">Полноценное метро для перемещения между районами — быстро и атмосферно.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🌴</div><div class="ls-card-h">Пляж и пальмы</div><div class="ls-card-p">Пляжные зоны, пальмовые улицы и летняя атмосфера у воды.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">📺</div><div class="ls-card-h">Гигантские экраны</div><div class="ls-card-p">Билборды и огромные LED-экраны по всему городу — часть атмосферы.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🚶</div><div class="ls-card-h">Живые NPC</div><div class="ls-card-p">Пешеходы, водители, таинственные NPC — город не пустой ни днём ни ночью.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">✨</div><div class="ls-card-h">Bloom & Neon</div><div class="ls-card-p">Неоновые вывески, bloom-эффекты и RGB-освещение создают киберпанк-атмосферу.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ ТРАНСПОРТ ══════════ -->
+  <div class="ls-sec-divider"></div>
+  <section class="ls-sec">
+    <div class="ls-sec-glow-l"></div>
+    <div class="ls-sec-inner">
+      <div class="ls-tag">🚗 Транспорт</div>
+      <div class="ls-sec-title">Глубокий <em>тюнинг. Дрифт. Адреналин.</em></div>
+      <div class="ls-sec-desc">Полноценная автокультура — тюнинг каждой детали, неоновая подсветка снизу, дрифт-система, burnout и радио в салоне.</div>
+      <div class="ls-feat-row">
+        <div class="ls-feat-visual">🏎</div>
+        <div class="ls-feat-text">
+          <h3>Deep Car Tuning</h3>
+          <p>Настраивай двигатель, подвеску, тормоза, диски и кузов. Добавляй underglow-неон любого цвета. Каждая машина — отражение твоего стиля.</p>
+        </div>
+      </div>
+      <div class="ls-feat-row rev" style="margin-top:40px">
+        <div class="ls-feat-visual">💨</div>
+        <div class="ls-feat-text">
+          <h3>Drift & Burnout</h3>
+          <p>Реальная физика заноса, дымовые эффекты от burnout, следы шин на асфальте. Car meets, стрит-рейсинг и полицейские погони.</p>
+        </div>
+      </div>
+      <div class="ls-cards ls-cards-3" style="margin-top:40px">
+        <div class="ls-card"><div class="ls-card-ico">🚁</div><div class="ls-card-h">Вертолёты</div><div class="ls-card-p">Летай над городом на вертолёте — уникальный вид сверху на весь мегаполис.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🛥</div><div class="ls-card-h">Яхты</div><div class="ls-card-p">Личные яхты у берега — роскошь и стиль на воде.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🎵</div><div class="ls-card-h">Car Radio</div><div class="ls-card-p">Собственное радио в машине — слушай музыку за рулём прямо в игре.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ ЖИЛЬЁ ══════════ -->
+  <div class="ls-sec-divider"></div>
+  <section class="ls-sec">
+    <div class="ls-sec-glow-r"></div>
+    <div class="ls-sec-inner">
+      <div class="ls-tag">🏠 Жильё</div>
+      <div class="ls-sec-title">Твой <em>личный уголок</em></div>
+      <div class="ls-sec-desc">Купи квартиру, роскошный пентхаус или обустрой гараж. Создай игровую комнату мечты и зови друзей.</div>
+      <div class="ls-cards ls-cards-4">
+        <div class="ls-card"><div class="ls-card-ico">🏠</div><div class="ls-card-h">Апартаменты</div><div class="ls-card-p">Стильные квартиры с персонализацией мебели и декора.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🌆</div><div class="ls-card-h">Пентхаусы</div><div class="ls-card-p">Роскошные пентхаусы с видом на ночной горизонт города.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🎮</div><div class="ls-card-h">Игровые комнаты</div><div class="ls-card-p">Обустрой игровую комнату — экраны, диваны, мини-бар.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🚪</div><div class="ls-card-h">Гаражи</div><div class="ls-card-p">Личный гараж для хранения и тюнинга коллекции машин.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ СМАРТФОН & ЭКОНОМИКА ══════════ -->
+  <div class="ls-sec-divider"></div>
+  <section class="ls-sec">
+    <div class="ls-sec-glow-l"></div>
+    <div class="ls-sec-inner">
+      <div class="ls-tag">📱 Цифровая жизнь</div>
+      <div class="ls-sec-title">Смартфон. Бизнес. <em>Экономика.</em></div>
+      <div class="ls-sec-desc">Полноценная система смартфона с SMS, звонками, картой и музыкой. Реальная экономика с банком, картами и своим бизнесом.</div>
+      <div class="ls-cards ls-cards-3">
+        <div class="ls-card"><div class="ls-card-ico">📱</div><div class="ls-card-h">Смартфон</div><div class="ls-card-p">SMS, звонки, карта города, музыкальный плеер и маркетплейс — всё в одном устройстве.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🏦</div><div class="ls-card-h">Банк & Карты</div><div class="ls-card-p">Банковские счета, кредитные карты, переводы между игроками.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🏪</div><div class="ls-card-h">Свой бизнес</div><div class="ls-card-p">Открывай кафе, магазины, СТО — становись настоящим предпринимателем.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🎰</div><div class="ls-card-h">Казино</div><div class="ls-card-p">Испытай удачу в казино — слоты, рулетка, покер с другими игроками.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🛒</div><div class="ls-card-h">Маркетплейс</div><div class="ls-card-p">Торгуй с игроками напрямую — предметы, машины, редкие вещи.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">💵</div><div class="ls-card-h">Живая экономика</div><div class="ls-card-p">Реальный рынок цен — зарабатывай, инвестируй, богатей.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ РАБОТЫ ══════════ -->
+  <div class="ls-sec-divider"></div>
+  <section class="ls-sec">
+    <div class="ls-sec-glow-r"></div>
+    <div class="ls-sec-inner">
+      <div class="ls-tag">💼 Работы</div>
+      <div class="ls-sec-title">Найди своё <em>призвание</em></div>
+      <div class="ls-sec-desc">Полицейский, таксист, механик, DJ — каждая профессия со своей механикой, формой и карьерной лестницей.</div>
+      <div class="ls-cards ls-cards-4">
+        <div class="ls-card"><div class="ls-card-ico">👮</div><div class="ls-card-h">Полиция</div><div class="ls-card-p">Патрулируй, гоняйся за нарушителями, арестовывай. Полная форма и спецтехника.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🚕</div><div class="ls-card-h">Таксист</div><div class="ls-card-p">Вози пассажиров по городу, зарабатывай на чаевых.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🔧</div><div class="ls-card-h">Механик</div><div class="ls-card-p">Чини машины игроков, делай тюнинг в собственном гараже-СТО.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🎧</div><div class="ls-card-h">DJ</div><div class="ls-card-p">Крути треки в ночных клубах, собирай аудиторию и качай весь зал.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ СОЦИАЛЬНАЯ ЖИЗНЬ ══════════ -->
+  <div class="ls-sec-divider"></div>
+  <section class="ls-sec">
+    <div class="ls-sec-glow-l"></div>
+    <div class="ls-sec-inner">
+      <div class="ls-tag">👥 Социальное</div>
+      <div class="ls-sec-title">Банды. Вечеринки. <em>Отношения.</em></div>
+      <div class="ls-sec-desc">Создавай банды, находи пару, устраивай вечеринки на крышах и танцуй в ночных клубах с живыми игроками.</div>
+      <div class="ls-cards ls-cards-3">
+        <div class="ls-card"><div class="ls-card-ico">👑</div><div class="ls-card-h">Банды</div><div class="ls-card-p">Создавай банду, захватывай территории, конкурируй с другими группировками.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">💍</div><div class="ls-card-h">Отношения</div><div class="ls-card-p">Дружба, романтика, семья — социальные связи как в реальной жизни.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🎉</div><div class="ls-card-h">Вечеринки</div><div class="ls-card-p">Организовывай вечеринки дома, на яхте или на rooftop с видом на город.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🪩</div><div class="ls-card-h">Ночные клубы</div><div class="ls-card-p">DJ-сеты, световые шоу, танцпол — живая клубная атмосфера.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🔊</div><div class="ls-card-h">3D Voice Chat</div><div class="ls-card-p">Голосовой чат с затуханием по расстоянию — слышишь только тех, кто рядом.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">☕</div><div class="ls-card-h">Кафе для RP</div><div class="ls-card-p">Уютные кафе для ролевых сцен, деловых встреч и просто разговоров.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ СТИЛЬ & КОСМЕТИКА ══════════ -->
+  <div class="ls-sec-divider"></div>
+  <section class="ls-sec">
+    <div class="ls-sec-glow-r"></div>
+    <div class="ls-sec-inner">
+      <div class="ls-tag">✨ Стиль</div>
+      <div class="ls-sec-title">Косметика. Аура. <em>Без повторений.</em></div>
+      <div class="ls-sec-desc">Тысячи вариантов кастомизации — от редких кроссовок и часов до мифических аур, светящихся глаз и анимированных эффектов.</div>
+      <div class="ls-cards ls-cards-4">
+        <div class="ls-card"><div class="ls-card-ico">👗</div><div class="ls-card-h">Мода</div><div class="ls-card-p">Брендовая одежда, уличный стиль, люкс — создай уникальный образ.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">👟</div><div class="ls-card-h">Rare Sneakers</div><div class="ls-card-p">Редкие кроссовки, которые есть только у единиц — настоящий flex.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">⌚</div><div class="ls-card-h">Часы</div><div class="ls-card-p">Коллекционные часы от простых до легендарных.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">😎</div><div class="ls-card-h">Маски</div><div class="ls-card-p">Маски на любой вкус — мистика, киберпанк, уличный стиль.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">✨</div><div class="ls-card-h">Ауры</div><div class="ls-card-p">Анимированные ауры вокруг персонажа — от редких до мифических.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">⚡</div><div class="ls-card-h">Светящиеся глаза</div><div class="ls-card-p">Неоновый взгляд — cyan, purple, red и другие цвета.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🎆</div><div class="ls-card-h">Шлейфы</div><div class="ls-card-p">Анимированные trails за персонажем — огонь, звёзды, плазма.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🔥</div><div class="ls-card-h">RGB & Эффекты</div><div class="ls-card-p">RGB-свечение, мифические частицы и анимированные нейм-теги.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ ЭМОЦИИ & ФОТО ══════════ -->
+  <div class="ls-sec-divider"></div>
+  <section class="ls-sec">
+    <div class="ls-sec-glow-l"></div>
+    <div class="ls-sec-inner">
+      <div class="ls-tag">🎭 Экспрессия</div>
+      <div class="ls-sec-title">Эмоции. Танцы. <em>Фотомод.</em></div>
+      <div class="ls-sec-desc">Выражай себя через сотни эмотов, уникальные танцы, рукопожатие с другом и кинематографический фоторежим.</div>
+      <div class="ls-cards ls-cards-3">
+        <div class="ls-card"><div class="ls-card-ico">💃</div><div class="ls-card-h">Танцы</div><div class="ls-card-p">Уникальные анимации танцев — от хип-хопа до клубных движений.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🎭</div><div class="ls-card-h">Эмоты</div><div class="ls-card-p">Сотни эмотов — смех, удивление, курение, приветствие и много другого.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">📸</div><div class="ls-card-h">Photo Mode</div><div class="ls-card-p">Кинематографические фильтры, режим селфи, управление камерой — делай кадры мечты.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ АКТИВНОСТИ ══════════ -->
+  <div class="ls-sec-divider"></div>
+  <section class="ls-sec">
+    <div class="ls-sec-glow-r"></div>
+    <div class="ls-sec-inner">
+      <div class="ls-tag">🎯 Активности</div>
+      <div class="ls-sec-title">Миссии. Гонки. <em>Тайны.</em></div>
+      <div class="ls-sec-desc">Ежедневные миссии, рейсинг-ивенты, полицейские погони, концерты, кино, аркады и скрытые пасхалки по всему городу.</div>
+      <div class="ls-cards ls-cards-4">
+        <div class="ls-card"><div class="ls-card-ico">🎯</div><div class="ls-card-h">Daily Missions</div><div class="ls-card-p">Новые задания каждый день с наградами, монетами и уникальными предметами.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🏁</div><div class="ls-card-h">Racing Events</div><div class="ls-card-p">Организованные гонки на улицах — стрит-рейсинг с реальными игроками.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🚓</div><div class="ls-card-h">Полицейские погони</div><div class="ls-card-p">Скрывайся от патрулей или гоняйся сам — адреналиновые chase-сцены.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🏆</div><div class="ls-card-h">Achievement System</div><div class="ls-card-p">Сотни достижений за всё — от первого шага до легендарных подвигов.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🧩</div><div class="ls-card-h">Пасхалки</div><div class="ls-card-p">Скрытые комнаты, таинственные NPC и секреты — найди всё сам.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🎤</div><div class="ls-card-h">Концерты</div><div class="ls-card-p">Live-события в игре — музыкальные концерты на огромных площадках.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🎥</div><div class="ls-card-h">Кинотеатр</div><div class="ls-card-p">Смотри кино с другими игроками в настоящем кинотеатре внутри игры.</div></div>
+        <div class="ls-card"><div class="ls-card-ico">🎡</div><div class="ls-card-h">Парк развлечений</div><div class="ls-card-p">Аттракционы, аркадные зоны — отдых внутри игрового мира.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ FANTAZIA PASS ══════════ -->
+  <div class="ls-sec-divider"></div>
+  <section class="ls-sec ls-pass-sec">
+    <div class="ls-sec-inner">
+      <div class="ls-tag">🏆 Премиум</div>
+      <div class="ls-sec-title"><em>Fantazia Pass</em> & Fantazia+</div>
+      <div class="ls-sec-desc">Два уровня премиума с эксклюзивными машинами, анимированной косметикой, мифическими наградами и VIP-клубом.</div>
+      <div class="ls-pass-grid">
+        <div class="ls-pass-card ls-pass-free">
+          <div class="ls-pass-badge">FREE</div>
+          <div class="ls-pass-title">Fantazia Pass</div>
+          <ul class="ls-pass-list">
+            <li>🎁 Ежедневные награды</li>
+            <li>🎯 Daily Missions</li>
+            <li>🏆 Achievement System</li>
+            <li>🎭 Базовые эмоты</li>
+            <li>💃 Базовые танцы</li>
+            <li>🌀 Анимированные загрузки</li>
+          </ul>
+        </div>
+        <div class="ls-pass-card ls-pass-premium">
+          <div class="ls-pass-badge ls-pass-badge-gold">FANTAZIA+</div>
+          <div class="ls-pass-title">Fantazia <em>Plus</em></div>
+          <ul class="ls-pass-list">
+            <li>🚘 Эксклюзивные машины</li>
+            <li>✨ Мифическая косметика</li>
+            <li>👑 VIP-клуб и зоны</li>
+            <li>💎 Премиум-награды</li>
+            <li>🔥 RGB & Animated эффекты</li>
+            <li>⚡ Светящиеся глаза</li>
+            <li>🎆 Уникальные шлейфы</li>
+            <li>👑 Animated Nametag</li>
+            <li>🌃 Rooftop Lounge доступ</li>
+          </ul>
+        </div>
       </div>
     </div>
   </section>
