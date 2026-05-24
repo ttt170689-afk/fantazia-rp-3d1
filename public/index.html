@@ -481,6 +481,40 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
   position:absolute; bottom:3px; right:5px; font-size:10px;
   color:#f1c40f; font-weight:bold;
 }
+/* ─── Редкость предметов из боксов ─── */
+.inv-slot.rarity-common  { border-color:rgba(160,160,190,.55); }
+.inv-slot.rarity-uncommon{ border-color:rgba(0,220,130,.65); box-shadow:0 0 8px rgba(0,220,130,.22); }
+.inv-slot.rarity-rare    { border-color:rgba(80,160,255,.75); box-shadow:0 0 12px rgba(80,160,255,.3); }
+.inv-slot.rarity-epic    { border-color:rgba(180,80,255,.85); box-shadow:0 0 14px rgba(180,80,255,.32); animation:inv-epic-glow 2s ease-in-out infinite alternate; }
+.inv-slot.rarity-legendary{ border-color:rgba(255,210,0,.95); box-shadow:0 0 18px rgba(255,200,0,.45); animation:inv-leg-glow 1.4s ease-in-out infinite alternate; }
+@keyframes inv-epic-glow{ from{box-shadow:0 0 8px rgba(180,80,255,.25)} to{box-shadow:0 0 22px rgba(180,80,255,.55)} }
+@keyframes inv-leg-glow { from{box-shadow:0 0 12px rgba(255,200,0,.4)} to{box-shadow:0 0 30px rgba(255,200,0,.85),0 0 50px rgba(255,200,0,.3)} }
+.inv-slot .is-rarity{ font-size:8px; font-weight:700; letter-spacing:.8px; margin-top:1px; }
+/* ─── Brawl-style brawl counter bar ─── */
+.fzbox-brawl-bar{
+  display:flex; align-items:center; gap:14px; width:100%; box-sizing:border-box;
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1);
+  border-radius:14px; padding:10px 18px;
+}
+.fzbox-brawl-left{ text-align:center; flex-shrink:0; }
+.fzbox-brawl-num{
+  font-family:'Orbitron',sans-serif; font-size:32px; font-weight:900;
+  color:#ffd000; line-height:1; transition:color .25s,text-shadow .25s;
+  text-shadow:0 0 16px rgba(255,200,0,.7);
+}
+.fzbox-brawl-lbl{ font-size:9px; color:rgba(255,255,255,.35); letter-spacing:2px; margin-top:2px; }
+.fzbox-brawl-dots{ display:flex; gap:5px; flex-wrap:wrap; flex:1; }
+.fzbox-brawl-dot{
+  width:13px; height:13px; border-radius:50%;
+  background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2);
+  transition:all .3s cubic-bezier(.34,1.56,.64,1); flex-shrink:0;
+}
+.fzbox-brawl-dot.rev-common   { background:#aaa; border-color:#ccc; transform:scale(1.2); }
+.fzbox-brawl-dot.rev-uncommon { background:#00dc82; border-color:#00ff99; box-shadow:0 0 6px #00dc82; transform:scale(1.25); }
+.fzbox-brawl-dot.rev-rare     { background:#4da6ff; border-color:#80c4ff; box-shadow:0 0 7px #4da6ff; transform:scale(1.25); }
+.fzbox-brawl-dot.rev-epic     { background:#c050ff; border-color:#d880ff; box-shadow:0 0 10px #c050ff; transform:scale(1.3); }
+.fzbox-brawl-dot.rev-legendary{ background:#ffd000; border-color:#ffe44d; box-shadow:0 0 12px #ffd000; transform:scale(1.35); animation:dot-leg-anim 1s ease-in-out infinite alternate; }
+@keyframes dot-leg-anim{ from{box-shadow:0 0 8px #ffd000} to{box-shadow:0 0 18px #ffd000,0 0 30px rgba(255,200,0,.5)} }
 .inv-detail {
   background:rgba(255,255,255,0.04); border-radius:10px; border:1px solid rgba(255,255,255,0.1);
   padding:12px; min-height:80px;
@@ -2289,6 +2323,14 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
   <div class="fzbox-result" style="display:none">
     <div class="fzbox-res-title">🎉 <span class="fzbox-count">Получено предметов!</span></div>
     <div id="fzbox-items-grid" class="fzbox-items-grid"></div>
+    <!-- Brawl-style counter -->
+    <div class="fzbox-brawl-bar" id="fzboxBrawlBar">
+      <div class="fzbox-brawl-left">
+        <div class="fzbox-brawl-num" id="fzboxBrawlNum">0</div>
+        <div class="fzbox-brawl-lbl">ОСТАЛОСЬ</div>
+      </div>
+      <div class="fzbox-brawl-dots" id="fzboxBrawlDots"></div>
+    </div>
     <button class="fzbox-close-btn" onclick="closeFzBoxModal()">Забрать всё! 🎊</button>
   </div>
 </div>
@@ -5589,7 +5631,10 @@ function renderInventory() {
   grid.innerHTML = '';
   if (detail) detail.innerHTML = '<p style="color:#555;font-size:13px;text-align:center;padding:20px 0">Нажмите на предмет</p>';
 
-  const inv = (localPlayer && localPlayer.inventory) || [];
+  // Merge server inventory + box drops
+  const serverInv = (localPlayer && localPlayer.inventory) || [];
+  const boxInv = _fzBoxInv();
+  const inv = [...serverInv, ...boxInv];
   const filtered = currentInvTab === 'all' ? inv : inv.filter(i => i.type === currentInvTab);
   if (countEl) countEl.textContent = inv.length;
 
@@ -5610,11 +5655,16 @@ function renderInventory() {
 
   Object.values(groups).forEach(item => {
     const slot = document.createElement('div');
-    const isEquipped = equippedAccessory === item.id;
-    slot.className = 'inv-slot' + (isEquipped ? ' equipped' : '');
+    const isEquipped = (equippedAccessory === item.id) || (item.source === 'box' && item.equipped);
+    // Rarity class for box items
+    const rarityClass = item.rarity ? ' rarity-' + item.rarity : '';
+    slot.className = 'inv-slot' + (isEquipped ? ' equipped' : '') + rarityClass;
+    const itemIco = item.ico || getItemIcon(item);
+    const rarityLabel = item.rarity ? `<div class="is-rarity" style="color:${_fzBoxRarityColor(item.rarity)}">${FZ_BOX_RARITY_COLORS[item.rarity]?.label||''}</div>` : '';
     slot.innerHTML = `
-      <div class="is-icon">${getItemIcon(item)}</div>
+      <div class="is-icon">${itemIco}</div>
       <div class="is-name">${item.name}</div>
+      ${rarityLabel}
       ${item.count > 1 ? `<span class="is-qty">×${item.count}</span>` : ''}
       ${isEquipped ? '<span style="position:absolute;top:3px;left:3px;font-size:9px;color:#00b894">✓</span>' : ''}
     `;
@@ -5623,28 +5673,44 @@ function renderInventory() {
       document.querySelectorAll('.inv-slot').forEach(s => s.style.boxShadow = '');
       slot.style.boxShadow = '0 0 0 2px #a29bfe';
       const typeStr = item.type === 'food' ? '🍕 Еда' : item.type === 'clothing' ? '👕 Одежда'
-        : item.type === 'accessory' ? '🎩 Аксессуар' : item.type === 'petfood' ? '🦴 Корм' : '📦 Предмет';
+        : item.type === 'accessory' ? '🎩 Аксессуар' : item.type === 'petfood' ? '🦴 Корм'
+        : item.type === 'cosmetic' ? '✨ Косметика' : item.type === 'emote' ? '💃 Эмот' : '📦 Предмет';
+      const rarityBadge = item.rarity
+        ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;background:rgba(0,0,0,.3);color:${_fzBoxRarityColor(item.rarity)}">${FZ_BOX_RARITY_COLORS[item.rarity]?.label||''}</span>`
+        : '';
+      // Equip buttons for box items
+      let actionBtns = '';
+      if (item.source === 'box') {
+        if (item.type === 'clothing' || item.type === 'accessory' || item.type === 'cosmetic' || item.type === 'emote') {
+          actionBtns = item.equipped
+            ? `<button class="modal-btn" style="flex:1;background:rgba(0,184,148,.3);border:1px solid #00b894" onclick="_fzBoxEquip('${item.id}',false)">Снять</button>`
+            : `<button class="modal-btn" style="flex:1" onclick="_fzBoxEquip('${item.id}',true)">✅ Экипировать</button>`;
+        }
+      } else if (item.type === 'food' || item.type === 'petfood') {
+        actionBtns = `<button class="modal-btn" onclick="useItem('${item.uids[0]}')" style="flex:1">Использовать</button>`;
+      } else if (item.type === 'accessory') {
+        actionBtns = isEquipped
+          ? `<button class="modal-btn danger" onclick="equipFromInv('')" style="flex:1">Снять</button>`
+          : `<button class="modal-btn" onclick="equipFromInv('${item.id}')" style="flex:1">✅ Надеть</button>`;
+      }
       if (detail) detail.innerHTML = `
         <div style="display:flex;align-items:center;gap:14px">
-          <div style="font-size:40px">${getItemIcon(item)}</div>
+          <div style="font-size:40px">${itemIco}</div>
           <div>
             <div style="font-weight:bold;font-size:16px">${item.name}</div>
-            <div style="font-size:12px;color:#888;margin-top:3px">${typeStr}${item.count > 1 ? ' · Кол-во: ' + item.count : ''}</div>
+            <div style="font-size:12px;color:#888;margin-top:3px;display:flex;align-items:center;gap:6px">${typeStr}${rarityBadge}</div>
+            ${item.count > 1 ? `<div style="font-size:12px;color:#888">Кол-во: ${item.count}</div>` : ''}
             ${item.heal ? `<div style="font-size:12px;color:#00b894;margin-top:2px">❤️ +${item.heal} HP</div>` : ''}
-            ${item.petHeal ? `<div style="font-size:12px;color:#e67e22;margin-top:2px">🦴 +${item.petHeal} Корма</div>` : ''}
             ${isEquipped ? '<div style="font-size:12px;color:#00b894;margin-top:2px">✅ Надето</div>' : ''}
           </div>
         </div>
-        <div style="display:flex;gap:8px;margin-top:12px">
-          <button class="modal-btn" onclick="useItem('${item.uids[0]}')" style="flex:1">Использовать</button>
-          ${item.count > 1 ? `<button class="modal-btn" onclick="useItem('${item.uids[0]}')" style="flex:1;background:rgba(255,255,255,0.1)">Использовать все</button>` : ''}
-        </div>
+        ${actionBtns ? `<div style="display:flex;gap:8px;margin-top:12px">${actionBtns}</div>` : ''}
       `;
     };
     grid.appendChild(slot);
   });
 
-  // Fill empty slots to make grid look full
+  // Fill empty slots
   const remaining = 10 - Object.keys(groups).length;
   for (let i = 0; i < Math.max(0, remaining); i++) {
     const empty = document.createElement('div');
@@ -5653,6 +5719,16 @@ function renderInventory() {
     empty.style.opacity = '0.2';
     grid.appendChild(empty);
   }
+}
+
+// Equip / unequip a box item
+function _fzBoxEquip(id, equip) {
+  const inv = _fzBoxInv();
+  inv.forEach(item => { if (item.id === id) item.equipped = equip; });
+  _fzBoxInvSave(inv);
+  if (equip) showNotification('✅ Предмет надет!', 'success');
+  else showNotification('🔁 Предмет снят', 'info');
+  renderInventory();
 }
 
 function useItem(uid) { socket.emit('useItem', uid); }
@@ -10045,6 +10121,44 @@ window.addEventListener('load', () => {
   updateFPWidget();
 });
 
+// ===== BOX INVENTORY (localStorage) =====
+function _fzBoxInv() { try { return JSON.parse(localStorage.getItem('fz_box_inv')||'[]'); } catch(e){ return []; } }
+function _fzBoxInvSave(a){ localStorage.setItem('fz_box_inv', JSON.stringify(a)); }
+function _fzBoxRarityColor(r){
+  return {common:'#aaa',uncommon:'#00dc82',rare:'#4da6ff',epic:'#c050ff',legendary:'#ffd000'}[r]||'#aaa';
+}
+const _FZ_BOX_TYPE_MAP = {
+  '👕':'clothing','🧢':'clothing','👟':'clothing',
+  '👑':'accessory','🎩':'accessory','🕶️':'accessory',
+  '💎':'cosmetic','🌟':'cosmetic','⚡':'cosmetic','🌈':'cosmetic',
+  '🔥':'cosmetic','🌙':'cosmetic','🚀':'cosmetic','🎆':'cosmetic',
+  '🎭':'emote','💃':'emote','🎪':'cosmetic','🎯':'cosmetic',
+};
+function _fzBoxAddReal(item) {
+  // Coins → give coins directly
+  if (item.ico === '🪙') {
+    const m = item.name.match(/(\d+)/);
+    if (m && typeof localCoins !== 'undefined') {
+      localCoins += parseInt(m[1]);
+      if (typeof updateCoinsDisplay === 'function') updateCoinsDisplay();
+    }
+    return;
+  }
+  // Everything else → goes to box inventory
+  const inv = _fzBoxInv();
+  inv.push({
+    id:     'box_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+    name:   item.name,
+    ico:    item.ico,
+    type:   _FZ_BOX_TYPE_MAP[item.ico] || 'cosmetic',
+    rarity: item.rarity,
+    uid:    'boxu_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+    source: 'box',
+    equipped: false
+  });
+  _fzBoxInvSave(inv);
+}
+
 // ===== FANTAZIA BOX ОТКРЫТИЕ =====
 const FZ_BOX_OPEN_SOUNDS = ['boop'];
 function openFzBox() {
@@ -10081,7 +10195,6 @@ function tapFzBox() {
     const count = Math.floor(Math.random() * 19) + 7; // 7–25
     const items = [];
     for (let i = 0; i < count; i++) {
-      // Взвешенный шанс редкости
       const roll = Math.random();
       let pool;
       if (roll < 0.40)      pool = FZ_BOX_ITEMS.filter(x => x.rarity === 'common');
@@ -10092,22 +10205,63 @@ function tapFzBox() {
       if (!pool.length) pool = FZ_BOX_ITEMS;
       items.push(pool[Math.floor(Math.random() * pool.length)]);
     }
-    // Показать результат
+
     const center = modal.querySelector('.fzbox-center');
     const result = modal.querySelector('.fzbox-result');
     center.style.display = 'none';
     result.style.display = 'flex';
     const grid = modal.querySelector('.fzbox-items-grid');
     grid.innerHTML = '';
-    items.forEach((item, idx) => {
-      const rc = FZ_BOX_RARITY_COLORS[item.rarity];
-      const el = document.createElement('div');
-      el.className = 'fzbox-item';
-      el.style.cssText = `background:${rc.bg};border:1.5px solid ${rc.border};animation-delay:${idx * 0.04}s`;
-      el.innerHTML = `<div class="fzbi-ico">${item.ico}</div><div class="fzbi-name">${item.name}</div><div class="fzbi-rarity" style="color:${rc.color}">${rc.label}</div>`;
-      grid.appendChild(el);
-    });
     modal.querySelector('.fzbox-count').textContent = 'Получено ' + count + ' предметов!';
+
+    // --- Brawl-style counter setup ---
+    const brawlNum  = document.getElementById('fzboxBrawlNum');
+    const brawlDots = document.getElementById('fzboxBrawlDots');
+    if (brawlNum)  brawlNum.textContent = count;
+    if (brawlDots) {
+      brawlDots.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'fzbox-brawl-dot';
+        dot.id = 'fzdot_' + i;
+        brawlDots.appendChild(dot);
+      }
+    }
+
+    // --- Sequential reveal ---
+    items.forEach((item, idx) => {
+      setTimeout(() => {
+        const rc = FZ_BOX_RARITY_COLORS[item.rarity];
+        const el = document.createElement('div');
+        el.className = 'fzbox-item';
+        el.style.cssText = `background:${rc.bg};border:1.5px solid ${rc.border};animation-delay:0s`;
+        // Skin/costume: extra glow
+        const isSkin = ['👕','🧢','👟','👑','🔮','💎','🌟','⚡','🌈','🔥','🌙','🚀','🎆','🎪'].includes(item.ico);
+        if (isSkin) {
+          el.style.boxShadow = `0 0 18px ${rc.border},0 0 36px ${rc.bg}`;
+          if (item.rarity === 'legendary') el.style.animation = 'fzboxItemIn .4s cubic-bezier(.34,1.56,.64,1) both, inv-leg-glow 1.4s ease-in-out infinite alternate';
+          if (item.rarity === 'epic') el.style.animation = 'fzboxItemIn .4s cubic-bezier(.34,1.56,.64,1) both, inv-epic-glow 2s ease-in-out infinite alternate';
+        }
+        el.innerHTML = `<div class="fzbi-ico">${item.ico}</div><div class="fzbi-name">${item.name}</div><div class="fzbi-rarity" style="color:${rc.color}">${rc.label}</div>`;
+        grid.appendChild(el);
+
+        // Update counter number
+        const remaining = count - idx - 1;
+        if (brawlNum) {
+          brawlNum.textContent = remaining;
+          brawlNum.style.color = rc.color;
+          brawlNum.style.textShadow = `0 0 16px ${rc.color}`;
+        }
+        // Mark dot as revealed
+        const dot = document.getElementById('fzdot_' + idx);
+        if (dot) dot.className = 'fzbox-brawl-dot rev-' + item.rarity;
+
+        // --- Add to real inventory / give coins ---
+        _fzBoxAddReal(item);
+
+      }, idx * 230);
+    });
+
   }, 900);
 }
 function closeFzBoxModal() {
