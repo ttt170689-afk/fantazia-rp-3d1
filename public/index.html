@@ -10052,20 +10052,26 @@ function openFzBox() {
   if (d.boxes <= 0) return;
   d.boxes--;
   saveFPData(d);
-  updateFPPanel();
-  showFzBoxScreen();
+  updateFPWidget();
+  // Закрываем панель пасса и открываем бокс
+  closeFPassPanel();
+  setTimeout(showFzBoxScreen, 150);
 }
 function showFzBoxScreen() {
   const modal = document.getElementById('fzBoxModal');
   if (!modal) return;
+  // Reset state перед открытием
+  const center = modal.querySelector('.fzbox-center');
+  const result = modal.querySelector('.fzbox-result');
+  const boxEl  = modal.querySelector('.fzbox-box');
+  result.style.display = 'none';
+  center.style.display = 'flex';
+  boxEl.classList.remove('fzbox-opened');
+  boxEl.style.animation = 'none';
+  void boxEl.offsetWidth; // reflow
+  boxEl.style.animation = '';
   modal.style.display = 'flex';
   document.exitPointerLock && document.exitPointerLock();
-  // Reset state
-  modal.querySelector('.fzbox-result').style.display = 'none';
-  modal.querySelector('.fzbox-center').style.display = 'flex';
-  const boxEl = modal.querySelector('.fzbox-box');
-  boxEl.classList.remove('fzbox-opened');
-  boxEl.style.transform = '';
 }
 function tapFzBox() {
   const modal = document.getElementById('fzBoxModal');
@@ -10106,6 +10112,11 @@ function tapFzBox() {
 }
 function closeFzBoxModal() {
   document.getElementById('fzBoxModal').style.display = 'none';
+  updateFPWidget();
+  // Сбросить анимацию коробки для следующего открытия
+  const modal = document.getElementById('fzBoxModal');
+  const boxEl = modal.querySelector('.fzbox-box');
+  if (boxEl) boxEl.classList.remove('fzbox-opened');
 }
 
 function updateFPWidget() {
@@ -10122,14 +10133,13 @@ function updateFPWidget() {
   document.getElementById('fpwXpText').textContent = isMax
     ? (d.bonusXp + ' / ' + FP_BOX_XP_COST + ' (Box)')
     : (d.xp + ' / ' + FP_XP_PER_LEVEL);
-  // Box badge
+  // Box badge (fixed position is already a positioned ancestor — no need to add relative)
   let badge = document.getElementById('fpwBoxBadge');
   if (d.boxes > 0) {
     if (!badge) {
       badge = document.createElement('div');
       badge.id = 'fpwBoxBadge';
-      badge.style.cssText = 'position:absolute;top:-6px;right:-6px;background:linear-gradient(135deg,#ffd000,#ff8800);color:#000;font-size:10px;font-weight:900;padding:2px 6px;border-radius:10px;min-width:18px;text-align:center;z-index:2;';
-      w.style.position = 'relative';
+      badge.style.cssText = 'position:absolute;top:-8px;right:-8px;background:linear-gradient(135deg,#ffd000,#ff8800);color:#000;font-size:10px;font-weight:900;padding:2px 7px;border-radius:10px;min-width:20px;text-align:center;z-index:2;pointer-events:none;';
       w.appendChild(badge);
     }
     badge.textContent = '📦' + d.boxes;
