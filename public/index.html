@@ -1956,7 +1956,7 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
             <li>👑 Animated Nametag</li>
             <li>🌃 Rooftop Lounge доступ</li>
           </ul>
-          <button class="ls-pass-btn ls-pass-btn-premium" onclick="openServerModal()">✨ Получить Fantazia+</button>
+          <button class="ls-pass-btn ls-pass-btn-premium" onclick="openLandingBuyPlus()">✨ Получить Fantazia+ — 1 ₽</button>
         </div>
       </div>
     </div>
@@ -2022,6 +2022,17 @@ function openServerModal(){
 function closeServerModal(){
   var m=document.getElementById('serverModal');
   m.style.display='none';m.classList.remove('show');
+}
+function openLandingBuyPlus(){
+  var modal=document.getElementById('buyPlusModal');
+  if(modal){
+    document.getElementById('bpmMain').style.display='';
+    document.getElementById('bpmProcessing').style.display='none';
+    document.getElementById('bpmSuccess').style.display='none';
+    modal.style.display='flex';
+  } else {
+    openServerModal();
+  }
 }
 document.getElementById('serverModal').addEventListener('click',function(e){if(e.target===this)closeServerModal();});
 </script>
@@ -2292,12 +2303,49 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
     <!-- Кнопка открыть бокс + футер -->
     <div class="fpp-footer">
       <div class="fpp-xp-total">🏆 Уровень <span id="fppLevelNum">1</span> · <span id="fppXpTotal">0</span> XP набрано</div>
-      <div style="display:flex;gap:8px;align-items:center;">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <button id="fppBoxBtn" class="fpp-box-open-btn" onclick="openFzBox()" style="display:none">📦 Fantazia Box</button>
+        <button id="fppBuyPlusBtn" class="fpp-buy-plus-btn" onclick="openBuyPlusModal()">✨ Fantazia+ — 1 ₽</button>
         <button class="fpp-add-xp-btn" onclick="addFPassXP(50)">+50 XP (тест)</button>
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- ========== BUY FANTAZIA PLUS MODAL ========== -->
+<div id="buyPlusModal" style="position:fixed;inset:0;z-index:9900;background:rgba(0,0,0,.82);backdrop-filter:blur(14px);display:none;align-items:center;justify-content:center;">
+  <div class="bpm-box">
+    <button class="bpm-close" onclick="closeBuyPlusModal()">✕</button>
+    <div id="bpmMain">
+      <span class="bpm-crown">👑</span>
+      <div class="bpm-title">FANTAZIA <em>PLUS</em></div>
+      <div class="bpm-sub">СЕЗОН 1 — ПРЕМИУМ ПРОПУСК</div>
+      <ul class="bpm-perks">
+        <li>🚘 Эксклюзивные авто и скины</li>
+        <li>✨ Мифическая косметика и ауры</li>
+        <li>👑 VIP-зоны и Rooftop Lounge</li>
+        <li>💎 Двойные XP-награды</li>
+        <li>🔥 RGB &amp; Animated эффекты</li>
+        <li>⚡ Светящиеся глаза персонажа</li>
+        <li>🎭 50 уровней премиум-наград</li>
+      </ul>
+      <div class="bpm-price-row">
+        <span class="bpm-old-price">299 ₽</span>
+        <span class="bpm-new-price">1 <span>₽</span></span>
+      </div>
+      <button class="bpm-pay-btn" onclick="processBuyPlus()">💳 Оплатить 1 ₽</button>
+    </div>
+    <div class="bpm-pay-processing" id="bpmProcessing" style="display:none;flex-direction:column;align-items:center;gap:14px;padding:20px 0;">
+      <div class="bpm-spinner"></div>
+      <div class="bpm-processing-text">ОБРАБОТКА ПЛАТЕЖА...</div>
+    </div>
+    <div class="bpm-success" id="bpmSuccess" style="display:none;flex-direction:column;align-items:center;gap:10px;padding:10px 0;">
+      <span class="bpm-success-ico">🎉</span>
+      <div class="bpm-success-title">FANTAZIA+ АКТИВИРОВАН!</div>
+      <div class="bpm-success-sub">Все премиум-награды теперь доступны</div>
+      <button class="bpm-success-close" onclick="closeBuyPlusModal()">✓ Закрыть</button>
+    </div>
   </div>
 </div>
 
@@ -2457,8 +2505,8 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
       <div class="inv-tab active" onclick="setInvTab('all')">Все</div>
       <div class="inv-tab" onclick="setInvTab('food')">🍕 Еда</div>
       <div class="inv-tab" onclick="setInvTab('clothing')">👕 Одежда</div>
-      <div class="inv-tab" onclick="setInvTab('accessory')">🎩 Аксессуары</div>
-      <div class="inv-tab" onclick="setInvTab('petfood')">🦴 Питомцы</div>
+      <div class="inv-tab" onclick="setInvTab('accessory')">💎 Аксессуары</div>
+      <div class="inv-tab" onclick="setInvTab('petfood')">🐾 Питомцы</div>
     </div>
     <div class="inv-grid" id="inventoryGrid"></div>
     <div class="inv-detail" id="invDetail">
@@ -9640,6 +9688,12 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
 }
 .fpp-slot.unlocked:hover .fpp-slot-claim { opacity:1; }
 .fpp-slot.claimed .fpp-slot-claim { display:none; }
+.fpp-slot-plus-lock {
+  position:absolute; inset:0; background:rgba(0,0,0,.6);
+  display:flex; align-items:center; justify-content:center;
+  font-size:10px; font-weight:700; color:#f1c40f; border-radius:12px;
+  letter-spacing:1px;
+}
 .fpp-slot-check {
   position:absolute; top:5px; right:7px; font-size:13px; display:none;
 }
@@ -9659,6 +9713,95 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
   transition:transform .2s, box-shadow .2s;
 }
 .fpp-add-xp-btn:hover { transform:scale(1.06); box-shadow:0 0 16px rgba(108,92,231,.5); }
+
+/* Buy Plus button */
+.fpp-buy-plus-btn {
+  padding:8px 18px; border:none; border-radius:10px; font-size:12px;
+  font-weight:700; cursor:pointer;
+  background:linear-gradient(135deg,#f1c40f,#e67e22); color:#000;
+  transition:transform .2s, box-shadow .2s;
+  animation:buyPlusPulse 2s ease-in-out infinite alternate;
+}
+.fpp-buy-plus-btn:hover { transform:scale(1.06); box-shadow:0 0 20px rgba(241,196,15,.7); }
+.fpp-buy-plus-btn.owned { background:linear-gradient(135deg,#00b894,#00cec9); color:#fff; animation:none; cursor:default; }
+@keyframes buyPlusPulse {
+  from{box-shadow:0 0 8px rgba(241,196,15,.4)} to{box-shadow:0 0 22px rgba(241,196,15,.9)}
+}
+
+/* Buy Plus Modal */
+#buyPlusModal {
+  position:fixed; inset:0; z-index:9900;
+  background:rgba(0,0,0,.82); backdrop-filter:blur(14px);
+  display:none; align-items:center; justify-content:center;
+}
+#buyPlusModal.show { display:flex; }
+.bpm-box {
+  background:linear-gradient(160deg,#07041a,#14093a);
+  border:2px solid rgba(241,196,15,.7); border-radius:26px;
+  padding:36px 32px 32px; width:min(90vw,400px);
+  box-shadow:0 0 80px rgba(241,196,15,.25), 0 0 0 1px rgba(241,196,15,.1);
+  animation:bpmIn .3s cubic-bezier(.34,1.56,.64,1);
+  text-align:center; position:relative;
+}
+@keyframes bpmIn{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
+.bpm-close {
+  position:absolute; top:12px; right:14px;
+  background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15);
+  color:#aaa; font-size:15px; width:30px; height:30px; border-radius:8px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+.bpm-close:hover { background:rgba(255,255,255,.2); color:#fff; }
+.bpm-crown { font-size:56px; display:block; margin-bottom:10px;
+  filter:drop-shadow(0 0 20px rgba(241,196,15,.8));
+  animation:bpmCrownFloat 2s ease-in-out infinite;
+}
+@keyframes bpmCrownFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.bpm-title { font-family:'Orbitron',sans-serif; font-size:22px; font-weight:900;
+  color:#f1c40f; letter-spacing:3px; margin-bottom:6px; }
+.bpm-title em { color:#fff; font-style:normal; }
+.bpm-sub { font-size:12px; color:rgba(255,255,255,.4); letter-spacing:2px; margin-bottom:20px; }
+.bpm-perks { list-style:none; margin-bottom:24px; display:flex; flex-direction:column; gap:8px; }
+.bpm-perks li {
+  font-size:13px; color:rgba(255,255,255,.75);
+  padding:8px 14px; border-radius:10px;
+  background:rgba(241,196,15,.07); border:1px solid rgba(241,196,15,.18);
+  text-align:left;
+}
+.bpm-price-row {
+  display:flex; align-items:center; justify-content:center; gap:16px;
+  margin-bottom:20px;
+}
+.bpm-old-price { font-size:18px; color:#666; text-decoration:line-through; }
+.bpm-new-price { font-size:36px; font-weight:900; color:#f1c40f; font-family:'Orbitron',sans-serif; }
+.bpm-new-price span { font-size:16px; }
+.bpm-pay-btn {
+  width:100%; padding:16px; border:none; border-radius:14px; font-size:16px;
+  font-weight:800; cursor:pointer; letter-spacing:1px;
+  background:linear-gradient(135deg,#f1c40f,#e67e22); color:#000;
+  box-shadow:0 0 30px rgba(241,196,15,.5);
+  transition:transform .2s, box-shadow .2s;
+}
+.bpm-pay-btn:hover { transform:scale(1.04); box-shadow:0 0 50px rgba(241,196,15,.8); }
+.bpm-pay-processing {
+  display:none; flex-direction:column; align-items:center; gap:14px; padding:20px 0;
+}
+.bpm-spinner {
+  width:44px; height:44px; border:3px solid rgba(241,196,15,.2);
+  border-top-color:#f1c40f; border-radius:50%; animation:bpmSpin .7s linear infinite;
+}
+@keyframes bpmSpin{to{transform:rotate(360deg)}}
+.bpm-processing-text { color:#f1c40f; font-size:14px; font-weight:700; letter-spacing:2px; }
+.bpm-success {
+  display:none; flex-direction:column; align-items:center; gap:10px; padding:10px 0;
+}
+.bpm-success-ico { font-size:64px; animation:bpmSuccPop .5s cubic-bezier(.34,1.56,.64,1); }
+@keyframes bpmSuccPop{from{transform:scale(.2);opacity:0}to{transform:scale(1);opacity:1}}
+.bpm-success-title { font-family:'Orbitron',sans-serif; font-size:20px; font-weight:900; color:#00b894; }
+.bpm-success-sub { font-size:13px; color:rgba(255,255,255,.5); }
+.bpm-success-close { padding:12px 36px; border:none; border-radius:12px; font-size:14px;
+  font-weight:700; cursor:pointer; margin-top:8px;
+  background:linear-gradient(135deg,#00b894,#00cec9); color:#fff; }
+
 
 /* ===== FP TABS ===== */
 .fpp-tabs {
@@ -10311,8 +10454,47 @@ function closeFPassPanel() {
   if (typeof localPlayer !== 'undefined' && localPlayer && typeof renderer !== 'undefined')
     renderer.domElement.requestPointerLock();
 }
+
+function openBuyPlusModal() {
+  const d = getFPData();
+  const modal = document.getElementById('buyPlusModal');
+  const btn = document.getElementById('fppBuyPlusBtn');
+  // If already owns plus, just show a message
+  if (d.plus) {
+    showNotification('✨ У вас уже есть Fantazia+!', 'levelup');
+    return;
+  }
+  document.getElementById('bpmMain').style.display = '';
+  document.getElementById('bpmProcessing').style.display = 'none';
+  document.getElementById('bpmSuccess').style.display = 'none';
+  modal.style.display = 'flex';
+}
+
+function closeBuyPlusModal() {
+  document.getElementById('buyPlusModal').style.display = 'none';
+  updateFPPanel();
+}
+
+function processBuyPlus() {
+  document.getElementById('bpmMain').style.display = 'none';
+  document.getElementById('bpmProcessing').style.display = 'flex';
+  setTimeout(() => {
+    // Activate plus
+    localStorage.setItem('fz_fp_plus', '1');
+    document.getElementById('bpmProcessing').style.display = 'none';
+    document.getElementById('bpmSuccess').style.display = 'flex';
+    // Update buy button
+    const btn = document.getElementById('fppBuyPlusBtn');
+    if (btn) { btn.textContent = '✨ Fantazia+ Активен'; btn.classList.add('owned'); btn.onclick = null; }
+    showNotification('👑 Fantazia+ активирован! Все премиум-награды доступны!', 'levelup');
+    updateFPPanel();
+  }, 2200);
+}
 document.getElementById('fpassPanel').addEventListener('click', function(e){
   if (e.target === this) closeFPassPanel();
+});
+document.getElementById('buyPlusModal').addEventListener('click', function(e){
+  if (e.target === this) closeBuyPlusModal();
 });
 
 function drawFPChar() {
@@ -10382,6 +10564,20 @@ function updateFPPanel() {
   renderFPRow('fppRowFree', FP_REWARDS_FREE, d, false);
   renderFPRow('fppRowPlus', FP_REWARDS_PLUS, d, true);
   renderFPQuests();
+
+  // Update buy plus button
+  const buyBtn = document.getElementById('fppBuyPlusBtn');
+  if (buyBtn) {
+    if (d.plus) {
+      buyBtn.textContent = '✨ Fantazia+ Активен';
+      buyBtn.classList.add('owned');
+      buyBtn.onclick = null;
+    } else {
+      buyBtn.textContent = '✨ Fantazia+ — 1 ₽';
+      buyBtn.classList.remove('owned');
+      buyBtn.onclick = openBuyPlusModal;
+    }
+  }
 }
 
 function renderFPRow(containerId, rewards, d, isPlus) {
@@ -10390,20 +10586,25 @@ function renderFPRow(containerId, rewards, d, isPlus) {
   container.innerHTML = '';
   rewards.forEach(r => {
     const unlocked = d.level >= r.lvl;
+    const hasPlus = d.plus;
+    const plusLocked = isPlus && !hasPlus; // Plus reward but user has no plus
     const claimKey = 'fz_fp_' + (isPlus ? 'plus' : 'free') + '_' + r.lvl;
     const claimed  = localStorage.getItem(claimKey) === '1';
     const slot = document.createElement('div');
     slot.className = 'fpp-slot' +
       (isPlus ? ' plus-slot' : '') +
-      (claimed ? ' claimed' : unlocked ? ' unlocked' : ' locked');
+      (claimed ? ' claimed' : (unlocked && !plusLocked) ? ' unlocked' : ' locked');
     slot.innerHTML = `
       <div class="fpp-slot-lvl">${r.lvl}</div>
       <div class="fpp-slot-ico">${r.ico}</div>
       <div class="fpp-slot-name">${r.name}</div>
-      <div class="fpp-slot-claim">Забрать!</div>
+      ${plusLocked ? '<div class="fpp-slot-plus-lock">✨ Plus</div>' : '<div class="fpp-slot-claim">Забрать!</div>'}
       <div class="fpp-slot-check">✅</div>
     `;
-    if (unlocked && !claimed) {
+    if (plusLocked) {
+      slot.title = 'Купите Fantazia+ чтобы получить эту награду';
+      slot.addEventListener('click', () => openBuyPlusModal());
+    } else if (unlocked && !claimed) {
       slot.addEventListener('click', () => claimFPReward(r, isPlus, claimKey));
     }
     container.appendChild(slot);
