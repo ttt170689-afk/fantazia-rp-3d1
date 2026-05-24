@@ -2214,38 +2214,82 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
       <div class="fpp-header-bar"><div class="fpp-header-fill" id="fppHeaderFill"></div></div>
     </div>
 
-    <!-- Тело: персонаж + ряды -->
-    <div class="fpp-body">
+    <!-- Табы -->
+    <div class="fpp-tabs">
+      <button class="fpp-tab active" onclick="switchFPTab('rewards',this)">🎁 Награды</button>
+      <button class="fpp-tab" onclick="switchFPTab('quests',this)">📋 Квесты</button>
+    </div>
 
-      <!-- Персонаж слева -->
-      <div class="fpp-char-col">
-        <div class="fpp-season-label">СЕЗОН<br><span>1</span></div>
-        <canvas id="fppCharCanvas" width="80" height="140"></canvas>
-        <div class="fpp-level-badge" id="fppLevelBadge">Ур. <span>1</span></div>
-      </div>
+    <!-- Вкладка: Награды -->
+    <div id="fppTabRewards" class="fpp-tab-content">
+      <!-- Тело: персонаж + ряды -->
+      <div class="fpp-body">
+        <!-- Персонаж слева -->
+        <div class="fpp-char-col">
+          <div class="fpp-season-label">СЕЗОН<br><span>1</span></div>
+          <canvas id="fppCharCanvas" width="80" height="140"></canvas>
+          <div class="fpp-level-badge" id="fppLevelBadge">Ур. <span>1</span></div>
+        </div>
 
-      <!-- Ряды наград -->
-      <div class="fpp-rows">
-
-        <!-- Fantazia+ ряд (верх) -->
-        <div class="fpp-row-label fpp-plus-label">✨ FANTAZIA+</div>
-        <div class="fpp-row" id="fppRowPlus"></div>
-
-        <div class="fpp-row-divider"></div>
-
-        <!-- Бесплатный ряд (низ) -->
-        <div class="fpp-row-label fpp-free-label">🎁 БЕСПЛАТНО</div>
-        <div class="fpp-row" id="fppRowFree"></div>
-
+        <!-- Ряды наград -->
+        <div class="fpp-rows">
+          <!-- Fantazia+ ряд (верх) -->
+          <div class="fpp-row-label fpp-plus-label">✨ FANTAZIA+</div>
+          <div class="fpp-row" id="fppRowPlus"></div>
+          <div class="fpp-row-divider"></div>
+          <!-- Бесплатный ряд (низ) -->
+          <div class="fpp-row-label fpp-free-label">🎁 БЕСПЛАТНО</div>
+          <div class="fpp-row" id="fppRowFree"></div>
+        </div>
       </div>
     </div>
 
-    <!-- Кнопка XP (тест) -->
+    <!-- Вкладка: Квесты -->
+    <div id="fppTabQuests" class="fpp-tab-content" style="display:none">
+      <div class="fpp-quests-wrap">
+        <div class="fpp-quests-header">
+          <div class="fpp-quests-title">📋 Ежедневные квесты</div>
+          <div class="fpp-quests-sub">Выполняй задания и зарабатывай XP для Fantazia Pass</div>
+        </div>
+        <div id="fppQuestList" class="fpq-list"></div>
+      </div>
+    </div>
+
+    <!-- Кнопка открыть бокс + футер -->
     <div class="fpp-footer">
       <div class="fpp-xp-total">🏆 Уровень <span id="fppLevelNum">1</span> · <span id="fppXpTotal">0</span> XP набрано</div>
-      <button class="fpp-add-xp-btn" onclick="addFPassXP(50)">+50 XP (тест)</button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button id="fppBoxBtn" class="fpp-box-open-btn" onclick="openFzBox()" style="display:none">📦 Fantazia Box</button>
+        <button class="fpp-add-xp-btn" onclick="addFPassXP(50)">+50 XP (тест)</button>
+      </div>
     </div>
 
+  </div>
+</div>
+
+<!-- ========== FANTAZIA BOX MODAL ========== -->
+<div id="fzBoxModal" style="display:none;position:fixed;inset:0;z-index:9500;align-items:center;justify-content:center;background:rgba(0,0,0,0.9);backdrop-filter:blur(16px);">
+  <!-- Neon animated background -->
+  <div class="fzbox-bg-neon"></div>
+
+  <!-- Box opening screen -->
+  <div class="fzbox-center">
+    <div class="fzbox-title">✨ FANTAZIA BOX ✨</div>
+    <div class="fzbox-subtitle">Нажми на коробку, чтобы открыть!</div>
+    <div class="fzbox-box" onclick="tapFzBox()">
+      <div class="fzbox-box-inner">
+        <div class="fzbox-box-ico">📦</div>
+        <div class="fzbox-box-glow"></div>
+      </div>
+      <div class="fzbox-box-hint">Нажми!</div>
+    </div>
+  </div>
+
+  <!-- Results screen -->
+  <div class="fzbox-result" style="display:none">
+    <div class="fzbox-res-title">🎉 <span class="fzbox-count">Получено предметов!</span></div>
+    <div id="fzbox-items-grid" class="fzbox-items-grid"></div>
+    <button class="fzbox-close-btn" onclick="closeFzBoxModal()">Забрать всё! 🎊</button>
   </div>
 </div>
 
@@ -9539,69 +9583,557 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
   transition:transform .2s, box-shadow .2s;
 }
 .fpp-add-xp-btn:hover { transform:scale(1.06); box-shadow:0 0 16px rgba(108,92,231,.5); }
+
+/* ===== FP TABS ===== */
+.fpp-tabs {
+  display:flex; gap:4px; padding:10px 20px 0;
+  border-bottom:1px solid rgba(108,92,231,.25);
+  background:rgba(108,92,231,.04);
+}
+.fpp-tab {
+  padding:8px 20px; border:none; border-radius:10px 10px 0 0;
+  font-size:13px; font-weight:700; cursor:pointer; letter-spacing:.5px;
+  background:transparent; color:rgba(255,255,255,.35);
+  border-bottom:2px solid transparent;
+  transition:all .2s;
+}
+.fpp-tab.active { color:#a29bfe; border-bottom-color:#a29bfe; background:rgba(108,92,231,.12); }
+.fpp-tab:hover:not(.active) { color:rgba(255,255,255,.7); }
+.fpp-tab-content { flex:1; overflow:hidden; }
+
+/* ===== BOX OPEN BUTTON ===== */
+.fpp-box-open-btn {
+  padding:8px 18px; border:none; border-radius:10px; font-size:12px;
+  font-weight:700; cursor:pointer;
+  background:linear-gradient(135deg,#ff8800,#ffd000); color:#000;
+  transition:transform .2s, box-shadow .2s;
+  display:flex; align-items:center; gap:6px;
+  animation:boxBtnPulse 2s ease-in-out infinite alternate;
+}
+.fpp-box-open-btn:disabled {
+  background:rgba(255,255,255,.1); color:#666; animation:none; cursor:default;
+}
+@keyframes boxBtnPulse {
+  from{box-shadow:0 0 10px rgba(255,180,0,.4)}
+  to{box-shadow:0 0 26px rgba(255,180,0,.8)}
+}
+
+/* ===== FP QUESTS ===== */
+.fpp-quests-wrap {
+  padding:16px 20px 8px; height:100%;
+  overflow-y:auto; scrollbar-width:thin; scrollbar-color:#6c5ce7 transparent;
+}
+.fpp-quests-header { margin-bottom:14px; }
+.fpp-quests-title { font-size:15px; font-weight:800; color:#fff; }
+.fpp-quests-sub { font-size:11px; color:rgba(255,255,255,.35); margin-top:3px; }
+.fpq-list { display:flex; flex-direction:column; gap:8px; }
+.fpq-item {
+  display:flex; align-items:center; gap:10px;
+  background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.09);
+  border-radius:12px; padding:10px 14px; position:relative;
+  transition:all .2s;
+}
+.fpq-item.fpq-ready {
+  background:rgba(108,92,231,.12); border-color:rgba(108,92,231,.5);
+  box-shadow:0 0 14px rgba(108,92,231,.2);
+}
+.fpq-item.fpq-done {
+  background:rgba(0,184,148,.07); border-color:rgba(0,184,148,.3); opacity:.6;
+}
+.fpq-ico { font-size:22px; flex-shrink:0; }
+.fpq-info { flex:1; min-width:0; }
+.fpq-name { font-size:13px; color:#fff; font-weight:600; margin-bottom:5px; }
+.fpq-bar-wrap { display:flex; align-items:center; gap:8px; }
+.fpq-bar { flex:1; height:6px; background:rgba(255,255,255,.08); border-radius:3px; overflow:hidden; }
+.fpq-fill { height:100%; background:linear-gradient(90deg,#6c5ce7,#a29bfe); border-radius:3px; transition:width .4s; }
+.fpq-prog { font-size:10px; color:rgba(255,255,255,.35); white-space:nowrap; }
+.fpq-xp { font-size:12px; font-weight:700; color:#a29bfe; white-space:nowrap; }
+.fpq-claim-btn {
+  padding:5px 12px; border:none; border-radius:8px; font-size:11px;
+  font-weight:700; cursor:pointer;
+  background:linear-gradient(135deg,#6c5ce7,#a29bfe); color:#fff;
+  white-space:nowrap; transition:transform .15s;
+}
+.fpq-claim-btn:hover { transform:scale(1.06); }
+.fpq-check { font-size:16px; }
+
+/* ===== FANTAZIA BOX MODAL ===== */
+.fzbox-bg-neon {
+  position:absolute; inset:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 60% 60% at 50% 50%, rgba(108,92,231,.35) 0%, transparent 65%),
+    radial-gradient(ellipse 30% 40% at 20% 30%, rgba(0,220,255,.15) 0%, transparent 60%),
+    radial-gradient(ellipse 30% 40% at 80% 70%, rgba(255,60,220,.15) 0%, transparent 60%);
+  animation:fzboxBgPulse 3s ease-in-out infinite alternate;
+}
+@keyframes fzboxBgPulse {
+  from{opacity:.8} to{opacity:1}
+}
+.fzbox-center {
+  position:relative; z-index:2;
+  display:flex; flex-direction:column; align-items:center; gap:16px;
+}
+.fzbox-title {
+  font-family:'Orbitron',sans-serif; font-size:clamp(22px,4vw,38px);
+  font-weight:900; color:#fff; letter-spacing:4px;
+  text-shadow:0 0 40px rgba(162,155,254,.9), 0 0 80px rgba(108,92,231,.5);
+  animation:fzboxTitlePulse 2s ease-in-out infinite alternate;
+}
+@keyframes fzboxTitlePulse {
+  from{text-shadow:0 0 30px rgba(162,155,254,.7)} to{text-shadow:0 0 60px rgba(162,155,254,1),0 0 100px rgba(108,92,231,.6)}
+}
+.fzbox-subtitle { font-size:14px; color:rgba(255,255,255,.45); letter-spacing:2px; }
+.fzbox-box {
+  width:180px; height:180px; cursor:pointer; position:relative;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+}
+.fzbox-box-inner {
+  width:160px; height:160px; border-radius:24px;
+  background:linear-gradient(160deg,rgba(108,92,231,.3),rgba(162,155,254,.15));
+  border:2.5px solid rgba(162,155,254,.7);
+  display:flex; align-items:center; justify-content:center;
+  position:relative; overflow:hidden;
+  box-shadow:0 0 60px rgba(108,92,231,.5), inset 0 0 40px rgba(108,92,231,.2);
+  transition:transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .3s;
+}
+.fzbox-box:hover .fzbox-box-inner {
+  transform:scale(1.06) translateY(-4px);
+  box-shadow:0 0 100px rgba(162,155,254,.8), inset 0 0 60px rgba(108,92,231,.4);
+}
+.fzbox-box-ico { font-size:80px; filter:drop-shadow(0 0 20px rgba(162,155,254,.8)); animation:fzboxFloat 2.5s ease-in-out infinite; }
+@keyframes fzboxFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+.fzbox-box-glow {
+  position:absolute; inset:0; border-radius:24px;
+  background:radial-gradient(circle at 50% 50%,rgba(162,155,254,.25) 0%,transparent 70%);
+  animation:fzboxGlowPulse 1.5s ease-in-out infinite alternate;
+}
+@keyframes fzboxGlowPulse { from{opacity:.5} to{opacity:1} }
+.fzbox-box-hint { font-size:13px; color:rgba(162,155,254,.7); letter-spacing:2px; animation:fzboxHintBlink 1.2s ease-in-out infinite; }
+@keyframes fzboxHintBlink { 0%,100%{opacity:.4} 50%{opacity:1} }
+.fzbox-box.fzbox-opened .fzbox-box-inner { animation:fzboxOpenBurst .8s cubic-bezier(.34,1.56,.64,1) forwards; }
+@keyframes fzboxOpenBurst {
+  0%{transform:scale(1)} 40%{transform:scale(1.3) rotate(10deg);box-shadow:0 0 200px rgba(255,255,100,1);}
+  100%{transform:scale(0) rotate(20deg);opacity:0;}
+}
+
+/* Results */
+.fzbox-result {
+  position:relative; z-index:2;
+  flex-direction:column; align-items:center; gap:14px;
+  width:min(96vw,780px); max-height:82vh;
+  background:linear-gradient(160deg,rgba(7,4,26,.97),rgba(17,8,48,.97));
+  border:2px solid rgba(108,92,231,.6); border-radius:22px;
+  padding:24px 22px; overflow-y:auto;
+  scrollbar-width:thin; scrollbar-color:#6c5ce7 transparent;
+  box-shadow:0 0 80px rgba(108,92,231,.4);
+}
+.fzbox-res-title { font-family:'Orbitron',sans-serif; font-size:20px; color:#fff; font-weight:900; }
+.fzbox-count { color:#ffd000; }
+.fzbox-items-grid {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(88px,1fr));
+  gap:10px; width:100%;
+}
+.fzbox-item {
+  border-radius:14px; padding:12px 8px; display:flex; flex-direction:column;
+  align-items:center; gap:6px; text-align:center;
+  animation:fzboxItemIn .4s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes fzboxItemIn { from{opacity:0;transform:scale(.4) translateY(20px)} to{opacity:1;transform:scale(1) translateY(0)} }
+.fzbi-ico { font-size:30px; }
+.fzbi-name { font-size:10px; color:#ddd; line-height:1.3; }
+.fzbi-rarity { font-size:9px; font-weight:700; letter-spacing:1px; }
+.fzbox-close-btn {
+  padding:12px 40px; border:none; border-radius:12px; font-size:15px;
+  font-weight:700; cursor:pointer;
+  background:linear-gradient(135deg,#6c5ce7,#a29bfe); color:#fff;
+  box-shadow:0 0 30px rgba(108,92,231,.5);
+  transition:transform .2s, box-shadow .2s;
+}
+.fzbox-close-btn:hover { transform:scale(1.06); box-shadow:0 0 50px rgba(108,92,231,.8); }
 </style>
 
 <script>
-// ===== FANTAZIA PASS LOGIC =====
+function switchFPTab(tab, btn) {
+  document.querySelectorAll('.fpp-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('fppTabRewards').style.display = tab === 'rewards' ? '' : 'none';
+  document.getElementById('fppTabQuests').style.display  = tab === 'quests'  ? '' : 'none';
+  if (tab === 'quests') renderFPQuests();
+}
+
 const FP_XP_PER_LEVEL = 250;
-const FP_MAX_LEVEL = 8;
+const FP_MAX_LEVEL = 50;
+const FP_BOX_XP_COST = 1500; // XP за 1 коробку после макс уровня
 
 const FP_REWARDS_FREE = [
-  { lvl:1, ico:'🪙', name:'100 монеток',    coins:100 },
-  { lvl:2, ico:'🎭', name:'Эмот "Привет"',  emote:'wave2' },
-  { lvl:3, ico:'💃', name:'Танец Диско',     emote:'disco2' },
-  { lvl:4, ico:'🪙', name:'300 монеток',    coins:300 },
-  { lvl:5, ico:'👕', name:'Футболка FZ',    item:'shirt_fz' },
-  { lvl:6, ico:'🪙', name:'600 монеток',    coins:600 },
-  { lvl:7, ico:'🎆', name:'Шлейф "Звёзды"', item:'trail_stars' },
-  { lvl:8, ico:'🏆', name:'Титул "Сезон 1"', item:'title_s1' },
+  { lvl:1,  ico:'🪙', name:'100 монеток',       coins:100 },
+  { lvl:2,  ico:'🎭', name:'Эмот "Привет"',     emote:'wave2' },
+  { lvl:3,  ico:'💃', name:'Танец Диско',        emote:'disco2' },
+  { lvl:4,  ico:'🪙', name:'300 монеток',        coins:300 },
+  { lvl:5,  ico:'👕', name:'Футболка FZ',        item:'shirt_fz' },
+  { lvl:6,  ico:'🪙', name:'600 монеток',        coins:600 },
+  { lvl:7,  ico:'🎆', name:'Шлейф "Звёзды"',    item:'trail_stars' },
+  { lvl:8,  ico:'🏆', name:'Значок Сезона',      item:'badge_s1' },
+  { lvl:9,  ico:'🪙', name:'800 монеток',        coins:800 },
+  { lvl:10, ico:'🎪', name:'Эмот "Сальто"',      emote:'flip' },
+  { lvl:11, ico:'🪙', name:'500 монеток',        coins:500 },
+  { lvl:12, ico:'🧢', name:'Кепка FZ',           item:'cap_fz' },
+  { lvl:13, ico:'🪙', name:'700 монеток',        coins:700 },
+  { lvl:14, ico:'💥', name:'Эффект "Взрыв"',     item:'fx_burst' },
+  { lvl:15, ico:'🌟', name:'Аура "Золото"',       item:'aura_gold' },
+  { lvl:16, ico:'🪙', name:'1000 монеток',       coins:1000 },
+  { lvl:17, ico:'🎵', name:'Эмот "Танец 2"',     emote:'dance2' },
+  { lvl:18, ico:'🪙', name:'600 монеток',        coins:600 },
+  { lvl:19, ico:'👟', name:'Кроссовки FZ',       item:'shoes_fz' },
+  { lvl:20, ico:'🎯', name:'Заголовок "Pro"',    item:'title_pro' },
+  { lvl:21, ico:'🪙', name:'900 монеток',        coins:900 },
+  { lvl:22, ico:'🌈', name:'Шлейф "Радуга"',     item:'trail_rainbow' },
+  { lvl:23, ico:'🪙', name:'600 монеток',        coins:600 },
+  { lvl:24, ico:'🎭', name:'Эмот "Победа"',      emote:'victory' },
+  { lvl:25, ico:'🔮', name:'Скин "Кристалл"',    item:'skin_crystal' },
+  { lvl:26, ico:'🪙', name:'1200 монеток',       coins:1200 },
+  { lvl:27, ico:'💫', name:'Шлейф "Вихрь"',      item:'trail_vortex' },
+  { lvl:28, ico:'🪙', name:'700 монеток',        coins:700 },
+  { lvl:29, ico:'🎪', name:'Эмот "Цирк"',        emote:'circus' },
+  { lvl:30, ico:'🏅', name:'Медаль "30 Ур."',    item:'medal_30' },
+  { lvl:31, ico:'🪙', name:'800 монеток',        coins:800 },
+  { lvl:32, ico:'🌙', name:'Аура "Луна"',         item:'aura_moon' },
+  { lvl:33, ico:'🪙', name:'600 монеток',        coins:600 },
+  { lvl:34, ico:'🎆', name:'Шлейф "Фейерверк"', item:'trail_firework' },
+  { lvl:35, ico:'⚡', name:'Скин "Молния"',       item:'skin_lightning' },
+  { lvl:36, ico:'🪙', name:'1500 монеток',       coins:1500 },
+  { lvl:37, ico:'🎭', name:'Эмот "Буря"',        emote:'storm' },
+  { lvl:38, ico:'🪙', name:'800 монеток',        coins:800 },
+  { lvl:39, ico:'🌊', name:'Шлейф "Волна"',      item:'trail_wave' },
+  { lvl:40, ico:'👑', name:'Корона "Сезон 1"',   item:'crown_s1' },
+  { lvl:41, ico:'🪙', name:'1000 монеток',       coins:1000 },
+  { lvl:42, ico:'🔥', name:'Шлейф "Огонь"',      item:'trail_fire' },
+  { lvl:43, ico:'🪙', name:'700 монеток',        coins:700 },
+  { lvl:44, ico:'🎭', name:'Эмот "Легенда"',     emote:'legend' },
+  { lvl:45, ico:'🌌', name:'Аура "Космос"',       item:'aura_space' },
+  { lvl:46, ico:'🪙', name:'2000 монеток',       coins:2000 },
+  { lvl:47, ico:'💎', name:'Шлейф "Алмаз"',      item:'trail_diamond' },
+  { lvl:48, ico:'🪙', name:'1500 монеток',       coins:1500 },
+  { lvl:49, ico:'🎭', name:'Эмот "Апокалипсис"', emote:'apocalypse' },
+  { lvl:50, ico:'🏆', name:'Титул "Легенда S1"', item:'title_legend_s1' },
 ];
 const FP_REWARDS_PLUS = [
-  { lvl:1, ico:'⚡', name:'Светящиеся глаза', item:'eyes_glow' },
-  { lvl:2, ico:'🚘', name:'Авто "Fantazia"',  item:'car_fz' },
-  { lvl:3, ico:'✨', name:'Аура "Violet"',    item:'aura_violet' },
-  { lvl:4, ico:'🪙', name:'1000 монеток',     coins:1000 },
-  { lvl:5, ico:'🎭', name:'Мифик-эмот',       emote:'myth1' },
-  { lvl:6, ico:'👑', name:'VIP-доступ',       item:'vip' },
-  { lvl:7, ico:'🔥', name:'RGB-эффект',       item:'rgb_fx' },
-  { lvl:8, ico:'🌌', name:'Animated Tag',     item:'tag_anim' },
+  { lvl:1,  ico:'⚡', name:'Светящиеся глаза',   item:'eyes_glow' },
+  { lvl:2,  ico:'🚘', name:'Авто "Fantazia"',     item:'car_fz' },
+  { lvl:3,  ico:'✨', name:'Аура "Violet"',       item:'aura_violet' },
+  { lvl:4,  ico:'🪙', name:'1000 монеток',        coins:1000 },
+  { lvl:5,  ico:'🎭', name:'Мифик-эмот',          emote:'myth1' },
+  { lvl:6,  ico:'👑', name:'VIP-доступ',          item:'vip' },
+  { lvl:7,  ico:'🔥', name:'RGB-эффект',          item:'rgb_fx' },
+  { lvl:8,  ico:'🌌', name:'Animated Tag',        item:'tag_anim' },
+  { lvl:9,  ico:'🪙', name:'1500 монеток',        coins:1500 },
+  { lvl:10, ico:'🚀', name:'Реактивный ранец',    item:'jetpack' },
+  { lvl:11, ico:'🪙', name:'1200 монеток',        coins:1200 },
+  { lvl:12, ico:'🎭', name:'Мифик-эмот 2',        emote:'myth2' },
+  { lvl:13, ico:'🪙', name:'1000 монеток',        coins:1000 },
+  { lvl:14, ico:'🌠', name:'Аура "Метеор"',        item:'aura_meteor' },
+  { lvl:15, ico:'💎', name:'Скин "Алмаз"',        item:'skin_diamond' },
+  { lvl:16, ico:'🪙', name:'2000 монеток',        coins:2000 },
+  { lvl:17, ico:'🎯', name:'Прицел "Плазма"',     item:'crosshair_plasma' },
+  { lvl:18, ico:'🪙', name:'1500 монеток',        coins:1500 },
+  { lvl:19, ico:'🌪️', name:'Шлейф "Торнадо"',    item:'trail_tornado' },
+  { lvl:20, ico:'🔮', name:'Особый эффект смерти',item:'death_fx' },
+  { lvl:21, ico:'🪙', name:'2000 монеток',        coins:2000 },
+  { lvl:22, ico:'🎭', name:'Мифик-эмот 3',        emote:'myth3' },
+  { lvl:23, ico:'🪙', name:'1200 монеток',        coins:1200 },
+  { lvl:24, ico:'🌈', name:'RGB-ник',              item:'rgb_nick' },
+  { lvl:25, ico:'🌟', name:'Скин "Легенда"',       item:'skin_legend' },
+  { lvl:26, ico:'🪙', name:'2500 монеток',        coins:2500 },
+  { lvl:27, ico:'🔥', name:'Аура "Адский огонь"', item:'aura_hellfire' },
+  { lvl:28, ico:'🪙', name:'1500 монеток',        coins:1500 },
+  { lvl:29, ico:'🎭', name:'Эксклюзив-эмот',      emote:'excl1' },
+  { lvl:30, ico:'🏆', name:'Трофей "30 Ур.+"',    item:'trophy_30plus' },
+  { lvl:31, ico:'🪙', name:'2000 монеток',        coins:2000 },
+  { lvl:32, ico:'💠', name:'Аура "Кристалл"',      item:'aura_crystal' },
+  { lvl:33, ico:'🪙', name:'1500 монеток',        coins:1500 },
+  { lvl:34, ico:'🎭', name:'Мифик-эмот 4',        emote:'myth4' },
+  { lvl:35, ico:'⚡', name:'Набор "Гроза"',        item:'set_storm' },
+  { lvl:36, ico:'🪙', name:'3000 монеток',        coins:3000 },
+  { lvl:37, ico:'🌙', name:'Аура "Лунный свет"',   item:'aura_moonlight' },
+  { lvl:38, ico:'🪙', name:'2000 монеток',        coins:2000 },
+  { lvl:39, ico:'🎭', name:'Мифик-эмот 5',        emote:'myth5' },
+  { lvl:40, ico:'👑', name:'Корона+ "Элита"',     item:'crown_elite' },
+  { lvl:41, ico:'🪙', name:'2500 монеток',        coins:2500 },
+  { lvl:42, ico:'🌌', name:'Аура "Вселенная"',    item:'aura_universe' },
+  { lvl:43, ico:'🪙', name:'2000 монеток',        coins:2000 },
+  { lvl:44, ico:'🎭', name:'Мифик-эмот 6',        emote:'myth6' },
+  { lvl:45, ico:'🔮', name:'Набор "Мистик"',       item:'set_mystic' },
+  { lvl:46, ico:'🪙', name:'4000 монеток',        coins:4000 },
+  { lvl:47, ico:'💎', name:'Шлейф "Бриллиант"',   item:'trail_brill' },
+  { lvl:48, ico:'🪙', name:'3000 монеток',        coins:3000 },
+  { lvl:49, ico:'🎭', name:'Мифик-эмот Легенда',  emote:'myth_legend' },
+  { lvl:50, ico:'🌟', name:'Набор "ЛЕГЕНДА S1+"', item:'set_legend_plus' },
 ];
+
+// ===== FP QUESTS =====
+const FP_QUESTS = [
+  { id:'q_chat',    ico:'💬', name:'Написать 10 сообщений',   xp:50,  max:10,  key:'fz_q_chat' },
+  { id:'q_walk',    ico:'🚶', name:'Пройти 500 метров',        xp:80,  max:500, key:'fz_q_walk' },
+  { id:'q_work',    ico:'💼', name:'Выполнить 1 работу',       xp:100, max:1,   key:'fz_q_work' },
+  { id:'q_dance',   ico:'💃', name:'Станцевать 3 раза',        xp:60,  max:3,   key:'fz_q_dance' },
+  { id:'q_drive',   ico:'🚘', name:'Проехать на авто 200м',    xp:70,  max:200, key:'fz_q_drive' },
+  { id:'q_kill',    ico:'⚔️', name:'Уничтожить 5 врагов',      xp:120, max:5,   key:'fz_q_kill' },
+  { id:'q_login',   ico:'🌅', name:'Войти в игру сегодня',     xp:30,  max:1,   key:'fz_q_login' },
+  { id:'q_inv',     ico:'🎒', name:'Открыть инвентарь 2 раза', xp:40,  max:2,   key:'fz_q_inv' },
+  { id:'q_build',   ico:'🏗️', name:'Зайти в 3 здания',         xp:90,  max:3,   key:'fz_q_build' },
+  { id:'q_surv',    ico:'💀', name:'Сыграть в выживание',      xp:150, max:1,   key:'fz_q_surv' },
+];
+
+// ===== FANTAZIA BOX ITEMS POOL =====
+const FZ_BOX_ITEMS = [
+  { ico:'🪙', name:'50 монеток',    rarity:'common' },
+  { ico:'🪙', name:'100 монеток',   rarity:'common' },
+  { ico:'🪙', name:'200 монеток',   rarity:'uncommon' },
+  { ico:'🪙', name:'500 монеток',   rarity:'rare' },
+  { ico:'👕', name:'Футболка',      rarity:'common' },
+  { ico:'🧢', name:'Кепка',         rarity:'common' },
+  { ico:'👟', name:'Кроссовки',     rarity:'uncommon' },
+  { ico:'🎭', name:'Случайный эмот',rarity:'uncommon' },
+  { ico:'💃', name:'Эмот "Микс"',   rarity:'rare' },
+  { ico:'✨', name:'Мини-аура',      rarity:'rare' },
+  { ico:'🌟', name:'Аура "Искры"',   rarity:'epic' },
+  { ico:'🔥', name:'Огненный шлейф',rarity:'epic' },
+  { ico:'💎', name:'Алмаз-дропп',   rarity:'legendary' },
+  { ico:'🌈', name:'Радужная аура',  rarity:'legendary' },
+  { ico:'🎆', name:'Шлейф "Салют"', rarity:'uncommon' },
+  { ico:'⚡', name:'Энерго-вспышка', rarity:'rare' },
+  { ico:'🌙', name:'Лунный эффект',  rarity:'epic' },
+  { ico:'🚀', name:'Ранец-буст',     rarity:'rare' },
+  { ico:'🎪', name:'Цирк-набор',     rarity:'uncommon' },
+  { ico:'👑', name:'Мини-корона',    rarity:'epic' },
+];
+
+const FZ_BOX_RARITY_COLORS = {
+  common:    { bg:'rgba(120,120,140,.25)', border:'rgba(150,150,180,.5)',  label:'Обычный',    color:'#aaa' },
+  uncommon:  { bg:'rgba(0,184,100,.2)',   border:'rgba(0,220,130,.5)',    label:'Необычный',  color:'#00dc82' },
+  rare:      { bg:'rgba(60,120,255,.2)',  border:'rgba(80,160,255,.5)',   label:'Редкий',     color:'#4da6ff' },
+  epic:      { bg:'rgba(160,50,240,.25)', border:'rgba(180,80,255,.6)',   label:'Эпический',  color:'#c050ff' },
+  legendary: { bg:'rgba(255,180,0,.25)',  border:'rgba(255,210,0,.7)',    label:'Легенд.',    color:'#ffd000' },
+};
 
 function getFPData() {
   return {
-    xp:    parseInt(localStorage.getItem('fz_fp_xp')    || '0'),
-    level: parseInt(localStorage.getItem('fz_fp_level') || '1'),
-    plus:  localStorage.getItem('fz_fp_plus') === '1',
+    xp:      parseInt(localStorage.getItem('fz_fp_xp')      || '0'),
+    level:   parseInt(localStorage.getItem('fz_fp_level')   || '1'),
+    plus:    localStorage.getItem('fz_fp_plus') === '1',
+    bonusXp: parseInt(localStorage.getItem('fz_fp_bonus_xp')|| '0'),
+    boxes:   parseInt(localStorage.getItem('fz_fp_boxes')   || '0'),
   };
 }
 function saveFPData(d) {
-  localStorage.setItem('fz_fp_xp',    d.xp);
-  localStorage.setItem('fz_fp_level', d.level);
+  localStorage.setItem('fz_fp_xp',       d.xp);
+  localStorage.setItem('fz_fp_level',    d.level);
+  localStorage.setItem('fz_fp_bonus_xp', d.bonusXp);
+  localStorage.setItem('fz_fp_boxes',    d.boxes);
 }
 
 function addFPassXP(amount) {
   let d = getFPData();
-  d.xp += amount;
-  while (d.level < FP_MAX_LEVEL && d.xp >= FP_XP_PER_LEVEL) {
-    d.xp -= FP_XP_PER_LEVEL;
-    d.level++;
-    showNotification('🏆 Fantazia Pass: уровень ' + d.level + '!', 'levelup');
+  if (d.level >= FP_MAX_LEVEL) {
+    // После 50 уровня — накапливаем bonusXp и раздаём боксы
+    d.bonusXp += amount;
+    let newBoxes = Math.floor(d.bonusXp / FP_BOX_XP_COST);
+    if (newBoxes > 0) {
+      d.bonusXp -= newBoxes * FP_BOX_XP_COST;
+      d.boxes += newBoxes;
+      for (let i = 0; i < newBoxes; i++) {
+        showNotification('📦 Получена Fantazia Box! Открой её в Passе!', 'levelup');
+      }
+    }
+  } else {
+    d.xp += amount;
+    while (d.level < FP_MAX_LEVEL && d.xp >= FP_XP_PER_LEVEL) {
+      d.xp -= FP_XP_PER_LEVEL;
+      d.level++;
+      showNotification('🏆 Fantazia Pass: уровень ' + d.level + '!', 'levelup');
+    }
+    if (d.level >= FP_MAX_LEVEL) {
+      // Остаток идёт в bonusXp
+      d.bonusXp += d.xp;
+      d.xp = FP_XP_PER_LEVEL; // полная полоска
+      let newBoxes = Math.floor(d.bonusXp / FP_BOX_XP_COST);
+      if (newBoxes > 0) {
+        d.bonusXp -= newBoxes * FP_BOX_XP_COST;
+        d.boxes += newBoxes;
+        showNotification('🎉 Макс уровень! +' + newBoxes + ' Fantazia Box!', 'levelup');
+      }
+    }
   }
-  if (d.level >= FP_MAX_LEVEL) d.xp = Math.min(d.xp, FP_XP_PER_LEVEL);
   saveFPData(d);
   updateFPWidget();
   updateFPPanel();
+}
+
+// ===== QUESTS LOGIC =====
+function getQuestProgress(q) {
+  return parseInt(localStorage.getItem(q.key + '_prog') || '0');
+}
+function isQuestDone(q) {
+  return localStorage.getItem(q.key + '_done') === '1';
+}
+function claimQuest(qId) {
+  const q = FP_QUESTS.find(x => x.id === qId);
+  if (!q) return;
+  if (isQuestDone(q)) return;
+  const prog = getQuestProgress(q);
+  if (prog < q.max) return;
+  localStorage.setItem(q.key + '_done', '1');
+  addFPassXP(q.xp);
+  showNotification('✅ Квест выполнен! +' + q.xp + ' XP', 'levelup');
+  renderFPQuests();
+}
+// Вызывать снаружи для прогресса квеста
+function progressQuest(qId, amount) {
+  amount = amount || 1;
+  const q = FP_QUESTS.find(x => x.id === qId);
+  if (!q || isQuestDone(q)) return;
+  let prog = getQuestProgress(q);
+  prog = Math.min(q.max, prog + amount);
+  localStorage.setItem(q.key + '_prog', prog);
+  if (prog >= q.max) {
+    showNotification('🎯 Квест готов к сдаче: ' + q.name, 'levelup');
+  }
+  renderFPQuests();
+  updateFPPanel();
+}
+
+function renderFPQuests() {
+  const container = document.getElementById('fppQuestList');
+  if (!container) return;
+  container.innerHTML = '';
+  FP_QUESTS.forEach(q => {
+    const done = isQuestDone(q);
+    const prog = getQuestProgress(q);
+    const ready = prog >= q.max && !done;
+    const pct = Math.min(100, (prog / q.max) * 100);
+    const el = document.createElement('div');
+    el.className = 'fpq-item' + (done ? ' fpq-done' : '') + (ready ? ' fpq-ready' : '');
+    el.innerHTML = `
+      <div class="fpq-ico">${q.ico}</div>
+      <div class="fpq-info">
+        <div class="fpq-name">${q.name}</div>
+        <div class="fpq-bar-wrap">
+          <div class="fpq-bar"><div class="fpq-fill" style="width:${pct}%"></div></div>
+          <span class="fpq-prog">${prog}/${q.max}</span>
+        </div>
+      </div>
+      <div class="fpq-xp">+${q.xp} XP</div>
+      ${ready ? `<button class="fpq-claim-btn" onclick="claimQuest('${q.id}')">Забрать!</button>` : ''}
+      ${done ? `<div class="fpq-check">✅</div>` : ''}
+    `;
+    container.appendChild(el);
+  });
+}
+
+// Авто-прогресс квеста входа
+window.addEventListener('load', () => {
+  progressQuest('q_login', 1);
+  // Ежедневный сброс квестов
+  const today = new Date().toDateString();
+  if (localStorage.getItem('fz_q_date') !== today) {
+    localStorage.setItem('fz_q_date', today);
+    FP_QUESTS.forEach(q => {
+      localStorage.removeItem(q.key + '_prog');
+      localStorage.removeItem(q.key + '_done');
+    });
+  }
+  updateFPWidget();
+});
+
+// ===== FANTAZIA BOX ОТКРЫТИЕ =====
+const FZ_BOX_OPEN_SOUNDS = ['boop'];
+function openFzBox() {
+  const d = getFPData();
+  if (d.boxes <= 0) return;
+  d.boxes--;
+  saveFPData(d);
+  updateFPPanel();
+  showFzBoxScreen();
+}
+function showFzBoxScreen() {
+  const modal = document.getElementById('fzBoxModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  document.exitPointerLock && document.exitPointerLock();
+  // Reset state
+  modal.querySelector('.fzbox-result').style.display = 'none';
+  modal.querySelector('.fzbox-center').style.display = 'flex';
+  const boxEl = modal.querySelector('.fzbox-box');
+  boxEl.classList.remove('fzbox-opened');
+  boxEl.style.transform = '';
+}
+function tapFzBox() {
+  const modal = document.getElementById('fzBoxModal');
+  const boxEl = modal.querySelector('.fzbox-box');
+  boxEl.classList.add('fzbox-opened');
+  setTimeout(() => {
+    const count = Math.floor(Math.random() * 19) + 7; // 7–25
+    const items = [];
+    for (let i = 0; i < count; i++) {
+      // Взвешенный шанс редкости
+      const roll = Math.random();
+      let pool;
+      if (roll < 0.40)      pool = FZ_BOX_ITEMS.filter(x => x.rarity === 'common');
+      else if (roll < 0.70) pool = FZ_BOX_ITEMS.filter(x => x.rarity === 'uncommon');
+      else if (roll < 0.88) pool = FZ_BOX_ITEMS.filter(x => x.rarity === 'rare');
+      else if (roll < 0.97) pool = FZ_BOX_ITEMS.filter(x => x.rarity === 'epic');
+      else                   pool = FZ_BOX_ITEMS.filter(x => x.rarity === 'legendary');
+      if (!pool.length) pool = FZ_BOX_ITEMS;
+      items.push(pool[Math.floor(Math.random() * pool.length)]);
+    }
+    // Показать результат
+    const center = modal.querySelector('.fzbox-center');
+    const result = modal.querySelector('.fzbox-result');
+    center.style.display = 'none';
+    result.style.display = 'flex';
+    const grid = modal.querySelector('.fzbox-items-grid');
+    grid.innerHTML = '';
+    items.forEach((item, idx) => {
+      const rc = FZ_BOX_RARITY_COLORS[item.rarity];
+      const el = document.createElement('div');
+      el.className = 'fzbox-item';
+      el.style.cssText = `background:${rc.bg};border:1.5px solid ${rc.border};animation-delay:${idx * 0.04}s`;
+      el.innerHTML = `<div class="fzbi-ico">${item.ico}</div><div class="fzbi-name">${item.name}</div><div class="fzbi-rarity" style="color:${rc.color}">${rc.label}</div>`;
+      grid.appendChild(el);
+    });
+    modal.querySelector('.fzbox-count').textContent = 'Получено ' + count + ' предметов!';
+  }, 900);
+}
+function closeFzBoxModal() {
+  document.getElementById('fzBoxModal').style.display = 'none';
 }
 
 function updateFPWidget() {
   const d = getFPData();
   const w = document.getElementById('fpWidget');
   if (!w) return;
-  const pct = Math.min(100, (d.xp / FP_XP_PER_LEVEL) * 100);
+  const isMax = d.level >= FP_MAX_LEVEL;
+  const pct = isMax
+    ? Math.min(100, (d.bonusXp / FP_BOX_XP_COST) * 100)
+    : Math.min(100, (d.xp / FP_XP_PER_LEVEL) * 100);
   document.getElementById('fpwLevel').textContent = d.level;
-  document.getElementById('fpwLevelNext').textContent = d.level < FP_MAX_LEVEL ? d.level + 1 : '★';
+  document.getElementById('fpwLevelNext').textContent = isMax ? '★' : d.level + 1;
   document.getElementById('fpwXpFill').style.width = pct + '%';
-  document.getElementById('fpwXpText').textContent = d.xp + ' / ' + FP_XP_PER_LEVEL;
+  document.getElementById('fpwXpText').textContent = isMax
+    ? (d.bonusXp + ' / ' + FP_BOX_XP_COST + ' (Box)')
+    : (d.xp + ' / ' + FP_XP_PER_LEVEL);
+  // Box badge
+  let badge = document.getElementById('fpwBoxBadge');
+  if (d.boxes > 0) {
+    if (!badge) {
+      badge = document.createElement('div');
+      badge.id = 'fpwBoxBadge';
+      badge.style.cssText = 'position:absolute;top:-6px;right:-6px;background:linear-gradient(135deg,#ffd000,#ff8800);color:#000;font-size:10px;font-weight:900;padding:2px 6px;border-radius:10px;min-width:18px;text-align:center;z-index:2;';
+      w.style.position = 'relative';
+      w.appendChild(badge);
+    }
+    badge.textContent = '📦' + d.boxes;
+  } else if (badge) badge.remove();
 }
 
 function openFPassPanel() {
@@ -9650,10 +10182,15 @@ setInterval(()=>{ if(document.getElementById('fpassPanel').style.display!=='none
 
 function updateFPPanel() {
   const d = getFPData();
-  const pct = Math.min(100, (d.xp / FP_XP_PER_LEVEL) * 100);
+  const isMax = d.level >= FP_MAX_LEVEL;
+  const pct = isMax
+    ? Math.min(100, (d.bonusXp / FP_BOX_XP_COST) * 100)
+    : Math.min(100, (d.xp / FP_XP_PER_LEVEL) * 100);
 
   const xpInfo = document.getElementById('fppXpInfo');
-  if (xpInfo) xpInfo.textContent = d.xp + ' / ' + FP_XP_PER_LEVEL + ' XP';
+  if (xpInfo) xpInfo.textContent = isMax
+    ? (d.bonusXp + ' / ' + FP_BOX_XP_COST + ' XP (до коробки)')
+    : (d.xp + ' / ' + FP_XP_PER_LEVEL + ' XP');
   const fill = document.getElementById('fppHeaderFill');
   if (fill) fill.style.width = pct + '%';
   const lvlNum = document.getElementById('fppLevelNum');
@@ -9661,10 +10198,26 @@ function updateFPPanel() {
   const xpTotal = document.getElementById('fppXpTotal');
   if (xpTotal) xpTotal.textContent = (d.level - 1) * FP_XP_PER_LEVEL + d.xp;
   const badge = document.getElementById('fppLevelBadge');
-  if (badge) badge.innerHTML = 'Ур. <span>' + d.level + '</span>';
+  if (badge) badge.innerHTML = isMax ? '⭐ МАКС' : ('Ур. <span>' + d.level + '</span>');
+
+  // Box button
+  const boxBtn = document.getElementById('fppBoxBtn');
+  if (boxBtn) {
+    if (d.boxes > 0) {
+      boxBtn.style.display = 'flex';
+      boxBtn.textContent = '📦 Открыть Fantazia Box (' + d.boxes + ')';
+    } else if (isMax) {
+      boxBtn.style.display = 'flex';
+      boxBtn.disabled = true;
+      boxBtn.textContent = '📦 Нет коробок (нужно ещё ' + (FP_BOX_XP_COST - d.bonusXp) + ' XP)';
+    } else {
+      boxBtn.style.display = 'none';
+    }
+  }
 
   renderFPRow('fppRowFree', FP_REWARDS_FREE, d, false);
   renderFPRow('fppRowPlus', FP_REWARDS_PLUS, d, true);
+  renderFPQuests();
 }
 
 function renderFPRow(containerId, rewards, d, isPlus) {
@@ -9704,8 +10257,7 @@ function claimFPReward(r, isPlus, claimKey) {
   updateFPPanel();
 }
 
-// Init on load
-window.addEventListener('load', () => { updateFPWidget(); });
+// (updateFPWidget вызывается внутри квест-инициализации выше)
 </script>
 </body>
 </html>
