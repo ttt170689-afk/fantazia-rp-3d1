@@ -1640,7 +1640,7 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
   <div class="ls-user-bar">
     <span id="loggedInUser"></span>
     <button onclick="logoutUser()">Выйти</button>
-    <a href="https://fantazia-shop.onrender.com" target="_blank" id="shopNavBtn" style="flex:0;padding:10px 16px;border:none;border-radius:12px;font-size:13px;font-weight:bold;cursor:pointer;background:linear-gradient(135deg,#5b3ef5,#a29bfe);color:#fff;display:flex;align-items:center;gap:6px;white-space:nowrap;text-decoration:none;box-shadow:0 0 16px rgba(108,92,231,0.5);">💎 Магазин кристаллов</a><button id="changelogBtn" onclick="(function(){var m=document.getElementById('changelogModal');m.style.display='flex';m.classList.add('show');})()">📋 Что нового</button>
+    <button id="changelogBtn" onclick="(function(){var m=document.getElementById('changelogModal');m.style.display='flex';m.classList.add('show');})()">📋 Что нового</button>
   </div>
 
   <!-- ══════════ HERO ══════════ -->
@@ -4537,6 +4537,147 @@ function updateAccessory3D(mesh, accId) {
       monoLens.position.set(0.17, 2.42, 0.375); accGroup.add(monoLens);
       break;
     }
+
+    // ═══════════ FANTAZIA BOX ITEMS ═══════════
+
+    case 'aura_mini': { // ✨ Мини-аура — фиолетовое кольцо у ног
+      const am = new THREE.MeshBasicMaterial({ color: 0xa29bfe, transparent: true, opacity: 0.55 });
+      const ar = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.045, 8, 32), am);
+      ar.position.set(0, 0.12, 0); ar.rotation.x = Math.PI/2;
+      ar.userData.isAura = true; accGroup.add(ar);
+      const ag = new THREE.MeshBasicMaterial({ color: 0xa29bfe, transparent: true, opacity: 0.15 });
+      const agr = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.09, 8, 32), ag);
+      agr.position.set(0, 0.12, 0); agr.rotation.x = Math.PI/2;
+      agr.userData.isAuraGlow = true; accGroup.add(agr);
+      break;
+    }
+    case 'aura_sparks': { // 🌟 Аура «Искры» — золотое кольцо + 6 орбитирующих огоньков
+      const sm = new THREE.MeshBasicMaterial({ color: 0xFFD700, transparent: true, opacity: 0.65 });
+      const sr = new THREE.Mesh(new THREE.TorusGeometry(0.65, 0.05, 8, 32), sm);
+      sr.position.set(0, 0.12, 0); sr.rotation.x = Math.PI/2;
+      sr.userData.isAura = true; accGroup.add(sr);
+      for (let i = 0; i < 6; i++) {
+        const a = (i/6)*Math.PI*2;
+        const sp = new THREE.Mesh(new THREE.SphereGeometry(0.065, 5, 5),
+          new THREE.MeshBasicMaterial({ color: 0xFFFF55, transparent: true, opacity: 0.95 }));
+        sp.position.set(Math.cos(a)*0.65, 0.12, Math.sin(a)*0.65);
+        sp.userData.isSpark = true; sp.userData.sparkAngle = a; sp.userData.sparkR = 0.65;
+        accGroup.add(sp);
+      }
+      break;
+    }
+    case 'trail_fire': { // 🔥 Огненный шлейф — три огненных кольца за спиной
+      const fc = [0xFF3300, 0xFF8800, 0xFFCC00];
+      for (let i = 0; i < 3; i++) {
+        const fm = new THREE.MeshBasicMaterial({ color: fc[i], transparent: true, opacity: 0.7 - i*0.15 });
+        const fr = new THREE.Mesh(new THREE.TorusGeometry(0.28 + i*0.11, 0.045, 6, 18), fm);
+        fr.position.set(0, 0.35 + i*0.18, -(0.12 + i*0.28));
+        fr.rotation.x = Math.PI/2; fr.userData.isTrailRing = true; fr.userData.trailIdx = i;
+        accGroup.add(fr);
+      }
+      break;
+    }
+    case 'trail_firework': { // 🎆 Шлейф «Салют» — 5 цветных шариков по орбите
+      const oc = [0xFF4488, 0x44AAFF, 0xFFDD00, 0x44FF88, 0xFF8844];
+      for (let i = 0; i < 5; i++) {
+        const a = (i/5)*Math.PI*2;
+        const om = new THREE.MeshBasicMaterial({ color: oc[i], transparent: true, opacity: 0.85 });
+        const orb = new THREE.Mesh(new THREE.SphereGeometry(0.1, 7, 7), om);
+        orb.position.set(Math.cos(a)*0.6, 1.0, Math.sin(a)*0.6);
+        orb.userData.isOrb = true; orb.userData.orbAngle = a;
+        accGroup.add(orb);
+      }
+      break;
+    }
+    case 'aura_energy': { // ⚡ Энерго-вспышка — синее + жёлтое кольца
+      const em1 = new THREE.MeshBasicMaterial({ color: 0x00CCFF, transparent: true, opacity: 0.7 });
+      const er1 = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.06, 8, 32), em1);
+      er1.position.set(0, 0.12, 0); er1.rotation.x = Math.PI/2;
+      er1.userData.isAura = true; accGroup.add(er1);
+      const em2 = new THREE.MeshBasicMaterial({ color: 0xFFFF00, transparent: true, opacity: 0.45 });
+      const er2 = new THREE.Mesh(new THREE.TorusGeometry(0.44, 0.04, 8, 32), em2);
+      er2.position.set(0, 0.12, 0); er2.rotation.x = Math.PI/2;
+      er2.userData.isAura = true; er2.userData.auraReverse = true; accGroup.add(er2);
+      break;
+    }
+    case 'aura_moon': { // 🌙 Лунный эффект — луна над головой + 5 звёздочек
+      const moonMat = new THREE.MeshLambertMaterial({ color: 0xDDEEFF, emissive: 0x6688BB, emissiveIntensity: 0.6 });
+      const moon = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 12), moonMat);
+      moon.position.set(0.15, 3.55, 0); accGroup.add(moon);
+      const hideMat = new THREE.MeshBasicMaterial({ color: 0x060411 });
+      const hide = new THREE.Mesh(new THREE.SphereGeometry(0.19, 12, 12), hideMat);
+      hide.position.set(0.3, 3.56, 0.05); accGroup.add(hide);
+      const sMat = new THREE.MeshBasicMaterial({ color: 0xFFFFAA, transparent: true, opacity: 0.9 });
+      for (let i = 0; i < 5; i++) {
+        const a = (i/5)*Math.PI*2;
+        const star = new THREE.Mesh(new THREE.SphereGeometry(0.04, 4, 4), sMat);
+        star.position.set(Math.cos(a)*0.65, 3.35, Math.sin(a)*0.65);
+        star.userData.isStar = true; star.userData.starAngle = a;
+        accGroup.add(star);
+      }
+      break;
+    }
+    case 'aura_rainbow': { // 🌈 Радужная аура — 6 разноцветных колец
+      const rc = [0xFF2222, 0xFF8800, 0xFFFF00, 0x22FF44, 0x2288FF, 0xAA22FF];
+      for (let i = 0; i < 6; i++) {
+        const rm = new THREE.MeshBasicMaterial({ color: rc[i], transparent: true, opacity: 0.42 });
+        const rr = new THREE.Mesh(new THREE.TorusGeometry(0.52 + i*0.09, 0.035, 6, 28), rm);
+        rr.position.set(0, 0.12, 0); rr.rotation.x = Math.PI/2;
+        rr.userData.isAura = true; rr.userData.auraIdx = i;
+        accGroup.add(rr);
+      }
+      break;
+    }
+    case 'pack_rocket': { // 🚀 Ранец-буст — ракетный ранец за спиной с пламенем
+      const bMat = new THREE.MeshLambertMaterial({ color: 0x999999, emissive: 0x222222 });
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.58, 8), bMat);
+      body.position.set(0, 1.55, -0.5); body.rotation.x = 0.1; accGroup.add(body);
+      const nMat = new THREE.MeshLambertMaterial({ color: 0x444444 });
+      [-0.13, 0.13].forEach(xOff => {
+        const n = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.085, 0.2, 6), nMat);
+        n.position.set(xOff, 1.2, -0.5); accGroup.add(n);
+      });
+      const flMat = new THREE.MeshBasicMaterial({ color: 0xFF6600, transparent: true, opacity: 0.85 });
+      const fl = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.32, 6), flMat);
+      fl.position.set(0, 0.98, -0.5); fl.rotation.x = Math.PI;
+      fl.userData.isFlame = true; accGroup.add(fl);
+      break;
+    }
+    case 'pack_circus': { // 🎪 Цирк-набор — яркие звёздочки вокруг
+      const cc = [0xFF2288, 0xFFDD00, 0x22FFCC, 0xFF6600, 0x8822FF, 0x22FF44];
+      for (let i = 0; i < 6; i++) {
+        const a = (i/6)*Math.PI*2;
+        const cMat = new THREE.MeshBasicMaterial({ color: cc[i], transparent: true, opacity: 0.9 });
+        const cStar = new THREE.Mesh(new THREE.SphereGeometry(0.09, 5, 5), cMat);
+        cStar.position.set(Math.cos(a)*0.7, 1.2 + Math.sin(a*0.7)*0.3, Math.sin(a)*0.7);
+        cStar.userData.isOrb = true; cStar.userData.orbAngle = a;
+        accGroup.add(cStar);
+        // Маленький шар повыше
+        const cMat2 = new THREE.MeshBasicMaterial({ color: cc[(i+3)%6], transparent: true, opacity: 0.7 });
+        const cStar2 = new THREE.Mesh(new THREE.SphereGeometry(0.055, 5, 5), cMat2);
+        cStar2.position.set(Math.cos(a+0.5)*0.45, 1.9 + Math.sin(a)*0.2, Math.sin(a+0.5)*0.45);
+        cStar2.userData.isOrb = true; cStar2.userData.orbAngle = a+0.5; cStar2.userData.orbY = 1.9; cStar2.userData.orbR = 0.45;
+        accGroup.add(cStar2);
+      }
+      break;
+    }
+    case 'acc_mini_crown': { // 👑 Мини-корона (розово-оранжевая, чуть меньше обычной)
+      const mcMat = new THREE.MeshLambertMaterial({ color: 0xFF9900, emissive: 0xCC5500, emissiveIntensity: 0.45 });
+      const mcBase = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.17, 0.09, 5, 1, true), mcMat);
+      mcBase.position.set(0, 3.07, 0); accGroup.add(mcBase);
+      for (let i = 0; i < 5; i++) {
+        const a = (i/5)*Math.PI*2;
+        const sp = new THREE.Mesh(new THREE.ConeGeometry(0.038, 0.16, 4), mcMat);
+        sp.position.set(Math.cos(a)*0.17, 3.19, Math.sin(a)*0.17); accGroup.add(sp);
+      }
+      const gemMat = new THREE.MeshLambertMaterial({ color: 0xFF44CC, emissive: 0xAA0066, emissiveIntensity: 0.7 });
+      for (let i = 0; i < 5; i++) {
+        const a = (i/5)*Math.PI*2;
+        const gem = new THREE.Mesh(new THREE.SphereGeometry(0.033, 5, 5), gemMat);
+        gem.position.set(Math.cos(a)*0.17, 3.08, Math.sin(a)*0.17); accGroup.add(gem);
+      }
+      break;
+    }
   }
 }
 
@@ -5827,12 +5968,49 @@ function renderInventory() {
 }
 
 // Equip / unequip a box item
+// ═══ Маппинг Box-предметов в accId для updateAccessory3D ═══
+const FZ_BOX_ITEM_ACCID = {
+  'Кепка':            'cap',
+  'Мини-аура':        'aura_mini',
+  'Аура "Искры"':     'aura_sparks',
+  'Огненный шлейф':   'trail_fire',
+  'Алмаз-дропп':      'aura_sparks',
+  'Радужная аура':    'aura_rainbow',
+  'Шлейф "Салют"':   'trail_firework',
+  'Энерго-вспышка':  'aura_energy',
+  'Лунный эффект':   'aura_moon',
+  'Ранец-буст':      'pack_rocket',
+  'Цирк-набор':      'pack_circus',
+  'Мини-корона':     'acc_mini_crown',
+  'Корона':          'crown',
+  'Крылья':          'wings',
+  'Нимб':            'halo',
+};
+
 function _fzBoxEquip(id, equip) {
   const inv = _fzBoxInv();
-  inv.forEach(item => { if (item.id === id) item.equipped = equip; });
+  let targetItem = null;
+  inv.forEach(item => {
+    if (item.id === id) { item.equipped = equip; targetItem = item; }
+    else if (equip && item.equipped && FZ_BOX_ITEM_ACCID[item.name]) {
+      item.equipped = false; // снимаем другие cosmetic-предметы
+    }
+  });
   _fzBoxInvSave(inv);
-  if (equip) showNotification('✅ Предмет надет!', 'success');
-  else showNotification('🔁 Предмет снят', 'info');
+  if (equip && targetItem) {
+    const accId = FZ_BOX_ITEM_ACCID[targetItem.name];
+    if (accId) {
+      equippedAccessory = accId;
+      if (typeof localPlayer !== 'undefined' && localPlayer && localPlayer.mesh)
+        updateAccessory3D(localPlayer.mesh, accId);
+    }
+    showNotification('✅ ' + (targetItem.ico||'') + ' ' + targetItem.name + ' — надет!', 'success');
+  } else {
+    equippedAccessory = 'none';
+    if (typeof localPlayer !== 'undefined' && localPlayer && localPlayer.mesh)
+      updateAccessory3D(localPlayer.mesh, 'none');
+    showNotification('🔁 Предмет снят', 'info');
+  }
   renderInventory();
 }
 
@@ -8202,6 +8380,61 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
     localPlayer.currentAnimation = 'dance';
   }
   animateCharacter(mesh, localPlayer.currentAnimation || 'idle', animationTime, delta);
+
+  // ═══ АНИМАЦИЯ АУР, ШЛЕЙФОВ И COSMETIC-ЭФФЕКТОВ ═══
+  if (mesh.userData.accGroup) {
+    const t = animationTime;
+    mesh.userData.accGroup.children.forEach(function(child) {
+      // Вращающееся кольцо-аура
+      if (child.userData.isAura) {
+        const dir = child.userData.auraReverse ? -1 : 1;
+        const spd = 1.4 + (child.userData.auraIdx || 0) * 0.35;
+        child.rotation.z = t * spd * dir;
+        if (child.material) {
+          child.material.opacity = 0.35 + Math.sin(t * 2.5 + (child.userData.auraIdx || 0)) * 0.18;
+        }
+      }
+      // Пульсирующий glow
+      if (child.userData.isAuraGlow) {
+        if (child.material) child.material.opacity = 0.08 + Math.sin(t * 2) * 0.07;
+      }
+      // Орбитирующие искры (Аура Искры)
+      if (child.userData.isSpark) {
+        const newA = child.userData.sparkAngle + delta * 2.8;
+        child.userData.sparkAngle = newA;
+        const r = child.userData.sparkR || 0.65;
+        child.position.set(Math.cos(newA) * r, 0.12, Math.sin(newA) * r);
+        child.scale.setScalar(0.85 + Math.sin(t * 6 + newA) * 0.15);
+      }
+      // Кольца огненного шлейфа
+      if (child.userData.isTrailRing) {
+        const idx = child.userData.trailIdx;
+        if (child.material) child.material.opacity = 0.55 - idx*0.12 + Math.sin(t*4 + idx)*0.1;
+        child.scale.setScalar(0.9 + Math.sin(t*5 + idx*1.5) * 0.1);
+      }
+      // Орбитирующие шары (Салют, Цирк)
+      if (child.userData.isOrb) {
+        const newA = child.userData.orbAngle + delta * 2.0;
+        child.userData.orbAngle = newA;
+        const r = child.userData.orbR || 0.6;
+        const baseY = child.userData.orbY || 1.0;
+        child.position.set(Math.cos(newA) * r, baseY + Math.sin(newA * 0.8) * 0.22, Math.sin(newA) * r);
+      }
+      // Орбита звёздочек (Луна)
+      if (child.userData.isStar) {
+        const newA = child.userData.starAngle + delta * 0.75;
+        child.userData.starAngle = newA;
+        child.position.set(Math.cos(newA) * 0.65, 3.35 + Math.sin(newA * 1.3) * 0.08, Math.sin(newA) * 0.65);
+      }
+      // Пламя ранца — пульсирует
+      if (child.userData.isFlame) {
+        child.scale.y = 0.75 + Math.sin(t * 12) * 0.25;
+        child.scale.x = 0.8 + Math.sin(t * 9) * 0.2;
+        if (child.material) child.material.opacity = 0.6 + Math.sin(t * 10) * 0.25;
+      }
+    });
+  }
+  // ════════════════════════════════════════════════
 
   // --- Камера ---
   const camDist = CONFIG.CAMERA_DISTANCE;
