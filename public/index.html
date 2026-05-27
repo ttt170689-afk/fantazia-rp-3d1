@@ -5089,6 +5089,61 @@ function animateRemoteCharacter(character, animation, dance, t) {
 }
 
 // =================== СЕТЬ (SOCKET.IO) ===================
+
+// ===== МАГАЗИН: загрузка купленных предметов =====
+// URL твоего магазина на Render (fantazia-shop сервис)
+const SHOP_SERVER = 'https://fantazia-shop.onrender.com';
+
+async function applyShopItems(playerName) {
+  try {
+    const nick = encodeURIComponent(playerName);
+    const res = await fetch(`${SHOP_SERVER}/api/user/${nick}/appearance`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.ok || !data.appearance) return;
+
+    const app = data.appearance;
+    console.log('🛒 Магазин: применяем предметы', app);
+
+    // Применяем цвет рубашки
+    if (app.shirtColor && localPlayer && localPlayer.mesh) {
+      localPlayer.appearance.shirtColor = app.shirtColor;
+      // Обновляем цвет тела персонажа
+      localPlayer.mesh.traverse(child => {
+        if (child.isMesh && child.userData.part === 'torso') {
+          child.material.color.set(app.shirtColor);
+        }
+      });
+      socket.emit('updateAppearance', localPlayer.appearance);
+    }
+
+    // Применяем цвет штанов
+    if (app.pantsColor && localPlayer && localPlayer.mesh) {
+      localPlayer.appearance.pantsColor = app.pantsColor;
+      localPlayer.mesh.traverse(child => {
+        if (child.isMesh && child.userData.part === 'legs') {
+          child.material.color.set(app.pantsColor);
+        }
+      });
+      socket.emit('updateAppearance', localPlayer.appearance);
+    }
+
+    // Применяем аксессуар
+    if (app.accessory) {
+      equippedAccessory = app.accessory;
+      if (localPlayer && localPlayer.mesh) {
+        updateAccessory3D(localPlayer.mesh, app.accessory);
+      }
+    }
+
+    if (Object.keys(app).length > 0) {
+      showNotification('🛒 Предметы из магазина применены!', 'success');
+    }
+  } catch(e) {
+    console.log('Магазин недоступен:', e.message);
+  }
+}
+
 function initSocket(name) {
   socket = io();
 
@@ -5123,6 +5178,8 @@ function initSocket(name) {
     // Инициализация монеток
     document.getElementById('coinsDisplay').textContent = localCoins;
     showNotification('Добро пожаловать в Fantazia RP 3D!', 'success');
+    // Загрузить предметы из магазина
+    setTimeout(() => applyShopItems(name), 1500);
     if (data.isAdmin) {
       localPlayer.isAdmin = true;
       window.isAdminFly    = false;
