@@ -1355,6 +1355,21 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
   color:#aaa; transition:all 0.2s;
 }
 .editor-cat-tab.active { background:rgba(108,92,231,0.4); border-color:#6c5ce7; color:#fff; }
+/* ---- Emotes / Effects grid ---- */
+.emotes-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-top:6px; }
+.emote-item {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:10px 5px; border:2px solid rgba(255,255,255,0.12);
+  border-radius:12px; background:rgba(255,255,255,0.05);
+  cursor:pointer; transition:all 0.2s; position:relative;
+}
+.emote-item:hover { border-color:#6c5ce7; background:rgba(108,92,231,0.2); transform:scale(1.05); }
+.emote-item.active-emote { border-color:#a29bfe; background:rgba(108,92,231,0.4); box-shadow:0 0 12px rgba(108,92,231,0.5); }
+.emote-stop { border-color:rgba(231,76,60,0.35); }
+.emote-stop:hover { border-color:#e74c3c; background:rgba(231,76,60,0.2); }
+.locked-effect { opacity:0.7; }
+.emote-icon { font-size:24px; margin-bottom:3px; }
+.emote-name { font-size:10px; color:#ccc; text-align:center; line-height:1.2; }
 
 /* ========== КНОПКА СКРЫТИЯ ЧАТА ========== */
 #chatToggleBtn {
@@ -2163,6 +2178,14 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
     <div class="dance-btn" onclick="doDance('sit')">🪑 Сесть</div>
     <div class="dance-btn" onclick="doDance('dab')">💪 Дэб</div>
     <div class="dance-btn" onclick="doDance('headbang')">🎸 Хэдбэнг</div>
+    <div class="dance-btn" onclick="doDance('floss')">🎵 Флосс</div>
+    <div class="dance-btn" onclick="doDance('latina')">💃 Латина</div>
+    <div class="dance-btn" onclick="doDance('acrobatic')">🤸 Акробат</div>
+    <div class="dance-btn" onclick="doDance('fistbump')">🤜 Кулак</div>
+    <div class="dance-btn" onclick="doDance('meditate')">🧘 Медит.</div>
+    <div class="dance-btn" onclick="doDance('rap')">🎤 Рэп</div>
+    <div class="dance-btn" onclick="doDance('duck')">🦆 Утка</div>
+    <div class="dance-btn" onclick="doDance('laugh')">🤣 Смех</div>
     <div class="dance-btn" onclick="stopDance()">❌ Стоп</div>
   </div>
 
@@ -2602,6 +2625,8 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
           <div class="editor-cat-tab" onclick="setEditorCat('top')">👕 Верх</div>
           <div class="editor-cat-tab" onclick="setEditorCat('shoes')">👟 Обувь</div>
           <div class="editor-cat-tab" onclick="setEditorCat('acc')">🎩 Аксессуары</div>
+          <div class="editor-cat-tab" onclick="setEditorCat('emotes')">🕺 Эмоты</div>
+          <div class="editor-cat-tab" onclick="setEditorCat('effects')">✨ Эффекты</div>
         </div>
 
         <!-- Секция: Тело -->
@@ -2644,6 +2669,18 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
         <div class="skin-section" id="editorSec_acc" style="display:none">
           <h4>🎩 Аксессуары <span style="color:#f1c40f;font-size:11px">(покупаются за 🪙 монетки)</span></h4>
           <div class="clothing-grid" id="accessoriesGrid"></div>
+        </div>
+
+        <!-- Секция: Эмоты -->
+        <div class="skin-section" id="editorSec_emotes" style="display:none">
+          <h4>🕺 Эмоты и танцы <span style="color:#00b894;font-size:11px">16 эмотов</span></h4>
+          <div class="emotes-grid" id="emotesGrid"></div>
+        </div>
+
+        <!-- Секция: Эффекты -->
+        <div class="skin-section" id="editorSec_effects" style="display:none">
+          <h4>✨ Визуальные эффекты <span style="color:#f1c40f;font-size:11px">частицы вокруг персонажа</span></h4>
+          <div class="emotes-grid" id="effectsGrid"></div>
         </div>
 
         <button class="skin-apply-btn" onclick="applySkinEditor()">✅ Применить изменения</button>
@@ -2894,7 +2931,135 @@ const ACCESSORIES = [
   { id:'halo',      name:'Нимб',       emoji:'😇', coinPrice:45,  draw:'halo' },
   { id:'mask',      name:'Маска',      emoji:'🎭', coinPrice:35,  draw:'mask' },
   { id:'wings',     name:'Крылья',     emoji:'🦋', coinPrice:60,  draw:'wings' },
+  { id:'cowboy',    name:'Ковбойка',   emoji:'🤠', coinPrice:18,  draw:'cowboy' },
+  { id:'beanie',    name:'Шапка',      emoji:'🧶', coinPrice:8,   draw:'beanie' },
+  { id:'party',     name:'Колпак',     emoji:'🎉', coinPrice:5,   draw:'party' },
+  { id:'cat_ears',  name:'Ушки',       emoji:'🐱', coinPrice:22,  draw:'cat_ears' },
+  { id:'ring',      name:'Кольцо',     emoji:'💍', coinPrice:35,  draw:'ring' },
+  { id:'gloves',    name:'Перчатки',   emoji:'🧤', coinPrice:15,  draw:'gloves' },
+  { id:'vest',      name:'Бронежилет', emoji:'🦺', coinPrice:40,  draw:'vest' },
+  { id:'watch',     name:'Часы',       emoji:'⌚', coinPrice:30,  draw:'watch' },
 ];
+
+// ---- Эффекты (частицы вокруг игрока) ----
+const EFFECTS_DATA = [
+  { id:'none',      name:'Нет эффекта', emoji:'❌', coinPrice:0 },
+  { id:'sakura',    name:'Сакура',      emoji:'🌸', coinPrice:30 },
+  { id:'lightning', name:'Молния',      emoji:'⚡', coinPrice:60 },
+  { id:'fire',      name:'Пламя',       emoji:'🔥', coinPrice:45 },
+  { id:'snow',      name:'Снежинки',    emoji:'❄️', coinPrice:25 },
+  { id:'moon',      name:'Лунная аура', emoji:'🌙', coinPrice:50 },
+  { id:'stardust',  name:'Звёзды',      emoji:'✨', coinPrice:40 },
+  { id:'rainbow',   name:'Радуга',      emoji:'🌈', coinPrice:70 },
+  { id:'portal',    name:'Портал',      emoji:'💫', coinPrice:55 },
+];
+let equippedEffect = 'none';
+let ownedEffects = new Set(['none']);
+let effectParticles = []; // { mesh, vel, life, maxLife }
+let effectGroup = null;
+
+function initEffectGroup(mesh) {
+  if (!mesh) return;
+  if (effectGroup) { scene.remove(effectGroup); }
+  effectGroup = new THREE.Group();
+  scene.add(effectGroup);
+}
+
+function updatePlayerEffect(t) {
+  if (!localPlayer || !localPlayer.mesh || equippedEffect === 'none') {
+    if (effectGroup) effectGroup.visible = false;
+    return;
+  }
+  if (!effectGroup) initEffectGroup(localPlayer.mesh);
+  effectGroup.visible = true;
+
+  const pos = localPlayer.mesh.position;
+
+  // Spawn new particles
+  const spawnCount = { sakura:2, lightning:3, fire:3, snow:2, moon:1, stardust:3, rainbow:2, portal:3 }[equippedEffect] || 1;
+  for (let i = 0; i < spawnCount; i++) {
+    let mat, geo, vel;
+    const angle = Math.random() * Math.PI * 2;
+    const radius = 0.4 + Math.random() * 0.5;
+    const baseX = pos.x + Math.cos(angle) * radius;
+    const baseZ = pos.z + Math.sin(angle) * radius;
+    const baseY = pos.y + Math.random() * 2.5;
+
+    switch(equippedEffect) {
+      case 'sakura':
+        geo = new THREE.PlaneGeometry(0.12, 0.1);
+        mat = new THREE.MeshBasicMaterial({ color: 0xffb7c5, transparent: true, opacity: 0.85, side: THREE.DoubleSide });
+        vel = { x: (Math.random()-0.5)*0.02, y: -0.012-Math.random()*0.01, z: (Math.random()-0.5)*0.02 };
+        break;
+      case 'lightning':
+        geo = new THREE.BoxGeometry(0.05, 0.25, 0.05);
+        mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 });
+        vel = { x: (Math.random()-0.5)*0.04, y: -0.025, z: (Math.random()-0.5)*0.04 };
+        break;
+      case 'fire':
+        geo = new THREE.SphereGeometry(0.08 + Math.random()*0.06, 4, 4);
+        const fireColors = [0xff4500, 0xff7700, 0xffaa00, 0xffff00];
+        mat = new THREE.MeshBasicMaterial({ color: fireColors[Math.floor(Math.random()*4)], transparent: true, opacity: 0.8 });
+        vel = { x: (Math.random()-0.5)*0.015, y: 0.03+Math.random()*0.02, z: (Math.random()-0.5)*0.015 };
+        break;
+      case 'snow':
+        geo = new THREE.SphereGeometry(0.04+Math.random()*0.04, 5, 5);
+        mat = new THREE.MeshBasicMaterial({ color: 0xeef4ff, transparent: true, opacity: 0.9 });
+        vel = { x: (Math.random()-0.5)*0.01, y: -0.008-Math.random()*0.008, z: (Math.random()-0.5)*0.01 };
+        break;
+      case 'moon':
+        geo = new THREE.TorusGeometry(0.12, 0.025, 6, 12, Math.PI * (0.5 + Math.random()));
+        mat = new THREE.MeshBasicMaterial({ color: 0xd4e8ff, transparent: true, opacity: 0.7 });
+        vel = { x: (Math.random()-0.5)*0.008, y: 0.005, z: (Math.random()-0.5)*0.008 };
+        break;
+      case 'stardust':
+        geo = new THREE.OctahedronGeometry(0.05);
+        const starColors2 = [0xffffff, 0xfff8b0, 0xa29bfe, 0xffeaa7];
+        mat = new THREE.MeshBasicMaterial({ color: starColors2[Math.floor(Math.random()*4)], transparent: true, opacity: 0.95 });
+        vel = { x: (Math.random()-0.5)*0.025, y: 0.01+Math.random()*0.015, z: (Math.random()-0.5)*0.025 };
+        break;
+      case 'rainbow':
+        geo = new THREE.SphereGeometry(0.07, 5, 5);
+        const rainbowColors = [0xff0000, 0xff7700, 0xffff00, 0x00ff00, 0x0000ff, 0x8b00ff];
+        mat = new THREE.MeshBasicMaterial({ color: rainbowColors[Math.floor(Math.random()*6)], transparent: true, opacity: 0.85 });
+        vel = { x: (Math.random()-0.5)*0.03, y: -0.01, z: (Math.random()-0.5)*0.03 };
+        break;
+      case 'portal':
+        geo = new THREE.RingGeometry(0.06, 0.1, 8);
+        const portalColors = [0x6c5ce7, 0xa29bfe, 0x00cec9, 0xe056fd];
+        mat = new THREE.MeshBasicMaterial({ color: portalColors[Math.floor(Math.random()*4)], transparent: true, opacity: 0.8, side: THREE.DoubleSide });
+        vel = { x: (Math.random()-0.5)*0.02, y: 0.015+Math.random()*0.01, z: (Math.random()-0.5)*0.02 };
+        break;
+      default: continue;
+    }
+
+    const particle = new THREE.Mesh(geo, mat);
+    particle.position.set(baseX, baseY, baseZ);
+    particle.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
+    effectGroup.add(particle);
+    effectParticles.push({ mesh: particle, vel, life: 0, maxLife: 40 + Math.floor(Math.random()*30), rotV: (Math.random()-0.5)*0.08 });
+  }
+
+  // Update existing particles
+  for (let i = effectParticles.length - 1; i >= 0; i--) {
+    const p = effectParticles[i];
+    p.life++;
+    p.mesh.position.x += p.vel.x;
+    p.mesh.position.y += p.vel.y;
+    p.mesh.position.z += p.vel.z;
+    p.mesh.rotation.y += p.rotV;
+    const lifeRatio = p.life / p.maxLife;
+    if (p.mesh.material.transparent) {
+      p.mesh.material.opacity = (1 - lifeRatio) * (equippedEffect === 'lightning' ? 0.9 : 0.85);
+    }
+    const scale = equippedEffect === 'fire' ? 1 - lifeRatio * 0.7 : 1;
+    p.mesh.scale.setScalar(scale);
+    if (p.life >= p.maxLife) {
+      effectGroup.remove(p.mesh);
+      effectParticles.splice(i, 1);
+    }
+  }
+}
 
 // Маппинг название предмета из магазина → игровой ID аксессуара
 const SHOP_TO_GAME_MAP = {
@@ -2904,13 +3069,18 @@ const SHOP_TO_GAME_MAP = {
   'Золотые часы':        'chain',
   'Цилиндр джентльмена': 'tophat',
   'Маска Тени':          'mask',
-  'Шляпа ковбоя':        'cap',
+  'Шляпа ковбоя':        'cowboy',
+  'Кольцо силы':          'ring',
+  'Перчатки ниндзя':      'gloves',
+  'Бронежилет':           'vest',
+  'Золотые часы':         'watch',
 };
 
 // ---- Монетки (клиентская валюта для аксессуаров) ----
 let localCoins = 50; // стартовые монетки
 let equippedAccessory = 'none';
 let ownedAccessories = new Set(['none']);
+// Effects initialized in EFFECTS_DATA section above
 let currentEditorCat = 'body';
 window.addEventListener('load', () => {
   loadSavedSettings();
@@ -4164,6 +4334,8 @@ function openSkinEditor() {
   renderClothingGrid('topClothingGrid', CLOTHING_TOPS, 'top');
   renderClothingGrid('shoeClothingGrid', CLOTHING_SHOES, 'shoes');
   renderAccessoriesGrid();
+  renderEmotesGrid();
+  renderEffectsGrid();
 
   // Update preview header
   document.getElementById('skinPreviewName').textContent = localPlayer.name || 'Игрок';
@@ -4175,13 +4347,15 @@ function openSkinEditor() {
 
 function setEditorCat(cat) {
   currentEditorCat = cat;
-  ['body','top','shoes','acc'].forEach(c => {
+  ['body','top','shoes','acc','emotes','effects'].forEach(c => {
     const sec = document.getElementById('editorSec_' + c);
     if (sec) sec.style.display = c === cat ? 'block' : 'none';
   });
   document.querySelectorAll('.editor-cat-tab').forEach((t,i) => {
-    t.classList.toggle('active', ['body','top','shoes','acc'][i] === cat);
+    t.classList.toggle('active', ['body','top','shoes','acc','emotes','effects'][i] === cat);
   });
+  if (cat === 'emotes') renderEmotesGrid();
+  if (cat === 'effects') renderEffectsGrid();
 }
 
 function renderAccessoriesGrid() {
@@ -4616,6 +4790,112 @@ function updateAccessory3D(mesh, accId) {
       monoFrame.position.set(0.17, 2.42, 0.37); monoFrame.rotation.y = Math.PI/2; accGroup.add(monoFrame);
       const monoLens = new THREE.Mesh(new THREE.CircleGeometry(0.09, 12), monoMat);
       monoLens.position.set(0.17, 2.42, 0.375); accGroup.add(monoLens);
+      break;
+    }
+    case 'cowboy': {
+      const cowMat = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+      const cowBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.54, 0.58, 0.055, 14), cowMat);
+      cowBrim.position.set(0, 2.98, 0); accGroup.add(cowBrim);
+      const cowTop = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.3, 0.42, 12), cowMat);
+      cowTop.position.set(0, 3.22, 0); accGroup.add(cowTop);
+      const cowBand = new THREE.Mesh(new THREE.CylinderGeometry(0.305, 0.305, 0.07, 12), new THREE.MeshLambertMaterial({ color: 0x3d2000 }));
+      cowBand.position.set(0, 3.01, 0); accGroup.add(cowBand);
+      break;
+    }
+    case 'beanie': {
+      const beaMat = new THREE.MeshLambertMaterial({ color: 0xe74c3c });
+      const beaDome = new THREE.Mesh(new THREE.SphereGeometry(0.34, 12, 8, 0, Math.PI*2, 0, Math.PI*0.55), beaMat);
+      beaDome.position.set(0, 2.73, 0); accGroup.add(beaDome);
+      const beaCuff = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.14, 12, 1, true), new THREE.MeshLambertMaterial({ color: 0xc0392b }));
+      beaCuff.position.set(0, 2.66, 0); accGroup.add(beaCuff);
+      const beaPom = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), new THREE.MeshLambertMaterial({ color: 0xffffff }));
+      beaPom.position.set(0, 3.02, 0); accGroup.add(beaPom);
+      break;
+    }
+    case 'party': {
+      const partyMat = new THREE.MeshLambertMaterial({ color: 0xf1c40f, emissive: 0xAA8800, emissiveIntensity: 0.2 });
+      const partyHat = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.55, 8), partyMat);
+      partyHat.position.set(0.05, 3.25, 0); partyHat.rotation.z = -0.15; accGroup.add(partyHat);
+      for(let i=0;i<3;i++){
+        const stripe = new THREE.Mesh(new THREE.TorusGeometry(0.16-i*0.04, 0.015, 4, 8), new THREE.MeshLambertMaterial({ color: [0xe056fd,0x00cec9,0xe74c3c][i] }));
+        stripe.position.set(0.05, 3.0-i*0.14, 0); stripe.rotation.z = -0.15; accGroup.add(stripe);
+      }
+      const ppom = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), new THREE.MeshLambertMaterial({ color: 0xff6b6b }));
+      ppom.position.set(0.1, 3.52, 0); accGroup.add(ppom);
+      break;
+    }
+    case 'cat_ears': {
+      const earMat = new THREE.MeshLambertMaterial({ color: 0xf8b4d9 });
+      const innerMat = new THREE.MeshLambertMaterial({ color: 0xff91c4 });
+      const headband = new THREE.Mesh(new THREE.CylinderGeometry(0.31, 0.31, 0.07, 14, 1, true), new THREE.MeshLambertMaterial({ color: 0xe91e8c }));
+      headband.position.set(0, 2.78, 0); accGroup.add(headband);
+      const eL = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.28, 4), earMat);
+      eL.position.set(-0.22, 3.02, 0); eL.rotation.z = -0.2; accGroup.add(eL);
+      const eLinL = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.2, 4), innerMat);
+      eLinL.position.set(-0.22, 3.02, 0.02); eLinL.rotation.z = -0.2; accGroup.add(eLinL);
+      const eR = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.28, 4), earMat);
+      eR.position.set(0.22, 3.02, 0); eR.rotation.z = 0.2; accGroup.add(eR);
+      const eLinR = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.2, 4), innerMat);
+      eLinR.position.set(0.22, 3.02, 0.02); eLinR.rotation.z = 0.2; accGroup.add(eLinR);
+      break;
+    }
+    case 'ring': {
+      // Кольцо силы — золотое кольцо с камнем на руке
+      const ringMat = new THREE.MeshLambertMaterial({ color: 0xFFD700, emissive: 0xAA8800, emissiveIntensity: 0.4 });
+      const ringBase = new THREE.Mesh(new THREE.TorusGeometry(0.065, 0.018, 8, 16), ringMat);
+      ringBase.position.set(-0.42, 1.12, 0.08); ringBase.rotation.x = Math.PI/2; accGroup.add(ringBase);
+      const gemMat2 = new THREE.MeshLambertMaterial({ color: 0xe056fd, emissive: 0xcc00ff, emissiveIntensity: 0.7 });
+      const gem2 = new THREE.Mesh(new THREE.OctahedronGeometry(0.03), gemMat2);
+      gem2.position.set(-0.42, 1.16, 0.08); accGroup.add(gem2);
+      break;
+    }
+    case 'gloves': {
+      // Перчатки ниндзя — тёмные накладки на руки
+      const gloveMat = new THREE.MeshLambertMaterial({ color: 0x111111 });
+      const gloveAccent = new THREE.MeshLambertMaterial({ color: 0x333333 });
+      // Левая рука
+      const gL = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.28, 0.22), gloveMat);
+      gL.position.set(-0.42, 1.05, 0); accGroup.add(gL);
+      const gLs = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.06, 0.24), gloveAccent);
+      gLs.position.set(-0.42, 1.19, 0); accGroup.add(gLs);
+      // Правая рука
+      const gR = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.28, 0.22), gloveMat);
+      gR.position.set(0.42, 1.05, 0); accGroup.add(gR);
+      const gRs = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.06, 0.24), gloveAccent);
+      gRs.position.set(0.42, 1.19, 0); accGroup.add(gRs);
+      break;
+    }
+    case 'vest': {
+      // Бронежилет — пластины на груди и спине
+      const vstMat = new THREE.MeshLambertMaterial({ color: 0x2c3e50 });
+      const vstAccent = new THREE.MeshLambertMaterial({ color: 0x34495e });
+      const vstPlate = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.65, 0.14), vstMat);
+      vstPlate.position.set(0, 1.55, 0.14); accGroup.add(vstPlate);
+      // Пластины брони
+      for(let i=0;i<3;i++){
+        const pl = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.12, 0.05), vstAccent);
+        pl.position.set(0, 1.78-i*0.18, 0.2); accGroup.add(pl);
+      }
+      // Боковые ремни
+      const beltMat = new THREE.MeshLambertMaterial({ color: 0x95a5a6 });
+      const bL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.6, 0.08), beltMat);
+      bL.position.set(-0.38, 1.55, 0.08); accGroup.add(bL);
+      const bR = bL.clone(); bR.position.x = 0.38; accGroup.add(bR);
+      // Карман-деталь
+      const pkt = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.12, 0.06), vstAccent);
+      pkt.position.set(0.24, 1.78, 0.18); accGroup.add(pkt);
+      break;
+    }
+    case 'watch': {
+      // Золотые часы — на левом запястье
+      const watchMat = new THREE.MeshLambertMaterial({ color: 0xFFD700, emissive: 0x885500, emissiveIntensity: 0.3 });
+      const watchFace = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x8888ff, emissiveIntensity: 0.2 });
+      const watchBand = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.12, 12, 1, true), watchMat);
+      watchBand.position.set(-0.42, 1.22, 0); watchBand.rotation.x = Math.PI/2; accGroup.add(watchBand);
+      const watchCase = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.06, 12), watchMat);
+      watchCase.position.set(-0.42, 1.22, 0.12); watchCase.rotation.x = Math.PI/2; accGroup.add(watchCase);
+      const watchDial = new THREE.Mesh(new THREE.CircleGeometry(0.065, 12), watchFace);
+      watchDial.position.set(-0.42, 1.22, 0.16); accGroup.add(watchDial);
       break;
     }
   }
@@ -5158,6 +5438,109 @@ function applyDance(character, danceType, t) {
       body.rotation.x = Math.sin(t*5) * 0.1;
       body.position.y = 1.4;
       break;
+    case 'floss': {
+      // Флосс: руки ритмично машут вперёд-назад
+      const fp = Math.round(t*4) % 2 === 0;
+      leftArm.rotation.x = fp ? -1.2 : 0.3;
+      leftArm.rotation.z = fp ? 0.6 : -0.3;
+      rightArm.rotation.x = fp ? 0.3 : -1.2;
+      rightArm.rotation.z = fp ? 0.3 : -0.6;
+      body.rotation.y = Math.sin(t*4) * 0.25;
+      body.position.y = 1.4 + Math.abs(Math.sin(t*4)) * 0.07;
+      break;
+    }
+    case 'latina': {
+      // Латина: бёдра, плавные руки
+      body.rotation.y = Math.sin(t*2) * 0.35;
+      body.position.y = 1.4 + Math.abs(Math.sin(t*2)) * 0.1;
+      leftArm.rotation.x = Math.sin(t*2 + Math.PI) * 0.8;
+      leftArm.rotation.z = 0.4 + Math.sin(t*2) * 0.3;
+      rightArm.rotation.x = Math.sin(t*2) * 0.8;
+      rightArm.rotation.z = -0.4 - Math.sin(t*2) * 0.3;
+      leftLeg.rotation.x = Math.sin(t*2) * 0.25;
+      rightLeg.rotation.x = Math.sin(t*2 + Math.PI) * 0.25;
+      head.rotation.y = Math.sin(t*2) * 0.2;
+      break;
+    }
+    case 'acrobatic': {
+      // Акробатика: колесо и поза
+      const ap = (t * 0.7) % (Math.PI * 2);
+      if (ap < Math.PI) {
+        leftArm.rotation.x = -ap * 0.8;
+        rightArm.rotation.x = -ap * 0.8;
+        leftArm.rotation.z = 0.8;
+        rightArm.rotation.z = -0.8;
+        body.position.y = 1.4 + Math.sin(ap) * 0.4;
+      } else {
+        leftArm.rotation.x = -(Math.PI*2-ap)*0.8;
+        rightArm.rotation.x = -(Math.PI*2-ap)*0.8;
+        body.position.y = 1.4;
+      }
+      leftLeg.rotation.x = Math.sin(ap) * 0.5;
+      rightLeg.rotation.x = -Math.sin(ap) * 0.5;
+      break;
+    }
+    case 'fistbump': {
+      // Кулак братства: рука вперёд с наклоном
+      const fb = Math.abs(Math.sin(t*1.5));
+      rightArm.rotation.x = -1.3 - fb * 0.3;
+      rightArm.rotation.z = -0.2;
+      leftArm.rotation.x = -0.2;
+      body.rotation.x = fb * 0.15;
+      head.rotation.x = -fb * 0.1;
+      body.position.y = 1.4;
+      break;
+    }
+    case 'meditate': {
+      // Медитация: сидим, руки в стороны
+      leftLeg.rotation.x = -1.2;
+      rightLeg.rotation.x = -1.2;
+      body.position.y = 0.85;
+      leftArm.rotation.x = -0.5;
+      leftArm.rotation.z = 0.9;
+      rightArm.rotation.x = -0.5;
+      rightArm.rotation.z = -0.9;
+      head.rotation.x = -0.15;
+      body.rotation.x = Math.sin(t * 0.5) * 0.04;
+      break;
+    }
+    case 'rap': {
+      // Рэп-баттл: указывает и раскачивается
+      const rp = Math.floor(t * 2) % 2;
+      rightArm.rotation.x = -1.1 - Math.sin(t*3)*0.2;
+      rightArm.rotation.z = rp ? -0.5 : -0.2;
+      leftArm.rotation.x = -0.2;
+      leftArm.rotation.z = 0.3 + Math.sin(t*2)*0.2;
+      body.rotation.y = Math.sin(t*1.5) * 0.3;
+      head.rotation.y = -Math.sin(t*1.5) * 0.2;
+      body.position.y = 1.4 + Math.abs(Math.sin(t*2))*0.05;
+      break;
+    }
+    case 'duck': {
+      // Утиный танец: приседание, покачивание
+      const dp = Math.abs(Math.sin(t*3));
+      body.position.y = 1.0 + dp * 0.3;
+      leftLeg.rotation.x = -dp * 0.6;
+      rightLeg.rotation.x = -dp * 0.6;
+      leftArm.rotation.x = 0.3;
+      leftArm.rotation.z = 0.7 + Math.sin(t*3) * 0.3;
+      rightArm.rotation.x = 0.3;
+      rightArm.rotation.z = -(0.7 + Math.sin(t*3) * 0.3);
+      body.rotation.y = Math.sin(t*3) * 0.3;
+      head.rotation.y = -Math.sin(t*3) * 0.25;
+      break;
+    }
+    case 'laugh': {
+      // Смех вслух: тело трясётся
+      body.position.y = 1.4 + Math.sin(t*8) * 0.06;
+      body.rotation.x = 0.15 + Math.sin(t*8) * 0.07;
+      head.rotation.x = -0.1 + Math.sin(t*8) * 0.08;
+      leftArm.rotation.x = 0.1 + Math.sin(t*7)*0.1;
+      rightArm.rotation.x = 0.1 + Math.sin(t*7+1)*0.1;
+      leftArm.rotation.z = 0.2;
+      rightArm.rotation.z = -0.2;
+      break;
+    }
   }
 }
 
@@ -5210,6 +5593,10 @@ async function applyShopItems(playerName) {
     }
 
     // Применяем аксессуар
+    if (app.effect) {
+      equippedEffect = app.effect;
+      ownedEffects.add(app.effect);
+    }
     if (app.accessory) {
       equippedAccessory = app.accessory;
       if (localPlayer && localPlayer.mesh) {
@@ -5687,9 +6074,11 @@ function doDance(type) {
   socket.emit('startDance', type);
 
   document.querySelectorAll('.dance-btn').forEach(b => {
-    b.classList.toggle('active', b.textContent.includes(
-      {wave:'Махать',disco:'Диско',spin:'Крутиться',jump:'Прыжок',
-       robot:'Робот',sit:'Сесть',dab:'Дэб',headbang:'Хэдбэнг'}[type] || ''));
+    const nameMap = {wave:'Махать',disco:'Диско',spin:'Крутиться',jump:'Прыжок',
+     robot:'Робот',sit:'Сесть',dab:'Дэб',headbang:'Хэдбэнг',
+     floss:'Флосс',latina:'Латина',acrobatic:'Акробатика',fistbump:'Кулак',
+     meditate:'Медитация',rap:'Рэп',duck:'Утка',laugh:'Смех'};
+    b.classList.toggle('active', b.textContent.includes(nameMap[type] || ''));
   });
 }
 
@@ -5703,6 +6092,80 @@ function stopDance() {
 function toggleDanceBar() {
   const bar = document.getElementById('danceBar');
   bar.style.display = bar.style.display === 'flex' ? 'none' : 'flex';
+}
+
+// =================== ЭМОТЫ В ПАНЕЛИ B ===================
+const ALL_EMOTES = [
+  { id:'wave',      name:'Махать',       emoji:'👋' },
+  { id:'disco',     name:'Диско',        emoji:'🕺' },
+  { id:'spin',      name:'Крутиться',    emoji:'🌀' },
+  { id:'jump',      name:'Прыжок',       emoji:'⬆️' },
+  { id:'robot',     name:'Робот',        emoji:'🤖' },
+  { id:'sit',       name:'Сесть',        emoji:'🪑' },
+  { id:'dab',       name:'Дэб',          emoji:'💪' },
+  { id:'headbang',  name:'Хэдбэнг',      emoji:'🎸' },
+  { id:'floss',     name:'Флосс',        emoji:'🎵' },
+  { id:'latina',    name:'Латина',       emoji:'💃' },
+  { id:'acrobatic', name:'Акробатика',   emoji:'🤸' },
+  { id:'fistbump',  name:'Кулак',        emoji:'🤜' },
+  { id:'meditate',  name:'Медитация',    emoji:'🧘' },
+  { id:'rap',       name:'Рэп',          emoji:'🎤' },
+  { id:'duck',      name:'Утка',         emoji:'🦆' },
+  { id:'laugh',     name:'Смех',         emoji:'🤣' },
+];
+
+function renderEmotesGrid() {
+  const grid = document.getElementById('emotesGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  ALL_EMOTES.forEach(em => {
+    const div = document.createElement('div');
+    div.className = 'emote-item' + (currentDance === em.id ? ' active-emote' : '');
+    div.innerHTML = `<div class="emote-icon">${em.emoji}</div><div class="emote-name">${em.name}</div>`;
+    div.onclick = () => {
+      doDance(em.id);
+      renderEmotesGrid();
+    };
+    grid.appendChild(div);
+  });
+  // Stop button
+  const stop = document.createElement('div');
+  stop.className = 'emote-item emote-stop';
+  stop.innerHTML = `<div class="emote-icon">❌</div><div class="emote-name">Стоп</div>`;
+  stop.onclick = () => { stopDance(); renderEmotesGrid(); };
+  grid.appendChild(stop);
+}
+
+function renderEffectsGrid() {
+  const grid = document.getElementById('effectsGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  EFFECTS_DATA.forEach(eff => {
+    const owned = ownedEffects.has(eff.id);
+    const equipped = equippedEffect === eff.id;
+    const div = document.createElement('div');
+    div.className = 'emote-item' + (equipped ? ' active-emote' : '') + (!owned && eff.coinPrice > 0 ? ' locked-effect' : '');
+    div.innerHTML = `
+      <div class="emote-icon">${eff.emoji}</div>
+      <div class="emote-name">${eff.name}</div>
+      ${eff.coinPrice > 0 && !owned ? `<span style="font-size:10px;color:#f1c40f">${eff.coinPrice}🪙</span>` : (eff.coinPrice > 0 ? '<span style="font-size:10px;color:#00b894">✅</span>' : '<span style="font-size:10px;color:#00b894">FREE</span>')}
+    `;
+    div.onclick = () => {
+      if (!owned && eff.coinPrice > 0) {
+        if (localCoins < eff.coinPrice) { showNotification('Недостаточно монеток!', 'error'); return; }
+        localCoins -= eff.coinPrice;
+        ownedEffects.add(eff.id);
+        showNotification('Куплено: ' + eff.name + '!', 'success');
+        if (document.getElementById('coinsDisplay')) document.getElementById('coinsDisplay').textContent = localCoins;
+      }
+      equippedEffect = eff.id;
+      // Clear old particles
+      if (effectGroup) { effectGroup.children.forEach(ch => effectGroup.remove(ch)); }
+      effectParticles = [];
+      renderEffectsGrid();
+    };
+    grid.appendChild(div);
+  });
 }
 
 // =================== UI МОДАЛЬНЫХ ОКОН ===================
@@ -8405,6 +8868,9 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
       }
     });
   }
+
+  // --- Эффекты частиц вокруг игрока ---
+  updatePlayerEffect(animationTime);
 
   // --- Обновление систем ---
   checkInteractables();
