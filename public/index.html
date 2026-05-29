@@ -794,6 +794,36 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
 @keyframes authPopIn { from{transform:scale(0.3);opacity:0} to{transform:scale(1);opacity:1} }
 .auth-error { color:#ff6b6b; font-size:13px; margin-bottom:8px; min-height:18px; text-align:center; }
 @keyframes authFadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+/* ── Поля ввода ── */
+.auth-input-wrap { position:relative; margin-bottom:12px; animation:authFadeUp 0.5s ease 0.5s both; }
+.auth-input-icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:16px; pointer-events:none; opacity:.55; }
+.auth-input {
+  width:100%; padding:13px 14px 13px 40px;
+  background:rgba(255,255,255,.06); border:1.5px solid rgba(108,92,231,.35);
+  border-radius:14px; color:#fff; font-size:14px; font-family:inherit;
+  outline:none; transition:border-color .2s, box-shadow .2s;
+}
+.auth-input::placeholder { color:rgba(162,155,254,.4); }
+.auth-input:focus { border-color:rgba(162,155,254,.7); box-shadow:0 0 0 3px rgba(108,92,231,.15); }
+/* ── Кнопка входа/регистрации ── */
+.auth-submit-btn {
+  width:100%; padding:14px; border:none; border-radius:14px;
+  background:linear-gradient(135deg,#5b3ef5,#a29bfe);
+  color:#fff; font-size:15px; font-weight:700; cursor:pointer; letter-spacing:.5px;
+  margin-bottom:16px; transition:all .25s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:0 0 24px rgba(108,92,231,.35); animation:authFadeUp 0.5s ease 0.6s both;
+}
+.auth-submit-btn:hover { transform:scale(1.04); box-shadow:0 0 40px rgba(108,92,231,.55); }
+.auth-submit-btn:active { transform:scale(.98); }
+/* ── Разделитель ── */
+.auth-divider {
+  display:flex; align-items:center; gap:12px;
+  margin-bottom:14px; animation:authFadeUp 0.5s ease 0.7s both;
+}
+.auth-divider::before,.auth-divider::after {
+  content:''; flex:1; height:1px; background:rgba(108,92,231,.3);
+}
+.auth-divider span { font-size:12px; color:rgba(162,155,254,.45); white-space:nowrap; letter-spacing:1px; }
 
 /* ========== МЕНЮ ПАУЗЫ ========== */
 #pauseMenu {
@@ -1650,8 +1680,17 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
 
     <!-- ВХОД -->
     <div id="loginForm">
-      <p class="auth-hint-text" id="authHintMain">Войдите в свой аккаунт<br>через Google</p>
-      <p class="auth-hint-small">Регистрация и вход только через Google</p>
+      <div class="auth-input-wrap">
+        <span class="auth-input-icon">👤</span>
+        <input id="loginUsername" class="auth-input" type="text" placeholder="Никнейм" autocomplete="username" maxlength="32">
+      </div>
+      <div class="auth-input-wrap">
+        <span class="auth-input-icon">🔒</span>
+        <input id="loginPassword" class="auth-input" type="password" placeholder="Пароль" autocomplete="current-password" maxlength="64"
+          onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="auth-submit-btn" onclick="doLogin()">🔑 Войти</button>
+      <div class="auth-divider"><span>или войти через</span></div>
       <button class="auth-google-btn" onclick="signInWithGoogle()">
         <svg class="auth-google-icon" viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -1665,8 +1704,21 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
 
     <!-- РЕГИСТРАЦИЯ -->
     <div id="registerForm" style="display:none">
-      <p class="auth-hint-text">Создайте новый аккаунт<br>через Google</p>
-      <p class="auth-hint-small">Регистрация и вход только через Google</p>
+      <div class="auth-input-wrap">
+        <span class="auth-input-icon">👤</span>
+        <input id="regUsername" class="auth-input" type="text" placeholder="Никнейм" autocomplete="username" maxlength="32">
+      </div>
+      <div class="auth-input-wrap">
+        <span class="auth-input-icon">🔒</span>
+        <input id="regPassword" class="auth-input" type="password" placeholder="Пароль" autocomplete="new-password" maxlength="64">
+      </div>
+      <div class="auth-input-wrap">
+        <span class="auth-input-icon">✅</span>
+        <input id="regPasswordConfirm" class="auth-input" type="password" placeholder="Повторите пароль" autocomplete="new-password" maxlength="64"
+          onkeydown="if(event.key==='Enter')doRegister()">
+      </div>
+      <button class="auth-submit-btn" onclick="doRegister()">✨ Зарегистрироваться</button>
+      <div class="auth-divider"><span>или зарегистрироваться через</span></div>
       <button class="auth-google-btn" onclick="signInWithGoogle()">
         <svg class="auth-google-icon" viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -9428,9 +9480,79 @@ window.addEventListener('message', function(event) {
   setTimeout(showAuthSuccess, 1800);
 });
 
-// Заглушка — больше не используется, но не удаляем чтобы не ломать старые вызовы
-function doLogin()    { document.getElementById('authError').textContent = '🔑 Используйте кнопку «Войти через Google»'; }
-function doRegister() { document.getElementById('authError').textContent = '🔑 Используйте кнопку «Google»'; }
+// ── Хэш пароля (простой, без внешних библиотек) ──
+async function hashPassword(password) {
+  const msgBuffer = new TextEncoder().encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// ── Вход по нику + паролю ──
+async function doLogin() {
+  const err = document.getElementById('authError');
+  const username = (document.getElementById('loginUsername').value || '').trim();
+  const password = (document.getElementById('loginPassword').value || '');
+  err.textContent = '';
+  if (!username) { err.textContent = '⚠️ Введите никнейм'; return; }
+  if (!password) { err.textContent = '⚠️ Введите пароль'; return; }
+
+  const accounts = getAccounts();
+  const key = 'nick_' + username.toLowerCase();
+  if (!accounts[key]) { err.textContent = '❌ Аккаунт не найден. Сначала зарегистрируйтесь'; return; }
+  if (accounts[key].provider === 'google') { err.textContent = '❌ Этот аккаунт создан через Google'; return; }
+
+  const hashed = await hashPassword(password);
+  if (accounts[key].passwordHash !== hashed) { err.textContent = '❌ Неверный пароль'; return; }
+
+  currentUser = { username: key, displayName: accounts[key].displayName, email: '' };
+  localStorage.setItem('fz_currentUser', JSON.stringify(currentUser));
+
+  document.getElementById('authSuccessName').textContent  = accounts[key].displayName;
+  document.getElementById('authSuccessEmail').textContent = '👤 ' + username;
+  document.getElementById('authSuccessOverlay').classList.add('show');
+  setTimeout(() => {
+    const msg = document.getElementById('authRedirectMsg');
+    if (msg) msg.style.display = 'block';
+  }, 900);
+  setTimeout(showAuthSuccess, 1800);
+}
+
+// ── Регистрация по нику + паролю ──
+async function doRegister() {
+  const err = document.getElementById('authError');
+  const username = (document.getElementById('regUsername').value || '').trim();
+  const password = (document.getElementById('regPassword').value || '');
+  const confirm  = (document.getElementById('regPasswordConfirm').value || '');
+  err.textContent = '';
+  if (!username) { err.textContent = '⚠️ Введите никнейм'; return; }
+  if (username.length < 3) { err.textContent = '⚠️ Никнейм минимум 3 символа'; return; }
+  if (!password) { err.textContent = '⚠️ Введите пароль'; return; }
+  if (password.length < 6) { err.textContent = '⚠️ Пароль минимум 6 символов'; return; }
+  if (password !== confirm) { err.textContent = '❌ Пароли не совпадают'; return; }
+
+  const accounts = getAccounts();
+  const key = 'nick_' + username.toLowerCase();
+  if (accounts[key]) { err.textContent = '⚠️ Никнейм уже занят — войдите или выберите другой'; return; }
+
+  const hashed = await hashPassword(password);
+  accounts[key] = {
+    displayName: username, passwordHash: hashed,
+    provider: 'nickname', createdAt: new Date().toISOString()
+  };
+  saveAccounts(accounts);
+  currentUser = { username: key, displayName: username, email: '' };
+  localStorage.setItem('fz_currentUser', JSON.stringify(currentUser));
+
+  document.getElementById('authSuccessName').textContent  = username;
+  document.getElementById('authSuccessEmail').textContent = '🎉 Аккаунт создан!';
+  document.getElementById('authSuccessOverlay').classList.add('show');
+  setTimeout(() => {
+    const msg = document.getElementById('authRedirectMsg');
+    if (msg) msg.style.display = 'block';
+  }, 900);
+  setTimeout(showAuthSuccess, 1800);
+}
 
 function showAuthSuccess() {
   document.getElementById('authScreen').style.display = 'none';
