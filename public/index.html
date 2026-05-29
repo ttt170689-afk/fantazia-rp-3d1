@@ -1122,32 +1122,31 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
   pointer-events:none; z-index:150; display:none;
 }
 #mobileControls > * { pointer-events:auto; }
-/* D-pad крестовина */
+/* Джойстик */
 #dpad {
   position:absolute; bottom:20px; left:16px;
   width:156px; height:156px;
-  display:grid;
-  grid-template-areas:". up ." "left center right" ". down .";
-  grid-template-columns:52px 52px 52px;
-  grid-template-rows:52px 52px 52px;
-  gap:0;
+  touch-action:none; user-select:none; -webkit-user-select:none;
 }
-.dp-btn {
-  display:flex; align-items:center; justify-content:center;
-  background:rgba(0,0,0,0.60); border:2px solid rgba(108,92,231,0.55);
-  color:#fff; font-size:20px; font-weight:bold;
-  user-select:none; -webkit-user-select:none;
-  touch-action:none; cursor:pointer;
+#joystick-base {
+  position:absolute; inset:0;
+  border-radius:50%;
+  background:rgba(0,0,0,0.45);
+  border:2px solid rgba(108,92,231,0.55);
   backdrop-filter:blur(4px);
-  transition:background 0.08s, transform 0.08s;
 }
-.dp-btn:active { background:rgba(108,92,231,0.65); transform:scale(0.88); }
-.dp-up    { grid-area:up;     border-radius:12px 12px 4px 4px; }
-.dp-down  { grid-area:down;   border-radius:4px 4px 12px 12px; }
-.dp-left  { grid-area:left;   border-radius:12px 4px 4px 12px; }
-.dp-right { grid-area:right;  border-radius:4px 12px 12px 4px; }
-.dp-center{ grid-area:center; background:rgba(20,20,40,0.5);
-  border:2px solid rgba(108,92,231,0.25); border-radius:4px; }
+#joystick-knob {
+  position:absolute;
+  width:60px; height:60px;
+  border-radius:50%;
+  background:radial-gradient(circle at 38% 38%, rgba(162,155,254,0.9), rgba(108,92,231,0.75));
+  border:2px solid rgba(162,155,254,0.8);
+  box-shadow:0 0 14px rgba(108,92,231,0.6);
+  top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  transition:box-shadow 0.1s;
+  pointer-events:none;
+}
 #mobileRightBtns {
   position:absolute; bottom:16px; right:16px;
   display:grid; grid-template-columns:64px 64px; gap:10px;
@@ -2499,25 +2498,10 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
 
 <!-- ========== МОБИЛЬНЫЕ КОНТРОЛЫ ========== -->
 <div id="mobileControls">
-  <!-- D-pad крестовина (левая сторона) -->
+  <!-- Джойстик движения (левая сторона) -->
   <div id="dpad">
-    <div class="dp-btn dp-up"
-      ontouchstart="mobilePressKey('KeyW',true)"
-      ontouchend="mobilePressKey('KeyW',false)"
-      ontouchcancel="mobilePressKey('KeyW',false)">▲</div>
-    <div class="dp-btn dp-left"
-      ontouchstart="mobilePressKey('KeyA',true)"
-      ontouchend="mobilePressKey('KeyA',false)"
-      ontouchcancel="mobilePressKey('KeyA',false)">◀</div>
-    <div class="dp-center"></div>
-    <div class="dp-btn dp-right"
-      ontouchstart="mobilePressKey('KeyD',true)"
-      ontouchend="mobilePressKey('KeyD',false)"
-      ontouchcancel="mobilePressKey('KeyD',false)">▶</div>
-    <div class="dp-btn dp-down"
-      ontouchstart="mobilePressKey('KeyS',true)"
-      ontouchend="mobilePressKey('KeyS',false)"
-      ontouchcancel="mobilePressKey('KeyS',false)">▼</div>
+    <div id="joystick-base"></div>
+    <div id="joystick-knob"></div>
   </div>
   <!-- Кнопки действий (правая сторона) -->
   <div id="mobileRightBtns">
@@ -2922,6 +2906,76 @@ let joystickId = null;
 let joystickOrigin = { x:0, y:0 };
 let joystickDelta = { x:0, y:0 };
 let mobileSprintOn = false;
+
+// ---- Инициализация джойстика ----
+(function initJoystick() {
+  function setupJoystick() {
+    var base = document.getElementById('dpad');
+    var knob = document.getElementById('joystick-knob');
+    if (!base || !knob) { setTimeout(setupJoystick, 300); return; }
+    var radius = 48; // максимальный радиус отклонения ноба
+
+    base.addEventListener('touchstart', function(e) {
+      e.preventDefault();
+      if (joystickActive) return;
+      var t = e.changedTouches[0];
+      joystickActive = true;
+      joystickId = t.identifier;
+      var rect = base.getBoundingClientRect();
+      joystickOrigin.x = rect.left + rect.width / 2;
+      joystickOrigin.y = rect.top + rect.height / 2;
+      knob.style.boxShadow = '0 0 20px rgba(162,155,254,0.9)';
+    }, { passive: false });
+
+    document.addEventListener('touchmove', function(e) {
+      if (!joystickActive) return;
+      for (var i = 0; i < e.changedTouches.length; i++) {
+        var t = e.changedTouches[i];
+        if (t.identifier !== joystickId) continue;
+        e.preventDefault();
+        var dx = t.clientX - joystickOrigin.x;
+        var dy = t.clientY - joystickOrigin.y;
+        var dist = Math.sqrt(dx*dx + dy*dy);
+        var clamp = Math.min(dist, radius);
+        var angle = Math.atan2(dy, dx);
+        var nx = Math.cos(angle) * clamp;
+        var ny = Math.sin(angle) * clamp;
+        joystickDelta.x = nx / radius;
+        joystickDelta.y = ny / radius;
+        knob.style.transform = 'translate(calc(-50% + ' + nx + 'px), calc(-50% + ' + ny + 'px))';
+
+        // Порог срабатывания 0.35
+        var DEAD = 0.35;
+        mobilePressKey('KeyW', joystickDelta.y < -DEAD);
+        mobilePressKey('KeyS', joystickDelta.y >  DEAD);
+        mobilePressKey('KeyA', joystickDelta.x < -DEAD);
+        mobilePressKey('KeyD', joystickDelta.x >  DEAD);
+      }
+    }, { passive: false });
+
+    function releaseJoystick(e) {
+      for (var i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier !== joystickId) continue;
+        joystickActive = false;
+        joystickId = null;
+        joystickDelta.x = 0; joystickDelta.y = 0;
+        knob.style.transform = 'translate(-50%, -50%)';
+        knob.style.boxShadow = '0 0 14px rgba(108,92,231,0.6)';
+        mobilePressKey('KeyW', false);
+        mobilePressKey('KeyS', false);
+        mobilePressKey('KeyA', false);
+        mobilePressKey('KeyD', false);
+      }
+    }
+    document.addEventListener('touchend', releaseJoystick, { passive: false });
+    document.addEventListener('touchcancel', releaseJoystick, { passive: false });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupJoystick);
+  } else {
+    setupJoystick();
+  }
+})();
 
 // ---- Машины ----
 let cars = [];
