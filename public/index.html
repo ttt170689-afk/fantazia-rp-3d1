@@ -466,6 +466,7 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
   width:40%;height:200%;
   background:linear-gradient(105deg,transparent,rgba(255,255,255,.18),transparent);
   animation:lsShine 3s ease-in-out infinite 1s;
+  pointer-events:none;
 }
 @keyframes lsShine{0%{left:-60%}60%,100%{left:130%}}
 .ls-play-btn:hover{transform:scale(1.07);box-shadow:0 0 100px rgba(108,92,231,.8),0 0 200px rgba(108,92,231,.4);}
@@ -1820,9 +1821,9 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
   #mobileRightBtns { grid-template-columns: 60px 60px !important; gap: 8px !important; }
 }
 
-/* body всегда 100dvh на мобиле */
+/* body overflow:hidden только во время игры */
 @media (max-width: 900px) {
-  body { height: 100dvh !important; overflow: hidden !important; }
+  body.game-active { height: 100dvh !important; overflow: hidden !important; }
   canvas { height: 100dvh !important; }
 }
 
@@ -1830,7 +1831,9 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
 <style id="mobile-overrides">
 /* portrait OK */
 @media (orientation: portrait) and (max-width:900px){#rotateOverlay{display:none!important}}
-@media(max-width:900px){html,body{height:100dvh!important;overflow:hidden!important}canvas{width:100vw!important;height:100dvh!important}}
+@media(max-width:900px){canvas{width:100vw!important;height:100dvh!important}}
+/* overflow:hidden только во время игры, не на лэндинге */
+@media(max-width:900px){body.game-active{height:100dvh!important;overflow:hidden!important}}
 @media(max-width:768px){
   #authScreen{align-items:center!important;justify-content:center!important;padding:0 12px!important}
   .auth-card{width:100%!important;max-width:400px!important;padding:22px 18px!important;max-height:96dvh!important;overflow-y:auto!important;margin:auto!important}
@@ -2084,6 +2087,7 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
       <div class="ls-hero-title">FANTAZIA <em>RP</em></div>
       <div class="ls-hero-sub">3 D &nbsp;·&nbsp; O N L I N E</div>
       <div class="ls-hero-tagline">Открытый мир · Живые игроки · Твои правила</div>
+      <button class="ls-play-btn" onclick="openServerModal()" style="margin-top:40px;font-size:clamp(16px,2.5vw,24px);padding:20px 60px;letter-spacing:6px;">▶ &nbsp;ИГРАТЬ</button>
     </div>
     <div class="ls-scroll-cue" onclick="document.getElementById('sec-world').scrollIntoView({behavior:'smooth'})">
       <span>Листай вниз</span>
@@ -10054,11 +10058,6 @@ function claimAnnualReward() {
 let currentUser = null;
 // ── ADMIN LIST ──
 const ADMIN_USERNAMES = ['temka_play_official'];
-function checkIfAdmin(u) { return ADMIN_USERNAMES.includes((u||"").toLowerCase()); }
-
-
-// ── ADMIN LIST ──
-const ADMIN_USERNAMES = ['temka_play_official'];
 function checkIfAdmin(username) {
   return ADMIN_USERNAMES.includes((username || '').toLowerCase());
 }
@@ -10129,6 +10128,7 @@ function saveAccounts(acc) {
 // Слушаем сообщение от popup-окна OAuth
 window.addEventListener('message', function(event) {
   if (!event.data || event.data.type !== 'GOOGLE_OAUTH_SUCCESS') return;
+  if (window._googleOAuthWin) {
     window._googleOAuthWin = null;
   }
 
