@@ -2,6 +2,8 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
 
 // ======================================================
 // FANTAZIA RP 3D SERVER
@@ -15,6 +17,109 @@ const io = new Server(server, {
     methods: ["GET", "POST"]
   }
 });
+
+// ======================================================
+// ACCOUNTS SYSTEM
+// ======================================================
+
+const ACCOUNTS_FILE = path.join(__dirname, 'accounts.json');
+
+function loadAccounts() {
+  try {
+    if (fs.existsSync(ACCOUNTS_FILE)) return JSON.parse(fs.readFileSync(ACCOUNTS_FILE, 'utf8'));
+  } catch(e) {}
+  return {};
+}
+
+function saveAccounts() {
+  try { fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2)); } catch(e) {}
+}
+
+let accounts = loadAccounts();
+
+function hashPassword(password) {
+  return crypto.createHash('sha256').update(password + 'fantazia_salt_2026').digest('hex');
+}
+
+function generateToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+// Регистрация
+app.post('/api/auth/register', (req, res) => {
+  const { username, password, email } = req.body;
+  if (!username || !password) return res.json({ ok: false, error: 'Введи имя и пароль' });
+  if (username.length < 3) return res.json({ ok: false, error: 'Имя минимум 3 символа' });
+  if (password.length < 6) return res.json({ ok: false, error: 'Пароль минимум 6 символов' });
+  const key = username.toLowerCase();
+  if (accounts[key]) return res.json({ ok: false, error: 'Это имя уже занято' });
+  
+  const token = generateToken();
+  accounts[key] = {
+    username,
+    email: email || '',
+    password: hashPassword(password),
+    token,
+    createdAt: Date.now(),
+    lastLogin: Date.now(),
+    // Сохранённый прогресс
+    money: 1000,
+    level: 1,
+    exp: 0,
+    inventory: [],
+    appearance: { skinColor: '#FFD1A4', shirtColor: '#3498DB', pantsColor: '#2C3E50', hairColor: '#4A2F1B', hairStyle: 0 }
+  };
+  saveAccounts();
+  res.json({ ok: true, token, username, message: 'Аккаунт создан!' });
+});
+
+// Вход
+app.post('/api/auth/login', (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) return res.json({ ok: false, error: 'Введи имя и пароль' });
+  const key = username.toLowerCase();
+  const acc = accounts[key];
+  if (!acc) return res.json({ ok: false, error: 'Аккаунт не найден' });
+  if (acc.password !== hashPassword(password)) return res.json({ ok: false, error: 'Неверный пароль' });
+  
+  const token = generateToken();
+  acc.token = token;
+  acc.lastLogin = Date.now();
+  saveAccounts();
+  res.json({ ok: true, token, username: acc.username, data: { money: acc.money, level: acc.level, exp: acc.exp, inventory: acc.inventory, appearance: acc.appearance } });
+});
+
+// Проверка токена
+app.post('/api/auth/verify', (req, res) => {
+  const { token } = req.body;
+  const acc = Object.values(accounts).find(a => a.token === token);
+  if (!acc) return res.json({ ok: false });
+  res.json({ ok: true, username: acc.username, data: { money: acc.money, level: acc.level, exp: acc.exp, inventory: acc.inventory, appearance: acc.appearance } });
+});
+
+// Сохранение прогресса
+app.post('/api/auth/save', (req, res) => {
+  const { token, money, level, exp, inventory, appearance } = req.body;
+  const acc = Object.values(accounts).find(a => a.token === token);
+  if (!acc) return res.json({ ok: false, error: 'Не авторизован' });
+  if (money !== undefined) acc.money = money;
+  if (level !== undefined) acc.level = level;
+  if (exp !== undefined) acc.exp = exp;
+  if (inventory !== undefined) acc.inventory = inventory;
+  if (appearance !== undefined) acc.appearance = appearance;
+  saveAccounts();
+  res.json({ ok: true });
+});
+
+// Список аккаунтов (только для админа)
+app.get('/api/admin/accounts', (req, res) => {
+  const pwd = req.query.adminPassword;
+  if (pwd !== 'fnfpoppy567765') return res.status(403).json({ error: 'Нет доступа' });
+  const list = Object.values(accounts).map(a => ({ username: a.username, email: a.email, level: a.level, money: a.money, createdAt: a.createdAt, lastLogin: a.lastLogin }));
+  res.json({ ok: true, total: list.length, accounts: list });
+});
+
+
 
 // ======================================================
 // EXPRESS
@@ -612,7 +717,17 @@ io.on('connection', (socket) => {
   // ----------------------------------------------------
   socket.on('registerPlayer', (data = {}) => {
     try {
-      const playerName = sanitizeText(data.name) || `Player_${socket.id.slice(0, 4)}`;
+      let playerName = sanitizeText(data.name) || `Player_${socket.id.slice(0, 4)}`;
+      let savedData = null;
+
+      // Загружаем сохранённый прогресс если есть токен
+      if (data.token) {
+        const acc = Object.values(accounts).find(a => a.token === data.token);
+        if (acc) {
+          playerName = acc.username;
+          savedData = acc;
+        }
+      }
 
       // ── Проверка бана ──────────────────────────────
       const banRecord = bans[playerName.toLowerCase()];
@@ -653,18 +768,19 @@ io.on('connection', (socket) => {
         dance: null,
         animation: 'idle',
         isTalking: false,
-        money: 1000,
-        level: 1,
-        exp: 0,
+        money: savedData ? savedData.money : 1000,
+        level: savedData ? savedData.level : 1,
+        exp: savedData ? savedData.exp : 0,
         health: 100,
         maxHealth: 100,
         apartment: null,
         pet: null,
-        inventory: [],
+        inventory: savedData ? (savedData.inventory || []) : [],
         online: true,
         joinedAt: Date.now(),
         isAdmin: (data.email || '') === ADMIN_EMAIL || ADMIN_USERNAMES.includes((playerName || '').toLowerCase()),
-        email: data.email || ''
+        email: data.email || '',
+        hasAccount: !!savedData
       };
 
       players[socket.id] = player;
@@ -1302,6 +1418,19 @@ io.on('connection', (socket) => {
 
     if (player) {
       broadcastSystemMessage(`${player.name} покинул игру`);
+
+      // Автосохранение прогресса если есть аккаунт
+      if (player.hasAccount) {
+        const key = player.name.toLowerCase();
+        if (accounts[key]) {
+          accounts[key].money = player.money;
+          accounts[key].level = player.level;
+          accounts[key].exp = player.exp;
+          accounts[key].inventory = player.inventory || [];
+          accounts[key].appearance = player.appearance || accounts[key].appearance;
+          saveAccounts();
+        }
+      }
 
       if (player.apartment && apartments[player.apartment]) {
         apartments[player.apartment].owner = null;
