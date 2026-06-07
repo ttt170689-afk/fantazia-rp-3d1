@@ -56,8 +56,9 @@ app.get('/api/players', (req, res) => {
 // ADMIN API
 // ======================================================
 
-const ADMIN_PASSWORD = 'fnfpoppy567765';
-const ADMIN_EMAIL    = 'ttt170689@gmail.com';
+const ADMIN_PASSWORD   = 'fnfpoppy567765';
+const ADMIN_EMAIL      = 'ttt170689@gmail.com';
+const ADMIN_USERNAMES  = ['temka_play_official'];
 
 function checkAdmin(req, res) {
   const pwd = req.body?.adminPassword || req.query?.adminPassword;
@@ -662,7 +663,7 @@ io.on('connection', (socket) => {
         inventory: [],
         online: true,
         joinedAt: Date.now(),
-        isAdmin: (data.email || '') === ADMIN_EMAIL,
+        isAdmin: (data.email || '') === ADMIN_EMAIL || ADMIN_USERNAMES.includes((playerName || '').toLowerCase()),
         email: data.email || ''
       };
 
