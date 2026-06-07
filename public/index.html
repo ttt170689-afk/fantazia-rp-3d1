@@ -12320,6 +12320,153 @@ function claimFPReward(r, isPlus, claimKey) {
 
 // (updateFPWidget вызывается внутри квест-инициализации выше)
 </script>
+
+<!-- ====== МОБИЛЬНЫЙ ПАТЧ ====== -->
+<style>
+@media (max-width: 900px) and (pointer: coarse) {
+
+  /* === FANTAZIA PASS — маленький === */
+  #fpWidget {
+    width: 110px !important;
+    padding: 5px 7px 4px !important;
+    border-radius: 10px !important;
+    bottom: 8px !important;
+    right: 6px !important;
+    font-size: 9px !important;
+  }
+  .fpw-logo { font-size: 7px !important; letter-spacing: 0 !important; }
+  .fpw-season { font-size: 7px !important; }
+  .fpw-level { width: 18px !important; height: 18px !important; font-size: 9px !important; }
+  .fpw-xptext { font-size: 8px !important; }
+  .fpw-plus-hint { display: none !important; }
+  .fpw-xpbar { height: 3px !important; }
+
+  /* === ЧАТ — компактный, не мешает === */
+  #chatPanel {
+    width: 180px !important;
+    left: 5px !important;
+    bottom: 200px !important;
+    padding: 5px !important;
+    border-radius: 10px !important;
+  }
+  #chatMessages {
+    height: 50px !important;
+    font-size: 9px !important;
+  }
+  #chatInput {
+    font-size: 10px !important;
+    padding: 4px 6px !important;
+  }
+  #chatToggleBtn {
+    font-size: 10px !important;
+    padding: 3px 6px !important;
+  }
+  .chat-type-btn {
+    font-size: 9px !important;
+    padding: 3px 6px !important;
+  }
+
+  /* === HP БАР === */
+  .health-bar-container {
+    width: 100px !important;
+    top: 5px !important;
+    left: 5px !important;
+    padding: 3px !important;
+  }
+  .health-bar { height: 11px !important; }
+  .health-text { font-size: 8px !important; }
+
+  /* === ВЕРХНИЕ СТАТЫ — компактно === */
+  .top-bar {
+    top: 3px !important;
+    gap: 3px !important;
+  }
+  .stat-box {
+    padding: 3px 6px !important;
+    gap: 3px !important;
+    border-radius: 7px !important;
+  }
+  .stat-box .icon { font-size: 11px !important; }
+  .stat-box .value { font-size: 10px !important; }
+
+  /* === МИНИКАРТА — правый верх, не перекрывает пасс === */
+  #minimap {
+    width: 75px !important;
+    height: 75px !important;
+    top: 5px !important;
+    right: 120px !important;
+  }
+
+  /* === БОКОВОЕ МЕНЮ (☰) === */
+  #sideMenuWrap {
+    right: 6px !important;
+    top: 85px !important;
+  }
+  #sideMenuToggle {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 16px !important;
+    border-radius: 10px !important;
+  }
+  .side-btn {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 16px !important;
+    border-radius: 8px !important;
+  }
+  #sideMenuPanel {
+    width: 86px !important;
+    padding: 6px !important;
+    gap: 5px !important;
+  }
+
+  /* === МОБИЛЬНЫЕ КНОПКИ (правые) — 3x2 === */
+  #mobileControls {
+    height: 210px !important;
+  }
+  #mobileRightBtns {
+    grid-template-columns: 56px 56px 56px !important;
+    grid-template-rows: 56px 56px !important;
+    gap: 7px !important;
+    right: 8px !important;
+    bottom: 14px !important;
+  }
+  .mob-btn {
+    width: 56px !important;
+    height: 56px !important;
+    font-size: 22px !important;
+    border-radius: 50% !important;
+  }
+
+  /* === ДЖОЙСТИК === */
+  #mobileJoystick {
+    width: 120px !important;
+    height: 120px !important;
+    bottom: 14px !important;
+    left: 10px !important;
+  }
+  #joystickBase {
+    width: 110px !important;
+    height: 110px !important;
+  }
+  #joystickKnob {
+    width: 42px !important;
+    height: 42px !important;
+  }
+
+  /* === ВЕРХНИЕ КНОПКИ (рюкзак, магазин, машина, друзья) === */
+  #mobileTopBtns {
+    top: 5px !important;
+    gap: 5px !important;
+  }
+  .mob-top-btn {
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 16px !important;
+    border-radius: 9px !important;
+  }
+}
+</style>
 </body>
 
 <script>
