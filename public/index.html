@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" id="htmlRoot">
 <head>
 <meta charset="UTF-8">
+<script src="https://yandex.ru/games/sdk/v2"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2008,7 +2009,7 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
     <!-- Loading overlay -->
     <div class="auth-overlay" id="authLoadingOverlay">
       <div class="auth-spinner"></div>
-      <div class="auth-ov-text">Подключение к Google...</div>
+      <div class="auth-ov-text">Подключение...</div>
     </div>
     <!-- Success overlay -->
     <div class="auth-overlay" id="authSuccessOverlay">
@@ -2075,7 +2076,7 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
   <div class="ls-user-bar">
     <span id="loggedInUser"></span>
     <button onclick="logoutUser()">Выйти</button>
-    <a href="https://fantazia-shop.onrender.com" target="_blank" id="shopNavBtn" style="flex:0;padding:10px 16px;border:none;border-radius:12px;font-size:13px;font-weight:bold;cursor:pointer;background:linear-gradient(135deg,#5b3ef5,#a29bfe);color:#fff;display:flex;align-items:center;gap:6px;white-space:nowrap;text-decoration:none;box-shadow:0 0 16px rgba(108,92,231,0.5);">💎 Магазин кристаллов</a><button id="changelogBtn" onclick="(function(){var m=document.getElementById('changelogModal');m.style.display='flex';m.classList.add('show');})()">📋 Что нового</button>
+    <button id="changelogBtn" onclick="(function(){var m=document.getElementById('changelogModal');m.style.display='flex';m.classList.add('show');})()">📋 Что нового</button>
   </div>
 
   <!-- ══════════ HERO ══════════ -->
@@ -3467,7 +3468,56 @@ let ownedAccessories = new Set(['none']);
 let currentEditorCat = 'body';
 window.addEventListener('load', () => {
   loadSavedSettings();
-  initAuth();
+
+  // ═══════════════════════════════════════════
+  // ЯНДЕКС ИГРЫ SDK — инициализация
+  // ═══════════════════════════════════════════
+  (function initYandexSDK() {
+    if (typeof YaGames === 'undefined') {
+      // SDK недоступен (не на платформе Яндекс) — запускаем без него
+      initAuth();
+      return;
+    }
+    YaGames.init().then(function(ysdk) {
+      window.ysdk = ysdk;
+
+      // 1. Определяем язык через SDK (п. 2.14 и п. 8.2.3)
+      try {
+        var env = ysdk.environment;
+        var lang = (env && env.i18n && env.i18n.lang) ? env.i18n.lang : 'ru';
+        document.getElementById('htmlRoot').setAttribute('lang', lang);
+        window.__YA_LANG = lang;
+      } catch(e) {
+        window.__YA_LANG = 'ru';
+      }
+
+      // 2. Сообщаем платформе что игра готова (п. 1.19 — GameReady API)
+      try {
+        if (ysdk.features && ysdk.features.LoadingAPI) {
+          ysdk.features.LoadingAPI.ready();
+        }
+      } catch(e) {}
+
+      // 3. Блокируем контекстное меню на канвасе (п. 1.6.2.7)
+      document.addEventListener('contextmenu', function(e) {
+        if (e.target && (e.target.tagName === 'CANVAS' || e.target.closest('#hud') || e.target.closest('#mobileControls'))) {
+          e.preventDefault();
+        }
+      });
+      // Блокируем выделение текста в игровой зоне (п. 1.10.3)
+      document.addEventListener('selectstart', function(e) {
+        if (e.target && (e.target.tagName === 'CANVAS' || e.target.closest('#hud'))) {
+          e.preventDefault();
+        }
+      });
+
+      initAuth();
+    }).catch(function() {
+      // Если SDK упал — всё равно запускаем игру
+      initAuth();
+    });
+  })();
+
   // Синхронизируем аксессуар из магазина при запуске
   (function syncShopEquippedOnLoad(){
     try {
@@ -6301,61 +6351,13 @@ function animateRemoteCharacter(character, animation, dance, t) {
 // =================== СЕТЬ (SOCKET.IO) ===================
 
 // ===== МАГАЗИН: загрузка купленных предметов =====
-// URL твоего магазина на Render (fantazia-shop сервис)
-const SHOP_SERVER = 'https://fantazia-shop.onrender.com';
+// Внешний магазин отключён (п.8.4.2 Яндекс Игр — нельзя ссылаться на сторонние сайты)
+const SHOP_SERVER = ''; // отключено
 
 async function applyShopItems(playerName) {
+  // Применяем только локально сохранённые предметы из localStorage
   try {
-    const nick = encodeURIComponent(playerName);
-    const res = await fetch(`${SHOP_SERVER}/api/user/${nick}/appearance`);
-    if (!res.ok) return;
-    const data = await res.json();
-    if (!data.ok || !data.appearance) return;
-
-    const app = data.appearance;
-    console.log('🛒 Магазин: применяем предметы', app);
-
-    // Применяем цвет рубашки
-    if (app.shirtColor && localPlayer && localPlayer.mesh) {
-      localPlayer.appearance.shirtColor = app.shirtColor;
-      // Обновляем цвет тела персонажа
-      localPlayer.mesh.traverse(child => {
-        if (child.isMesh && child.userData.part === 'torso') {
-          child.material.color.set(app.shirtColor);
-        }
-      });
-      socket.emit('updateAppearance', localPlayer.appearance);
-    }
-
-    // Применяем цвет штанов
-    if (app.pantsColor && localPlayer && localPlayer.mesh) {
-      localPlayer.appearance.pantsColor = app.pantsColor;
-      localPlayer.mesh.traverse(child => {
-        if (child.isMesh && child.userData.part === 'legs') {
-          child.material.color.set(app.pantsColor);
-        }
-      });
-      socket.emit('updateAppearance', localPlayer.appearance);
-    }
-
-    // Применяем аксессуар
-    if (app.effect) {
-      equippedEffect = app.effect;
-      ownedEffects.add(app.effect);
-    }
-    if (app.accessory) {
-      equippedAccessory = app.accessory;
-      if (localPlayer && localPlayer.mesh) {
-        updateAccessory3D(localPlayer.mesh, app.accessory);
-      }
-    }
-
-    if (Object.keys(app).length > 0) {
-      showNotification('🛒 Предметы из магазина применены!', 'success');
-    }
-  } catch(e) {
-    console.log('Магазин недоступен:', e.message);
-  }
+    // (серверный магазин отключён — только fz_box_inv)
 
   // ── Также проверяем fz_box_inv (локальный магазин) ──
   try {
@@ -10458,85 +10460,7 @@ function saveAccounts(acc) {
 
 
 
-// ===== ОБРАБОТКА POPUP OAUTH REDIRECT =====
-// Если страница открыта как popup (с access_token в хэше) — отправляем данные в родителя и закрываемся
-(function handleOAuthPopupRedirect() {
-  const hash = window.location.hash;
-  if (!hash) return;
-  const params = new URLSearchParams(hash.substring(1));
-  const accessToken = params.get('access_token');
-  if (!accessToken) return;
-
-  // Мы в попап-окне — показываем сообщение и закрываемся
-  if (window.opener) {
-    // Покажем красивое сообщение перед закрытием
-    document.addEventListener('DOMContentLoaded', () => {
-      document.body.innerHTML = `
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
-          height:100vh;background:linear-gradient(135deg,#0a0618,#1a0535);color:#fff;font-family:sans-serif;text-align:center;gap:16px;">
-          <div style="font-size:52px;">✅</div>
-          <div style="font-size:22px;font-weight:bold;color:#a29bfe;">Авторизация успешна!</div>
-          <div style="font-size:15px;color:#00b894;">✅ Успешно перенаправляем в игру...</div>
-          <div style="font-size:13px;color:#888;margin-top:8px;">Это окно закроется автоматически</div>
-        </div>`;
-    });
-    // Получаем профиль через Google UserInfo API
-    fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: { Authorization: 'Bearer ' + accessToken }
-    })
-    .then(r => r.json())
-    .then(profile => {
-      window.opener.postMessage({ type: 'GOOGLE_OAUTH_SUCCESS', profile }, '*');
-    })
-    .catch(() => {
-      window.opener.postMessage({ type: 'GOOGLE_OAUTH_SUCCESS', profile: { sub: 'unknown', name: 'Player', email: '' } }, '*');
-    })
-    .finally(() => {
-      setTimeout(() => window.close(), 1500);
-    });
-  }
-})();
-
-// Слушаем сообщение от popup-окна OAuth
-window.addEventListener('message', function(event) {
-  if (!event.data || event.data.type !== 'GOOGLE_OAUTH_SUCCESS') return;
-  if (window._googleOAuthWin) {
-    window._googleOAuthWin = null;
-  }
-
-  const profile = event.data.profile || {};
-  const googleId = profile.sub || ('g_' + Date.now());
-  const name     = profile.name || profile.email?.split('@')[0] || 'Player';
-  const email    = profile.email || '';
-  const picture  = profile.picture || '';
-  const accounts = getAccounts();
-  const activeTab = document.getElementById('registerForm').style.display !== 'none' ? 'register' : 'login';
-
-  if (activeTab === 'register') {
-    if (accounts[googleId]) {
-      document.getElementById('authError').textContent = '⚠️ Аккаунт уже существует — используйте вкладку «Войти»';
-      return;
-    }
-    accounts[googleId] = { displayName: name, email, picture, provider: 'google', createdAt: new Date().toISOString() };
-  } else {
-    if (!accounts[googleId]) {
-      // Автоматически создаём аккаунт если первый раз
-      accounts[googleId] = { displayName: name, email, picture, provider: 'google', createdAt: new Date().toISOString() };
-    }
-    accounts[googleId].displayName = name;
-    accounts[googleId].picture = picture;
-  }
-  saveAccounts(accounts);
-  currentUser = { username: googleId, displayName: name, email, picture };
-  localStorage.setItem('fz_currentUser', JSON.stringify(currentUser));
-
-  document.getElementById('authSuccessName').textContent  = name;
-  document.getElementById('authSuccessEmail').textContent = email;
-  document.getElementById('authSuccessOverlay').classList.add('show');
-  const msg = document.getElementById('authRedirectMsg');
-  setTimeout(() => { if (msg) msg.style.display = 'block'; }, 900);
-  setTimeout(showAuthSuccess, 1800);
-});
+// ===== (Google OAuth удалён — нарушал п.1.2 Яндекс Игр) =====
 
 // ── Хэш пароля (простой, без внешних библиотек) ──
 async function hashPassword(password) {
@@ -10853,13 +10777,7 @@ function initAuth() {
   } catch(e) {}
   document.getElementById('authScreen').style.display = 'flex';
   document.getElementById('serverScreen').style.display = 'none';
-  // Инициализируем GSI
-  if (typeof google !== 'undefined' && google.accounts) {
-    renderGoogleButtons();
-  } else {
-    window.addEventListener('load', renderGoogleButtons);
-    setTimeout(renderGoogleButtons, 1000);
-  }
+  // Google кнопки удалены (нарушение п.1.2 Яндекс)
 }
 
 // =================== МЕНЮ ПАУЗЫ ===================
@@ -12982,16 +12900,7 @@ window.addEventListener('DOMContentLoaded', function() {
   }
 });
 </script>
-<!-- PWA Install Bar -->
-<div id="pwa-install-bar" style="display:none;">
-  <div class="pwa-icon">⚡</div>
-  <div class="pwa-text">
-    <div class="pwa-title">Установить Fantazia RP</div>
-    <div class="pwa-sub">Работает как приложение без браузера</div>
-  </div>
-  <button id="pwa-install-btn" onclick="pwaInstall()">Установить</button>
-  <button id="pwa-dismiss-btn" onclick="pwaDismiss()">✕</button>
-</div>
+<!-- PWA Install Bar скрыт (нарушает п.8.2.2 — игра не должна предлагать установку) -->
 
 </html>
 
@@ -13256,6 +13165,21 @@ document.addEventListener('dblclick', function(e) {
 
 // ─── 8. Информируем о платформе в консоли ───────────────────────────────
 console.log('[FANTAZIA] Платформа:', window.IS_MOBILE ? '📱 Мобильный' : '🖥️ ПК', '| mobileReady:', window.mobileReady);
+
+// ─── 9. Блокируем контекстное меню на канвасе (п. 1.6.2.7 Яндекс Игр) ──
+document.addEventListener('contextmenu', function(e) {
+  if (e.target && (e.target.tagName === 'CANVAS' ||
+      (e.target.closest && (e.target.closest('#hud') || e.target.closest('#mobileControls'))))) {
+    e.preventDefault();
+  }
+});
+// Блокируем выделение текста в игровой зоне (п. 1.10.3)
+document.addEventListener('selectstart', function(e) {
+  if (e.target && (e.target.tagName === 'CANVAS' ||
+      (e.target.closest && e.target.closest('#hud')))) {
+    e.preventDefault();
+  }
+});
 
 
 // ═══════════════════════════════════════════════════════
