@@ -3505,19 +3505,28 @@ function startGame() {
 function initThreeJS() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x87CEEB);
-  const _mobFog = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || ('ontouchstart' in window && window.innerWidth < 1024);
-  scene.fog = new THREE.Fog(0x87CEEB, _mobFog ? 40 : 100, _mobFog ? 120 : 300);
 
-  camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, _mobFog ? 200 : 500);
+  // ── ОПТИМИЗАЦИЯ: агрессивный туман скрывает дальние объекты ──
+  const _isMob = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || ('ontouchstart' in window && window.innerWidth < 1024);
+  const FOG_NEAR = _isMob ? 30 : 60;
+  const FOG_FAR  = _isMob ? 90 : 180;
+  scene.fog = new THREE.Fog(0x87CEEB, FOG_NEAR, FOG_FAR);
+
+  // ── ОПТИМИЗАЦИЯ: camera far = FOG_FAR, ничего дальше не рендерится ──
+  camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, FOG_FAR + 10);
   camera.position.set(0, 10, 15);
 
-  const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || ('ontouchstart' in window && window.innerWidth < 1024);
-  renderer = new THREE.WebGLRenderer({ antialias: !isMobileDevice, powerPreference: isMobileDevice ? 'low-power' : 'high-performance' });
+  // ── ОПТИМИЗАЦИЯ: пониженный pixelRatio на всех устройствах ──
+  const optPixelRatio = _isMob ? Math.min(window.devicePixelRatio, 1) : Math.min(window.devicePixelRatio, 1.5);
+  renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: _isMob ? 'low-power' : 'high-performance' });
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.shadowMap.enabled = !isMobileDevice;
-  if (!isMobileDevice) renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.setPixelRatio(isMobileDevice ? Math.min(window.devicePixelRatio, 1) : Math.min(window.devicePixelRatio, 2));
-  if (!isMobileDevice) { renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1; }
+  renderer.setPixelRatio(optPixelRatio);
+  // ── ОПТИМИЗАЦИЯ: тени только у источника (512 вместо 2048) ──
+  renderer.shadowMap.enabled = !_isMob;
+  if (!_isMob) renderer.shadowMap.type = THREE.BasicShadowMap; // быстрее PCFSoft
+  // Tone mapping отключаем — дорого
+  renderer.toneMapping = THREE.NoToneMapping;
+  // ── ОПТИМИЗАЦИЯ: frustum culling включён по умолчанию в Three.js ──
   document.body.insertBefore(renderer.domElement, document.body.firstChild);
 
   clock = new THREE.Clock();
@@ -3528,38 +3537,40 @@ function initThreeJS() {
 
   const sunLight = new THREE.DirectionalLight(0xFFF5E1, 1.0);
   sunLight.position.set(50, 80, 50);
-  sunLight.castShadow = true;
-  sunLight.shadow.mapSize.width = 2048;
-  sunLight.shadow.mapSize.height = 2048;
-  sunLight.shadow.camera.near = 0.5;
-  sunLight.shadow.camera.far = 200;
-  sunLight.shadow.camera.left = -100;
-  sunLight.shadow.camera.right = 100;
-  sunLight.shadow.camera.top = 100;
-  sunLight.shadow.camera.bottom = -100;
+  sunLight.castShadow = !_isMob;
+  if (!_isMob) {
+    sunLight.shadow.mapSize.width  = 512; // было 2048 — в 4 раза быстрее
+    sunLight.shadow.mapSize.height = 512;
+    sunLight.shadow.camera.near = 0.5;
+    sunLight.shadow.camera.far  = 150;
+    sunLight.shadow.camera.left = -80;
+    sunLight.shadow.camera.right = 80;
+    sunLight.shadow.camera.top  = 80;
+    sunLight.shadow.camera.bottom = -80;
+  }
   scene.add(sunLight);
   window.sunLight = sunLight;
 
   const hemiLight = new THREE.HemisphereLight(0x87CEEB, 0x362D1F, 0.4);
   scene.add(hemiLight);
 
-  // Земля с текстурой сетки
-  const groundGeo = new THREE.PlaneGeometry(CONFIG.WORLD_SIZE, CONFIG.WORLD_SIZE, 40, 40);
+  // Земля — меньше сегментов для скорости
+  const groundGeo = new THREE.PlaneGeometry(CONFIG.WORLD_SIZE, CONFIG.WORLD_SIZE, 1, 1);
   const groundCanvas = document.createElement('canvas');
-  groundCanvas.width = 512; groundCanvas.height = 512;
+  groundCanvas.width = 256; groundCanvas.height = 256;
   const gc = groundCanvas.getContext('2d');
   gc.fillStyle = '#4a7c4f';
-  gc.fillRect(0,0,512,512);
+  gc.fillRect(0,0,256,256);
   gc.strokeStyle = 'rgba(0,0,0,0.12)';
   gc.lineWidth = 1;
-  for(let gi=0;gi<512;gi+=32){gc.beginPath();gc.moveTo(gi,0);gc.lineTo(gi,512);gc.stroke();gc.beginPath();gc.moveTo(0,gi);gc.lineTo(512,gi);gc.stroke();}
+  for(let gi=0;gi<256;gi+=32){gc.beginPath();gc.moveTo(gi,0);gc.lineTo(gi,256);gc.stroke();gc.beginPath();gc.moveTo(0,gi);gc.lineTo(256,gi);gc.stroke();}
   const groundTex = new THREE.CanvasTexture(groundCanvas);
   groundTex.wrapS = groundTex.wrapT = THREE.RepeatWrapping;
-  groundTex.repeat.set(20,20);
+  groundTex.repeat.set(10,10);
   const groundMat = new THREE.MeshLambertMaterial({ map: groundTex });
   const ground = new THREE.Mesh(groundGeo, groundMat);
   ground.rotation.x = -Math.PI / 2;
-  ground.receiveShadow = true;
+  ground.receiveShadow = !_isMob;
   scene.add(ground);
 
   buildCity();
@@ -3605,24 +3616,20 @@ function createBuilding(x, z, w, h, d, color, name, type) {
   const mat = new THREE.MeshLambertMaterial({ color });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.y = h/2;
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
+  mesh.castShadow = false;  // ОПТИМИЗАЦИЯ: выкл тени у зданий
+  mesh.receiveShadow = false;
   group.add(mesh);
 
-  // Окна
-  const windowMat = new THREE.MeshBasicMaterial({ color: 0xFFFF99, transparent:true, opacity:0.8 });
-  const floors = Math.floor(h / 3);
-  for (let f = 0; f < floors; f++) {
-    for (let wx = -w/2+1.5; wx < w/2-0.5; wx += 2.5) {
-      // Передняя сторона
-      const win = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.5), windowMat);
-      win.position.set(wx, f*3+2, d/2+0.01);
-      group.add(win);
-      // Задняя
-      const win2 = win.clone();
-      win2.position.z = -d/2-0.01;
-      win2.rotation.y = Math.PI;
-      group.add(win2);
+  // Окна — только у ближних небольших зданий (экономия draw calls)
+  if (h < 30) {
+    const windowMat = new THREE.MeshBasicMaterial({ color: 0xFFFF99, transparent:true, opacity:0.8 });
+    const floors = Math.floor(h / 4); // реже, меньше плоскостей
+    for (let f = 0; f < floors; f++) {
+      for (let wx = -w/2+1.5; wx < w/2-0.5; wx += 3.5) { // шаг 3.5 вместо 2.5
+        const win = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.5), windowMat);
+        win.position.set(wx, f*4+2, d/2+0.01);
+        group.add(win);
+      }
     }
   }
 
@@ -3641,18 +3648,17 @@ function createBuilding(x, z, w, h, d, color, name, type) {
     group.add(roof);
   }
 
-  // Вывеска
-  if (name) {
+  // Вывеска — только у типовых зданий, без canvas у небоскрёбов
+  if (name && h < 40) {
     const canvas = document.createElement('canvas');
-    canvas.width = 512; canvas.height = 128;
+    canvas.width = 256; canvas.height = 64; // вдвое меньше текстура
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.roundRect(0,0,512,128,16);
-    ctx.fill();
+    ctx.fillRect(0,0,256,64);
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 48px Arial';
+    ctx.font = 'bold 28px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText(name, 256, 80);
+    ctx.fillText(name, 128, 44);
     const texture = new THREE.CanvasTexture(canvas);
     const signGeo = new THREE.PlaneGeometry(w*0.8, w*0.2);
     const signMat = new THREE.MeshBasicMaterial({ map:texture, transparent:true });
@@ -3833,8 +3839,7 @@ function buildShoppingMeadow() {
   createBuilding(MX-15, MZ+20, 16, 10, 12, 0x9B59B6, '🛋️ МЕБЕЛЬ', 'shop_furniture');
   createBuilding(MX+15, MZ+20, 10, 6, 8,  0x1ABC9C, '🐾 ЗООМАГАЗИН', 'shop_petfood');
 
-  // NPC на поляне
-  for (let i = 0; i < 6; i++) spawnNPC(MX + (i-3)*8, 0, MZ - 5, 'shopper');
+  // NPC убраны для оптимизации
 }
 
 function buildGrandMall() {
@@ -3905,8 +3910,7 @@ function buildGrandMall() {
     bounds:{ minX:MX-MW/2-0.5, maxX:MX+MW/2+0.5, minZ:MZ-MD/2-0.5, maxZ:MZ+MD/2+0.5 }});
   interactables.push({ position:{x:MX, y:0, z:MZ+MD/2+3}, type:'mall', name:'🏬 GRAND MALL', range:6 });
 
-  // Spawn mall NPCs
-  spawnMallNPCs(MX, MZ);
+  // NPC убраны для оптимизации
 
   // Spawn cars in parking lot
   spawnCarsInParking();
@@ -3944,8 +3948,7 @@ function buildResidentialArea() {
   createBuilding(145, 138, 14, 5, 12, 0xFFF9C4, '🧸 ДЕТСКИЙ САД', 'office');
   // Магазин продуктов в жилом квартале
   createBuilding(80, 155, 10, 5, 8, 0x81C784, '🛒 ПРОДУКТЫ', 'shop_food');
-  // NPC жильцы
-  for (let i = 0; i < 5; i++) spawnNPC(48 + i*10, 0, 28, 'shopper');
+  // NPC убраны для оптимизации
 }
 
 function buildEntertainmentDistrict() {
@@ -3957,7 +3960,7 @@ function buildEntertainmentDistrict() {
   createBuilding(75, -130, 18, 7, 14, 0xFF7043, '🎳 БОУЛИНГ', 'cinema');
   createBuilding(105, -130, 14, 6, 12, 0x5C6BC0, '🎱 БИЛЬЯРД', 'club');
   createBuilding(130, -105, 10, 5, 8, 0xFFA726, '🍕 PIZZA 24/7', 'shop_food');
-  for (let i = 0; i < 5; i++) spawnNPC(80+i*12, 0, -68, 'shopper');
+  // NPC убраны для оптимизации
 }
 function buildBusinessDistrict() {
   // Небоскрёбы делового центра — вдали от центральных дорог
@@ -3991,8 +3994,7 @@ function buildBusinessDistrict() {
     col.position.set(-90+ci,-113,15); scene.add(col);
   }
   interactables.push({position:{x:-90,y:0,z:-104}, type:'office', name:'🏛️ МЭРИЯ', range:7});
-  // NPC деловые
-  for (let i = 0; i < 5; i++) spawnNPC(-115+i*15, 0, -108, 'guard');
+  // NPC деловые — убраны для оптимизации
 }
 
 function buildPark() {
@@ -4060,7 +4062,7 @@ function buildNorthernDistrict() {
   createBuilding(148, 130, 22, 9, 16, 0xFFF176, '🏫 ШКОЛА №1', 'office');
   createBuilding(148, 158, 18, 7, 14, 0xFFE082, '📚 БИБЛИОТЕКА', 'office');
   // NPC на улице
-  for (let i = 0; i < 5; i++) spawnNPC(30 + i*12, 0, 118, 'shopper');
+  // NPC убраны для оптимизации
 }
 
 function buildSouthernIndustrialZone() {
@@ -4089,7 +4091,7 @@ function buildSouthernIndustrialZone() {
     rail.position.set(fx+2.5, 2, -109); scene.add(rail);
   }
   // NPC-рабочие
-  for (let i = 0; i < 4; i++) spawnNPC(-40 + i*10, 0, -134, 'guard');
+  // NPC-рабочие убраны для оптимизации
 }
 
 function buildEasternDistrict() {
@@ -4121,7 +4123,7 @@ function buildEasternDistrict() {
   }
   interactables.push({ position:{x:145,y:0,z:-55}, type:'cinema', name:'🏟️ СТАДИОН', range:8 });
   // NPC в восточном районе
-  for (let i = 0; i < 6; i++) spawnNPC(108 + i*7, 0, 30, 'shopper');
+  // NPC убраны для оптимизации
 }
 
 function buildWesternVillage() {
@@ -4178,14 +4180,9 @@ function buildWesternVillage() {
     createTree(-105 - Math.random()*80, -50 + Math.random()*100);
   }
   // NPC деревенские
-  for (let i = 0; i < 4; i++) spawnNPC(-128 + i*8, 0, -10, 'shopper');
+  // NPC убраны для оптимизации
 
-  // Полицейские патрули по городу (роль guard = полицейский)
-  const policePatrols = [
-    [15, 0, 15], [-15, 0, 15], [15, 0, -15], [-15, 0, -15],
-    [30, 0, 0], [-30, 0, 0], [0, 0, 30], [0, 0, -30]
-  ];
-  policePatrols.forEach(([px, py, pz]) => spawnNPC(px, py, pz, 'guard'));
+  // Полицейские патрули — убраны
 }
 
 // ═══════════════════════════════════════════════════════
@@ -4300,11 +4297,7 @@ function buildDesert() {
     createTree(185+Math.cos(a)*7, 185+Math.sin(a)*7);
   }
   interactables.push({ position:{x:185,y:0,z:185}, type:'house', name:'🏜️ ОАЗИС', range:8 });
-
-  // НПС в пустыне
-  for (let i = 0; i < 6; i++) spawnNPC(140+i*15, 0, 140+Math.random()*40, 'shopper');
-  spawnNPC(185, 0, 195, 'merchant');
-  spawnNPC(175, 0, 185, 'merchant');
+  // НПС убраны для оптимизации
 }
 
 // ═══════════════════════════════════════════════════════
@@ -4363,12 +4356,10 @@ function buildCaves() {
       crystal.position.set(cx+(Math.random()-0.5)*5, 0.5, cz+5+k*4); scene.add(crystal);
     }
 
-    // НПС у пещеры
-    spawnNPC(cx+4, 0, cz-3, 'guard');
+    // НПС у пещеры убраны для оптимизации
   });
 
-  // Общие НПС в пещерной зоне
-  for (let i = 0; i < 5; i++) spawnNPC(-150-i*10, 0, 150+i*12, 'shopper');
+  // НПС убраны для оптимизации
 }
 
 // ═══════════════════════════════════════════════════════
@@ -4445,10 +4436,7 @@ function buildBridge(cx, cz, isNS, label, length) {
   }
 
   interactables.push({ position:{x:cx,y:0,z:cz}, type:'house', name: label, range: 10 });
-  // НПС на мосту
-  for (let i = 0; i < 3; i++) {
-    spawnNPC(cx + (isNS?0:(i-1)*20), 2, cz + (isNS?(i-1)*20:0), 'shopper');
-  }
+  // НПС на мосту убраны для оптимизации
 }
 
 // ═══════════════════════════════════════════════════════
@@ -4461,7 +4449,7 @@ function buildFarNorthCity() {
     const h = 8 + Math.floor(Math.random()*40);
     const colors = [0x1b2631,0x154360,0x1a5276,0x1f618d];
     createBuilding(x, z, 12, h, 12, colors[i%4], '🏢 СЕВЕР-' + i, 'office');
-    if (i % 3 === 0) spawnNPC(x, 0, z-15, 'shopper');
+    // НПС убраны для оптимизации
   }
   // Дорога через северный город
   const northRoad = new THREE.Mesh(new THREE.PlaneGeometry(400, 10),
@@ -4479,7 +4467,7 @@ function buildFarEastCity() {
     const h = 8 + Math.floor(Math.random()*35);
     const colors = [0x1a3a6e,0x2c3e50,0x21618c,0x1b4f72];
     createBuilding(x, z, 12, h, 12, colors[i%4], '🏢 ВОСТОК-' + i, 'office');
-    if (i % 3 === 0) spawnNPC(x-15, 0, z, 'shopper');
+    // НПС убраны для оптимизации
   }
   const eastRoad = new THREE.Mesh(new THREE.PlaneGeometry(10, 400),
     new THREE.MeshLambertMaterial({color:0x222222}));
@@ -4496,7 +4484,7 @@ function buildFarWestCity() {
     const h = 8 + Math.floor(Math.random()*35);
     const colors = [0x4a235a,0x6c3483,0x7d3c98,0x5b2c6f];
     createBuilding(x, z, 12, h, 12, colors[i%4], '🏢 ЗАПАД-' + i, 'office');
-    if (i % 3 === 0) spawnNPC(x+15, 0, z, 'shopper');
+    // НПС убраны для оптимизации
   }
   const westRoad = new THREE.Mesh(new THREE.PlaneGeometry(10, 400),
     new THREE.MeshLambertMaterial({color:0x222222}));
@@ -4513,7 +4501,7 @@ function buildFarSouthCity() {
     const h = 8 + Math.floor(Math.random()*40);
     const colors = [0x1c2833,0x212f3d,0x2e4057,0x273746];
     createBuilding(x, z, 12, h, 12, colors[i%4], '🏢 ЮГ-' + i, 'office');
-    if (i % 3 === 0) spawnNPC(x, 0, z+15, 'shopper');
+    // НПС убраны для оптимизации
   }
   const southRoad = new THREE.Mesh(new THREE.PlaneGeometry(400, 10),
     new THREE.MeshLambertMaterial({color:0x222222}));
@@ -4524,21 +4512,12 @@ function buildFarSouthCity() {
 // ДОПОЛНИТЕЛЬНЫЕ НПС ПО ВСЕМУ ГОРОДУ
 // ═══════════════════════════════════════════════════════
 function buildNPCPopulation() {
-  // Торговцы — новый тип
-  const npcZones = [
-    [0, 0, 15], [50, 0, 10], [-50, 0, 10],
-    [100, 0, 8], [-100, 0, 8], [0, 0, -100],
-    [150, 0, 6], [-150, 0, 6],
-    [-60, 0, 80], [60, 0, 80], [60, 0, -80], [-60, 0, -80]
-  ];
-  npcZones.forEach(([x, y, count]) => {
-    for (let i = 0; i < count; i++) {
-      const nx = x + (Math.random()-0.5)*30;
-      const nz = y + (Math.random()-0.5)*30;
-      const roles = ['shopper','shopper','guard','merchant'];
-      spawnNPC(nx, 0, nz, roles[Math.floor(Math.random()*roles.length)]);
-    }
-  });
+  // Только 5 НПС в центре города для атмосферы
+  spawnNPC(20, 0, 0, 'shopper');
+  spawnNPC(-20, 0, 10, 'shopper');
+  spawnNPC(0, 0, 25, 'shopper');
+  spawnNPC(10, 0, -20, 'merchant');
+  spawnNPC(-10, 0, -15, 'shopper');
 }
 
 function createTree(x, z) {
@@ -4562,28 +4541,26 @@ function createTree(x, z) {
 }
 
 function addStreetLights() {
+  // ОПТИМИЗАЦИЯ: фонари только в радиусе 150 от центра, без PointLight
   const positions = [];
-  for (let i = -CONFIG.WORLD_SIZE/2+20; i < CONFIG.WORLD_SIZE/2; i += 25) {
+  for (let i = -150; i < 150; i += 30) {
     positions.push([i, 12], [i, -12], [12, i], [-12, i]);
   }
   positions.forEach(([x, z]) => {
     const pole = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.1, 0.15, 6, 6),
+      new THREE.CylinderGeometry(0.1, 0.15, 6, 4), // 4 сегмента вместо 6
       new THREE.MeshLambertMaterial({ color: 0x555555 })
     );
     pole.position.set(x, 3, z);
     scene.add(pole);
 
     const lamp = new THREE.Mesh(
-      new THREE.SphereGeometry(0.3, 6, 6),
+      new THREE.SphereGeometry(0.3, 4, 3), // 4x3 вместо 6x6
       new THREE.MeshBasicMaterial({ color: 0xFFFF99 })
     );
     lamp.position.set(x, 6.2, z);
     scene.add(lamp);
-
-    const light = new THREE.PointLight(0xFFDD88, 0.5, 20);
-    light.position.set(x, 6, z);
-    scene.add(light);
+    // PointLight убран — слишком дорого при сотнях фонарей
   });
 }
 
@@ -4700,31 +4677,53 @@ function spawnNPC(x, y, z, role) {
   npcs.push({ mesh:g, x, z, role, walkAngle:Math.random()*Math.PI*2, walkTimer:Math.random()*3, waitTime:2+Math.random()*4 });
 }
 
+// ===== ОПТИМИЗИРОВАННЫЙ updateNPCs =====
+// НПС обновляются не каждый кадр, а раз в 3 кадра
+// + только НПС в радиусе 60 единиц от игрока получают полный апдейт
+let _npcUpdateFrame = 0;
 function updateNPCs(delta) {
+  _npcUpdateFrame++;
+  // Полный апдейт каждые 3 кадра
+  if (_npcUpdateFrame % 3 !== 0) return;
+  const scaledDelta = delta * 3; // компенсируем пропущенные кадры
+
+  const playerPos = (localPlayer && localPlayer.mesh) ? localPlayer.mesh.position : null;
+  const ACTIVE_RANGE = 80;
+  const ACTIVE_RANGE_SQ = ACTIVE_RANGE * ACTIVE_RANGE;
+
   npcs.forEach(npc => {
+    // Culling — скрываем НПС далеко от игрока
+    if (playerPos) {
+      const dx = npc.mesh.position.x - playerPos.x;
+      const dz = npc.mesh.position.z - playerPos.z;
+      const distSq = dx*dx + dz*dz;
+      if (distSq > ACTIVE_RANGE_SQ) {
+        npc.mesh.visible = false;
+        return;
+      }
+      npc.mesh.visible = true;
+    }
+
     // Полицейский преследует игрока если тот рядом
-    if (npc.role === 'guard' && localPlayer && localPlayer.mesh) {
-      const pp = localPlayer.mesh.position;
+    if (npc.role === 'guard' && playerPos) {
+      const pp = playerPos;
       const pdx = pp.x - npc.mesh.position.x;
       const pdz = pp.z - npc.mesh.position.z;
       const dist = Math.sqrt(pdx*pdx + pdz*pdz);
       const CHASE_RANGE = 20;
       const CATCH_RANGE = 1.8;
       if (dist < CHASE_RANGE && dist > CATCH_RANGE) {
-        // Преследование: бежать к игроку
-        const chaseSpeed = 0.065;
+        const chaseSpeed = 0.065 * scaledDelta / 0.016;
         const chaseAngle = Math.atan2(pdx, pdz);
-        npc.mesh.position.x += Math.sin(chaseAngle) * chaseSpeed;
-        npc.mesh.position.z += Math.cos(chaseAngle) * chaseSpeed;
+        npc.mesh.position.x += Math.sin(chaseAngle) * chaseSpeed * 0.016;
+        npc.mesh.position.z += Math.cos(chaseAngle) * chaseSpeed * 0.016;
         npc.mesh.rotation.y = chaseAngle;
-        // Мигающее уведомление при погоне
         if (!npc._chaseAlert) {
           npc._chaseAlert = true;
           showNotification('🚨 Полиция вас преследует! Убегайте!', 'error');
         }
         return;
       } else if (dist <= CATCH_RANGE) {
-        // Поймали!
         if (!npc._caught || Date.now() - npc._caught > 5000) {
           npc._caught = Date.now();
           showNotification('👮 Полиция вас поймала! Штраф 500$', 'error');
@@ -4740,7 +4739,7 @@ function updateNPCs(delta) {
       }
     }
 
-    npc.walkTimer -= delta;
+    npc.walkTimer -= scaledDelta;
     if (npc.walkTimer <= 0) {
       npc.walkAngle = Math.random()*Math.PI*2;
       npc.walkTimer = npc.waitTime;
@@ -4749,10 +4748,10 @@ function updateNPCs(delta) {
     const nx = npc.mesh.position.x + Math.sin(npc.walkAngle)*speed;
     const nz = npc.mesh.position.z + Math.cos(npc.walkAngle)*speed;
     const dx = nx - npc.x; const dz = nz - npc.z;
-    if (Math.sqrt(dx*dx+dz*dz) < 8) { // stay within 8u
+    if (Math.sqrt(dx*dx+dz*dz) < 8) {
       npc.mesh.position.x = nx; npc.mesh.position.z = nz;
     } else {
-      npc.walkAngle += Math.PI; // turn around
+      npc.walkAngle += Math.PI;
     }
     npc.mesh.rotation.y = npc.walkAngle;
   });
@@ -10097,36 +10096,39 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
   // Jason Day eggs
   if (window.jasonDayRole === 'survivor') checkJasonEggCollection();
 
-  // --- Мигающие огни у полицейских ---
-  npcs.forEach(npc => {
-    if (npc.role === 'guard' && npc.mesh.userData.policeLight1) {
-      const t = animationTime * 4;
-      npc.mesh.userData.policeLight1.visible = Math.sin(t) > 0;
-      npc.mesh.userData.policeLight2.visible = Math.sin(t) <= 0;
-    }
-  });
+  // --- Мигающие огни у полицейских (каждые 4 кадра) ---
+  if (_npcUpdateFrame % 4 === 0) {
+    npcs.forEach(npc => {
+      if (!npc.mesh.visible) return;
+      if (npc.role === 'guard' && npc.mesh.userData.policeLight1) {
+        const t = animationTime * 4;
+        npc.mesh.userData.policeLight1.visible = Math.sin(t) > 0;
+        npc.mesh.userData.policeLight2.visible = Math.sin(t) <= 0;
+      }
+    });
+  }
 
-  // --- Анимация конечностей NPC (ходьба/дыхание) ---
-  npcs.forEach(npc => {
-    const ud = npc.mesh.userData;
-    if (!ud.leftArm) return;
-    const nt  = animationTime;
-    const ns  = Math.sin(nt * 8);
-    const baseY = ud.npcBaseY || 1.3;
-    // Руки и ноги — лёгкая ходьба
-    ud.leftArm.rotation.x  =  ns * 0.52;
-    ud.leftArm.rotation.z  =  ns * 0.09;
-    ud.rightArm.rotation.x = -ns * 0.52;
-    ud.rightArm.rotation.z = -ns * 0.09;
-    ud.leftLeg.rotation.x  = -ns * 0.52;
-    ud.rightLeg.rotation.x =  ns * 0.52;
-    // Тело слегка подпрыгивает
-    ud.body.position.y = baseY + Math.abs(Math.sin(nt * 16)) * 0.05;
-    // Голова покачивается
-    if (ud.head) {
-      ud.head.rotation.y = Math.sin(nt * 1.8 + npc.walkAngle) * 0.07;
-    }
-  });
+  // --- Анимация конечностей NPC (каждые 2 кадра, только видимые) ---
+  if (_npcUpdateFrame % 2 === 0) {
+    npcs.forEach(npc => {
+      if (!npc.mesh.visible) return;
+      const ud = npc.mesh.userData;
+      if (!ud.leftArm) return;
+      const nt  = animationTime;
+      const ns  = Math.sin(nt * 8);
+      const baseY = ud.npcBaseY || 1.3;
+      ud.leftArm.rotation.x  =  ns * 0.52;
+      ud.leftArm.rotation.z  =  ns * 0.09;
+      ud.rightArm.rotation.x = -ns * 0.52;
+      ud.rightArm.rotation.z = -ns * 0.09;
+      ud.leftLeg.rotation.x  = -ns * 0.52;
+      ud.rightLeg.rotation.x =  ns * 0.52;
+      ud.body.position.y = baseY + Math.abs(Math.sin(nt * 16)) * 0.05;
+      if (ud.head) {
+        ud.head.rotation.y = Math.sin(nt * 1.8 + npc.walkAngle) * 0.07;
+      }
+    });
+  }
 
   // --- Машина ---
   if (localCar) {
