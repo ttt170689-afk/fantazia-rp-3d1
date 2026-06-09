@@ -3549,6 +3549,50 @@ function startGame() {
   animate();
   // Check daily reward on login
   setTimeout(() => checkAndShowReward(), 2000);
+
+  // ─── ОФЛАЙН FALLBACK ────────────────────────────────────────
+  // Если сервер недоступен — через 3 сек создаём игрока локально
+  setTimeout(function() {
+    if (localPlayer) return; // уже зарегистрированы — всё ок
+    console.warn('[FANTAZIA] Сервер недоступен — офлайн режим');
+    showNotification('⚡ Офлайн режим — сервер недоступен', 'info');
+    setTimeout(() => showNotification('🖱️ Кликни на экран для управления мышью | WASD — движение', 'info'), 1500);
+
+    const appearance = {
+      skinColor: document.getElementById('skinColor') ? document.getElementById('skinColor').value : '#ffcc99',
+      shirtColor: document.getElementById('shirtColor') ? document.getElementById('shirtColor').value : '#6c5ce7',
+      pantsColor: document.getElementById('pantsColor') ? document.getElementById('pantsColor').value : '#2d3436',
+      hairColor: document.getElementById('hairColor') ? document.getElementById('hairColor').value : '#4a3728',
+      hairStyle: selectedHair || 0
+    };
+
+    localPlayer = {
+      id: 'offline_' + Date.now(),
+      name: name,
+      position: { x: 0, y: 0, z: 10 },
+      appearance: appearance,
+      health: 100,
+      job: 'Безработный',
+      isOffline: true
+    };
+
+    const char3D = createCharacter(appearance, true);
+    char3D.position.set(0, 0, 10);
+    scene.add(char3D);
+    localPlayer.mesh = char3D;
+    createNameTag(name, char3D);
+
+    // Заглушка для socket.emit чтоб не крашилось
+    if (!socket || !socket.connected) {
+      socket = {
+        emit: function() {},
+        on: function() {},
+        id: 'offline',
+        connected: false
+      };
+    }
+  }, 3000);
+  // ─────────────────────────────────────────────────────────────
 }
 
 // =================== THREE.JS СЦЕНА ===================
@@ -3578,6 +3622,9 @@ function initThreeJS() {
   renderer.toneMapping = THREE.NoToneMapping;
   // ── ОПТИМИЗАЦИЯ: frustum culling включён по умолчанию в Three.js ──
   document.body.insertBefore(renderer.domElement, document.body.firstChild);
+  renderer.domElement.style.cssText = 'display:block;position:fixed;top:0;left:0;z-index:0;';
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(optPixelRatio);
 
   clock = new THREE.Clock();
 
@@ -6370,7 +6417,7 @@ async function applyShopItems(playerName) {
 }
 
 function initSocket(name) {
-  socket = io();
+  try { socket = io(); } catch(e) { socket = { emit:function(){}, on:function(){}, connected:false }; return; }
 
   socket.on('connect', () => {
     console.log('Подключено к серверу!');
@@ -6669,11 +6716,30 @@ function initControls() {
   });
 
   // Мышь
+  let _mouseDragging = false;
+  let _lastMouseX = 0, _lastMouseY = 0;
   document.addEventListener('mousemove', (e) => {
-    if (!isPointerLocked) return;
-    cameraAngleH -= e.movementX * CONFIG.MOUSE_SENSITIVITY;
-    cameraAngleV = Math.max(-0.5, Math.min(1.2, cameraAngleV + e.movementY * CONFIG.MOUSE_SENSITIVITY));
+    if (isPointerLocked) {
+      cameraAngleH -= e.movementX * CONFIG.MOUSE_SENSITIVITY;
+      cameraAngleV = Math.max(-0.5, Math.min(1.2, cameraAngleV + e.movementY * CONFIG.MOUSE_SENSITIVITY));
+    } else if (_mouseDragging && localPlayer && localPlayer.isOffline) {
+      const dx = e.clientX - _lastMouseX;
+      const dy = e.clientY - _lastMouseY;
+      cameraAngleH -= dx * CONFIG.MOUSE_SENSITIVITY * 0.8;
+      cameraAngleV = Math.max(-0.5, Math.min(1.2, cameraAngleV + dy * CONFIG.MOUSE_SENSITIVITY * 0.8));
+      _lastMouseX = e.clientX;
+      _lastMouseY = e.clientY;
+    }
   });
+  renderer.domElement.addEventListener('mousedown', (e) => {
+    if (!isPointerLocked) {
+      _mouseDragging = true;
+      _lastMouseX = e.clientX;
+      _lastMouseY = e.clientY;
+      renderer.domElement.requestPointerLock().catch(() => {});
+    }
+  });
+  document.addEventListener('mouseup', () => { _mouseDragging = false; });
 
   // Клавиатура
   document.addEventListener('keydown', (e) => {
@@ -9942,7 +10008,7 @@ function animate(timestamp) {
   const mesh = localPlayer.mesh;
 
   // --- Движение ---
-  if ((isPointerLocked || window.mobileReady) && !currentDance) {
+  if ((isPointerLocked || window.mobileReady || (localPlayer && localPlayer.isOffline)) && !currentDance) {
     const isSprint = keys['ShiftLeft'] || keys['ShiftRight'] || mobileSprintOn;
     const speed = isSprint ? CONFIG.SPRINT_SPEED : CONFIG.MOVE_SPEED;
 
