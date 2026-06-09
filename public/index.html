@@ -6355,11 +6355,7 @@ function animateRemoteCharacter(character, animation, dance, t) {
 const SHOP_SERVER = ''; // отключено
 
 async function applyShopItems(playerName) {
-  // Применяем только локально сохранённые предметы из localStorage
-  try {
-    // (серверный магазин отключён — только fz_box_inv)
-
-  // ── Также проверяем fz_box_inv (локальный магазин) ──
+  // Серверный магазин отключён (п.8.4.2 Яндекс Игр) — только localStorage
   try {
     const boxInv = _fzBoxInv();
     const shopEquipped = boxInv.find(i => i.source === 'shop' && i.equipped && i.type === 'accessory');
@@ -6370,7 +6366,7 @@ async function applyShopItems(playerName) {
         updateAccessory3D(localPlayer.mesh, gId);
       }
     }
-  } catch(e2) {}
+  } catch(e) {}
 }
 
 function initSocket(name) {
