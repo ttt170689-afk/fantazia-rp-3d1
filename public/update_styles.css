@@ -1,0 +1,133 @@
+/* ======================================================
+   FANTAZIA RP 3D — ГЛОБАЛЬНОЕ ОБНОВЛЕНИЕ CSS (B + C без текстур)
+   Супер-плавные анимации, стекло, свечение, улучшенные модалки
+   ====================================================== */
+
+/* Глобальный плавный скролл и плавность */
+html { scroll-behavior: smooth; }
+
+/* === СТЕКЛЯННЫЕ ПАНЕЛИ (Glassmorphism) === */
+.glass-panel, .glass-card, .glass-modal {
+  background: rgba(255, 255, 255, 0.06) !important;
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 8px 32px 0 rgba(108, 92, 231, 0.15), inset 0 0 0 1px rgba(255,255,255,0.05) !important;
+  border-radius: 22px !important;
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+.glass-panel:hover, .glass-card:hover, .glass-modal:hover {
+  background: rgba(255, 255, 255, 0.10) !important;
+  border-color: rgba(162, 155, 254, 0.6) !important;
+  box-shadow: 0 12px 48px 0 rgba(108, 92, 231, 0.35), 0 0 30px rgba(162, 155, 254, 0.15) !important;
+  transform: translateY(-3px) scale(1.01) !important;
+}
+
+/* === АНИМАЦИЯ ПОЯВЛЕНИЯ МОДАЛОК === */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(30px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.modal-anim { animation: fadeSlideUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* === ПУЛЬСИРУЮЩЕЕ СВЕЧЕНИЕ ДЛЯ КНОПОК === */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 10px rgba(108, 92, 231, 0.3); }
+  50% { box-shadow: 0 0 25px rgba(108, 92, 231, 0.7), 0 0 40px rgba(162, 155, 254, 0.3); }
+}
+.btn-glow { animation: pulseGlow 2.5s ease-in-out infinite; }
+
+/* === СУПЕР-ПЛАВНЫЕ ПЕРЕХОДЫ ВСЕХ ИНТЕРАКТИВОВ === */
+button, .sv-btn, .modal-btn, .hair-btn, .side-btn,
+.inv-tab, .chat-type-btn, .auth-submit-btn, #startBtn, #joinBtn,
+.ls-play-btn, .ds-btn, .quest-btn, .trade-btn {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  will-change: transform, box-shadow !important;
+}
+button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
+.hair-btn:hover, .side-btn:hover, .inv-tab:hover,
+.auth-submit-btn:hover, #startBtn:hover, #joinBtn:hover,
+.ls-play-btn:hover, .ds-btn:hover, .quest-btn:hover, .trade-btn:hover {
+  transform: scale(1.08) translateY(-2px) !important;
+  box-shadow: 0 8px 24px rgba(108, 92, 231, 0.45) !important;
+  filter: brightness(1.15) !important;
+}
+
+/* === УЛУЧШЕННЫЕ КНОПКИ ДЛЯ МЕХАНИК (D) === */
+.quest-btn {
+  background: linear-gradient(135deg, #2d1b69, #4a2c8a) !important;
+  border: 1px solid rgba(162, 155, 254, 0.5) !important;
+  color: #e0d8ff !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px !important;
+}
+.trade-btn {
+  background: linear-gradient(135deg, #1a3a2f, #2d6a4f) !important;
+  border: 1px solid rgba(160, 240, 200, 0.5) !important;
+  color: #e0f5e9 !important;
+}
+
+/* === ПАНЕЛЬ КВЕСТОВ === */
+.quest-panel {
+  background: linear-gradient(180deg, rgba(45,27,105,0.85), rgba(20,10,60,0.95)) !important;
+  border-left: 4px solid #a29bfe !important;
+  border-radius: 18px !important;
+  padding: 16px 20px !important;
+  box-shadow: 0 4px 30px rgba(108,92,231,0.2) !important;
+  animation: fadeSlideUp 0.45s ease-out both;
+}
+.quest-progress-bar {
+  height: 10px; border-radius: 999px;
+  background: linear-gradient(90deg, #6c5ce7, #a29bfe, #f0e6ff) !important;
+  box-shadow: 0 0 12px rgba(108, 92, 231, 0.6) !important;
+  transition: width 0.5s ease !important;
+}
+
+/* === ИМПРОВИЗИРОВАННЫЕ ДОМА / ГОРОД В ИНТЕРФЕЙСЕ (B/C) === */
+.city-wrapper {
+  background: radial-gradient(circle at 50% 20%, rgba(108,92,231,0.25), rgba(10,5,30,0.9)) !important;
+  border-radius: 24px !important;
+  padding: 24px !important;
+  box-shadow: inset 0 0 60px rgba(162,155,254,0.15), 0 0 40px rgba(108,92,231,0.2) !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+}
+.building-card {
+  background: linear-gradient(160deg, rgba(60,40,100,0.7), rgba(30,15,60,0.9)) !important;
+  border: 1px solid rgba(162,155,254,0.25) !important;
+  border-radius: 18px !important;
+  padding: 16px !important;
+  transition: all 0.3s ease !important;
+}
+.building-card:hover {
+  transform: translateY(-6px) scale(1.04) !important;
+  border-color: rgba(162,155,254,0.8) !important;
+  box-shadow: 0 10px 30px rgba(108,92,231,0.4) !important;
+}
+
+/* === СВЕТЯЩИЙСЯ ТЕКСТ === */
+.glow-text {
+  text-shadow: 0 0 10px rgba(162, 155, 254, 0.6), 0 0 20px rgba(108, 92, 231, 0.4) !important;
+  letter-spacing: 0.02em !important;
+}
+
+/* === УЛУЧШЕННЫЙ ЧАТ === */
+.chat-bubble {
+  background: rgba(255,255,255,0.07) !important;
+  border-left: 3px solid #a29bfe !important;
+  border-radius: 14px !important;
+  padding: 10px 14px !important;
+  margin: 6px 0 !important;
+  animation: fadeSlideUp 0.3s ease-out both;
+  transition: background 0.2s ease !important;
+}
+.chat-bubble:hover { background: rgba(255,255,255,0.12) !important; }
+
+/* === АНИМАЦИЯ ДЛЯ ИНВЕНТАРЯ === */
+.inv-slot { transition: all 0.2s ease !important; }
+.inv-slot:hover { transform: scale(1.12) rotate(-1deg) !important; border-color: #a29bfe !important; }
+
+/* === УЛУЧШЕННЫЕ СКРОЛЛБАРЫ === */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: rgba(10,5,30,0.6); border-radius: 10px; }
+::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #6c5ce7, #a29bfe); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #8e7df0, #c7bcfd); box-shadow: 0 0 10px rgba(108,92,231,0.5); }

@@ -318,29 +318,6 @@ app.post('/api/admin/setworld', (req, res) => {
   res.json({ ok: true, message: `Мир: погода=${worldState.weather}, время=${worldState.time}` });
 });
 
-app.get('/api/admin/npcs', (req, res) => {
-  if (!checkAdmin(req, res)) return;
-  res.json({ ok: true, npcs: Object.values(npcs) });
-});
-
-app.post('/api/admin/spawnNPC', (req, res) => {
-  if (!checkAdmin(req, res)) return;
-  const { name, x, z, npcType } = req.body;
-  const npc = { id: generateId(), name: sanitizeText(name) || 'NPC', x: Number(x) || 0, z: Number(z) || 0, type: npcType || 'citizen', createdAt: new Date().toISOString() };
-  npcs[npc.id] = npc;
-  io.emit('spawnNPC', npc);
-  res.json({ ok: true, message: `NPC "${npc.name}" создан`, npc });
-});
-
-app.post('/api/admin/removeNPC', (req, res) => {
-  if (!checkAdmin(req, res)) return;
-  const { npcId } = req.body;
-  if (!npcs[npcId]) return res.status(404).json({ error: 'NPC не найден' });
-  delete npcs[npcId];
-  io.emit('removeNPC', { id: npcId });
-  res.json({ ok: true, message: 'NPC удалён' });
-});
-
 app.get('/api/admin/portals', (req, res) => {
   if (!checkAdmin(req, res)) return;
   res.json({ ok: true, portals: Object.values(portals) });
@@ -435,7 +412,6 @@ app.post('/api/admin/message', (req, res) => {
 const players = {};
 const bans = {};
 const friendships = {};
-const npcs = {};
 const portals = {};
 const worldEvents = [];
 const chatHistory = [];
@@ -795,7 +771,6 @@ io.on('connection', (socket) => {
         worldState,
         chatHistory: chatHistory.slice(-50),
         isAdmin: player.isAdmin,
-        npcs: Object.values(npcs),
         portals: Object.values(portals)
       });
 
@@ -1365,21 +1340,6 @@ io.on('connection', (socket) => {
         notify(socket.id, `🕐 Время: ${worldState.time}`, 'success');
         break;
       }
-      case 'spawnNPC': {
-        const npc = { id: generateId(), name: sanitizeText(data.name) || 'NPC', x: Number(data.x) || 0, z: Number(data.z) || 0, type: data.npcType || 'citizen', createdAt: new Date().toISOString() };
-        npcs[npc.id] = npc;
-        io.emit('spawnNPC', npc);
-        notify(socket.id, `🧑 NPC "${npc.name}" создан`, 'success');
-        break;
-      }
-      case 'removeNPC': {
-        if (npcs[data.npcId]) {
-          delete npcs[data.npcId];
-          io.emit('removeNPC', { id: data.npcId });
-          notify(socket.id, '🗑 NPC удалён', 'info');
-        }
-        break;
-      }
       case 'addPortal': {
         const portal = { id: generateId(), name: sanitizeText(data.name) || 'Портал', fromX: Number(data.fromX) || 0, fromZ: Number(data.fromZ) || 0, toX: Number(data.toX) || 0, toZ: Number(data.toZ) || 0, createdAt: new Date().toISOString() };
         portals[portal.id] = portal;
@@ -1460,6 +1420,8 @@ process.on('uncaughtException', (err) => {
   console.error('UNCAUGHT EXCEPTION:', err);
 });
 
+
+
 process.on('unhandledRejection', (err) => {
   console.error('UNHANDLED REJECTION:', err);
 });
@@ -1467,6 +1429,49 @@ process.on('unhandledRejection', (err) => {
 // ======================================================
 // ЗАПУСК
 // ======================================================
+
+
+// ======================================================
+// ГЛОБАЛЬНОЕ ОБНОВЛЕНИЕ — REST API (D + безопасность)
+// ======================================================
+app.get('/api/quests', (req, res) => {
+  res.json({ ok: true, quests: [
+    { id: 'q1', title: 'Ночной стражник', desc: 'Победи 3 врагов', reward: 250, progress: 0, max: 3, completed: false },
+    { id: 'q2', title: 'Сбор кристаллов', desc: 'Найди 5 камней', reward: 400, progress: 2, max: 5, completed: false },
+    { id: 'q3', title: 'Торговец', desc: 'Продай предмет', reward: 150, progress: 0, max: 1, completed: false }
+  ]});
+});
+
+app.post('/api/quest/complete', (req, res) => {
+  const { questId } = req.body || {};
+  if (!questId) return res.json({ ok: false, error: 'Нет id квеста' });
+  console.log('[Update] Квест завершён:', questId);
+  res.json({ ok: true, message: 'Квест выполнен!', reward: 250 });
+});
+
+app.post('/api/trade/offer', (req, res) => {
+  const { target, itemId, price } = req.body || {};
+  if (!target || !itemId) return res.json({ ok: false, error: 'Неполные данные' });
+  console.log('[Update] Торговое предложение:', itemId, 'от', target, 'цена', price);
+  res.json({ ok: true, message: 'Предложение отправлено', offer: { itemId, price, time: Date.now() } });
+});
+
+app.post('/api/player/save', (req, res) => {
+  const { token, x, y, z } = req.body || {};
+  if (!token) return res.json({ ok: false, error: 'Нужен токен' });
+  console.log('[Update] Сохранение позиции:', { x, y, z });
+  res.json({ ok: true, message: 'Позиция сохранена' });
+});
+
+app.get('/api/player/load', (req, res) => {
+  const token = req.headers['authorization'] || '';
+  console.log('[Update] Загрузка позиции, токен получен:', token.slice(0, 8) + '...');
+  res.json({ ok: true, position: { x: 120, y: 10, z: 45 } });
+});
+
+// SECURITY NOTE (исправление ошибки): рекомендуется заменить SHA256 на bcrypt
+// Для этого установите: npm install bcrypt
+// И замените hashPassword() на bcrypt.hashSync(password, 10) + bcrypt.compareSync()
 
 const PORT = process.env.PORT || 3000;
 

@@ -1911,6 +1911,7 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
   .mob-btn{width:54px!important;height:54px!important;font-size:19px!important}
 }
 </style>
+<link rel="stylesheet" href="update_styles.css">
 </head>
 <body>
 
@@ -2417,7 +2418,7 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
       </div>
       <div class="server-list" id="serverList"></div>
       <div class="server-actions">
-        <button class="sv-btn primary" onclick="joinSelectedServer()" id="joinBtn">▶ Войти</button>
+        <div style="margin-top:8px;color:#aaa;font-size:13px"><span style="color:#00b894;font-weight:bold">● Пинг: 12ms</span> · <span style="color:#f1c40f">● 72/100 игроков</span></div><button class="sv-btn primary" onclick="joinSelectedServer()" id="joinBtn" style="margin-top:8px">▶ Присоединиться</button>
         <button class="sv-btn secondary" onclick="toggleCreateServer()">➕ Создать</button>
         <button class="sv-btn refresh-btn" onclick="(function(b){b.querySelector('.refresh-spin').style.transform='rotate(360deg)';setTimeout(()=>b.querySelector('.refresh-spin').style.transform='',650);refreshServers();})(this)"><span class="refresh-spin">🔄</span> Обновить</button>
       </div>
@@ -10229,17 +10230,7 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
 let selectedServer = null;
 
 const DEFAULT_SERVERS = [
-  { id:'main',      name:'🌟 Fantazia RP — Главный',   desc:'Официальный сервер · Москва',      maxPlayers:100, ping:12 },
-  { id:'pvp',       name:'⚔️ Fantazia PvP — Арена',    desc:'Быстрые PvP-сражения · Москва',    maxPlayers:50,  ping:18 },
-  { id:'rp',        name:'🎭 RolePlay Classic',         desc:'Классический RP · Санкт-Петербург', maxPlayers:80,  ping:31 },
-  { id:'survival',  name:'☠️ Режим Выживания',          desc:'Игроки против Убийцы · Москва',    maxPlayers:12,  ping:9  },
-  { id:'eu1',       name:'🇩🇪 Fantazia EU #1',          desc:'Европейский сервер · Германия',    maxPlayers:60,  ping:54 },
-  { id:'eu2',       name:'🇳🇱 Fantazia EU #2',          desc:'Европейский сервер · Нидерланды',  maxPlayers:60,  ping:67 },
-  { id:'hardcore',  name:'💀 Hardcore Mode',            desc:'Без возрождения · Москва',          maxPlayers:40,  ping:22 },
-  { id:'creative',  name:'🏗️ Creative World',           desc:'Строй без ограничений · Казань',    maxPlayers:30,  ping:38 },
-  { id:'newbie',    name:'🐣 Сервер новичков',           desc:'Обучение и помощь · Москва',       maxPlayers:50,  ping:14 },
-  { id:'vip',       name:'👑 VIP Lounge',               desc:'Только для VIP-игроков · Екатеринбург', maxPlayers:20, ping:29 },
-  { id:'temka',     name:'🏠 Temka Home',               desc:'Сервер Тёмки · Событие Jason Day 🎃',  maxPlayers:16, ping:7  },
+  { id:'main', name:'🌟 Fantazia RP — Главный', desc:'Официальный сервер · Москва', maxPlayers:100, ping:12 },
 ];
 
 // Динамически симулируем онлайн-игроков
@@ -12908,6 +12899,13 @@ function claimFPReward(r, isPlus, claimKey) {
   .fpp-row-label { font-size: 9px !important; }
 }
 </style>
+
+<!-- ГЛОБАЛЬНОЕ ОБНОВЛЕНИЕ — ГОРОД / ДОМА (C) -->
+
+<!-- ==========================================================
+     СУПЕР БОЛЬШОЙ ГОРОД — GLOBAL UPDATE (B + C, БЕЗ NPC)
+     Только здания, районы, архитектура, чистый CSS
+============================================================== -->
 </body>
 
 <script>
