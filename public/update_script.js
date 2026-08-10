@@ -134,3 +134,21 @@
   }
 
 })();
+// === ДОПОЛНИТЕЛЬНЫЕ МЕХАНИКИ ГЛОБАЛЬНОГО ОБНОВЛЕНИЯ ===
+window.GlobalUpdate = {
+  version: '2.0.0',
+  rebuilt: true,
+  worldSize: '500x500',
+  mallSize: '120x55x100',
+  npcRemoved: true,
+  cameraZoomLimited: true,
+  init() {
+    console.log('[Global Update v2.0] Мир перестроен. Grand Mall огромный. Без NPC.');
+    if (window.QuestSystem) window.QuestSystem.init();
+    if (window.TradeSystem) window.TradeSystem.init();
+  },
+  getStatus() {
+    return { version: this.version, rebuilt: this.rebuilt, mallSize: this.mallSize, worldSize: this.worldSize, npcRemoved: this.npcRemoved, zoomLimited: this.cameraZoomLimited };
+  }
+};
+window.GlobalUpdate.init();
