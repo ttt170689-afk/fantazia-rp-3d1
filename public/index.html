@@ -4005,6 +4005,26 @@ function buildGrandMall() {
   // NPC убраны для оптимизации
 
   // Spawn cars in parking lot
+  // === УЛУЧШЕНИЯ GRAND MALL — БОЛЬШОЙ РЕАЛЬНЫЙ МОЛЛ ===
+  // Внутренние этажи (видны сквозь стекло)
+  for(let f=1; f<=5; f++){
+    const floor = new THREE.Mesh(new THREE.BoxGeometry(MW-2, 0.15, MD-2), new THREE.MeshLambertMaterial({color:0xeeeeee}));
+    floor.position.set(MX, f*MH/5, MZ); scene.add(floor);
+  }
+  // Больше стеклянных панелей на фасаде
+  for(let gx = -MW/2+2; gx < MW/2-2; gx += 4) {
+    const g = new THREE.Mesh(new THREE.PlaneGeometry(3.5, MH-1), new THREE.MeshBasicMaterial({color:0xaaccff, transparent:true, opacity:0.6}));
+    g.position.set(MX+gx, MH/2, MZ+MD/2+0.15); scene.add(g);
+    const g2 = g.clone(); g2.position.z = MZ-MD/2-0.15; g2.rotation.y = Math.PI; scene.add(g2);
+  }
+  // Большой центральный атриум — открытый зал
+  const atrium = new THREE.Mesh(new THREE.BoxGeometry(MW*0.6, MH*0.3, MD*0.5), new THREE.MeshLambertMaterial({color:0xffffff, transparent:true, opacity:0.15}));
+  atrium.position.set(MX, MH*0.15, MZ); scene.add(atrium);
+  // Внутренний свет (точки)
+  for(let i=0; i<6; i++){
+    const l = new THREE.Mesh(new THREE.BoxGeometry(0.8,0.8,0.8), new THREE.MeshLambertMaterial({color:0xffeeaa, emissive:0xffeeaa}));
+    l.position.set(MX + (i-3)*12, MH/2 + 2, MZ + (i%2===0?10:-10)); scene.add(l);
+  }
   spawnCarsInParking();
 }
 
