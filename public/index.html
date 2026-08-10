@@ -3675,30 +3675,30 @@ function initThreeJS() {
 
 // =================== ГЕНЕРАТОР ГОРОДА ===================
 function buildCity() {
-  // === МОЙ ОГРОМНЫЙ НОРМАЛЬНЫЙ МИР ===
-  // Огромная земля
-  const groundGeo = new THREE.PlaneGeometry(500, 500);
-  const groundMat = new THREE.MeshLambertMaterial({ color: 0x3a7d3a });
-  const ground = new THREE.Mesh(groundGeo, groundMat);
-  ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
-
-  // Широкие дороги (крест)
-  const roadMat = new THREE.MeshLambertMaterial({ color: 0x666666 });
-  const road1 = new THREE.Mesh(new THREE.PlaneGeometry(500, 14), roadMat); road1.rotation.x=-Math.PI/2; road1.position.y=0.02; road1.receiveShadow=true; scene.add(road1);
-  const road2 = new THREE.Mesh(new THREE.PlaneGeometry(14, 500), roadMat); road2.rotation.x=-Math.PI/2; road2.position.y=0.02; road2.receiveShadow=true; scene.add(road2);
-
-  // Площадь чистая
-  const plaza = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshLambertMaterial({color:0xddccaa})); plaza.rotation.x=-Math.PI/2; plaza.position.set(0,0.01,0); scene.add(plaza);
-
-  // Только нужно: Grand Mall и Mega Skyscraper
+  buildRoads();
+  buildCentralPlaza();
   buildShoppingDistrict();
   buildMegaSkyscraperDistrict();
-  buildCentralPlaza();
   buildPark();
-  buildRoads();
   buildBridges();
   addStreetLights();
-  // Без мелких домов, без NPC, без мусора
+  // ВСЕ МЕЛКИЕ ДОМА УДАЛЕНЫ
+  // buildResidentialArea();
+  // buildEntertainmentDistrict();
+  // buildBusinessDistrict();
+  // buildNorthernDistrict();
+  // buildSouthernIndustrialZone();
+  // buildEasternDistrict();
+  // buildWesternVillage();
+  // buildFarNorthCity();
+  // buildFarEastCity();
+  // buildFarWestCity();
+  // buildFarSouthCity();
+  // buildDesert();
+  // buildCaves();
+  // buildNPCPopulation();
+  // addTrees();
+  // addDecorations();
 }
 
 
