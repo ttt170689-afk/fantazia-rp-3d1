@@ -2418,8 +2418,8 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
       </div>
       <div class="server-list" id="serverList"></div>
       <div class="server-actions">
-        <div style="margin-top:8px;color:#aaa;font-size:13px"><span style="color:#00b894;font-weight:bold">● Пинг: 12ms</span> · <span style="color:#f1c40f">● 72/100 игроков</span></div><button class="sv-btn refresh-btn" onclick="joinSelectedServer()" id="joinBtn" style="margin-top:8px;width:100%;padding:12px;font-size:15px;font-weight:700;background:linear-gradient(135deg,#6c5ce7,#a29bfe);border:none;border-radius:12px;color:#fff;box-shadow:0 0 20px rgba(108,92,231,0.4);cursor:pointer;transition:all .3s ease;letter-spacing:.5px;">▶ Присоединиться</button>
-        <button class="sv-btn refresh-btn" onclick="toggleCreateServer()" style="padding:12px 18px;font-size:13px;background:linear-gradient(135deg,#2d1b69,#4a2c8a);border:1px solid rgba(162,155,254,0.4);color:#e0d8ff;border-radius:12px;cursor:pointer;box-shadow:0 0 12px rgba(108,92,231,0.25);transition:all .3s ease;letter-spacing:.5px;">➕ Создать</button>
+        <button class="sv-btn refresh-btn" onclick="joinSelectedServer()" id="joinBtn" style="margin-top:8px;width:100%;padding:12px;font-size:15px;font-weight:700;background:linear-gradient(135deg,#6c5ce7,#a29bfe);border:none;border-radius:12px;color:#fff;box-shadow:0 0 20px rgba(108,92,231,0.4);cursor:pointer;">▶ Присоединиться</button>
+        <button class="sv-btn refresh-btn" onclick="toggleCreateServer()" style="padding:12px 18px;font-size:13px;background:linear-gradient(135deg,#2d1b69,#4a2c8a);border:1px solid rgba(162,155,254,0.4);color:#e0d8ff;border-radius:12px;cursor:pointer;">➕ Создать</button>
         <button class="sv-btn refresh-btn" onclick="(function(b){b.querySelector('.refresh-spin').style.transform='rotate(360deg)';setTimeout(()=>b.querySelector('.refresh-spin').style.transform='',650);refreshServers();})(this)"><span class="refresh-spin">🔄</span> Обновить</button>
       </div>
       <div id="createServerBox">
@@ -2428,7 +2428,7 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
           <input type="text" id="newServerDesc" placeholder="Описание (необязательно)" maxlength="60" style="flex:1;padding:8px 12px;border:2px solid #6c5ce7;border-radius:8px;background:rgba(255,255,255,0.08);color:#fff;font-size:13px;outline:none;">
           <button class="sv-btn primary" style="flex:0 0 auto;padding:8px 18px" onclick="createServer()">✔</button>
         </div>
-
+        
       </div>
     </div>
   </div>
@@ -3678,29 +3678,98 @@ function buildCity() {
   buildRoads();
   buildCentralPlaza();
   buildShoppingDistrict();
-  buildMegaSkyscraperDistrict();
+  buildResidentialArea();
+  buildEntertainmentDistrict();
+  buildBusinessDistrict();
   buildPark();
+  buildNorthernDistrict();
+  buildSouthernIndustrialZone();
+  buildEasternDistrict();
+  buildWesternVillage();
+  // --- НОВЫЕ ЗОНЫ ---
+  buildMegaSkyscraperDistrict();
+  buildDesert();
+  buildCaves();
   buildBridges();
+  buildFarNorthCity();
+  buildFarEastCity();
+  buildFarWestCity();
+  buildFarSouthCity();
+  buildNPCPopulation();
   addStreetLights();
-  // ВСЕ МЕЛКИЕ ДОМА УДАЛЕНЫ
-  // buildResidentialArea();
-  // buildEntertainmentDistrict();
-  // buildBusinessDistrict();
-  // buildNorthernDistrict();
-  // buildSouthernIndustrialZone();
-  // buildEasternDistrict();
-  // buildWesternVillage();
-  // buildFarNorthCity();
-  // buildFarEastCity();
-  // buildFarWestCity();
-  // buildFarSouthCity();
-  // buildDesert();
-  // buildCaves();
-  // buildNPCPopulation();
-  // addTrees();
-  // addDecorations();
+  addTrees();
+  addDecorations();
 }
 
+function createBuilding(x, z, w, h, d, color, name, type) {
+  const group = new THREE.Group();
+  // Основное здание
+  const geo = new THREE.BoxGeometry(w, h, d);
+  const mat = new THREE.MeshLambertMaterial({ color });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.y = h/2;
+  mesh.castShadow = false;  // ОПТИМИЗАЦИЯ: выкл тени у зданий
+  mesh.receiveShadow = false;
+  group.add(mesh);
+
+  // Окна — только у ближних небольших зданий (экономия draw calls)
+  if (h < 30) {
+    const windowMat = new THREE.MeshBasicMaterial({ color: 0xFFFF99, transparent:true, opacity:0.8 });
+    const floors = Math.floor(h / 4); // реже, меньше плоскостей
+    for (let f = 0; f < floors; f++) {
+      for (let wx = -w/2+1.5; wx < w/2-0.5; wx += 3.5) { // шаг 3.5 вместо 2.5
+        const win = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.5), windowMat);
+        win.position.set(wx, f*4+2, d/2+0.01);
+        group.add(win);
+      }
+    }
+  }
+
+  // Дверь
+  const doorMat = new THREE.MeshLambertMaterial({ color: 0x5D4037 });
+  const door = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 0.2), doorMat);
+  door.position.set(0, 1.5, d/2+0.1);
+  group.add(door);
+
+  // Крыша (если не небоскрёб)
+  if (h < 25) {
+    const roofGeo = new THREE.BoxGeometry(w+1, 0.5, d+1);
+    const roofMat = new THREE.MeshLambertMaterial({ color: new THREE.Color(color).multiplyScalar(0.7) });
+    const roof = new THREE.Mesh(roofGeo, roofMat);
+    roof.position.y = h + 0.25;
+    group.add(roof);
+  }
+
+  // Вывеска — только у типовых зданий, без canvas у небоскрёбов
+  if (name && h < 40) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256; canvas.height = 64; // вдвое меньше текстура
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(0,0,256,64);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 28px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(name, 128, 44);
+    const texture = new THREE.CanvasTexture(canvas);
+    const signGeo = new THREE.PlaneGeometry(w*0.8, w*0.2);
+    const signMat = new THREE.MeshBasicMaterial({ map:texture, transparent:true });
+    const sign = new THREE.Mesh(signGeo, signMat);
+    sign.position.set(0, h+2, d/2+0.1);
+    group.add(sign);
+  }
+
+  group.position.set(x, 0, z);
+  scene.add(group);
+  buildings.push({ mesh:group, x, z, w, h, d, name, type,
+    bounds: { minX:x-w/2-0.5, maxX:x+w/2+0.5, minZ:z-d/2-0.5, maxZ:z+d/2+0.5 }
+  });
+
+  if (type) {
+    interactables.push({ position:{x,y:0,z:z+d/2+2}, type, name, range:5 });
+  }
+  return group;
+}
 
 function buildRoads() {
   const roadMat = new THREE.MeshLambertMaterial({ color: 0x333333 });
@@ -3866,7 +3935,7 @@ function buildShoppingMeadow() {
 }
 
 function buildGrandMall() {
-  const MX = 85, MZ = -85, MW = 120, MH = 55, MD = 100; // ОГРОМНЫЙ МОЛЛ
+  const MX = 85, MZ = -85, MW = 120, MH = 55, MD = 100; // ОГРОМНЫЙ
   // Main body
   const mallGeo = new THREE.BoxGeometry(MW, MH, MD);
   const mallMat = new THREE.MeshLambertMaterial({ color: 0xdde3ec });
@@ -3934,13 +4003,6 @@ function buildGrandMall() {
   interactables.push({ position:{x:MX, y:0, z:MZ+MD/2+3}, type:'mall', name:'🏬 GRAND MALL', range:6 });
 
   // NPC убраны для оптимизации
-
-  // ОГРОМНЫЙ ЗАЛ С ЛИФТАМИ И МАГАЗИНАМИ ПО КРУГУ
-  [-20,-10,0,10,20].forEach(ex => { const lift = new THREE.Mesh(new THREE.CylinderGeometry(2,2,MH*0.7,12), new THREE.MeshLambertMaterial({color:0x6c5ce7})); lift.position.set(MX+ex, MH*0.35, MZ+MD/2-8); scene.add(lift); });
-  [20,10,0,-10,-20].forEach(ex => { const lift = new THREE.Mesh(new THREE.CylinderGeometry(2,2,MH*0.7,12), new THREE.MeshLambertMaterial({color:0xa29bfe})); lift.position.set(MX+ex, MH*0.35, MZ-MD/2+8); scene.add(lift); });
-  for(let i=0;i<8;i++){ const angle=i*Math.PI/4; const rx=Math.cos(angle)*45, rz=Math.sin(angle)*45; const shop=new THREE.Mesh(new THREE.BoxGeometry(10,8,8), new THREE.MeshLambertMaterial({color:0x88ccff})); shop.position.set(MX+rx, 4, MZ+rz); scene.add(shop); }
-  const hall = new THREE.Mesh(new THREE.BoxGeometry(60, 20, 50), new THREE.MeshLambertMaterial({color:0xf0f0f5})); hall.position.set(MX, 10, MZ); scene.add(hall);
-  for(let i=-20;i<=20;i+=20){ const esc=new THREE.Mesh(new THREE.BoxGeometry(4,1,30), new THREE.MeshLambertMaterial({color:0xffcc00})); esc.position.set(MX+i, 2, MZ+28); scene.add(esc); }
 
   // Spawn cars in parking lot
   spawnCarsInParking();
@@ -12831,13 +12893,7 @@ function claimFPReward(r, isPlus, claimKey) {
   .fpp-row-label { font-size: 9px !important; }
 }
 </style>
-
-<!-- ГЛОБАЛЬНОЕ ОБНОВЛЕНИЕ — ГОРОД / ДОМА (C) -->
-
-<!-- ==========================================================
-     СУПЕР БОЛЬШОЙ ГОРОД — GLOBAL UPDATE (B + C, БЕЗ NPC)
-     Только здания, районы, архитектура, чистый CSS
-============================================================== -->
+<script src="update_script.js"></script>
 </body>
 
 <script>
