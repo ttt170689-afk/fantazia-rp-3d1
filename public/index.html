@@ -4026,7 +4026,182 @@ function buildGrandMall() {
     l.position.set(MX + (i-3)*12, MH/2 + 2, MZ + (i%2===0?10:-10)); scene.add(l);
   }
   spawnCarsInParking();
+  const mallGroup = new THREE.Group(); scene.add(mallGroup);
+  buildMallInterior(scene, mallGroup);
 }
+
+function buildMallInterior(scene, mallGroup) {
+  // ===== ЦЕНТРАЛЬНЫЙ ЗАЛ =====
+  const MX = 85, MZ = -85, MH = 55, MW = 120, MD = 100;
+
+  // 1. ФОНТАН — цилиндрическая чаша + частицы воды (THREE.Points)
+  const basin = new THREE.Mesh(
+    new THREE.CylinderGeometry(3.5, 4.5, 1.2, 32),
+    new THREE.MeshLambertMaterial({ color: 0xAAEEEE })
+  );
+  basin.position.set(MX, 0.6, MZ);
+  basin.castShadow = false; basin.receiveShadow = false;
+  mallGroup.add(basin);
+
+  // Частицы воды (анимированы вверх/вниз по Y в рендер-цикле или просто с движением)
+  const ptCount = 150;
+  const pts = new Float32Array(ptCount * 3);
+  for (let i = 0; i < ptCount * 3; i += 3) {
+    pts[i] = MX + (Math.random() - 0.5) * 7;
+    pts[i + 1] = 1.8 + Math.random() * 2.2;
+    pts[i + 2] = MZ + (Math.random() - 0.5) * 7;
+  }
+  const pGeo = new THREE.BufferGeometry();
+  pGeo.setAttribute('position', new THREE.BufferAttribute(pts, 3));
+  const pMat = new THREE.PointsMaterial({ color: 0x88CCFF, size: 0.12, transparent: true, opacity: 0.75 });
+  const fountainParticles = new THREE.Points(pGeo, pMat);
+  fountainParticles.castShadow = false; fountainParticles.receiveShadow = false;
+  mallGroup.add(fountainParticles);
+  // Простая анимация частиц вверх/вниз (вызывается из render-цикла или через setInterval)
+  fountainParticles.userData = { baseY: 1.8, phase: Math.random() * Math.PI * 2 };
+
+  // 2. СКАМЕЙКИ (4 шт) с точками-якорями для сидячей анимации
+  const benchPos = [
+    { x: MX - 18, z: MZ + 12, rot: Math.PI / 6 },
+    { x: MX + 18, z: MZ + 12, rot: -Math.PI / 6 },
+    { x: MX - 18, z: MZ - 12, rot: Math.PI + Math.PI / 6 },
+    { x: MX + 18, z: MZ - 12, rot: Math.PI - Math.PI / 6 },
+    { x: MX - 14, z: MZ + 16, rot: Math.PI / 3 },
+    { x: MX + 14, z: MZ + 16, rot: -Math.PI / 3 }
+  ];
+  const benchGeo = new THREE.BoxGeometry(3, 0.5, 1.5);
+  const benchMat = new THREE.MeshLambertMaterial({ color: 0x8B5A2B });
+  const benchInst = new THREE.InstancedMesh(benchGeo, benchMat, benchPos.length);
+  benchInst.castShadow = false; benchInst.receiveShadow = false;
+  const dummy = new THREE.Object3D();
+  benchPos.forEach((bp, i) => {
+    dummy.position.set(bp.x, 0.65, bp.z);
+    dummy.rotation.y = bp.rot;
+    dummy.updateMatrix();
+    benchInst.setMatrixAt(i, dummy.matrix);
+  });
+  benchInst.instanceMatrix.needsUpdate = true;
+  benchInst.userData = { anchorPoints: benchPos.map(b => ({ x: b.x, y: 0.8, z: b.z })) };
+  mallGroup.add(benchInst);
+
+  // 3. ТАБЛО НА СТЕНЕ (256x128 canvas)
+  const signCanvas = document.createElement('canvas');
+  signCanvas.width = 256; signCanvas.height = 128;
+  const sctx = signCanvas.getContext('2d');
+  sctx.fillStyle = '#1a0b2e';
+  sctx.fillRect(0, 0, 256, 128);
+  sctx.fillStyle = '#e0d8ff';
+  sctx.font = 'bold 32px Arial';
+  sctx.textAlign = 'center';
+  sctx.fillText('FANTAZIA RP — v2.0', 128, 55);
+  sctx.font = '16px Arial'; sctx.fillStyle = '#a29bfe';
+  sctx.fillText('ТОП-ИГРОКИ / ТАЙМЕР ИВЕНТА', 128, 85);
+  sctx.fillStyle = '#ccc'; sctx.font = '14px Arial';
+  sctx.fillText('Обновлено: 2026-08-10', 128, 108);
+  const signTex = new THREE.CanvasTexture(signCanvas);
+  const signPlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(14, 7),
+    new THREE.MeshBasicMaterial({ map: signTex, transparent: true })
+  );
+  signPlane.position.set(MX, 12, MZ + 24); // на стене зала
+  signPlane.rotation.y = Math.PI;
+  signPlane.castShadow = false; signPlane.receiveShadow = false;
+  mallGroup.add(signPlane);
+
+  // 4. 8 МАГАЗИНОВ ПО КРУГУ — категории + вывески + клик
+  const shopDef = [
+    { label: 'ОДЕЖДА', type: 'clothing', color: 0xFF6B9D },
+    { label: 'СКИНЫ', type: 'clothing', color: 0xFF6B9D },
+    { label: 'ОБНОВЛЕНИЯ', type: 'clothing', color: 0xFF6B9D },
+    { label: 'АКСЕССУАРЫ', type: 'accessories', color: 0xDDA0DD },
+    { label: 'МЕБЕЛЬ', type: 'furniture', color: 0xDEB887 },
+    { label: 'РАСХОДНИКИ', type: 'consumables', color: 0x87CEEB },
+    { label: 'РЕДКОЕ', type: 'rare', color: 0xFFD700 },
+    { label: 'СКОРО', type: 'soon', color: 0xAAAAAA }
+  ];
+  const radius = 62;
+  const angles = [0, Math.PI/4, Math.PI/2, 3*Math.PI/4, Math.PI, 5*Math.PI/4, 3*Math.PI/2, 7*Math.PI/4];
+  shopDef.forEach((shop, i) => {
+    const a = angles[i];
+    const sx = MX + Math.cos(a) * radius;
+    const sz = MZ + Math.sin(a) * radius;
+    const boxMat = new THREE.MeshLambertMaterial({ color: shop.color, emissive: shop.color * 0.15 });
+    const box = new THREE.Mesh(new THREE.BoxGeometry(8, 7, 8), boxMat);
+    box.position.set(sx, 3.5, sz);
+    box.castShadow = false; box.receiveShadow = false;
+    box.userData = { isMallShop: true, category: shop.type, label: shop.label, index: i };
+    mallGroup.add(box);
+
+    // Вывеска (canvas 256x64) на переднюю грань — к центру
+    const c = document.createElement('canvas');
+    c.width = 256; c.height = 64;
+    const cx = c.getContext('2d');
+    cx.fillStyle = '#1a0b2e'; cx.fillRect(0, 0, 256, 64);
+    cx.fillStyle = shop.type === 'soon' ? '#888' : '#e0d8ff';
+    cx.font = 'bold 28px Arial'; cx.textAlign = 'center';
+    cx.fillText(shop.label, 128, 36);
+    cx.font = '14px Arial'; cx.fillStyle = '#aaa';
+    cx.fillText(shop.type === 'soon' ? 'ЗАКРЫТО' : 'КЛИКНИ • ОТКРОЙ', 128, 55);
+    const signTex = new THREE.CanvasTexture(c);
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(7, 2), new THREE.MeshBasicMaterial({ map: signTex, transparent: true }));
+    const toCenter = Math.atan2(MZ - sz, MX - sx);
+    sign.position.set(sx + Math.cos(toCenter) * 4.1, 6.8, sz + Math.sin(toCenter) * 4.1);
+    sign.rotation.y = toCenter + Math.PI;
+    sign.castShadow = false; sign.receiveShadow = false;
+    mallGroup.add(sign);
+  });
+
+  // 5. БАЛКОН 2 ЭТАЖ (около z высоты ~10) — плоскость + кафе + доска квестов
+  const balcony = new THREE.Mesh(new THREE.PlaneGeometry(90, 40), new THREE.MeshLambertMaterial({ color: 0x222222, transparent: true, opacity: 0.6 }));
+  balcony.rotation.x = -Math.PI / 2;
+  balcony.position.set(MX, 10, MZ); // баланс вокруг зала
+  balcony.castShadow = false; balcony.receiveShadow = false;
+  mallGroup.add(balcony);
+
+  // Кафе столы/стулья (InstancedMesh)
+  const tGeo = new THREE.BoxGeometry(2, 0.7, 1.5);
+  const tMat = new THREE.MeshLambertMaterial({ color: 0xC0A060 });
+  const chairGeo = new THREE.BoxGeometry(0.8, 0.6, 0.8);
+  const chairMat = new THREE.MeshLambertMaterial({ color: 0x8B5A2B });
+  const tInst = new THREE.InstancedMesh(tGeo, tMat, 3);
+  const cInst = new THREE.InstancedMesh(chairGeo, chairMat, 6);
+  tInst.castShadow = false; tInst.receiveShadow = false;
+  cInst.castShadow = false; cInst.receiveShadow = false;
+  const d = new THREE.Object3D();
+  [[-15, 10, 15], [15, 10, 15], [0, 10, -20]].forEach((pos, i) => {
+    d.position.set(MX + pos[0], 10.35, MZ + pos[2]); d.updateMatrix(); tInst.setMatrixAt(i, d.matrix);
+  });
+  tInst.instanceMatrix.needsUpdate = true;
+  mallGroup.add(tInst);
+  let ci = 0;
+  [[-15,10,15],[15,10,15],[0,10,-20]].forEach(pos => {
+    [[-1.2,0,-0.8],[1.2,0,-0.8]].forEach(off => {
+      d.position.set(MX + pos[0] + off[0], 10.3, MZ + pos[2] + off[2]); d.rotation.y = Math.PI/4; d.updateMatrix(); cInst.setMatrixAt(ci++, d.matrix);
+    });
+  });
+  cInst.instanceMatrix.needsUpdate = true;
+  mallGroup.add(cInst);
+
+  // Доска квестов на стене балкона
+  const qCanvas = document.createElement('canvas');
+  qCanvas.width = 256; qCanvas.height = 128;
+  const qctx = qCanvas.getContext('2d');
+  qctx.fillStyle = '#1a0b2e'; qctx.fillRect(0,0,256,128);
+  qctx.fillStyle = '#e0d8ff'; qctx.font = 'bold 24px Arial'; qctx.textAlign = 'center';
+  qctx.fillText('КВЕСТЫ — ПАНЕЛЬ', 128, 35);
+  qctx.font = '16px Arial'; qctx.fillStyle = '#a29bfe';
+  qctx.fillText('Ночной стражник', 128, 65);
+  qctx.fillText('Прогресс: 0/3', 128, 90);
+  qctx.fillText('Награда: +250', 128, 110);
+  const qTex = new THREE.CanvasTexture(qCanvas);
+  const qPlane = new THREE.Mesh(new THREE.PlaneGeometry(10, 5), new THREE.MeshBasicMaterial({ map: qTex, transparent: true }));
+  qPlane.position.set(MX + 30, 13, MZ - 24);
+  qPlane.castShadow = false; qPlane.receiveShadow = false;
+  mallGroup.add(qPlane);
+
+  console.log('[MallInterior] Внутренность Grand Mall загружена: фонтан, скамейки, табло, 8 магазинов, балкон с кафе и доской квестов.');
+}
+
 
 function spawnMallNPCs(cx, cz) {
   // NPCs outside mall
