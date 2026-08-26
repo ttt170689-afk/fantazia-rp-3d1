@@ -2591,6 +2591,7 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
       <div class="side-btn" onclick="toggleVoice()" title="Голос (V)" id="voiceBtn">🎙️</div>
       <div class="side-btn" onclick="openRewardModal()" title="Ежедневная награда" id="rewardBtn" style="position:relative">🎁<span id="rewardDot" style="position:absolute;top:4px;right:4px;width:8px;height:8px;background:#e74c3c;border-radius:50%;display:none"></span></div>
       <div class="side-btn" onclick="openQuestsPanel()" title="Задания ивента Jason Day" style="position:relative;">📋<span id="questsDot" style="position:absolute;top:4px;right:4px;width:8px;height:8px;background:#ff9800;border-radius:50%;display:none;"></span></div>
+      <div class="side-btn" onclick="var m=document.getElementById('changelogModal');m.style.display='flex';m.classList.add('show');document.exitPointerLock()" title="Обновления игры">📰</div>
       <div class="side-btn" onclick="loadSettingsUI();document.getElementById('settingsModal').classList.add('show');document.exitPointerLock()" title="Настройки">⚙️</div>
       <div class="side-btn" onclick="openPauseMenu()" title="Пауза [ESC]">⏸</div>
     </div>
@@ -2746,7 +2747,7 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <button id="fppBoxBtn" class="fpp-box-open-btn" onclick="openFzBox()" style="display:none">📦 Fantazia Box</button>
         <button id="fppBuyPlusBtn" class="fpp-buy-plus-btn" onclick="openBuyPlusModal()">✨ Fantazia+ — 1 ₽</button>
-        <button class="fpp-add-xp-btn" onclick="addFPassXP(50)">+50 XP (тест)</button>
+        <button class="fpp-add-xp-btn" onclick="switchFPTab('quests', document.querySelectorAll('.fpp-tab')[1])">📋 Задания</button>
       </div>
     </div>
 
@@ -3216,6 +3217,9 @@ let socket, scene, camera, renderer, clock;
 let localPlayer = null;
 let remotePlayers = {};
 let buildings = [];
+let streetColliders = []; // { x, z, r } — круглые коллайдеры уличных объектов
+let sitSpots = [];        // { x, z, y, rot, type } — места где можно сесть (лавочки)
+let sittingOn = null;     // текущее место сидения
 let interactables = [];
 let keys = {};
 let mouseX = 0, mouseY = 0;
@@ -3318,6 +3322,19 @@ const ACCESSORIES = [
   { id:'gloves',    name:'Перчатки',   emoji:'🧤', coinPrice:15,  draw:'gloves' },
   { id:'vest',      name:'Бронежилет', emoji:'🦺', coinPrice:40,  draw:'vest' },
   { id:'watch',     name:'Часы',       emoji:'⌚', coinPrice:30,  draw:'watch' },
+  // ── НОВЫЕ АКСЕССУАРЫ (глобальное обновление) ──
+  { id:'viking',    name:'Шлем викинга',  emoji:'⚔️', coinPrice:55, draw:'viking' },
+  { id:'wizard',    name:'Шляпа мага',    emoji:'🧙', coinPrice:65, draw:'wizard' },
+  { id:'pirate',    name:'Пиратская',     emoji:'🏴‍☠️', coinPrice:48, draw:'pirate' },
+  { id:'headphones',name:'Наушники',      emoji:'🎧', coinPrice:28, draw:'headphones' },
+  { id:'flower',    name:'Цветок',        emoji:'🌺', coinPrice:14, draw:'flower' },
+  { id:'scarf',     name:'Шарф',          emoji:'🧣', coinPrice:20, draw:'scarf' },
+  { id:'backpack',  name:'Рюкзак',        emoji:'🎒', coinPrice:38, draw:'backpack' },
+  { id:'cape',      name:'Плащ героя',    emoji:'🦸', coinPrice:75, draw:'cape' },
+  { id:'antenna',   name:'Антенки',       emoji:'👾', coinPrice:33, draw:'antenna' },
+  { id:'samurai',   name:'Кабуто',        emoji:'🗾', coinPrice:70, draw:'samurai' },
+  { id:'fedora',    name:'Федора',        emoji:'🕵️', coinPrice:26, draw:'fedora' },
+  { id:'unicorn',   name:'Рог единорога', emoji:'🦄', coinPrice:52, draw:'unicorn' },
 ];
 
 // ---- Эффекты (частицы вокруг игрока) ----
@@ -3595,26 +3612,28 @@ function initThreeJS() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x87CEEB);
 
-  // ── ОПТИМИЗАЦИЯ: агрессивный туман скрывает дальние объекты ──
+  // ── ОПТИМИЗАЦИЯ: туман скрывает дальние объекты (на ПК дальше — красивее) ──
   const _isMob = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || ('ontouchstart' in window && window.innerWidth < 1024);
-  const FOG_NEAR = _isMob ? 30 : 60;
-  const FOG_FAR  = _isMob ? 90 : 180;
+  const FOG_NEAR = _isMob ? 30 : 90;
+  const FOG_FAR  = _isMob ? 90 : 260;
   scene.fog = new THREE.Fog(0x87CEEB, FOG_NEAR, FOG_FAR);
 
   // ── ОПТИМИЗАЦИЯ: camera far = FOG_FAR, ничего дальше не рендерится ──
   camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, FOG_FAR + 10);
   camera.position.set(0, 10, 15);
 
-  // ── ОПТИМИЗАЦИЯ: пониженный pixelRatio на всех устройствах ──
-  const optPixelRatio = _isMob ? Math.min(window.devicePixelRatio, 1) : Math.min(window.devicePixelRatio, 1.5);
-  renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: _isMob ? 'low-power' : 'high-performance' });
+  // ── СУПЕР-ГРАФИКА: antialias на ПК, полный pixelRatio до 2 ──
+  const optPixelRatio = _isMob ? Math.min(window.devicePixelRatio, 1) : Math.min(window.devicePixelRatio, 2);
+  renderer = new THREE.WebGLRenderer({ antialias: !_isMob, powerPreference: _isMob ? 'low-power' : 'high-performance' });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(optPixelRatio);
-  // ── ОПТИМИЗАЦИЯ: тени только у источника (512 вместо 2048) ──
+  // ── Мягкие тени на ПК (1024 — баланс качества и скорости) ──
   renderer.shadowMap.enabled = !_isMob;
-  if (!_isMob) renderer.shadowMap.type = THREE.BasicShadowMap; // быстрее PCFSoft
-  // Tone mapping отключаем — дорого
-  renderer.toneMapping = THREE.NoToneMapping;
+  if (!_isMob) renderer.shadowMap.type = THREE.PCFSoftShadowMap; // мягкие края теней
+  // ── Кинематографичный tone mapping ──
+  renderer.toneMapping = _isMob ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
+  renderer.outputEncoding = THREE.sRGBEncoding;
   // ── ОПТИМИЗАЦИЯ: frustum culling включён по умолчанию в Three.js ──
   document.body.insertBefore(renderer.domElement, document.body.firstChild);
   renderer.domElement.style.cssText = 'display:block;position:fixed;top:0;left:0;z-index:0;';
@@ -3627,12 +3646,13 @@ function initThreeJS() {
   const ambientLight = new THREE.AmbientLight(0x404060, 0.6);
   scene.add(ambientLight);
 
-  const sunLight = new THREE.DirectionalLight(0xFFF5E1, 1.0);
+  const sunLight = new THREE.DirectionalLight(0xFFF5E1, 1.15);
   sunLight.position.set(50, 80, 50);
   sunLight.castShadow = !_isMob;
   if (!_isMob) {
-    sunLight.shadow.mapSize.width  = 512; // было 2048 — в 4 раза быстрее
-    sunLight.shadow.mapSize.height = 512;
+    sunLight.shadow.mapSize.width  = 1024; // качественнее тени
+    sunLight.shadow.mapSize.height = 1024;
+    sunLight.shadow.bias = -0.0005;
     sunLight.shadow.camera.near = 0.5;
     sunLight.shadow.camera.far  = 150;
     sunLight.shadow.camera.left = -80;
@@ -3869,6 +3889,10 @@ function createBench(x, z, rotation) {
   group.position.set(x, 0, z);
   group.rotation.y = rotation;
   scene.add(group);
+  // Коллизия лавочки + место для сидения [E]
+  streetColliders.push({ x, z, r: 1.0 });
+  sitSpots.push({ x, z, y: 0.62, rot: rotation, type: 'bench' });
+  interactables.push({ position:{x, y:0, z}, type:'sit_bench', name:'🪑 Сесть на лавочку', range: 2.2 });
 }
 
 function buildShoppingDistrict() {
@@ -4825,6 +4849,8 @@ function createTree(x, z) {
 
   group.position.set(x, 0, z);
   scene.add(group);
+  // Коллизия ствола дерева
+  streetColliders.push({ x, z, r: 0.55 });
 }
 
 function addStreetLights() {
@@ -4848,6 +4874,8 @@ function addStreetLights() {
     lamp.position.set(x, 6.2, z);
     scene.add(lamp);
     // PointLight убран — слишком дорого при сотнях фонарей
+    // Коллизия столба
+    streetColliders.push({ x, z, r: 0.3 });
   });
 }
 
@@ -4886,6 +4914,8 @@ function addDecorations() {
     );
     bin.position.set(i, 0.5, 10);
     scene.add(bin);
+    // Коллизия урны
+    streetColliders.push({ x: i, z: 10, r: 0.5 });
   }
 }
 
@@ -5931,6 +5961,141 @@ function updateAccessory3D(mesh, accId) {
       watchDial.position.set(-0.42, 1.22, 0.16); accGroup.add(watchDial);
       break;
     }
+    // ── НОВЫЕ АКСЕССУАРЫ ──
+    case 'viking': {
+      const helmMat = new THREE.MeshLambertMaterial({ color: 0x8a8a95 });
+      const hornMat2 = new THREE.MeshLambertMaterial({ color: 0xf5e8c8 });
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(0.34, 10, 6, 0, Math.PI*2, 0, Math.PI/2), helmMat);
+      dome.position.set(0, 2.7, 0); accGroup.add(dome);
+      const hl = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.42, 6), hornMat2);
+      hl.position.set(-0.34, 2.95, 0); hl.rotation.z = 0.7; accGroup.add(hl);
+      const hr = hl.clone(); hr.position.x = 0.34; hr.rotation.z = -0.7; accGroup.add(hr);
+      break;
+    }
+    case 'wizard': {
+      const wizMat = new THREE.MeshLambertMaterial({ color: 0x3b2a8e, emissive: 0x1a0a5e, emissiveIntensity: 0.3 });
+      const brim2 = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.05, 12), wizMat);
+      brim2.position.set(0, 2.95, 0); accGroup.add(brim2);
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.75, 10), wizMat);
+      cone.position.set(0, 3.35, 0); cone.rotation.z = 0.12; accGroup.add(cone);
+      const starMat = new THREE.MeshBasicMaterial({ color: 0xffe066 });
+      for (let i = 0; i < 4; i++) {
+        const star = new THREE.Mesh(new THREE.SphereGeometry(0.035, 5, 5), starMat);
+        const a = i * 1.7;
+        star.position.set(Math.cos(a)*0.2, 3.15 + i*0.14, Math.sin(a)*0.2);
+        accGroup.add(star);
+      }
+      break;
+    }
+    case 'pirate': {
+      const pirMat = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+      const brim3 = new THREE.Mesh(new THREE.SphereGeometry(0.42, 10, 4, 0, Math.PI*2, 0, Math.PI/2.5), pirMat);
+      brim3.position.set(0, 2.85, 0); brim3.scale.set(1.25, 0.5, 1); accGroup.add(brim3);
+      const skullMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const skull = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 6), skullMat);
+      skull.position.set(0, 2.95, 0.36); accGroup.add(skull);
+      break;
+    }
+    case 'headphones': {
+      const hpMat = new THREE.MeshLambertMaterial({ color: 0xe84393, emissive: 0x881155, emissiveIntensity: 0.3 });
+      const band2 = new THREE.Mesh(new THREE.TorusGeometry(0.33, 0.035, 6, 14, Math.PI), hpMat);
+      band2.position.set(0, 2.6, 0); accGroup.add(band2);
+      const earL = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.09, 10), hpMat);
+      earL.position.set(-0.35, 2.5, 0); earL.rotation.z = Math.PI/2; accGroup.add(earL);
+      const earR = earL.clone(); earR.position.x = 0.35; accGroup.add(earR);
+      break;
+    }
+    case 'flower': {
+      const petalMat = new THREE.MeshLambertMaterial({ color: 0xff6b9d, emissive: 0x992255, emissiveIntensity: 0.2 });
+      const centerMat = new THREE.MeshBasicMaterial({ color: 0xffe066 });
+      for (let i = 0; i < 6; i++) {
+        const a = (i/6) * Math.PI * 2;
+        const petal = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 5), petalMat);
+        petal.position.set(0.28 + Math.cos(a)*0.07, 2.85 + Math.sin(a)*0.07, 0.12);
+        petal.scale.z = 0.4; accGroup.add(petal);
+      }
+      const center = new THREE.Mesh(new THREE.SphereGeometry(0.045, 6, 6), centerMat);
+      center.position.set(0.28, 2.85, 0.15); accGroup.add(center);
+      break;
+    }
+    case 'scarf': {
+      const scarfMat = new THREE.MeshLambertMaterial({ color: 0xc0392b });
+      const wrap = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.09, 8, 14), scarfMat);
+      wrap.position.set(0, 2.05, 0); wrap.rotation.x = Math.PI/2; accGroup.add(wrap);
+      const tail = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.5, 0.06), scarfMat);
+      tail.position.set(0.12, 1.75, 0.24); tail.rotation.z = -0.12; accGroup.add(tail);
+      break;
+    }
+    case 'backpack': {
+      const bpMat = new THREE.MeshLambertMaterial({ color: 0x2980b9 });
+      const bpPocketMat = new THREE.MeshLambertMaterial({ color: 0x1a5276 });
+      const pack = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.75, 0.28), bpMat);
+      pack.position.set(0, 1.75, -0.42); accGroup.add(pack);
+      const pocket = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 0.1), bpPocketMat);
+      pocket.position.set(0, 1.55, -0.58); accGroup.add(pocket);
+      const strapMat = new THREE.MeshLambertMaterial({ color: 0x17202a });
+      [-0.2, 0.2].forEach(sx => {
+        const strap = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.65, 0.06), strapMat);
+        strap.position.set(sx, 1.8, -0.24); accGroup.add(strap);
+      });
+      break;
+    }
+    case 'cape': {
+      const capeMat = new THREE.MeshLambertMaterial({ color: 0xc0202a, side: THREE.DoubleSide });
+      const cape = new THREE.Mesh(new THREE.PlaneGeometry(0.85, 1.35), capeMat);
+      cape.position.set(0, 1.55, -0.34); cape.rotation.x = 0.16; accGroup.add(cape);
+      const claspMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+      const clasp = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), claspMat);
+      clasp.position.set(0, 2.15, 0.28); accGroup.add(clasp);
+      accGroup.userData.isCape = cape; // для анимации развевания
+      break;
+    }
+    case 'antenna': {
+      const antMat = new THREE.MeshLambertMaterial({ color: 0x2ecc71, emissive: 0x117744, emissiveIntensity: 0.5 });
+      [-0.14, 0.14].forEach(ax => {
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.4, 5), antMat);
+        stem.position.set(ax, 3.0, 0); stem.rotation.z = ax > 0 ? -0.2 : 0.2; accGroup.add(stem);
+        const ball = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), antMat);
+        ball.position.set(ax * 1.6, 3.22, 0); accGroup.add(ball);
+      });
+      break;
+    }
+    case 'samurai': {
+      const samMat = new THREE.MeshLambertMaterial({ color: 0x8e2020, emissive: 0x441010, emissiveIntensity: 0.3 });
+      const goldMat = new THREE.MeshLambertMaterial({ color: 0xffd700, emissive: 0xaa7700, emissiveIntensity: 0.4 });
+      const kabuto = new THREE.Mesh(new THREE.SphereGeometry(0.36, 10, 6, 0, Math.PI*2, 0, Math.PI/2), samMat);
+      kabuto.position.set(0, 2.68, 0); accGroup.add(kabuto);
+      const crest = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.025, 6, 12, Math.PI), goldMat);
+      crest.position.set(0, 3.0, 0.22); accGroup.add(crest);
+      const neckGuard = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.48, 0.16, 10, 1, true), samMat);
+      neckGuard.position.set(0, 2.55, -0.05); accGroup.add(neckGuard);
+      break;
+    }
+    case 'fedora': {
+      const fedMat = new THREE.MeshLambertMaterial({ color: 0x6e5842 });
+      const fedBandMat = new THREE.MeshLambertMaterial({ color: 0x2c1e12 });
+      const fBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.46, 0.04, 14), fedMat);
+      fBrim.position.set(0, 2.92, 0); accGroup.add(fBrim);
+      const fTop = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.29, 0.3, 12), fedMat);
+      fTop.position.set(0, 3.09, 0); accGroup.add(fTop);
+      const fBand = new THREE.Mesh(new THREE.CylinderGeometry(0.295, 0.30, 0.09, 12), fedBandMat);
+      fBand.position.set(0, 2.99, 0); accGroup.add(fBand);
+      break;
+    }
+    case 'unicorn': {
+      const uniMat = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0xff88ee, emissiveIntensity: 0.45 });
+      const horn = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.45, 8), uniMat);
+      horn.position.set(0, 3.1, 0.12); horn.rotation.x = 0.25; accGroup.add(horn);
+      // Спиральные полоски
+      const stripeMat = new THREE.MeshBasicMaterial({ color: 0xff66dd });
+      for (let i = 0; i < 3; i++) {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.045 - i*0.011, 0.008, 5, 10), stripeMat);
+        ring.position.set(0, 2.98 + i*0.12, 0.12 + i*0.03);
+        ring.rotation.x = Math.PI/2 - 0.25;
+        accGroup.add(ring);
+      }
+      break;
+    }
   }
 }
 
@@ -6338,44 +6503,52 @@ function animateCharacter(character, animation, time, delta) {
   switch(animation) {
     case 'walk': {
       const sw = Math.sin(t);
-      // Руки раскачиваются с лёгким разворотом
-      leftArm.rotation.x  =  sw * 0.68;
-      leftArm.rotation.z  =  sw * 0.10;
-      rightArm.rotation.x = -sw * 0.68;
-      rightArm.rotation.z = -sw * 0.10;
-      // Ноги — широкий шаг
-      leftLeg.rotation.x  = -sw * 0.68;
-      rightLeg.rotation.x =  sw * 0.68;
+      const sw2 = Math.sin(t * 2);
+      // Руки: раскачка + лёгкий сгиб в локте (комбинация осей)
+      leftArm.rotation.x  =  sw * 0.72;
+      leftArm.rotation.z  =  0.06 + sw * 0.09;
+      rightArm.rotation.x = -sw * 0.72;
+      rightArm.rotation.z = -0.06 - sw * 0.09;
+      // Ноги: широкий шаг + подъём колена (пружинистый шаг)
+      leftLeg.rotation.x  = -sw * 0.72 + Math.max(0, Math.sin(t + Math.PI)) * 0.12;
+      rightLeg.rotation.x =  sw * 0.72 + Math.max(0, Math.sin(t)) * 0.12;
       leftLeg.rotation.z  = 0;
       rightLeg.rotation.z = 0;
-      // Тело подпрыгивает и скручивается
-      body.position.y = 1.4 + Math.abs(Math.sin(t * 2)) * 0.08;
-      body.rotation.x = 0;
-      body.rotation.y = sw * 0.07;
-      // Голова покачивается в такт шагам
-      head.rotation.x = Math.sin(t * 2) * 0.028;
-      head.rotation.y = -sw * 0.07;
+      // Тело: подпрыг + боковое покачивание (перенос веса) + скручивание
+      body.position.y = 1.4 + Math.abs(sw2) * 0.075;
+      body.position.x = sw * 0.025;
+      body.rotation.x = 0.03;
+      body.rotation.y = sw * 0.08;
+      body.rotation.z = sw * 0.025;
+      // Голова: стабилизация взгляда + такт шагов
+      head.rotation.x = sw2 * 0.03;
+      head.rotation.y = -sw * 0.08;
+      head.rotation.z = -sw * 0.02;
       break;
     }
     case 'run': {
       const sr = Math.sin(t * 1.5);
-      // Мощная раскачка рук при беге
-      leftArm.rotation.x  =  sr * 1.15;
-      leftArm.rotation.z  =  sr * 0.20;
-      rightArm.rotation.x = -sr * 1.15;
-      rightArm.rotation.z = -sr * 0.20;
-      // Активный бег ногами
-      leftLeg.rotation.x  = -sr * 1.15;
-      rightLeg.rotation.x =  sr * 1.15;
+      const sr2 = Math.sin(t * 3);
+      // Руки: согнуты в локтях, мощная раскачка как у спринтера
+      leftArm.rotation.x  =  sr * 1.35 - 0.35;
+      leftArm.rotation.z  =  0.12 + sr * 0.18;
+      rightArm.rotation.x = -sr * 1.35 - 0.35;
+      rightArm.rotation.z = -0.12 - sr * 0.18;
+      // Ноги: высокий подъём колена, широкая амплитуда
+      leftLeg.rotation.x  = -sr * 1.25 + Math.max(0, Math.sin(t * 1.5 + Math.PI)) * 0.3;
+      rightLeg.rotation.x =  sr * 1.25 + Math.max(0, Math.sin(t * 1.5)) * 0.3;
       leftLeg.rotation.z  = 0;
       rightLeg.rotation.z = 0;
-      // Сильный подпрыг + наклон вперёд + скручивание торса
-      body.position.y = 1.4 + Math.abs(Math.sin(t * 3)) * 0.14;
-      body.rotation.x = -0.15;
-      body.rotation.y = sr * 0.10;
-      // Голова слегка наклонена вперёд, покачивается
-      head.rotation.x =  0.11;
-      head.rotation.y = -sr * 0.07;
+      // Тело: сильный наклон вперёд, подпрыг, скручивание торса
+      body.position.y = 1.4 + Math.abs(sr2) * 0.16;
+      body.position.x = sr * 0.035;
+      body.rotation.x = -0.22;
+      body.rotation.y = sr * 0.13;
+      body.rotation.z = sr * 0.03;
+      // Голова: взгляд вперёд, лёгкое покачивание
+      head.rotation.x =  0.14 + sr2 * 0.02;
+      head.rotation.y = -sr * 0.09;
+      head.rotation.z = -sr * 0.025;
       break;
     }
     case 'dance':
@@ -6383,23 +6556,27 @@ function animateCharacter(character, animation, time, delta) {
       break;
     case 'idle':
     default: {
-      // Дыхание: плавный подъём груди
+      // Дыхание: плавный подъём груди + микро-движения
       const breathe = Math.sin(t * 0.45);
-      body.position.y = 1.4 + breathe * 0.026;
-      body.rotation.x = breathe * 0.009;
-      body.rotation.y = 0;
-      // Руки слегка покачиваются, немного разведены
-      leftArm.rotation.x  = Math.sin(t * 0.42 + 0.3) * 0.045;
-      leftArm.rotation.z  =  0.06;
-      rightArm.rotation.x = Math.sin(t * 0.42 + 0.3) * 0.045;
-      rightArm.rotation.z = -0.06;
-      leftLeg.rotation.x  = 0;
-      rightLeg.rotation.x = 0;
+      body.position.y = 1.4 + breathe * 0.028;
+      body.position.x = 0;
+      body.rotation.x = breathe * 0.011;
+      body.rotation.y = Math.sin(t * 0.15) * 0.02;
+      body.rotation.z = Math.sin(t * 0.22) * 0.008;
+      // Руки дышат вместе с телом, чуть разведены
+      leftArm.rotation.x  = Math.sin(t * 0.42 + 0.3) * 0.05 + breathe * 0.015;
+      leftArm.rotation.z  =  0.07 + breathe * 0.012;
+      rightArm.rotation.x = Math.sin(t * 0.42 + 0.6) * 0.05 + breathe * 0.015;
+      rightArm.rotation.z = -0.07 - breathe * 0.012;
+      // Лёгкий перенос веса с ноги на ногу
+      leftLeg.rotation.x  = Math.sin(t * 0.1) * 0.012;
+      rightLeg.rotation.x = -Math.sin(t * 0.1) * 0.012;
       leftLeg.rotation.z  = 0;
       rightLeg.rotation.z = 0;
-      // Голова лениво оглядывается
-      head.rotation.y = Math.sin(t * 0.28) * 0.10;
-      head.rotation.x = Math.sin(t * 0.18) * 0.03;
+      // Голова лениво оглядывается по сторонам
+      head.rotation.y = Math.sin(t * 0.28) * 0.12;
+      head.rotation.x = Math.sin(t * 0.18) * 0.035 + breathe * 0.01;
+      head.rotation.z = Math.sin(t * 0.12) * 0.015;
       break;
     }
   }
@@ -6779,6 +6956,11 @@ function initSocket(name) {
     showNotification(`📍 Телепортирован (${data.x}, ${data.z})`, 'info');
   });
 
+  // ── ЭКРАН "ИГРА ОБНОВЛЯЕТСЯ" (сервер перезапускается) ──
+  socket.on('gameUpdating', (data) => {
+    showGameUpdateScreen(data && data.message);
+  });
+
   // ── Принудительный телепорт админом (на его сервер) ──
   socket.on('forceTeleport', (data) => {
     showTeleportWaitScreen(data.serverName || 'другой сервер');
@@ -6952,19 +7134,36 @@ function initControls() {
 
   // Клавиатура
   document.addEventListener('keydown', (e) => {
+    // ── Если пользователь печатает в чате или любом поле ввода —
+    //    игровые хоткеи (B, E, F, V, 1-9, Tab, WASD) НЕ срабатывают ──
+    const ae = document.activeElement;
+    const isTyping = ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable);
+    if (isTyping) {
+      // Enter — отправить сообщение и выйти из чата
+      if (e.code === 'Enter') {
+        e.preventDefault();
+        if (ae === document.getElementById('chatInput')) {
+          sendChatMessage();
+          ae.blur();
+          renderer.domElement.requestPointerLock();
+        }
+      }
+      // Escape — выйти из поля ввода
+      if (e.code === 'Escape') {
+        ae.blur();
+      }
+      return; // всё остальное — обычный набор текста
+    }
+
     keys[e.code] = true;
 
     if (e.code === 'Enter') {
       e.preventDefault();
       const input = document.getElementById('chatInput');
-      if (document.activeElement === input) {
-        sendChatMessage();
-        input.blur();
-        renderer.domElement.requestPointerLock();
-      } else {
-        document.exitPointerLock();
-        input.focus();
-      }
+      document.exitPointerLock();
+      // Сбрасываем зажатые клавиши, чтобы персонаж не бежал во время набора
+      Object.keys(keys).forEach(k => keys[k] = false);
+      input.focus();
     }
 
     if (e.code === 'Escape') {
@@ -6996,13 +7195,9 @@ function initControls() {
       }
     }
 
-    // Цифры 1-9 для танцев
-    const dances = ['wave','disco','spin','jump','robot','sit','dab','headbang'];
-    if (e.code >= 'Digit1' && e.code <= 'Digit8') {
-      const idx = parseInt(e.code.replace('Digit','')) - 1;
-      if (dances[idx]) doDance(dances[idx]);
-    }
-    if (e.code === 'Digit9') stopDance();
+    // Клавиши 1-9 для эмоций УБРАНЫ — эмоции теперь в меню 💃 (боковая панель) и панели B
+    // Клавиша G — открыть/закрыть меню эмоций
+    if (e.code === 'KeyG') { e.preventDefault(); toggleDanceBar(); }
 
     if (e.code === 'Tab') {
       e.preventDefault();
@@ -7691,6 +7886,57 @@ function hideTeleportWaitScreen() {
   if (window._tpDotsInterval) { clearInterval(window._tpDotsInterval); window._tpDotsInterval = null; }
 }
 
+// =================== ЭКРАН "ИГРА ОБНОВЛЯЕТСЯ" ===================
+function showGameUpdateScreen(message) {
+  if (document.getElementById('gameUpdateOverlay')) return;
+  const ov = document.createElement('div');
+  ov.id = 'gameUpdateOverlay';
+  ov.style.cssText = `
+    position:fixed;inset:0;z-index:999999;
+    background:radial-gradient(circle at 50% 40%, rgba(30,15,80,0.99), rgba(3,2,10,1));
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    font-family:'Segoe UI',sans-serif;color:#fff;text-align:center;
+  `;
+  ov.innerHTML = `
+    <div style="font-size:64px;margin-bottom:18px;animation:guPulse 1.2s ease-in-out infinite;">⚡</div>
+    <div style="font-size:38px;font-weight:900;letter-spacing:3px;margin-bottom:14px;background:linear-gradient(90deg,#a29bfe,#6c5ce7,#a29bfe);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;background-size:200% auto;animation:guShine 2s linear infinite;">ИГРА ОБНОВЛЯЕТСЯ</div>
+    <div style="font-size:17px;color:#dcd3ff;margin-bottom:8px;">${message || 'Устанавливается новая версия игры'}</div>
+    <div style="font-size:14px;color:#8a80c0;margin-bottom:28px;">Сервер перезапускается — вы вернётесь в игру автоматически</div>
+    <div style="width:280px;height:10px;background:rgba(255,255,255,0.08);border-radius:999px;overflow:hidden;">
+      <div id="guProgressBar" style="height:100%;width:0%;background:linear-gradient(90deg,#6c5ce7,#a29bfe);border-radius:999px;transition:width 0.4s;"></div>
+    </div>
+    <div id="guStatus" style="font-size:13px;color:#a29bfe;margin-top:14px;">Подготовка обновления...</div>
+    <style>
+      @keyframes guPulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.18);opacity:0.7} }
+      @keyframes guShine { to { background-position: 200% center; } }
+    </style>
+  `;
+  document.body.appendChild(ov);
+
+  // Фейковый прогресс + автопереподключение
+  const statuses = ['Подготовка обновления...', 'Загрузка новой версии...', 'Установка файлов...', 'Перезапуск сервера...', 'Подключение к серверу...'];
+  let pct = 0, si = 0;
+  window._guInterval = setInterval(() => {
+    pct = Math.min(95, pct + Math.random() * 9 + 3);
+    const bar = document.getElementById('guProgressBar');
+    if (bar) bar.style.width = pct + '%';
+    const st = document.getElementById('guStatus');
+    if (st && si < statuses.length - 1 && pct > (si + 1) * 22) si++;
+    if (st) st.textContent = statuses[si];
+    // После 8 сек — пробуем переподключиться к серверу
+    if (pct >= 95) {
+      fetch('/api/health').then(r => {
+        if (r.ok) {
+          if (bar) bar.style.width = '100%';
+          if (st) st.textContent = '✅ Обновление установлено! Перезагрузка...';
+          clearInterval(window._guInterval);
+          setTimeout(() => location.reload(), 1200);
+        }
+      }).catch(() => {}); // сервер ещё не поднялся — ждём дальше
+    }
+  }, 700);
+}
+
 // =================== АДМИН КОМАНДНАЯ СТРОКА ===================
 function toggleAdminConsole() {
   let con = document.getElementById('adminConsole');
@@ -7759,6 +8005,7 @@ function runAdminCommand(raw) {
       adminConsoleLog('/time <day|night> — время суток', '#dcd3ff');
       adminConsoleLog('/say <текст> — объявление всем', '#dcd3ff');
       adminConsoleLog('/hp <число> — установить своё HP', '#dcd3ff');
+      adminConsoleLog('/update [текст] — ОБНОВЛЕНИЕ ИГРЫ: всем экран "Игра обновляется", сервер перезапускается', '#f1c40f');
       adminConsoleLog('/clear — очистить консоль', '#dcd3ff');
       break;
     case 'tp': {
@@ -7795,6 +8042,12 @@ function runAdminCommand(raw) {
       socket.emit('adminCommand', { cmd: 'setHealth', amount: parseInt(parts[1], 10) || 100 });
       adminConsoleLog(`❤️ HP: ${parts[1] || 100}`, '#00b894');
       break;
+    case 'update': {
+      const updMsg = parts.slice(1).join(' ') || 'Устанавливается новая версия игры';
+      socket.emit('adminCommand', { cmd: 'gameUpdate', message: updMsg });
+      adminConsoleLog('⚡ ОБНОВЛЕНИЕ ЗАПУЩЕНО! Всем игрокам показан экран, сервер перезапустится через 5 сек', '#f1c40f');
+      break;
+    }
     case 'clear': {
       const log = document.getElementById('adminConsoleLog');
       if (log) log.innerHTML = '';
@@ -8671,9 +8924,61 @@ function updateMinimap() {
 }
 
 // =================== ВЗАИМОДЕЙСТВИЕ С ОБЪЕКТАМИ ===================
+// =================== СИСТЕМА СИДЕНИЯ (ЛАВОЧКИ) ===================
+function sitOnBench(inter) {
+  if (!localPlayer || !localPlayer.mesh || sittingOn) return;
+  // Найти ближайший sitSpot
+  let best = null, bestD = 999;
+  for (const s of sitSpots) {
+    const dx = s.x - inter.position.x, dz = s.z - inter.position.z;
+    const d = dx*dx + dz*dz;
+    if (d < bestD) { bestD = d; best = s; }
+  }
+  if (!best) return;
+  sittingOn = {
+    spot: best,
+    prevPos: {
+      x: localPlayer.mesh.position.x,
+      y: localPlayer.mesh.position.y,
+      z: localPlayer.mesh.position.z
+    }
+  };
+  // Сажаем персонажа на лавочку (чуть перед спинкой, лицом от неё)
+  const offX = Math.sin(best.rot) * 0.15;
+  const offZ = Math.cos(best.rot) * 0.15;
+  localPlayer.mesh.position.set(best.x + offX, best.y, best.z + offZ);
+  localPlayer.mesh.rotation.y = best.rot;
+  // Поза сидя через систему танцев — синхронизируется с другими игроками
+  currentDance = 'sit';
+  localPlayer.currentAnimation = 'dance';
+  socket.emit('startDance', 'sit');
+  showNotification('🪑 Вы сели на лавочку · [E] встать', 'info');
+}
+
+function standUpFromSeat() {
+  if (!sittingOn || !localPlayer || !localPlayer.mesh) return;
+  const spot = sittingOn.spot;
+  // Встаём перед лавочкой
+  localPlayer.mesh.position.set(
+    spot.x + Math.sin(spot.rot) * 1.4,
+    0,
+    spot.z + Math.cos(spot.rot) * 1.4
+  );
+  sittingOn = null;
+  currentDance = null;
+  localPlayer.currentAnimation = 'idle';
+  socket.emit('stopDance');
+  showNotification('🚶 Вы встали', 'info');
+}
+
 function handleInteraction() {
+  // Если сидим — встаём
+  if (sittingOn) { standUpFromSeat(); return; }
   if (!nearestInteractable) return;
   const inter = nearestInteractable;
+
+  // Посадка на лавочку
+  if (inter.type === 'sit_bench') { sitOnBench(inter); return; }
 
   // Интерьерные зоны
   if (inter.type === 'stairs_up') { changeFloor(1); return; }
@@ -8761,9 +9066,9 @@ function checkCollision(newX, newZ) {
       if (newX + playerRadius > c.minX && newX - playerRadius < c.maxX &&
           newZ + playerRadius > c.minZ && newZ - playerRadius < c.maxZ) return true;
     }
-    // Граница интерьера
+    // Граница интерьера (комнаты 30x24)
     const bx = INTERIOR_BASE.x, bz = INTERIOR_BASE.z;
-    const W = 12.5, D = 10.5;
+    const W = 14.5, D = 11.5;
     if (newX < bx-W || newX > bx+W || newZ < bz-D || newZ > bz+D) return true;
     return false;
   }
@@ -8776,6 +9081,13 @@ function checkCollision(newX, newZ) {
       return true;
     }
   }
+
+  // ── КОЛЛИЗИИ УЛИЧНЫХ ОБЪЕКТОВ (деревья, лавочки, фонари, урны, фонтан) ──
+  for (const c of streetColliders) {
+    const dx = newX - c.x, dz = newZ - c.z;
+    if (dx*dx + dz*dz < (c.r + playerRadius) * (c.r + playerRadius)) return true;
+  }
+
   const half = CONFIG.WORLD_SIZE / 2 - 2;
   if (Math.abs(newX) > half || Math.abs(newZ) > half) return true;
   return false;
@@ -8881,7 +9193,7 @@ function buildInterior(type) {
   const cfg = INTERIOR_CONFIGS[type] || INTERIOR_CONFIGS.office;
   const bx = INTERIOR_BASE.x;
   const bz = INTERIOR_BASE.z;
-  const W = 24, D = 20, FH = 3.5;
+  const W = 30, D = 24, FH = 3.5; // ГЛОБАЛЬНОЕ ОБНОВЛЕНИЕ: интерьеры значительно больше
 
   const addObj = (mesh) => { scene.add(mesh); interiorObjects.push(mesh); return mesh; };
   const mat = (color, emissive=0, em=0) => new THREE.MeshLambertMaterial({ color, emissiveIntensity:em, emissive });
@@ -10376,7 +10688,11 @@ function animate(timestamp) {
   const mesh = localPlayer.mesh;
 
   // --- Движение ---
-  if ((isPointerLocked || window.mobileReady || (localPlayer && localPlayer.isOffline)) && !currentDance) {
+  // Если игрок начал двигаться сидя — автоматически встаёт
+  if (sittingOn && (keys['KeyW'] || keys['KeyA'] || keys['KeyS'] || keys['KeyD'] || keys['Space'])) {
+    standUpFromSeat();
+  }
+  if ((isPointerLocked || window.mobileReady || (localPlayer && localPlayer.isOffline)) && !currentDance && !sittingOn) {
     const isSprint = keys['ShiftLeft'] || keys['ShiftRight'] || mobileSprintOn;
     const speed = isSprint ? CONFIG.SPRINT_SPEED : CONFIG.MOVE_SPEED;
 
@@ -10428,7 +10744,12 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
   }
 
   // Гравитация
-  if (!window.isAdminFly) {
+  if (sittingOn) {
+    // Сидим на лавочке — фиксируем позицию, гравитация не действует
+    velocity.y = 0;
+    mesh.position.y = sittingOn.spot.y;
+    isGrounded = true;
+  } else if (!window.isAdminFly) {
     velocity.y -= CONFIG.GRAVITY;
     mesh.position.y += velocity.y;
     const groundY = isInsideBuilding ? currentFloor * 3.5 : 0;
@@ -10451,18 +10772,27 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
   const camDist = CONFIG.CAMERA_DISTANCE;
   const camH = CONFIG.CAMERA_HEIGHT;
   if (window.cameraMode === 'first') {
-    // 1-е лицо: камера внутри головы персонажа
-    const headY = mesh.position.y + 2.3;
+    // 1-е лицо: камера на уровне глаз + реалистичное покачивание при движении
+    const isMoving = localPlayer.currentAnimation === 'walk' || localPlayer.currentAnimation === 'run';
+    const isRunning = localPlayer.currentAnimation === 'run';
+    // Head bob: лёгкое покачивание головы в такт шагам
+    const bobFreq = isRunning ? 11 : 7;
+    const bobAmp  = isMoving ? (isRunning ? 0.055 : 0.03) : 0.008;
+    const bobY = Math.abs(Math.sin(animationTime * bobFreq)) * bobAmp;
+    const bobX = Math.sin(animationTime * bobFreq * 0.5) * bobAmp * 0.6;
+    const headY = mesh.position.y + 2.35 + bobY;
     camera.position.set(
-      mesh.position.x - Math.sin(cameraAngleH) * 0.1,
+      mesh.position.x + Math.sin(cameraAngleH) * 0.18 + Math.cos(cameraAngleH) * bobX,
       headY,
-      mesh.position.z - Math.cos(cameraAngleH) * 0.1
+      mesh.position.z + Math.cos(cameraAngleH) * 0.18 - Math.sin(cameraAngleH) * bobX
     );
     camera.lookAt(
       mesh.position.x + Math.sin(cameraAngleH) * 10,
       headY + Math.sin(cameraAngleV) * 10,
       mesh.position.z + Math.cos(cameraAngleH) * 10
     );
+    // Персонаж поворачивается вслед за камерой (другие игроки видят куда ты смотришь)
+    mesh.rotation.y = cameraAngleH;
     // Скрыть тело в 1-м лице
     mesh.visible = false;
   } else {
@@ -12604,9 +12934,14 @@ function isQuestDone(q) {
 function claimQuest(qId) {
   const q = FP_QUESTS.find(x => x.id === qId);
   if (!q) return;
-  if (isQuestDone(q)) return;
+  if (isQuestDone(q)) { showNotification('⚠️ Квест уже сдан!', 'error'); return; }
   const prog = getQuestProgress(q);
-  if (prog < q.max) return;
+  // Проверка: выполнен ли квест на самом деле
+  if (prog < q.max) {
+    showNotification(`❌ Квест не выполнен! Прогресс: ${prog}/${q.max}`, 'error');
+    renderFPQuests();
+    return;
+  }
   localStorage.setItem(q.key + '_done', '1');
   addFPassXP(q.xp);
   showNotification('✅ Квест выполнен! +' + q.xp + ' XP', 'levelup');
@@ -12655,6 +12990,83 @@ function renderFPQuests() {
   });
 }
 
+// ===== РЕАЛЬНАЯ ПРОВЕРКА ВЫПОЛНЕНИЯ ЗАДАНИЙ =====
+// Хуки на настоящие действия игрока — прогресс считается честно.
+(function initQuestHooks() {
+  // 💬 Чат: 10 сообщений
+  const _origSendChat = window.sendChatMessage;
+  window.sendChatMessage = function() {
+    const input = document.getElementById('chatInput');
+    const hadText = input && input.value.trim().length > 0;
+    const r = _origSendChat.apply(this, arguments);
+    if (hadText) progressQuest('q_chat', 1);
+    return r;
+  };
+
+  // 💃 Танцы: 3 раза
+  const _origDoDance = window.doDance;
+  window.doDance = function(type) {
+    const r = _origDoDance.apply(this, arguments);
+    progressQuest('q_dance', 1);
+    return r;
+  };
+
+  // 🏗️ Здания: зайти в 3 разных
+  const _origEnterBuilding = window.enterBuilding;
+  window.enterBuilding = function(type, name) {
+    const r = _origEnterBuilding.apply(this, arguments);
+    try {
+      const visited = JSON.parse(localStorage.getItem('fz_q_build_list') || '[]');
+      const key = type + '_' + (name || '');
+      if (!visited.includes(key)) {
+        visited.push(key);
+        localStorage.setItem('fz_q_build_list', JSON.stringify(visited));
+        progressQuest('q_build', 1);
+      }
+    } catch(e) {}
+    return r;
+  };
+
+  // 🎒 Инвентарь: открыть 2 раза
+  const _origTogglePanel = window.togglePanel;
+  window.togglePanel = function(name) {
+    const r = _origTogglePanel.apply(this, arguments);
+    if (name === 'inventory') progressQuest('q_inv', 1);
+    return r;
+  };
+
+  // 🚶 Ходьба 500м + 🚘 Езда 200м — замер каждую секунду
+  let _lastQX = null, _lastQZ = null;
+  setInterval(() => {
+    if (!localPlayer || !localPlayer.mesh) return;
+    const m = localPlayer.mesh.position;
+    if (_lastQX !== null) {
+      const dist = Math.sqrt((m.x-_lastQX)**2 + (m.z-_lastQZ)**2);
+      // Фильтр телепортов: за 1 сек больше 40м — не считаем
+      if (dist > 0.5 && dist < 40) {
+        if (typeof localCar !== 'undefined' && localCar) {
+          progressQuest('q_drive', Math.round(dist));
+        } else {
+          progressQuest('q_walk', Math.round(dist));
+        }
+      }
+    }
+    _lastQX = m.x; _lastQZ = m.z;
+  }, 1000);
+
+  // 💼 Работа: выполнить 1 работу (получение зарплаты)
+  const _watchJob = setInterval(() => {
+    if (typeof socket === 'undefined' || !socket || !socket.on || socket._qJobHooked) return;
+    socket._qJobHooked = true;
+    clearInterval(_watchJob);
+    socket.on('notification', (data) => {
+      if (data && typeof data.text === 'string' && (data.text.includes('Зарплата') || data.text.includes('зарплат'))) {
+        progressQuest('q_work', 1);
+      }
+    });
+  }, 2000);
+})();
+
 // Авто-прогресс квеста входа
 window.addEventListener('load', () => {
   progressQuest('q_login', 1);
@@ -12666,6 +13078,7 @@ window.addEventListener('load', () => {
       localStorage.removeItem(q.key + '_prog');
       localStorage.removeItem(q.key + '_done');
     });
+    localStorage.removeItem('fz_q_build_list');
   }
   updateFPWidget();
 });
@@ -13329,23 +13742,29 @@ window.addEventListener('DOMContentLoaded', function() {
 <div id="changelogModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.65);display:none;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(6px);">
   <div class="changelog-box">
     <h2>📋 Что нового</h2>
-    <div class="cl-version">FANTAZIA RP 3D — UI UPDATE</div>
+    <div class="cl-version">FANTAZIA RP 3D — ⚡ СУПЕР ГЛОБАЛЬНОЕ ОБНОВЛЕНИЕ v3.0</div>
     <div class="cl-section">
       <div class="cl-section-title">✨ ДОБАВЛЕНО</div>
-      <div class="cl-item"><span class="cl-badge new">NEW</span>Кнопка <b>«🔄 Обновить»</b> — обновляет список серверов с анимацией иконки</div>
-      <div class="cl-item"><span class="cl-badge new">NEW</span>Кнопка <b>«📋 Что нового»</b> — открывает это окно изменений</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span><b>Посадка на лавочки!</b> Подойди к лавочке и нажми [E] — персонаж реально сядет. [E] или WASD — встать</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span><b>12 новых аксессуаров:</b> шлем викинга, шляпа мага, пиратская шляпа, наушники, плащ героя, кабуто самурая, рог единорога и другие</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span><b>Задания Fantazia Pass работают по-настоящему</b> — прогресс считается от реальных действий (чат, ходьба, танцы, здания)</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span>Кнопка <b>📰 Обновления</b> в боковом меню — история версий прямо в игре</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span>Клавиша <b>[G]</b> — быстрое меню эмоций</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span>Экран <b>«⚡ ИГРА ОБНОВЛЯЕТСЯ»</b> — при обновлении сервера все игроки видят красивый полноэкранный статус</div>
     </div>
     <div class="cl-section">
-      <div class="cl-section-title">🎨 UI УЛУЧШЕНИЯ</div>
-      <div class="cl-item"><span class="cl-badge ui">UI</span>Все кнопки плавно <b>увеличиваются</b> при наведении (scale + пружинная анимация)</div>
-      <div class="cl-item"><span class="cl-badge ui">UI</span>Скруглены углы у панелей: сервер-браузер, модалки, карточки, чат, стат-боксы</div>
-      <div class="cl-item"><span class="cl-badge ui">UI</span>Кнопка обновления получила фиолетовый акцент и спин-анимацию иконки</div>
-      <div class="cl-item"><span class="cl-badge ui">UI</span>Переходы на кнопках сделаны плавнее через cubic-bezier (пружинный эффект)</div>
+      <div class="cl-section-title">🎨 ГРАФИКА И АНИМАЦИИ</div>
+      <div class="cl-item"><span class="cl-badge ui">GFX</span><b>Супер-графика:</b> сглаживание (antialias), мягкие тени PCF, кинематографичный ACES tone mapping, дальность прорисовки увеличена</div>
+      <div class="cl-item"><span class="cl-badge ui">GFX</span><b>Новые анимации</b> ходьбы, бега и покоя: перенос веса, подъём коленей, согнутые локти при спринте, живое дыхание</div>
+      <div class="cl-item"><span class="cl-badge ui">UI</span>Интерьеры зданий стали <b>значительно больше</b></div>
     </div>
     <div class="cl-section">
       <div class="cl-section-title">🔧 ИСПРАВЛЕНО</div>
-      <div class="cl-item"><span class="cl-badge fix">FIX</span>Иконка 🔄 была без текста — теперь подписана «Обновить» для ясности</div>
-      <div class="cl-item"><span class="cl-badge fix">FIX</span>Hover-эффект кнопок унифицирован — единый стиль для всех элементов</div>
+      <div class="cl-item"><span class="cl-badge fix">FIX</span><b>Коллизии уличных объектов:</b> деревья, фонари, лавочки, урны больше не «проходятся насквозь»</div>
+      <div class="cl-item"><span class="cl-badge fix">FIX</span>Клавиши 1-9 больше не мешают — эмоции перенесены в меню 💃 и [G]</div>
+      <div class="cl-item"><span class="cl-badge fix">FIX</span>Написание в чат больше не открывает меню (B, E, F и др.)</div>
+      <div class="cl-item"><span class="cl-badge fix">FIX</span>Кнопка «+50 XP (тест)» убрана из Fantazia Pass — вместо неё кнопка «📋 Задания»</div>
+      <div class="cl-item"><span class="cl-badge fix">FIX</span>Чёрный экран при загрузке города исправлен</div>
     </div>
     <button class="changelog-close" onclick="document.getElementById('changelogModal').classList.remove('show');document.getElementById('changelogModal').style.display='none'">
       ✓ Понятно
@@ -13482,6 +13901,8 @@ window.initControls = function() {
   if (window.IS_MOBILE) {
     // Клавиатура — оставляем для физических клавиатур на планшетах
     document.addEventListener('keydown', function(e) {
+      var ae = document.activeElement;
+      if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) return;
       if (typeof keys !== 'undefined') keys[e.code] = true;
     });
     document.addEventListener('keyup', function(e) {

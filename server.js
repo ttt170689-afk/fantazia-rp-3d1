@@ -1367,6 +1367,23 @@ io.on('connection', (socket) => {
         notify(socket.id, `⭐ Уровень: ${player.level}`, 'success');
         break;
       }
+      // ── ОБНОВЛЕНИЕ ИГРЫ: всем показывается полноэкранный экран, сервер перезапускается ──
+      case 'gameUpdate': {
+        console.log(`[UPDATE] Админ ${player.name} запустил обновление игры — сервер перезапустится через 5 сек`);
+        io.emit('gameUpdating', {
+          by: player.name,
+          message: data.message || 'Устанавливается новая версия игры'
+        });
+        broadcastSystemMessage('⚡ ИГРА ОБНОВЛЯЕТСЯ — сервер перезапустится через несколько секунд!');
+        notify(socket.id, '⚡ Обновление запущено! Сервер перезапустится через 5 сек', 'success');
+        // Даём клиентам 5 секунд показать экран, потом перезапуск
+        // (Render/Railway автоматически поднимут процесс заново)
+        setTimeout(() => {
+          console.log('[UPDATE] Перезапуск сервера...');
+          process.exit(0);
+        }, 5000);
+        break;
+      }
       // ── ТЕЛЕПОРТ ИГРОКОВ К АДМИНУ (на его сервер) ──
       case 'teleportToMe': {
         const tName = (data.target || '').toLowerCase();
