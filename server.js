@@ -163,7 +163,7 @@ app.get('/api/players', (req, res) => {
 
 const ADMIN_PASSWORD   = 'fnfpoppy567765';
 const ADMIN_EMAIL      = 'ttt170689@gmail.com';
-const ADMIN_USERNAMES  = ['temka_play_official'];
+const ADMIN_USERNAMES  = ['temka_play_official', 'ttt170689@gmail.com', 'ttt170689'];
 
 function checkAdmin(req, res) {
   const pwd = req.body?.adminPassword || req.query?.adminPassword;
