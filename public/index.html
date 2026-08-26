@@ -3630,10 +3630,9 @@ function initThreeJS() {
   // ── Мягкие тени на ПК (1024 — баланс качества и скорости) ──
   renderer.shadowMap.enabled = !_isMob;
   if (!_isMob) renderer.shadowMap.type = THREE.PCFSoftShadowMap; // мягкие края теней
-  // ── Кинематографичный tone mapping ──
+  // ── Кинематографичный tone mapping (без пересвета) ──
   renderer.toneMapping = _isMob ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.15;
-  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMappingExposure = 0.85; // не пересвечено
   // ── ОПТИМИЗАЦИЯ: frustum culling включён по умолчанию в Three.js ──
   document.body.insertBefore(renderer.domElement, document.body.firstChild);
   renderer.domElement.style.cssText = 'display:block;position:fixed;top:0;left:0;z-index:0;';
@@ -3646,7 +3645,7 @@ function initThreeJS() {
   const ambientLight = new THREE.AmbientLight(0x404060, 0.6);
   scene.add(ambientLight);
 
-  const sunLight = new THREE.DirectionalLight(0xFFF5E1, 1.15);
+  const sunLight = new THREE.DirectionalLight(0xFFF5E1, 1.0);
   sunLight.position.set(50, 80, 50);
   sunLight.castShadow = !_isMob;
   if (!_isMob) {
@@ -6493,7 +6492,36 @@ function createPet3D(petData) {
 }
 
 // =================== АНИМАЦИИ ===================
+// ── СУПЕР-ПЛАВНЫЕ АНИМАЦИИ: интерполяция поз ──
+// Вычисляем целевую позу, затем плавно перетекаем к ней (exp smoothing).
+// Переходы walk→run→idle становятся мягкими, без рывков.
 function animateCharacter(character, animation, time, delta) {
+  const ud = character.userData;
+  if (!ud.leftArm) return;
+  const parts = [ud.leftArm, ud.rightArm, ud.leftLeg, ud.rightLeg, ud.body, ud.head];
+
+  // 1) Запоминаем текущую позу
+  const prev = parts.map(p => ({
+    rx: p.rotation.x, ry: p.rotation.y, rz: p.rotation.z,
+    px: p.position.x, py: p.position.y, pz: p.position.z
+  }));
+
+  // 2) Вычисляем целевую позу (жёстко, как раньше)
+  computeCharacterPose(character, animation, time, delta);
+
+  // 3) Плавно интерполируем: чем больше delta — тем быстрее догоняем цель
+  const k = delta > 0 ? (1 - Math.exp(-16 * delta)) : 0.28;
+  parts.forEach((p, i) => {
+    p.rotation.x = prev[i].rx + (p.rotation.x - prev[i].rx) * k;
+    p.rotation.y = prev[i].ry + (p.rotation.y - prev[i].ry) * k;
+    p.rotation.z = prev[i].rz + (p.rotation.z - prev[i].rz) * k;
+    p.position.x = prev[i].px + (p.position.x - prev[i].px) * k;
+    p.position.y = prev[i].py + (p.position.y - prev[i].py) * k;
+    p.position.z = prev[i].pz + (p.position.z - prev[i].pz) * k;
+  });
+}
+
+function computeCharacterPose(character, animation, time, delta) {
   const { leftArm, rightArm, leftLeg, rightLeg, body, head } = character.userData;
   if (!leftArm) return;
 
