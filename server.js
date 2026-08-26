@@ -1367,6 +1367,34 @@ io.on('connection', (socket) => {
         notify(socket.id, `⭐ Уровень: ${player.level}`, 'success');
         break;
       }
+      // ── ТЕЛЕПОРТ ИГРОКОВ К АДМИНУ (на его сервер) ──
+      case 'teleportToMe': {
+        const tName = (data.target || '').toLowerCase();
+        const destX = Number(data.x) || 0;
+        const destZ = Number(data.z) || 0;
+        let targets;
+        if (tName === 'all' || tName === '*') {
+          targets = Object.values(players).filter(p => p.id !== socket.id);
+        } else {
+          const found = Object.values(players).find(p => p.name.toLowerCase() === tName);
+          targets = found && found.id !== socket.id ? [found] : [];
+        }
+        if (!targets.length) {
+          notify(socket.id, `⚠️ Игрок "${data.target}" не найден (или это вы сами)`, 'error');
+          break;
+        }
+        targets.forEach(t => {
+          io.to(t.id).emit('forceTeleport', {
+            x: destX,
+            z: destZ,
+            byAdmin: player.name,
+            serverName: data.serverName || `Сервер администратора ${player.name}`
+          });
+        });
+        notify(socket.id, `🌀 Телепортирую: ${targets.length} игрок(ов) → к вам`, 'success');
+        console.log(`[TP] Админ ${player.name} телепортирует ${targets.length} игроков к себе (${destX}, ${destZ})`);
+        break;
+      }
     }
   });
 

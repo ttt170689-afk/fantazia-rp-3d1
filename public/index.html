@@ -4027,10 +4027,10 @@ function buildGrandMall() {
   }
   spawnCarsInParking();
   const mallGroup = new THREE.Group(); scene.add(mallGroup);
-  buildMallInterior(scene, mallGroup);
+  buildMallInteriorWorld(scene, mallGroup);
 }
 
-function buildMallInterior(scene, mallGroup) {
+function buildMallInteriorWorld(scene, mallGroup) {
   // ===== ЦЕНТРАЛЬНЫЙ ЗАЛ =====
   const MX = 85, MZ = -85, MH = 55, MW = 120, MD = 100;
 
@@ -6779,6 +6779,25 @@ function initSocket(name) {
     showNotification(`📍 Телепортирован (${data.x}, ${data.z})`, 'info');
   });
 
+  // ── Принудительный телепорт админом (на его сервер) ──
+  socket.on('forceTeleport', (data) => {
+    showTeleportWaitScreen(data.serverName || 'другой сервер');
+    // Через 3.5 сек "переносим" игрока и убираем экран
+    setTimeout(() => {
+      if (localPlayer && localPlayer.mesh) {
+        localPlayer.mesh.position.set(Number(data.x) || 0, 0, Number(data.z) || 0);
+        socket.emit('updatePosition', {
+          x: localPlayer.mesh.position.x,
+          y: localPlayer.mesh.position.y,
+          z: localPlayer.mesh.position.z,
+          rotation: localPlayer.mesh.rotation.y
+        });
+      }
+      hideTeleportWaitScreen();
+      showNotification(`🌀 Вы телепортированы администратором ${data.byAdmin || ''}`, 'info');
+    }, 3500);
+  });
+
   socket.on('worldEvent', (ev) => {
     showWorldEventBanner(ev.title, ev.description, ev.type);
   });
@@ -7638,6 +7657,154 @@ function showWorldEventBanner(title, description, type) {
 }
 
 // =================== ADMIN HUD ===================
+// =================== ЭКРАН ОЖИДАНИЯ ТЕЛЕПОРТА ===================
+function showTeleportWaitScreen(serverName) {
+  hideTeleportWaitScreen();
+  const ov = document.createElement('div');
+  ov.id = 'teleportWaitOverlay';
+  ov.style.cssText = `
+    position:fixed;inset:0;z-index:99999;
+    background:radial-gradient(circle at 50% 45%, rgba(40,20,90,0.97), rgba(5,3,15,0.99));
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    font-family:'Segoe UI',sans-serif;color:#fff;text-align:center;
+  `;
+  ov.innerHTML = `
+    <div style="width:90px;height:90px;border:5px solid rgba(162,155,254,0.25);border-top-color:#a29bfe;border-radius:50%;animation:tpSpin 1s linear infinite;margin-bottom:28px;"></div>
+    <div style="font-size:30px;font-weight:bold;letter-spacing:1px;margin-bottom:10px;">🌀 Ждите...</div>
+    <div style="font-size:20px;color:#dcd3ff;margin-bottom:6px;">Телепорт на другой сервер</div>
+    <div style="font-size:15px;color:#a29bfe;">${serverName}</div>
+    <div id="tpDots" style="font-size:26px;color:#6c5ce7;margin-top:16px;letter-spacing:6px;">●</div>
+    <style>@keyframes tpSpin{to{transform:rotate(360deg)}}</style>
+  `;
+  document.body.appendChild(ov);
+  let dots = 1;
+  window._tpDotsInterval = setInterval(() => {
+    dots = dots % 3 + 1;
+    const el = document.getElementById('tpDots');
+    if (el) el.textContent = '●'.repeat(dots);
+  }, 450);
+}
+
+function hideTeleportWaitScreen() {
+  const ov = document.getElementById('teleportWaitOverlay');
+  if (ov) ov.remove();
+  if (window._tpDotsInterval) { clearInterval(window._tpDotsInterval); window._tpDotsInterval = null; }
+}
+
+// =================== АДМИН КОМАНДНАЯ СТРОКА ===================
+function toggleAdminConsole() {
+  let con = document.getElementById('adminConsole');
+  if (con) {
+    con.style.display = con.style.display === 'none' ? 'flex' : 'none';
+    if (con.style.display === 'flex') document.getElementById('adminConsoleInput').focus();
+    return;
+  }
+  con = document.createElement('div');
+  con.id = 'adminConsole';
+  con.style.cssText = `
+    position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+    width:min(620px,92vw);z-index:9500;display:flex;flex-direction:column;
+    background:rgba(8,5,20,0.95);border:1.5px solid #6c5ce7;border-radius:12px;
+    font-family:'Consolas','Courier New',monospace;backdrop-filter:blur(8px);overflow:hidden;
+  `;
+  con.innerHTML = `
+    <div style="padding:6px 12px;background:rgba(108,92,231,0.25);color:#a29bfe;font-size:12px;display:flex;justify-content:space-between;align-items:center;">
+      <span>👑 ADMIN CONSOLE — /help для списка команд</span>
+      <span style="cursor:pointer;color:#e74c3c;font-weight:bold" onclick="toggleAdminConsole()">✕</span>
+    </div>
+    <div id="adminConsoleLog" style="height:180px;overflow-y:auto;padding:8px 12px;font-size:13px;color:#ccc;line-height:1.5;"></div>
+    <input id="adminConsoleInput" type="text" placeholder="/tp ник  |  /tpall  |  /help" autocomplete="off"
+      style="border:none;outline:none;background:rgba(255,255,255,0.07);color:#fff;padding:10px 12px;font-size:14px;font-family:inherit;" />
+  `;
+  document.body.appendChild(con);
+
+  const input = document.getElementById('adminConsoleInput');
+  input.addEventListener('keydown', (e) => {
+    e.stopPropagation();
+    if (e.key === 'Enter' && input.value.trim()) {
+      runAdminCommand(input.value.trim());
+      input.value = '';
+    }
+    if (e.key === 'Escape') toggleAdminConsole();
+  });
+  input.addEventListener('keyup', (e) => e.stopPropagation());
+  adminConsoleLog('Консоль готова. Введите /help', '#a29bfe');
+  input.focus();
+}
+
+function adminConsoleLog(text, color) {
+  const log = document.getElementById('adminConsoleLog');
+  if (!log) return;
+  const line = document.createElement('div');
+  line.style.color = color || '#ccc';
+  line.textContent = text;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+function runAdminCommand(raw) {
+  adminConsoleLog('> ' + raw, '#6c5ce7');
+  const parts = raw.replace(/^\//, '').split(/\s+/);
+  const cmd = (parts[0] || '').toLowerCase();
+  const px = localPlayer && localPlayer.mesh ? Math.round(localPlayer.mesh.position.x) : 0;
+  const pz = localPlayer && localPlayer.mesh ? Math.round(localPlayer.mesh.position.z) : 0;
+  const myServer = (typeof selectedServer !== 'undefined' && selectedServer) ? selectedServer.name : 'сервер администратора';
+
+  switch (cmd) {
+    case 'help':
+      adminConsoleLog('/tp <ник> — телепортировать игрока к себе (у него: "Ждите, телепорт на другой сервер")', '#dcd3ff');
+      adminConsoleLog('/tpall — телепортировать ВСЕХ игроков к себе', '#dcd3ff');
+      adminConsoleLog('/money <ник|all> <сумма> — выдать деньги', '#dcd3ff');
+      adminConsoleLog('/weather <sunny|rain|snow> — погода', '#dcd3ff');
+      adminConsoleLog('/time <day|night> — время суток', '#dcd3ff');
+      adminConsoleLog('/say <текст> — объявление всем', '#dcd3ff');
+      adminConsoleLog('/hp <число> — установить своё HP', '#dcd3ff');
+      adminConsoleLog('/clear — очистить консоль', '#dcd3ff');
+      break;
+    case 'tp': {
+      const target = parts[1];
+      if (!target) { adminConsoleLog('⚠️ Укажи ник: /tp Ник', '#e74c3c'); break; }
+      socket.emit('adminCommand', { cmd: 'teleportToMe', target, x: px, z: pz, serverName: myServer });
+      adminConsoleLog(`🌀 Телепортирую "${target}" к тебе (${px}, ${pz})...`, '#00b894');
+      break;
+    }
+    case 'tpall':
+      socket.emit('adminCommand', { cmd: 'teleportToMe', target: 'all', x: px, z: pz, serverName: myServer });
+      adminConsoleLog(`🌀 Телепортирую ВСЕХ игроков к тебе (${px}, ${pz})...`, '#00b894');
+      break;
+    case 'money': {
+      const target = parts[1] || 'all';
+      const amount = parseInt(parts[2] || parts[1], 10) || 0;
+      socket.emit('adminCommand', { cmd: 'giveMoney', target, amount });
+      adminConsoleLog(`💰 Выдано ${amount}$ → ${target}`, '#00b894');
+      break;
+    }
+    case 'weather':
+      socket.emit('adminCommand', { cmd: 'setWeather', weather: parts[1] || 'sunny' });
+      adminConsoleLog(`☁️ Погода: ${parts[1] || 'sunny'}`, '#00b894');
+      break;
+    case 'time':
+      socket.emit('adminCommand', { cmd: 'setTime', time: parts[1] || 'day' });
+      adminConsoleLog(`🕐 Время: ${parts[1] || 'day'}`, '#00b894');
+      break;
+    case 'say':
+      socket.emit('adminCommand', { cmd: 'broadcast', title: '📢 Администратор', description: parts.slice(1).join(' '), eventType: 'info' });
+      adminConsoleLog('📢 Объявление отправлено', '#00b894');
+      break;
+    case 'hp':
+      socket.emit('adminCommand', { cmd: 'setHealth', amount: parseInt(parts[1], 10) || 100 });
+      adminConsoleLog(`❤️ HP: ${parts[1] || 100}`, '#00b894');
+      break;
+    case 'clear': {
+      const log = document.getElementById('adminConsoleLog');
+      if (log) log.innerHTML = '';
+      break;
+    }
+    default:
+      adminConsoleLog(`❓ Неизвестная команда: /${cmd}. Введите /help`, '#e74c3c');
+  }
+}
+
 function showAdminHUD() {
   if (document.getElementById('adminHUD')) return;
 
@@ -7653,6 +7820,7 @@ function showAdminHUD() {
   hud.innerHTML = `
     <span style="color:#f1c40f;font-weight:bold">👑 ADMIN</span>
     <button id="btnAdminPanel" style="background:#6c5ce7;color:#fff;border:none;border-radius:7px;padding:4px 10px;cursor:pointer;font-size:12px">⚙️ Панель</button>
+    <button id="btnAdminConsole" style="background:#2d3436;color:#00cec9;border:1px solid #00cec9;border-radius:7px;padding:4px 10px;cursor:pointer;font-size:12px">⌨️ Консоль</button>
     <button id="btnAdminFly" style="background:#2d3436;color:#a29bfe;border:1px solid #6c5ce7;border-radius:7px;padding:4px 10px;cursor:pointer;font-size:12px">🛸 Лети</button>
     <button id="btnAdminNoclip" style="background:#2d3436;color:#a29bfe;border:1px solid #6c5ce7;border-radius:7px;padding:4px 10px;cursor:pointer;font-size:12px">👻 Нокл</button>
     <span id="adminCoords" style="color:#636e72;font-size:11px">x:0 z:0</span>
@@ -7663,6 +7831,16 @@ function showAdminHUD() {
   buildAnimatePanel();
 
   document.getElementById('btnAdminPanel').onclick = toggleAdminPanel;
+  document.getElementById('btnAdminConsole').onclick = toggleAdminConsole;
+  // Горячая клавиша ~ (Ё) — открыть/закрыть консоль
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Backquote' && localPlayer && localPlayer.isAdmin) {
+      const inp = document.getElementById('adminConsoleInput');
+      if (document.activeElement === inp) return;
+      e.preventDefault();
+      toggleAdminConsole();
+    }
+  });
   document.getElementById('btnAdminFly').onclick = () => {
     window.isAdminFly = !window.isAdminFly;
     document.getElementById('btnAdminFly').style.background = window.isAdminFly ? '#6c5ce7' : '#2d3436';
