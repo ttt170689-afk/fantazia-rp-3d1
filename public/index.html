@@ -2568,6 +2568,8 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
   </div>
 </div>
 
+<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v2.6</div>
+
 <!-- ========== HUD ========== -->
 <div id="hud">
   <!-- Верхняя панель -->
@@ -4432,8 +4434,8 @@ const CONFIG = {
   JUMP_FORCE: 0.2,
   GRAVITY: 0.008,
   MOUSE_SENSITIVITY: 0.002,
-  CAMERA_DISTANCE: 6.5,
-  CAMERA_HEIGHT: 3.2,
+  CAMERA_DISTANCE: 5.2,
+  CAMERA_HEIGHT: 2.7,
   WORLD_SIZE: 1200,
   SEND_RATE: 50,
   VOICE_RANGE: 30
@@ -9565,7 +9567,7 @@ function initControls() {
 
   // Колёсико для зума
   document.addEventListener('wheel', (e) => {
-    CONFIG.CAMERA_DISTANCE = Math.max(3, Math.min(20,
+    CONFIG.CAMERA_DISTANCE = Math.max(2.5, Math.min(11,
       CONFIG.CAMERA_DISTANCE + e.deltaY * 0.01));
   });
 }
@@ -11473,8 +11475,8 @@ function checkCollision(newX, newZ) {
     }
     // Граница интерьера (ТЦ — большой зал 44x36)
     const bx = INTERIOR_BASE.x, bz = INTERIOR_BASE.z;
-    const W = currentBuildingType === 'mall' ? 21.5 : 14.5;
-    const D = currentBuildingType === 'mall' ? 17.5 : 11.5;
+    const W = currentBuildingType === 'mall' ? 21.5 : (currentBuildingType === 'house' ? 19.5 : 14.5);
+    const D = currentBuildingType === 'mall' ? 17.5 : (currentBuildingType === 'house' ? 14.5 : 11.5);
     if (newX < bx-W || newX > bx+W || newZ < bz-D || newZ > bz+D) return true;
     return false;
   }
@@ -11578,7 +11580,7 @@ function mobileToggleSprint() {
 // =================== СИСТЕМА ИНТЕРЬЕРОВ ===================
 const INTERIOR_CONFIGS = {
   apartment: { name:'🏢 Жилой дом', floors:9, color:0x8a9bb0, floorColor:0xd4cfc7 },
-  house:     { name:'🏡 Частный дом', floors:2, color:0xc9a87c, floorColor:0xe8d5b7 },
+  house:     { name:'🏡 ТВОЙ ДОМ', floors:1, color:0xc9a87c, floorColor:0xe8d5b7 },
   office:    { name:'🏢 Офисный центр', floors:8, color:0x6b8cae, floorColor:0xe0e8f0 },
   cinema:    { name:'🎬 Кинотеатр', floors:2, color:0x2c3e50, floorColor:0x3c3c3c },
   club:      { name:'🎵 Ночной клуб', floors:1, color:0x1a0030, floorColor:0x1a0030 },
@@ -11601,13 +11603,14 @@ function buildInterior(type) {
   const bz = INTERIOR_BASE.z;
   let W = 30, D = 24;
   if (type === 'mall') { W = 44; D = 36; } // ТЦ — большой зал
+  if (type === 'house') { W = 40; D = 30; } // дом — огромный лофт
   const FH = 3.5;
 
   const addObj = (mesh) => { scene.add(mesh); interiorObjects.push(mesh); return mesh; };
   const mat = (color, emissive=0, em=0) => new THREE.MeshLambertMaterial({ color, emissiveIntensity:em, emissive });
 
-  // Оболочка (для ТЦ её строит buildMallInterior сам)
-  if (type !== 'mall') {
+  // Оболочка (для ТЦ её строит buildMallInterior сам; дом — вообще без лестниц)
+  if (type !== 'mall' && type !== 'house') {
   // Пол
   const floorMesh = new THREE.Mesh(new THREE.PlaneGeometry(W, D), mat(cfg.floorColor));
   floorMesh.rotation.x = -Math.PI/2;
@@ -11712,7 +11715,7 @@ function buildInterior(type) {
 
   // Интерактивные зоны в интерьере
   interactables = interactables.filter(i => i.interior !== true);
-  if (type !== 'mall') {
+  if (type !== 'mall' && type !== 'house') { // в доме лестниц нет — один огромный зал
     const stairZ = bz - D/2 + 3;
     const stairX = bx - W/2 + 3;
     interactables.push({ position:{x:stairX, y:currentFloor*FH, z:stairZ}, type:'stairs_up', name:'⬆️ Подняться', range:3, interior:true });
@@ -12584,321 +12587,311 @@ function buildClubInterior(bx, bz, floor, FH, add, mat) {
 // 2 этаж: спальня + ванная + гардероб + гейминг
 // ═══════════════════════════════════════════════════
 function buildSuperHouseInterior(bx, bz, floor, FH, add, mat) {
+  // ═══ 🏡 ТВОЙ ДОМ — ОДИН ОГРОМНЫЙ ЛОФТ-ЗАЛ 40×30 (без лестниц) ═══
   const F = floor * FH;
-  // основной зал: x ∈ [bx-9, bx+15], z ∈ [bz-12, bz+12] (запад — лестница)
-  const hx0 = bx - 8.5, hx1 = bx + 14.5, hz0 = bz - 11.5, hz1 = bz + 11.5;
-  const cx = (hx0 + hx1) / 2, cz = (hz0 + hz1) / 2;
-
-  const box = (w, h, d, color, x, y, z, ry, emissive, em) => {
+  const hx0 = bx - 20, hx1 = bx + 20, hz0 = bz - 15, hz1 = bz + 15;
+  const B = (w, h, d, color, x, y, z, ry, emissive, em) => {
     const m2 = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, emissive || 0, em || 0));
     m2.position.set(x, F + y, z);
     if (ry) m2.rotation.y = ry;
     add(m2); return m2;
   };
-  const collide = (x1, z1, x2, z2) => interiorColliders.push({ minX: x1, maxX: x2, minZ: z1, maxZ: z2 });
+  const col = (x1, z1, x2, z2) => interiorColliders.push({ minX: x1, maxX: x2, minZ: z1, maxZ: z2 });
 
-  // ── паркетный пол (текстура плашек) ──
+  // ── пол: светлый паркет ──
   const parquetTex = nzCanvas(256, 256, (g, w, h) => {
     for (let row = 0; row < 8; row++) {
-      for (let col = 0; col < 3; col++) {
+      for (let p = 0; p < 3; p++) {
         const off = (row % 2) * 42;
-        g.fillStyle = ['#9c6b3f', '#8a5c34', '#a5744a', '#7d5230'][(row + col) % 4];
-        g.fillRect(col * 86 + off - 42, row * 32, 84, 30);
+        g.fillStyle = ['#c9a06a', '#b98d5c', '#d4ad78', '#ad8354'][(row + p) % 4];
+        g.fillRect(p * 86 + off - 42, row * 32, 84, 30);
       }
     }
   });
   parquetTex.wrapS = parquetTex.wrapT = THREE.RepeatWrapping;
-  parquetTex.repeat.set(4, 4);
-  const parquet = new THREE.Mesh(new THREE.PlaneGeometry(hx1 - hx0, hz1 - hz0), new THREE.MeshLambertMaterial({ map: parquetTex }));
+  parquetTex.repeat.set(8, 6);
+  const parquet = new THREE.Mesh(new THREE.PlaneGeometry(40, 30), new THREE.MeshLambertMaterial({ map: parquetTex }));
   parquet.rotation.x = -Math.PI/2;
-  parquet.position.set(cx, F + 0.03, cz);
+  parquet.position.set(bx, F + 0.03, bz);
   add(parquet);
 
-  // тёплый свет
-  const warm = new THREE.PointLight(0xFFE0B0, 0.75, 22);
-  warm.position.set(cx, F + FH - 0.6, cz);
-  add(warm);
+  // ── потолок: деревянные балки + подвесные лампы ──
+  for (let i = 0; i < 5; i++) {
+    B(40, 0.28, 0.34, 0x8d6e63, bx, FH - 0.16, hz0 + 3 + i * 6.8);
+  }
+  for (let i = 0; i < 6; i++) {
+    const lx = bx - 15 + (i % 3) * 15, lz = bz - 8 + Math.floor(i / 3) * 16;
+    B(0.05, 0.5, 0.05, 0x37474f, lx, FH - 0.45, lz);
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 10), mat(0xfff59d, 0xffee58, 0.95));
+    bulb.position.set(lx, F + FH - 0.75, lz);
+    add(bulb);
+    const pl = new THREE.PointLight(0xFFE8C0, 0.42, 14);
+    pl.position.set(lx, F + FH - 0.9, lz);
+    add(pl);
+  }
 
-  if (floor === 0) {
-    // ═══ 1 ЭТАЖ ═══
-    addInteriorSign('🏡 ТВОЙ ДОМ — 1 ЭТАЖ', bx, F + FH - 0.3, bz - 11.7, add);
-
-    // ── ГОСТИННАЯ (восток) ──
-    // большой угловой диван
-    box(5.2, 0.55, 1.2, 0x5c6bc0, bx + 8.5, 0.45, bz + 6.5);            // длинная часть
-    box(0.55, 1.0, 1.2, 0x5c6bc0, bx + 11.6, 0.35, bz + 4.4, 0);        // спинка угла
-    box(5.2, 0.8, 0.25, 0x4753a8, bx + 8.5, 0.85, bz + 7.2);            // спинка
-    box(1.6, 0.55, 1.2, 0x5c6bc0, bx + 12.4, 0.45, bz + 2.2, Math.PI/2);// короткая часть
-    box(0.25, 0.8, 1.2, 0x4753a8, bx + 13.05, 0.85, bz + 2.2, Math.PI/2);
-    box(0.9, 0.9, 0.9, 0x8e44ad, bx + 12.35, 0.45, bz + 5.6);           // пуф
-    collide(bx + 5.7, bz + 5.8, bx + 11.3, bz + 7.9);
-    collide(bx + 11.7, bz + 1.5, bx + 13.2, bz + 5.5);
-    // подушки на диване
-    box(0.7, 0.7, 0.18, 0xef5350, bx + 7, 0.95, bz + 7.0);
-    box(0.7, 0.7, 0.18, 0xffca28, bx + 9.5, 0.95, bz + 7.0);
-
-    // журнальный столик + ковёр
-    const rug = new THREE.Mesh(new THREE.PlaneGeometry(6.5, 4.5), mat(0x7f8c8d));
-    rug.rotation.x = -Math.PI/2; rug.position.set(bx + 8.5, F + 0.05, bz + 3.2);
-    add(rug);
-    box(1.9, 0.1, 1.0, 0x6d4c41, bx + 8.5, 0.5, bz + 3.2);              // столешница
-    [-0.8, 0.8].forEach(ox => box(0.1, 0.5, 0.1, 0x4e342e, bx + 8.5 + ox, 0.25, bz + 3.2));
-    box(0.35, 0.05, 0.5, 0xd7ccc8, bx + 8.2, 0.56, bz + 3.2);           // журнал
-    collide(bx + 7.5, bz + 2.6, bx + 9.5, bz + 3.8);
-
-    // ТВ на тумбе у восточной стены
-    box(2.6, 0.5, 0.8, 0x3e2723, bx + 14, 0.25, bz + 3.2);              // тумба
-    const tvScr2 = new THREE.Mesh(new THREE.PlaneGeometry(3.1, 1.75), mat(0x092b4a, 0x1e88e5, 0.85));
-    tvScr2.position.set(bx + 14.35, F + 1.75, bz + 3.2);
-    tvScr2.rotation.y = -Math.PI/2;
-    add(tvScr2);
-    box(0.12, 2.0, 3.4, 0x111111, bx + 14.45, 1.75, bz + 3.2);          // рама ТВ
-    const tvLight = new THREE.PointLight(0x64b5f6, 0.55, 9);
-    tvLight.position.set(bx + 12.8, F + 1.8, bz + 3.2);
-    tvLight.userData = { isTVLight: true };
-    add(tvLight);
-    collide(bx + 13.5, bz + 1.6, bx + 14.6, bz + 4.8);
-
-    // КАМИН с живым огнём (у южной стены)
-    box(3.2, 2.6, 0.8, 0x5d4037, bx + 8, 1.3, bz + 11.2);               // портал
-    box(2.4, 1.7, 0.5, 0x1a1a1a, bx + 8, 1.05, bz + 11.0);              // топка
-    const fire = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 1.2), mat(0xff6d00, 0xff9100, 1));
-    fire.position.set(bx + 8, F + 0.85, bz + 10.78);
-    add(fire);
-    const logs = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 1.6, 6), mat(0x4e342e));
-    logs.rotation.z = Math.PI/2; logs.position.set(bx + 8, F + 0.35, bz + 10.85);
-    add(logs);
-    const fireLight = new THREE.PointLight(0xFF8F00, 1.0, 10);
-    fireLight.position.set(bx + 8, F + 1.1, bz + 10.2);
-    fireLight.userData = { isFireLight: true, ph: Math.random() * 9 };
-    add(fireLight);
-    box(3.6, 0.18, 1.1, 0x8d6e63, bx + 8, 2.7, bz + 11.1);              // полка камина
-    collide(bx + 6.3, bz + 10.7, bx + 9.7, bz + 11.9);
-    // фото на камине
-    box(0.5, 0.65, 0.05, 0xffe082, bx + 7.3, 3.1, bz + 11.0);
-    box(0.5, 0.65, 0.05, 0x80deea, bx + 8.7, 3.1, bz + 11.0);
-
-    // книжный шкаф у северной стены
-    box(3.2, 2.6, 0.6, 0x4e342e, bx + 8.5, 1.3, bz - 11.1);
-    for (let sh = 0; sh < 4; sh++) {
-      for (let bk = 0; bk < 7; bk++) {
-        box(0.3, 0.5, 0.42, [0xe74c3c,0x3498db,0xf1c40f,0x27ae60,0x9b59b6,0xe67e22,0xecf0f1][bk],
-          bx + 7.3 + bk * 0.42, 0.5 + sh * 0.62, bz - 11.05);
-      }
+  // ── ПАНОРАМНЫЕ ОКНА (восточная стена): вид на город ──
+  const cityTex = nzCanvas(256, 160, (g, w, h) => {
+    const grad = g.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, '#0d1b3e'); grad.addColorStop(0.7, '#2b3a67'); grad.addColorStop(1, '#4a5a8a');
+    g.fillStyle = grad; g.fillRect(0, 0, w, h);
+    for (let b = 0; b < 9; b++) {
+      const bw = 18 + Math.random() * 22, bh = 30 + Math.random() * 80;
+      g.fillStyle = '#0a1229';
+      g.fillRect(b * 28 + 4, h - bh, bw, bh);
+      g.fillStyle = '#ffd76e';
+      for (let wy = 0; wy < bh - 8; wy += 9) for (let wx = 0; wx < bw - 5; wx += 7)
+        if (Math.random() < 0.4) g.fillRect(b * 28 + 7 + wx, h - bh + 5 + wy, 3, 4);
     }
-    collide(bx + 6.8, bz - 11.6, bx + 10.2, bz - 10.7);
-
-    // торшер
-    box(0.4, 0.06, 0.4, 0x37474f, bx + 5.2, 0.03, bz + 8.5);
-    box(0.06, 1.7, 0.06, 0x37474f, bx + 5.2, 0.85, bz + 8.5);
-    const lampGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 0.5, 10), mat(0xfff59d, 0xffee58, 0.9));
-    lampGlow.position.set(bx + 5.2, F + 1.85, bz + 8.5);
-    add(lampGlow);
-    collide(bx + 4.9, bz + 8.2, bx + 5.5, bz + 8.8);
-
-    // картины на северной стене
-    const arts = ['🌊', '🏔️', '🌅'];
-    arts.forEach((a, i) => {
-      const pt = nzCanvas(128, 96, (g, w, h) => {
-        g.fillStyle = ['#1b4965', '#577399', '#b5c9d0'][i]; g.fillRect(0, 0, w, h);
-        g.fillStyle = '#f5e6c8'; g.fillRect(6, 6, w-12, h-12);
-        g.fillStyle = ['#0f4c81', '#c9a227', '#e07a5f'][i];
-        if (i === 0) { for (let wv = 0; wv < 4; wv++) g.fillRect(0, 40 + wv*10, w, 5); }
-        else if (i === 1) { g.beginPath(); g.moveTo(10, h-14); g.lineTo(w/2, 16); g.lineTo(w-10, h-14); g.fill(); }
-        else { g.beginPath(); g.arc(w*0.7, 34, 16, 0, 7); g.fill(); }
-      });
-      const painting = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 1.25), new THREE.MeshBasicMaterial({ map: pt }));
-      painting.position.set(bx + 3 + i * 2.6, F + 2.1, bz - 11.65);
-      add(painting);
-    });
-
-    // ── КУХНЯ (запад homes-зала, вдоль стены лестницы) ──
-    // гарнитур вдоль западной стены (x = hx0)
-    box(0.7, 0.9, 7.5, 0xecf0f1, hx0 + 0.4, 0.45, bz + 1.5);            // тумбы
-    box(0.8, 0.08, 7.7, 0x37474f, hx0 + 0.4, 0.94, bz + 1.5);           // столешница
-    collide(hx0, bz - 2.3, hx0 + 0.9, bz + 5.3);
-    // плита
-    box(0.75, 0.12, 1.6, 0x212121, hx0 + 0.4, 1.0, bz - 0.6);
-    [-0.5, 0, 0.5].forEach(dz3 => {
-      const burner = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.03, 10), mat(0x424242, 0xd84315, 0.25));
-      burner.position.set(hx0 + 0.4, F + 1.08, bz - 0.75 + dz3 * 0.6);
-      add(burner);
-    });
-    // мойка
-    box(0.6, 0.06, 1.1, 0x90a4ae, hx0 + 0.4, 0.97, bz + 1.6);
-    const faucet = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8), mat(0xb0bec5));
-    faucet.position.set(hx0 + 0.15, F + 1.2, bz + 1.6);
-    add(faucet);
-    // холодильник
-    box(1.1, 2.4, 1.0, 0xcfd8dc, hx0 + 0.6, 1.2, bz + 4.6);
-    box(0.08, 0.7, 0.06, 0x90a4ae, hx0 + 1.13, 1.5, bz + 4.6);
-    box(0.08, 0.5, 0.06, 0x90a4ae, hx0 + 1.13, 0.8, bz + 4.6);
-    box(0.3, 0.4, 0.02, 0xffe082, hx0 + 1.12, 2.0, bz + 4.3);           // магнитик
-    collide(hx0, bz + 4.0, hx0 + 1.3, bz + 5.2);
-    // вытяжка + полки наверх
-    box(0.9, 0.6, 1.4, 0x78909c, hx0 + 0.5, 2.5, bz - 0.6);
-    box(0.6, 1.6, 0.06, 0xd7ccc8, hx0 + 0.85, 2.2, bz + 3.2, Math.PI/2);// полка с банками
-    ['🍋','🫐','🍎'].forEach((j, i) => box(0.22, 0.3, 0.22, [0xfff176, 0x9575cd, 0xef5350][i], hx0 + 0.85, 3.0, bz + 2.9 + i * 0.45));
-
-    // барная стойка
-    box(3.4, 0.12, 0.8, 0x8d6e63, bx + 1.2, 1.05, bz + 6.8);
-    [-1.4, 1.4].forEach(ox => box(0.12, 1.0, 0.12, 0x5d4037, bx + 1.2 + ox, 0.5, bz + 6.8));
-    collide(bx - 0.6, bz + 6.3, bx + 3.0, bz + 7.3);
-    // барные стулья
-    [-1.0, 1.0].forEach(sx => {
-      const stool = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.12, 10), mat(0xe74c3c));
-      stool.position.set(bx + 1.2 + sx, F + 0.95, bz + 8.0);
-      add(stool);
-      box(0.08, 0.9, 0.08, 0x9e9e9e, bx + 1.2 + sx, 0.45, bz + 8.0);
-      collide(bx + 1.2 + sx - 0.35, bz + 7.6, bx + 1.2 + sx + 0.35, bz + 8.4);
-    });
-
-    // обеденный стол со стульями (запад — не в зоне телепорта!)
-    box(2.6, 0.12, 1.4, 0xa1887f, bx - 3.6, 0.85, bz + 1.2);
-    [[-1.1, -0.5], [1.1, -0.5], [-1.1, 0.5], [1.1, 0.5]].forEach(([lx, lz]) => box(0.12, 0.85, 0.12, 0x8d6e63, bx - 3.6 + lx, 0.42, bz + 1.2 + lz));
-    box(0.5, 0.06, 0.5, 0xffcc80, bx - 3.6, 0.94, bz + 1.2);            // посуда
-    [[-0.85, 1.35], [0.85, 1.35], [-0.85, 1.05], [0.85, 1.05]].forEach(([lx, lz]) => {
-      box(0.5, 0.12, 0.5, 0x5d4037, bx - 3.6 + lx, 0.6, bz + lz);      // сиденья
-      box(0.5, 0.7, 0.1, 0x5d4037, bx - 3.6 + lx * 1.3, 1.0, bz + lz);
-    });
-    collide(bx - 5.1, bz + 0.3, bx - 2.1, bz + 2.1);
-
-    // ── ПРИХОЖАЯ (юго-запад у входа) ──
-    box(1.6, 0.14, 0.5, 0x8d6e63, hx0 + 1.2, 1.5, hz1 - 0.6);           // вешалка-полка
-    box(1.4, 0.9, 0.35, 0x455a64, hx0 + 1.2, 0.9, hz1 - 0.65);          // обувница
-    const mirror2 = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 2.0), mat(0xb3e5fc, 0x81d4fa, 0.3));
-    mirror2.position.set(hx0 + 0.15, F + 1.7, hz1 - 2.5);
-    mirror2.rotation.y = Math.PI/2;
-    add(mirror2);
-    // коврик у входа
-    const doorMat2 = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.4), mat(0x8d6e63));
-    doorMat2.rotation.x = -Math.PI/2; doorMat2.position.set(cx + 1, F + 0.06, hz1 - 1.3);
-    add(doorMat2);
-    collide(hx0 + 0.3, hz1 - 1.1, hx0 + 2.1, hz1 - 0.2);
-
-    // растение у дивана
-    box(0.55, 0.6, 0.55, 0xbf6b3f, bx + 4.2, 0.3, bz + 10.3);
-    const plant2 = new THREE.Mesh(new THREE.SphereGeometry(0.75, 8, 7), mat(0x2e7d32));
-    plant2.position.set(bx + 4.2, F + 1.1, bz + 10.3);
-    add(plant2);
-    collide(bx + 3.8, bz + 9.9, bx + 4.6, bz + 10.7);
+  });
+  for (let wi = 0; wi < 4; wi++) {
+    const win = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 2.6), new THREE.MeshBasicMaterial({ map: cityTex }));
+    win.position.set(hx1 - 0.1, F + 1.75, hz0 + 4 + wi * 7.4);
+    win.rotation.y = -Math.PI/2;
+    add(win);
+    B(0.14, 2.9, 0.14, 0x37474f, hx1 - 0.12, 1.75, hz0 + 4 + wi * 7.4 - 2.3);
+    B(0.14, 2.9, 0.14, 0x37474f, hx1 - 0.12, 1.75, hz0 + 4 + wi * 7.4 + 2.3);
   }
+  const cityGlow = new THREE.PointLight(0x89a7e0, 0.4, 18);
+  cityGlow.position.set(hx1 - 2.5, F + 2.2, bz);
+  add(cityGlow);
 
-  if (floor === 1) {
-    // ═══ 2 ЭТАЖ ═══
-    addInteriorSign('🏡 ТВОЙ ДОМ — 2 ЭТАЖ', bx, F + FH - 0.3, bz - 11.7, add);
+  // ═══ LOUNGE-ЗОНА (юго-восток): полукруглый диван + кино-стена ═══
+  // диван полукругом
+  B(4.6, 0.55, 1.15, 0x5c6bc0, bx + 10, 0.45, bz + 9.5);
+  B(4.6, 0.85, 0.22, 0x4753a8, bx + 10, 0.9, bz + 10.2);
+  B(1.15, 0.55, 3.4, 0x5c6bc0, bx + 13.4, 0.45, bz + 6.4);
+  B(0.22, 0.85, 3.4, 0x4753a8, bx + 14.1, 0.9, bz + 6.4);
+  B(4.2, 0.55, 1.15, 0x5c6bc0, bx + 9.5, 0.45, bz + 4.2, 0.12);
+  B(1.0, 0.95, 1.0, 0x8e44ad, bx + 12.6, 0.48, bz + 9.3); // пуф
+  B(0.75, 0.7, 0.2, 0xef5350, bx + 8.8, 0.95, bz + 10.05); // подушки
+  B(0.75, 0.7, 0.2, 0xffca28, bx + 10.6, 0.95, bz + 10.05);
+  col(bx + 7.6, bz + 3.5, bx + 12.4, bz + 5.0);
+  col(bx + 7.6, bz + 8.9, bx + 12.4, bz + 10.4);
+  col(bx + 12.9, bz + 4.6, bx + 14.6, bz + 8.2);
+  // журнальный стол + ковёр
+  const rug = new THREE.Mesh(new THREE.PlaneGeometry(6.5, 5), mat(0x78909c));
+  rug.rotation.x = -Math.PI/2; rug.position.set(bx + 10, F + 0.05, bz + 7);
+  add(rug);
+  B(1.9, 0.1, 1.0, 0x8d6e63, bx + 10, 0.5, bz + 7);
+  B(0.4, 0.06, 0.55, 0xd7ccc8, bx + 9.7, 0.57, bz + 7);
+  col(bx + 9, bz + 6.4, bx + 11, bz + 7.6);
+  // КИНО-СТЕНА на юге
+  B(6.4, 3.0, 0.3, 0x101018, bx + 10, 1.7, hz1 - 0.2);
+  const cinema = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 2.5), mat(0x0a1a2f, 0x2196f3, 0.75));
+  cinema.position.set(bx + 10, F + 1.75, hz1 - 0.38);
+  cinema.rotation.y = Math.PI;
+  add(cinema);
+  addInteriorSign('🎬 КИНО-СТЕНА', bx + 10, F + FH - 0.35, hz1 - 0.4, add);
+  // проектор на стойке за диваном
+  B(0.14, 1.5, 0.14, 0x37474f, bx + 10, 0.75, bz + 2.4);
+  B(0.5, 0.3, 0.6, 0x212121, bx + 10, 1.62, bz + 2.4);
+  const projBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.5, 3.6, 10, 1, true), mat(0xffffff, 0x64b5f6, 0.18));
+  projBeam.rotation.x = Math.PI / 2 - 0.18;
+  projBeam.position.set(bx + 10, F + 1.8, bz + 5.6);
+  add(projBeam);
 
-    // ── СПАЛЬНЯ (восток) ──
-    // кровать
-    box(2.6, 0.45, 3.4, 0x8d6e63, bx + 11, 0.35, bz + 6.5);             // каркас
-    box(2.4, 0.35, 3.1, 0xcfd8dc, bx + 11, 0.72, bz + 6.5);             // матрас
-    box(2.4, 0.2, 2.2, 0x5c6bc0, bx + 11, 0.95, bz + 7.1);              // одеяло
-    box(0.9, 0.25, 0.5, 0xffffff, bx + 10.6, 1.0, bz + 5.2);            // подушки
-    box(0.9, 0.25, 0.5, 0xffffff, bx + 11.4, 1.0, bz + 5.2);
-    box(2.6, 1.6, 0.25, 0x5d4037, bx + 11, 1.1, bz + 8.35);             // изголовье
-    collide(bx + 9.6, bz + 4.7, bx + 12.4, bz + 8.6);
-    // тумбочки с лампами
-    [[9.6, 5.0], [12.4, 5.0]].forEach(([lx, lz]) => {
-      box(0.7, 0.55, 0.7, 0x6d4c41, bx + lx, 0.28, bz + lz);
-      const nl = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8), mat(0xfff59d, 0xffee58, 0.8));
-      nl.position.set(bx + lx, F + 0.75, bz + lz);
-      add(nl);
-      collide(bx + lx - 0.4, bz + lz - 0.4, bx + lx + 0.4, bz + lz + 0.4);
+  // ═══ КАМИН-КОЛОННА (двусторонняя, центр-запад) ═══
+  B(2.8, 3.5, 2.8, 0x5d4037, bx - 8, 1.75, bz - 5);
+  [[-1, 0], [1, 0]].forEach(([sx]) => {
+    B(1.6, 1.5, 0.4, 0x1a1a1a, bx - 8 + sx * 1.45, 0.95, bz - 5);
+    const fire = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 0.9), mat(0xff6d00, 0xff9100, 1));
+    fire.position.set(bx - 8 + sx * 1.48, F + 0.8, bz - 5);
+    fire.rotation.y = sx > 0 ? Math.PI/2 : -Math.PI/2;
+    add(fire);
+    const fl = new THREE.PointLight(0xFF8F00, 0.9, 11);
+    fl.position.set(bx - 8 + sx * 2.2, F + 1.1, bz - 5);
+    fl.userData = { isFireLight: true, ph: Math.random() * 9 };
+    add(fl);
+  });
+  B(3.2, 0.2, 3.2, 0x8d6e63, bx - 8, 3.4, bz - 5); // крышка-полка
+  B(0.5, 0.6, 0.06, 0xffe082, bx - 8.8, 3.75, bz - 3.45);
+  B(0.5, 0.6, 0.06, 0x80deea, bx - 7.2, 3.75, bz - 3.45);
+  const logs = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 1.1, 6), mat(0x4e342e));
+  logs.rotation.x = Math.PI/2; logs.position.set(bx - 8, F + 0.3, bz - 5);
+  add(logs);
+  col(bx - 9.5, bz - 6.5, bx - 6.5, bz - 3.5);
+
+  // ═══ КУХНЯ-ОСТРОВ (север-восток) ═══
+  B(4.4, 1.0, 1.5, 0x37474f, bx + 8, 0.5, bz - 8);
+  B(4.7, 0.12, 1.8, 0xeceff1, bx + 8, 1.05, bz - 8);
+  // мойка в острове
+  B(0.9, 0.07, 0.6, 0x90a4ae, bx + 6.8, 1.12, bz - 8);
+  const faucet = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.55, 8), mat(0xb0bec5));
+  faucet.position.set(bx + 6.8, F + 1.4, bz - 8.35);
+  add(faucet);
+  col(bx + 5.6, bz - 9.0, bx + 10.4, bz - 7.0);
+  // барные стулья у острова
+  [6.6, 8, 9.4].forEach(sx => {
+    const st = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.14, 12), mat(0xff7043));
+    st.position.set(bx + sx, F + 1.0, bz - 6.4);
+    add(st);
+    B(0.09, 1.0, 0.09, 0x9e9e9e, bx + sx, 0.5, bz - 6.4);
+    col(bx + sx - 0.4, bz - 6.8, bx + sx + 0.4, bz - 6.0);
+  });
+  // колонна холодильников у северной стены
+  B(1.2, 2.5, 1.0, 0xcfd8dc, bx + 13.2, 1.25, hz0 + 0.6);
+  B(1.2, 2.5, 1.0, 0xb0bec5, bx + 14.5, 1.25, hz0 + 0.6);
+  B(0.06, 0.8, 0.06, 0x90a4ae, bx + 13.85, 1.5, hz0 + 1.12);
+  col(bx + 12.5, hz0, bx + 15.2, hz0 + 1.2);
+  // гарнитур у северной стены (духовка + варочная)
+  B(6.5, 0.95, 0.75, 0x455a64, bx + 5.5, 0.48, hz0 + 0.45);
+  B(6.8, 0.1, 0.9, 0xeceff1, bx + 5.5, 0.98, hz0 + 0.45);
+  B(1.3, 0.75, 0.15, 0x111111, bx + 7, 0.55, hz0 + 0.85); // духовка
+  B(1.1, 0.1, 0.12, 0xffca28, bx + 7, 0.98, hz0 + 0.92);  // ручка
+  [3.6, 4.8, 6.0].forEach(sx => {
+    const burner = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.03, 10), mat(0x424242, 0xd84315, 0.25));
+    burner.position.set(bx + sx, F + 1.05, hz0 + 0.45);
+    add(burner);
+  });
+  // вытяжка
+  B(2.0, 0.7, 0.9, 0x78909c, bx + 4.8, 2.4, hz0 + 0.5);
+  col(bx + 2.2, hz0, bx + 8.8, hz0 + 1.0);
+  addInteriorSign('🍳 КУХНЯ', bx + 8, F + FH - 0.35, hz0 + 0.6, add);
+
+  // ═══ ОБЕДЕННАЯ ЗОНА (центр-восток) ═══
+  B(3.2, 0.14, 1.5, 0xa1887f, bx + 9, 0.85, bz - 1.5);
+  [[-1.35,-0.55],[1.35,-0.55],[-1.35,0.55],[1.35,0.55]].forEach(([lx,lz]) => B(0.12,0.85,0.12,0x8d6e63, bx+9+lx, 0.42, bz-1.5+lz));
+  B(0.5, 0.07, 0.5, 0xffcc80, bx + 9, 0.95, bz - 1.5);
+  [[-1,1.25],[0,1.25],[-1,-1.25],[0,-1.25]].forEach(([lxo, lzo]) => {
+    const px2 = bx + 9.6 + lxo * 1.4, pz2 = bz - 1.5 + lzo;
+    B(0.55, 0.12, 0.55, 0x5d4037, px2, 0.6, pz2);
+    B(0.55, 0.7, 0.12, 0x5d4037, px2, 1.0, pz2 + (lzo > 0 ? 0.28 : -0.28));
+    B(0.1, 0.6, 0.1, 0x5d4037, px2, 0.3, pz2);
+  });
+  col(bx + 7.3, bz - 2.4, bx + 10.7, bz - 0.6);
+
+  // ═══ СПАЛЬНЯ-ПОДИУМ (юго-запад) ═══
+  B(7, 0.28, 6, 0x8d6e63, bx - 12, 0.14, bz + 9);
+  // king-кровать
+  B(2.7, 0.5, 3.5, 0x6d4c41, bx - 13.5, 0.53, bz + 9.5);
+  B(2.5, 0.35, 3.2, 0xcfd8dc, bx - 13.5, 0.95, bz + 9.5);
+  B(2.5, 0.22, 2.3, 0x7986cb, bx - 13.5, 1.18, bz + 10.0);
+  B(1.0, 0.28, 0.55, 0xffffff, bx - 14.1, 1.25, bz + 8.2);
+  B(1.0, 0.28, 0.55, 0xffffff, bx - 12.9, 1.25, bz + 8.2);
+  B(2.7, 1.8, 0.25, 0x5d4037, bx - 13.5, 1.35, bz + 11.4);
+  [[-14.6, 8.0], [-12.4, 8.0]].forEach(([lx, lz]) => {
+    B(0.65, 0.5, 0.65, 0x6d4c41, bx + lx, 0.78, bz + lz);
+    const nl = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8), mat(0xfff59d, 0xffee58, 0.85));
+    nl.position.set(bx + lx, F + 1.2, bz + lz);
+    add(nl);
+  });
+  col(bx - 15, bz + 7.6, bx - 12, bz + 11.8);
+  col(bx - 15.1, bz + 6.4, bx - 11.9, bz + 7.4);
+  // ковёр у подиума + торшер
+  const rug3 = new THREE.Mesh(new THREE.PlaneGeometry(4, 3), mat(0x90a4ae));
+  rug3.rotation.x = -Math.PI/2; rug3.position.set(bx - 11, F + 0.05, bz + 6.5);
+  add(rug3);
+  // занавес за кроватью
+  B(0.06, 2.6, 4.5, 0x8e44ad, bx - 16.8, 1.45, bz + 9.5);
+  // гардероб-штанга у стены
+  B(0.5, 0.08, 3.2, 0x8d6e63, hx0 + 0.5, 2.1, bz + 8.5);
+  [-1.1, -0.35, 0.35, 1.1].forEach(dz => B(0.42, 1.35, 0.14, [0xe74c3c, 0x3498db, 0x27ae60, 0xf1c40f][Math.abs(Math.round(dz*2)) % 4], hx0 + 0.5, 1.35, bz + 8.5 + dz));
+  col(hx0 + 0.05, bz + 6.8, hx0 + 0.95, bz + 10.2);
+  addInteriorSign('🛏️ СПАЛЬНЯ', bx - 12.5, F + FH - 0.35, bz + 12.8, add);
+
+  // ═══ ВАННАЯ-СТЕКЛО (северо-запад) ═══
+  const glassM = new THREE.MeshBasicMaterial({ color: 0xbfe8f5, transparent: true, opacity: 0.24, side: THREE.DoubleSide });
+  // стёкла бокса 4.6×3.2 (запад и юг — вход)
+  const g1 = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 2.6), glassM);
+  g1.position.set(bx - 15.5 + 2.3, F + 1.4, hz0 + 2.0);
+  g1.rotation.y = Math.PI/2;
+  add(g1); // западная стенка бокса (внутр.)
+  const g2 = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 2.6), glassM);
+  g2.position.set(bx - 13.2, F + 1.4, hz0 + 3.6);
+  add(g2);
+  // раковина
+  B(1.3, 0.9, 0.6, 0xffffff, bx - 16.6, 0.45, hz0 + 0.9);
+  B(1.5, 0.09, 0.75, 0xeceff1, bx - 16.6, 0.93, hz0 + 0.9);
+  const mir = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.4), mat(0xb3e5fc, 0x81d4fa, 0.35));
+  mir.position.set(hx0 + 0.08, F + 1.85, hz0 + 0.9);
+  mir.rotation.y = Math.PI/2;
+  add(mir);
+  // унитаз
+  B(0.6, 0.8, 0.75, 0xffffff, bx - 16.5, 0.4, hz0 + 2.4);
+  B(0.55, 0.65, 0.22, 0xffffff, bx - 16.75, 1.05, hz0 + 2.72);
+  // душевая: поддон + стёкла + лейка
+  B(1.6, 0.16, 1.6, 0xeceff1, bx - 15.2, 0.1, hz0 + 2.8);
+  const sh1 = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.4), glassM);
+  sh1.position.set(bx - 15.2, F + 1.3, hz0 + 2.02);
+  add(sh1);
+  const sh2 = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.4), glassM);
+  sh2.position.set(bx - 14.42, F + 1.3, hz0 + 2.8);
+  sh2.rotation.y = Math.PI/2;
+  add(sh2);
+  B(0.14, 0.14, 0.5, 0xb0bec5, bx - 15.9, 2.25, hz0 + 2.8);
+  const showerHead = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.05, 10), mat(0x90a4ae, 0x81d4fa, 0.3));
+  showerHead.position.set(bx - 15.7, F + 2.3, hz0 + 2.8);
+  add(showerHead);
+  col(bx - 17.3, hz0 + 0.4, bx - 15.9, hz0 + 1.5);  // раковина
+  col(bx - 16.9, hz0 + 1.9, bx - 16.1, hz0 + 3.0);  // унитаз
+  col(bx - 16.1, hz0 + 1.9, bx - 14.3, hz0 + 3.7);  // душ
+  addInteriorSign('🚿 ВАННАЯ', bx - 15, F + FH - 0.35, hz0 + 1.2, add);
+
+  // ═══ СПОРТ-УГОЛОК (юго-запад зала, у входа) ═══
+  // беговая дорожка
+  B(0.9, 0.22, 2.2, 0x263238, bx - 6, 0.12, hz1 - 2.2);
+  B(0.75, 0.1, 1.9, 0x37474f, bx - 6, 0.27, hz1 - 2.2);
+  B(0.12, 1.25, 0.12, 0x455a64, bx - 6, 0.85, hz1 - 3.2);
+  B(0.7, 0.5, 0.1, 0x111111, bx - 6, 1.55, hz1 - 3.15);
+  const twScr = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.35), mat(0x0a1a2f, 0x00e5ff, 0.8));
+  twScr.position.set(bx - 6, F + 1.55, hz1 - 3.09);
+  twScr.rotation.y = Math.PI;
+  add(twScr);
+  col(bx - 6.5, hz1 - 3.5, bx - 5.5, hz1 - 1.0);
+  // стойка гантелей
+  B(2.2, 0.12, 0.7, 0x37474f, bx - 3, 0.35, hz1 - 1.2);
+  for (let d = 0; d < 5; d++) {
+    const dw = 0.22 + d * 0.045;
+    B(0.09, 0.09, 0.5, 0x212121, bx - 3.9 + d * 0.45, 0.45, hz1 - 1.2);
+    [-0.24, 0.24].forEach(dzz => {
+      const plate = new THREE.Mesh(new THREE.CylinderGeometry(dw, dw, 0.06, 10), mat(0x455a64));
+      plate.rotation.x = Math.PI/2;
+      plate.position.set(bx - 3.9 + d * 0.45, F + 0.45, hz1 - 1.2 + dzz);
+      add(plate);
     });
-    // ковёр у кровати
-    const rug2 = new THREE.Mesh(new THREE.PlaneGeometry(4.5, 3), mat(0x90a4ae));
-    rug2.rotation.x = -Math.PI/2; rug2.position.set(bx + 10.5, F + 0.05, bz + 2.5);
-    add(rug2);
-    // шкаф
-    box(2.8, 2.6, 0.7, 0x5d4037, bx + 13.8, 1.3, bz + 1.0, Math.PI/2);
-    box(0.06, 1.8, 0.15, 0xffca28, bx + 13.4, 1.3, bz + 0.3);           // ручки
-    box(0.06, 1.8, 0.15, 0xffca28, bx + 13.4, 1.3, bz + 1.7);
-    collide(bx + 13.3, bz - 0.5, bx + 14.4, bz + 2.5);
-
-    // ── ВАННАЯ (северо-запад) ──
-    // плитка на полу
-    const tileTex = nzCanvas(128, 128, (g, w, h) => {
-      for (let tx = 0; tx < 4; tx++) for (let tz = 0; tz < 4; tz++) {
-        g.fillStyle = (tx + tz) % 2 ? '#cfe8f0' : '#bfe0ea';
-        g.fillRect(tx*32, tz*32, 30, 30);
-      }
-    });
-    tileTex.wrapS = tileTex.wrapT = THREE.RepeatWrapping;
-    tileTex.repeat.set(2, 2);
-    const tileFloor = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), new THREE.MeshLambertMaterial({ map: tileTex }));
-    tileFloor.rotation.x = -Math.PI/2;
-    tileFloor.position.set(hx0 + 4, F + 0.04, bz - 7.5);
-    add(tileFloor);
-    // стена-перегородка ванной
-    box(0.2, FH, 8, 0xe0e0e0, hx0 + 8.1, FH/2, bz - 7.5);
-    interiorColliders.push({ minX: hx0+8.0, maxX: hx0+8.3, minZ: bz-11.5, maxZ: bz-3.5 });
-    // ванна
-    box(2.4, 0.7, 1.3, 0xffffff, hx0 + 1.6, 0.35, bz - 10.5);
-    box(2.0, 0.15, 0.95, 0x81d4fa, hx0 + 1.6, 0.68, bz - 10.5);         // вода
-    box(2.4, 0.5, 0.12, 0xb0bec5, hx0 + 1.6, 0.9, bz - 11.15);          // борт-спинка
-    collide(hx0 + 0.3, bz - 11.2, hx0 + 2.9, bz - 9.8);
-    // раковина + зеркало
-    box(1.2, 0.85, 0.6, 0xffffff, hx0 + 5.4, 0.42, bz - 11.0);
-    const mir3 = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.3), mat(0xb3e5fc, 0x81d4fa, 0.35));
-    mir3.position.set(hx0 + 5.4, F + 1.8, bz - 11.6);
-    add(mir3);
-    box(1.4, 0.08, 0.7, 0xeceff1, hx0 + 5.4, 0.87, bz - 11.0);
-    collide(hx0 + 4.7, bz - 11.4, hx0 + 6.1, bz - 10.6);
-    // унитаз
-    box(0.55, 0.75, 0.7, 0xffffff, hx0 + 7.2, 0.37, bz - 10.9);
-    box(0.5, 0.6, 0.2, 0xffffff, hx0 + 7.2, 0.95, bz - 11.25);
-    collide(hx0 + 6.8, bz - 11.4, hx0 + 7.6, bz - 10.4);
-    // полотенца
-    box(0.5, 0.9, 0.08, 0xffab91, hx0 + 2.2, 1.7, bz - 11.55);
-    box(0.5, 0.9, 0.08, 0x80deea, hx0 + 3.0, 1.7, bz - 11.55);
-    addInteriorSign('🚿 ВАННАЯ', hx0 + 4, F + FH - 0.35, bz - 11.55, add);
-
-    // ── ГАРДЕРОБ (юго-запад 2 этажа) ──
-    box(0.6, 0.1, 3.4, 0x8d6e63, hx0 + 0.35, 2.0, bz + 5.5);            // штанга
-    [-1.2, -0.4, 0.4, 1.2].forEach(dz4 => {
-      box(0.4, 1.3, 0.12, [0xe74c3c, 0x3498db, 0xf1c40f, 0x27ae60][Math.abs(Math.round(dz4)) % 4], hx0 + 0.35, 1.25, bz + 5.5 + dz4);
-    });
-    collide(hx0, bz + 3.6, hx0 + 0.9, bz + 7.4);
-    addInteriorSign('👔 ГАРДЕРОБ', hx0 + 1.2, F + FH - 0.35, bz + 5.5, add);
-
-    // ── ГЕЙМИНГ (юг, центр) ──
-    box(2.2, 0.08, 1.0, 0x37474f, bx + 6, 0.78, bz + 8.5);              // стол
-    [[-1, -0.4], [1, -0.4], [-1, 0.4], [1, 0.4]].forEach(([lx, lz]) => box(0.08, 0.78, 0.08, 0x455a64, bx + 6 + lx, 0.39, bz + 8.5 + lz));
-    const gScr = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.85), mat(0x0d47a1, 0x2979ff, 0.9));
-    gScr.position.set(bx + 6, F + 1.6, bz + 8.15);
-    add(gScr);
-    box(0.08, 1.0, 1.7, 0x111111, bx + 6, 1.6, bz + 8.05);              // рама монитора
-    box(0.55, 0.5, 0.16, 0x212121, bx + 6, 1.05, bz + 8.05);            // подставка
-    box(0.7, 0.06, 0.3, 0x263238, bx + 6, 0.83, bz + 8.7);              // клавиатура (RGB)
-    const kbLight = new THREE.PointLight(0x00e5ff, 0.5, 4);
-    kbLight.position.set(bx + 6, F + 1.0, bz + 8.8);
-    add(kbLight);
-    // системник с RGB
-    box(0.5, 1.1, 1.0, 0x212121, bx + 7.6, 0.55, bz + 8.5);
-    const rgb = new THREE.Mesh(new THREE.PlaneGeometry(0.35, 0.8), mat(0x1a0033, 0xaa00ff, 0.9));
-    rgb.position.set(bx + 7.36, F + 0.6, bz + 8.5);
-    rgb.rotation.y = -Math.PI/2;
-    add(rgb);
-    // кресло
-    box(0.75, 0.15, 0.75, 0x212121, bx + 6, 0.62, bz + 10.0);
-    box(0.75, 1.0, 0.15, 0x212121, bx + 6, 1.15, bz + 10.35);
-    box(0.1, 0.62, 0.1, 0x616161, bx + 6, 0.31, bz + 10.0);
-    collide(bx + 4.8, bz + 7.9, bx + 7.1, bz + 9.1);
-    collide(bx + 5.5, bz + 9.5, bx + 6.5, bz + 10.6);
-    addInteriorSign('🎮 GAME ZONE', bx + 6, F + FH - 0.35, bz + 10.4, add);
-
-    // торшер и растение 2 этаж
-    box(0.4, 0.06, 0.4, 0x37474f, bx + 2.5, 0.03, bz + 2.0);
-    const lampGlow2 = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.4, 0.45, 10), mat(0xfff59d, 0xffee58, 0.9));
-    lampGlow2.position.set(bx + 2.5, F + 1.8, bz + 2.0);
-    add(lampGlow2);
-    box(0.7, 0.7, 0.7, 0xbf6b3f, bx + 2.5, 0.35, bz - 2.0);
-    const plant3 = new THREE.Mesh(new THREE.SphereGeometry(0.9, 8, 7), mat(0x388e3c));
-    plant3.position.set(bx + 2.5, F + 1.25, bz - 2.0);
-    add(plant3);
-    collide(bx + 2.0, bz - 2.5, bx + 3.0, bz - 1.5);
   }
+  col(bx - 4.2, hz1 - 1.7, bx - 1.8, hz1 - 0.7);
+  // боксёрская груша
+  B(0.1, 3.0, 0.1, 0x37474f, bx - 1.6, 1.5, hz1 - 3.4);
+  const bag = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.28, 1.1, 12), mat(0x8e2b2b));
+  bag.position.set(bx - 1.6, F + 1.9, hz1 - 3.4);
+  add(bag);
+  col(bx - 2.1, hz1 - 3.9, bx - 1.1, hz1 - 2.9);
+  addInteriorSign('🏋️ СПОРТ-УГОЛОК', bx - 3.5, F + FH - 0.35, hz1 - 1.4, add);
+
+  // ═══ ДЕКОР ═══
+  // растения по углам
+  [[hx0 + 1.6, hz0 + 12.5], [hx1 - 1.8, hz0 + 12.5], [bx + 17.5, hz1 - 2.2], [bx - 2.6, hz0 + 1.2]].forEach(([px3, pz3]) => {
+    B(0.7, 0.7, 0.7, 0xbf6b3f, px3, 0.35, pz3);
+    const pl = new THREE.Mesh(new THREE.SphereGeometry(0.95, 9, 8), mat(0x2e7d32));
+    pl.position.set(px3, F + 1.35, pz3);
+    add(pl);
+    col(px3 - 0.5, pz3 - 0.5, px3 + 0.5, pz3 + 0.5);
+  });
+  // картины на северной стене
+  const arts = [0, 1, 2];
+  arts.forEach((i) => {
+    const pt = nzCanvas(128, 96, (g, w, h) => {
+      g.fillStyle = ['#12324f', '#3f2f25', '#2f253f'][i]; g.fillRect(0, 0, w, h);
+      g.fillStyle = '#f5e6c8'; g.fillRect(6, 6, w - 12, h - 12);
+      g.fillStyle = ['#0f4c81', '#c9a227', '#e07a5f'][i];
+      if (i === 1) { g.beginPath(); g.moveTo(10, h - 14); g.lineTo(w/2, 16); g.lineTo(w - 10, h - 14); g.fill(); }
+      else if (i === 0) { for (let wv = 0; wv < 4; wv++) g.fillRect(0, 42 + wv * 10, w, 5); }
+      else { g.beginPath(); g.arc(w * 0.68, 36, 16, 0, 7); g.fill(); g.fillRect(0, 66, w, 4); }
+    });
+    const p2 = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 1.35), new THREE.MeshBasicMaterial({ map: pt }));
+    p2.position.set(bx - 4 + i * 4, F + 2.15, hz0 + 0.09);
+    add(p2);
+  });
+  // коврик у входа (юг, центр)
+  const mat2 = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.5), mat(0x6d4c41));
+  mat2.rotation.x = -Math.PI/2; mat2.position.set(bx + 1, F + 0.06, hz1 - 1.6);
+  add(mat2);
+
+  addInteriorSign('🏡 ТВОЙ ДОМ — ЛОФТ 40×30', bx, F + FH - 0.3, hz0 + 0.35, add);
 }
+
 
 function buildApartmentInterior(bx, bz, floor, FH, add, mat) {
   const roomTypes = [
@@ -16499,7 +16492,7 @@ window.initControls = function() {
         var dy = e.touches[0].clientY - e.touches[1].clientY;
         var dist = Math.sqrt(dx*dx + dy*dy);
         if (lastPinchDist > 0 && typeof CONFIG !== 'undefined') {
-          CONFIG.CAMERA_DISTANCE = Math.max(3, Math.min(20,
+          CONFIG.CAMERA_DISTANCE = Math.max(2.5, Math.min(11,
             CONFIG.CAMERA_DISTANCE + (lastPinchDist - dist) * 0.05));
         }
         lastPinchDist = dist;
