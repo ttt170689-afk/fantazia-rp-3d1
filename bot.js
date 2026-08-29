@@ -12,7 +12,7 @@ const NAME = process.env.BOT_NAME || '🤖 Тестер-Бот';
 console.log('[BOT] Подключаюсь к', URL);
 const socket = io(URL, { transports: ['websocket'], reconnection: true });
 
-let me = { x: 12, y: 0, z: 12, ry: 0 };
+let me = { x: 17, y: 0, z: 21, ry: 0 };
 let mode = 'patrol';           // patrol | follow | idle
 let followId = null;
 let danceUntil = 0;
@@ -115,9 +115,9 @@ setInterval(() => {
     } else {
       // Патруль: круг с меняющимся радиусом вокруг центра
       angle += 0.007;
-      const r = 6 + Math.sin(angle * 0.3) * 3; // круг по центральной площади
-      const nx = Math.sin(angle) * r + 12;
-      const nz = Math.cos(angle) * r + 12;
+      const r = 5 + Math.sin(angle * 0.3) * 2.5; // круг у дома игрока
+      const nx = Math.sin(angle) * r + 17;
+      const nz = Math.cos(angle) * r + 24;
       me.ry = Math.atan2(nx - me.x, nz - me.z);
       me.x = nx; me.z = nz;
     }

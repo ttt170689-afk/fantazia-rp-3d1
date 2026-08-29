@@ -4432,8 +4432,8 @@ const CONFIG = {
   JUMP_FORCE: 0.2,
   GRAVITY: 0.008,
   MOUSE_SENSITIVITY: 0.002,
-  CAMERA_DISTANCE: 8,
-  CAMERA_HEIGHT: 4,
+  CAMERA_DISTANCE: 6.5,
+  CAMERA_HEIGHT: 3.2,
   WORLD_SIZE: 1200,
   SEND_RATE: 50,
   VOICE_RANGE: 30
@@ -4450,7 +4450,7 @@ let sittingOn = null;     // текущее место сидения
 let interactables = [];
 let keys = {};
 let mouseX = 0, mouseY = 0;
-let cameraAngleH = 0, cameraAngleV = 0.3;
+let cameraAngleH = 0, cameraAngleV = 0.15;
 let isPointerLocked = false;
 let velocity = { x:0, y:0, z:0 };
 let isGrounded = true;
@@ -4953,7 +4953,7 @@ function startGame() {
     localPlayer = {
       id: 'offline_' + Date.now(),
       name: name,
-      position: { x: 12, y: 0, z: 12 }, // спавн на центральной площади
+      position: { x: 17, y: 0, z: 21 }, // спавн у двери дома
       appearance: appearance,
       health: 100,
       job: 'Безработный',
@@ -4961,7 +4961,7 @@ function startGame() {
     };
 
     const char3D = createCharacter(appearance, true);
-    char3D.position.set(12, 0, 12); // спавн на центральной площади
+    char3D.position.set(17, 0, 21); // спавн у двери дома
     scene.add(char3D);
     localPlayer.mesh = char3D;
     createNameTag(name, char3D);
@@ -5999,46 +5999,30 @@ function buildRoads() {
 }
 
 function buildCentralPlaza() {
-  // Площадь
+  // Площадь (мощение) — фонтан и лавочки убраны по просьбе игрока
   const plazaGeo = new THREE.CircleGeometry(20, 32);
   const plazaMat = new THREE.MeshLambertMaterial({ color: 0xD4A574 });
   const plaza = new THREE.Mesh(plazaGeo, plazaMat);
   plaza.rotation.x = -Math.PI/2; plaza.position.y = 0.02; scene.add(plaza);
 
-  // Фонтан
-  const fountainBase = new THREE.Mesh(
-    new THREE.CylinderGeometry(4, 5, 1, 16), new THREE.MeshLambertMaterial({ color:0x808080 })
-  );
-  fountainBase.position.y = 0.5; scene.add(fountainBase);
-  const water = new THREE.Mesh(
-    new THREE.CylinderGeometry(3.5, 3.5, 0.8, 16), new THREE.MeshLambertMaterial({ color:0x3498db, transparent:true, opacity:0.7 })
-  );
-  water.position.y = 0.9; scene.add(water);
-  const pillar = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.5, 0.5, 4, 8), new THREE.MeshLambertMaterial({ color:0x707070 })
-  );
-  pillar.position.y = 3; scene.add(pillar);
-
-  // Частицы воды фонтана
+  // массив частиц оставляем пустым (цикл анимации на него ссылается)
   window.fountainParticles = [];
-  const particleGeo = new THREE.SphereGeometry(0.1, 4, 4);
-  const particleMat = new THREE.MeshBasicMaterial({ color:0x74b9ff, transparent:true, opacity:0.6 });
-  for (let i = 0; i < 50; i++) {
-    const p = new THREE.Mesh(particleGeo, particleMat);
-    p.userData = { angle: Math.random()*Math.PI*2, speed: 0.5+Math.random()*1, phase: Math.random()*Math.PI*2 };
-    scene.add(p);
-    window.fountainParticles.push(p);
-  }
 
-  // Скамейки вокруг фонтана
-  for (let i = 0; i < 8; i++) {
-    const angle = (i/8) * Math.PI*2;
-    const bx = Math.cos(angle)*12;
-    const bz = Math.sin(angle)*12;
-    createBench(bx, bz, angle);
-  }
+  // ── ДОМ ИГРОКА У ПЛОЩАДИ (спавн прямо у двери) ──
+  nzHouse(12, 14, 0, {
+    wall: '#e8d5b0', roof: 0xa8533c, awning: 0x27ae60,
+    floors: 2, w: 10, d: 8,
+    name: '🏡 ТВОЙ ДОМ', type: 'house'
+  });
 
-  interactables.push({ position:{x:0,y:0,z:0}, type:'fountain', name:'Фонтан', range:6 });
+  // клумбы по краю площади (декор)
+  [[-14, 6], [-6, 14], [6, -14], [14, -6]].forEach(([cx, cz], i) => {
+    const bed = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.5, 0.5, 8), new THREE.MeshLambertMaterial({ color: 0x9c6b4a }));
+    bed.position.set(cx, 0.25, cz); scene.add(bed);
+    const fl = new THREE.Mesh(new THREE.SphereGeometry(1.05, 8, 6), new THREE.MeshLambertMaterial({ color: [0xe74c3c, 0xf1c40f, 0xe67e22, 0x9b59b6][i] }));
+    fl.position.set(cx, 0.85, cz); fl.scale.y = 0.6; scene.add(fl);
+    streetColliders.push({ x: cx, z: cz, r: 1.6 });
+  });
 }
 
 function createBench(x, z, rotation) {
@@ -7422,7 +7406,7 @@ function createCarDriverGhost(car) {
     const isLimo2 = car.type === 'limo', isTruck2 = car.type === 'truck' || car.type === 'van';
     const H2 = isTruck2 ? 2.2 : 1.4;
     const D2 = isLimo2 ? 2.2 : 1.8;
-    ghost.position.set(0, H2 * 0.45 - 1.0, D2 * 0.15);
+    ghost.position.set(0, H2 * 0.45 - 1.35, D2 * 0.15);
     ghost.rotation.y = Math.PI; // лицом вперёд
     car.mesh.add(ghost);
     carGhostMesh = ghost;
@@ -7884,7 +7868,7 @@ function applySkinEditor() {
       skinColor: skin, hairColor: hair, pantsColor: pants, shirtColor: shirtHex
     });
     const g = mesh.userData.model.group;
-    g.scale.x = bw; g.scale.z = bw; g.scale.y = bh;
+    g.scale.x = bw * 1.5; g.scale.z = bw * 1.5; g.scale.y = bh * 1.5;
   }
 
   // Scale body parts
@@ -8483,6 +8467,7 @@ function createCharacter(appearance, isLocal) {
 
   const group = model.group;          // модель смотрит вдоль +Z — как и старая
   group.userData.model = model;       // ссылка для системы анимаций
+  group.scale.setScalar(1.5);         // крупнее (рост 2.7) — как старая модель, руки-ноги видно
 
   // ── Мягкая тень-блоб под ногами (на мобилках реальные тени выключены) ──
   const shadow = new THREE.Mesh(
@@ -8632,8 +8617,8 @@ function createNameTag(name, group) {
   if (model) {
     model.setNameTag(name);
     if (model._tag) {
-      model._tag.scale.set(1.75, 0.44, 1);   // чуть крупнее для читаемости
-      model._tag.position.y = 2.16;
+      model._tag.scale.set(2.4, 0.6, 1);     // крупнее (модель ×1.5)
+      model._tag.position.y = 3.25;
       group.userData.nameTag = model._tag;    // чтобы работали переключатели видимости
     }
     return;
@@ -8782,7 +8767,7 @@ function animateCharacter(character, animation, time, delta) {
     }
     // Сидим на лавочке — опускаем модель, чтобы таз был на уровне сиденья
     const isLocalChar = localPlayer && character === localPlayer.mesh;
-    const sitOffset = (isLocalChar && sittingOn && model.state === 'sit') ? -0.5 : 0;
+    const sitOffset = (isLocalChar && sittingOn && model.state === 'sit') ? -0.8 : 0;
     model.group.position.y += (sitOffset - model.group.position.y) * 0.25;
     model.update(delta || lastFrameDelta || 0.016);
     return;
@@ -9135,7 +9120,7 @@ function initSocket(name) {
 
     // Создание 3D персонажа
     const char3D = createCharacter(localPlayer.appearance, true);
-    char3D.position.set(12, 0, 12); // спавн на центральной площади
+    char3D.position.set(17, 0, 21); // спавн у двери дома
     scene.add(char3D);
     localPlayer.mesh = char3D;
 
@@ -13020,7 +13005,7 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
     const bobAmp  = isMoving ? (isRunning ? 0.055 : 0.03) : 0.008;
     const bobY = Math.abs(Math.sin(animationTime * bobFreq)) * bobAmp;
     const bobX = Math.sin(animationTime * bobFreq * 0.5) * bobAmp * 0.6;
-    const headY = mesh.position.y + (mesh.userData.model ? 1.66 : 2.35) + bobY;
+    const headY = mesh.position.y + (mesh.userData.model ? 2.49 : 2.35) + bobY;
     camera.position.set(
       mesh.position.x + Math.sin(cameraAngleH) * 0.18 + Math.cos(cameraAngleH) * bobX,
       headY,
@@ -13040,7 +13025,7 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
     camera.position.x = mesh.position.x + Math.sin(cameraAngleH) * camDist * Math.cos(cameraAngleV);
     camera.position.z = mesh.position.z + Math.cos(cameraAngleH) * camDist * Math.cos(cameraAngleV);
     camera.position.y = mesh.position.y + camH + Math.sin(cameraAngleV) * camDist;
-    camera.lookAt(mesh.position.x, mesh.position.y + (mesh.userData.model ? 1.15 : 1.5), mesh.position.z);
+    camera.lookAt(mesh.position.x, mesh.position.y + (mesh.userData.model ? 1.75 : 1.5), mesh.position.z);
   }
 
   // --- Удалённые игроки: интерполяция ---
