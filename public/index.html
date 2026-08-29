@@ -49,7 +49,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Fantazia RP 3D · v2.7</title>
+<title>Fantazia RP 3D · v2.8</title>
 <!-- ===== PWA MANIFEST (встроенный) ===== -->
 <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22Fantazia+RP+3D%22%2C%22short_name%22%3A%22Fantazia%22%2C%22description%22%3A%22Fantazia+RP+3D+%E2%80%94+%D0%BC%D0%BE%D0%B1%D0%B8%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+3D+%D0%B8%D0%B3%D1%80%D0%B0%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22fullscreen%22%2C%22orientation%22%3A%22landscape%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%236c5ce7%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABJQTFRFAAAAbEjiqqr%2F6%2BXz1s77////aoCa9AAAAARdFJlcAMEBQYHCJ%2BZAAAAsklEQVR42u3BMQEAAADCoPVP7WsIoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAMBuAABHwAAAABJRU5ErkJggg%3D%3D%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
 <meta name="theme-color" content="#6c5ce7">
@@ -2568,7 +2568,7 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
   </div>
 </div>
 
-<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v2.7</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v2.7 — СТАРАЯ МОДЕЛЬ · ПЛАВНЫЕ АНИМАЦИИ 🕺</div>
+<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v2.8</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v2.8 — ПРЫЖОК С ГРУППИРОВКОЙ 🤸</div>
 <script>setTimeout(function(){var t=document.getElementById('fzVerToast');if(t){t.style.transition='opacity 1s';t.style.opacity='0';setTimeout(function(){t.remove()},1100)}},6000)</script>
 
 <!-- ========== HUD ========== -->
@@ -3242,11 +3242,11 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
 </div>
 
 <!-- ========== СКРИПТЫ ========== -->
-<script src="/socket.io/socket.io.js?v=27"></script>
-<script src="assets/three.min.js?v=27"></script>
+<script src="/socket.io/socket.io.js?v=28"></script>
+<script src="assets/three.min.js?v=28"></script>
 <script>if (!window.THREE) document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\\/script>');</script>
 <!-- ===== НОВАЯ 3D-МОДЕЛЬ ИГРОКА (после Three.js!) ===== -->
-<script src="assets/fantazia-player.js?v=27"></script>
+<script src="assets/fantazia-player.js?v=28"></script>
 <script>
 /*!
  * ============================================================
@@ -6011,12 +6011,8 @@ function buildCentralPlaza() {
   // массив частиц оставляем пустым (цикл анимации на него ссылается)
   window.fountainParticles = [];
 
-  // ── ДОМ ИГРОКА У ПЛОЩАДИ (спавн прямо у двери) ──
-  nzHouse(12, 14, 0, {
-    wall: '#e8d5b0', roof: 0xa8533c, awning: 0x27ae60,
-    floors: 2, w: 10, d: 8,
-    name: '🏡 ТВОЙ ДОМ', type: 'house'
-  });
+  // ── ДОМИК У ПЛОЩАДИ УБРАН по просьбе игрока ──
+  // (спавн (17,21) остаётся — теперь это открытое место у площади)
 
   // клумбы по краю площади (декор)
   [[-14, 6], [-6, 14], [6, -14], [14, -6]].forEach(([cx, cz], i) => {
@@ -8804,6 +8800,8 @@ function animateCharacter(character, animation, time, delta) {
     }
     if (animation === 'dance') {
       model.setState(_fantaziaMapDance(currentDance));
+    } else if (animation === 'jumpAir') {
+      model.setState('jump');                    // физический прыжок
     } else if (FantaziaPlayerModel.ANIM_STATES.indexOf(animation) !== -1) {
       model.setState(animation);
     } else {
@@ -8909,6 +8907,40 @@ function computeCharacterPose(character, animation, time, delta) {
       head.rotation.x = 0.16 + sr2 * 0.02;
       head.rotation.y = -sr * 0.08;
       head.rotation.z = -sr * 0.02;
+      break;
+    }
+    case 'jumpAir': {
+      // Физический прыжок: поза зависит от вертикальной скорости
+      const vy = (typeof window !== 'undefined' && window._fzAirV) || 0;
+      if (vy > 1.2) {
+        // ТОЛЧОК: тело вытянуто, руки назад-вверх, ноги в замахе
+        leftArm.rotation.x = -1.0;  leftArm.rotation.z = 0.35;
+        rightArm.rotation.x = -1.0; rightArm.rotation.z = -0.35;
+        if (lf) { lf.rotation.x = -0.35; rf.rotation.x = -0.35; }
+        leftLeg.rotation.x = 0.55; rightLeg.rotation.x = -0.35;
+        if (ls) { ls.rotation.x = 0.5; rs.rotation.x = 0.75; }
+        body.position.y = 1.46; body.rotation.x = -0.08;
+        head.rotation.x = -0.12;
+      } else if (vy > -1.2) {
+        // ВЕРШИНА: группировка — колени к груди, руки балансируют в стороны
+        leftArm.rotation.x = -0.45; leftArm.rotation.z = 0.95;
+        rightArm.rotation.x = -0.45; rightArm.rotation.z = -0.95;
+        if (lf) { lf.rotation.x = -0.5; rf.rotation.x = -0.5; }
+        leftLeg.rotation.x = -1.15; rightLeg.rotation.x = -0.75;
+        if (ls) { ls.rotation.x = 1.7; rs.rotation.x = 1.35; }
+        body.position.y = 1.4; body.rotation.x = 0.12;
+        head.rotation.x = 0.06;
+      } else {
+        // ПАДЕНИЕ: руки вверх, ноги готовятся к приземлению
+        leftArm.rotation.x = -2.3; leftArm.rotation.z = 0.55;
+        rightArm.rotation.x = -2.3; rightArm.rotation.z = -0.55;
+        if (lf) { lf.rotation.x = -0.25; rf.rotation.x = -0.25; }
+        leftLeg.rotation.x = -0.55; rightLeg.rotation.x = -0.2;
+        if (ls) { ls.rotation.x = 0.85; rs.rotation.x = 0.45; }
+        body.position.y = 1.4; body.rotation.x = 0.05;
+        head.rotation.x = 0.1;
+      }
+      body.position.x = 0;
       break;
     }
     case 'dance':
@@ -11647,7 +11679,7 @@ function mobileToggleSprint() {
 // =================== СИСТЕМА ИНТЕРЬЕРОВ ===================
 const INTERIOR_CONFIGS = {
   apartment: { name:'🏢 Жилой дом', floors:9, color:0x8a9bb0, floorColor:0xd4cfc7 },
-  house:     { name:'🏡 ТВОЙ ДОМ', floors:1, color:0xc9a87c, floorColor:0xe8d5b7 },
+  house:     { name:'🏡 КОТТЕДЖ', floors:1, color:0xc9a87c, floorColor:0xe8d5b7 },
   office:    { name:'🏢 Офисный центр', floors:8, color:0x6b8cae, floorColor:0xe0e8f0 },
   cinema:    { name:'🎬 Кинотеатр', floors:2, color:0x2c3e50, floorColor:0x3c3c3c },
   club:      { name:'🎵 Ночной клуб', floors:1, color:0x1a0030, floorColor:0x1a0030 },
@@ -12956,7 +12988,7 @@ function buildSuperHouseInterior(bx, bz, floor, FH, add, mat) {
   mat2.rotation.x = -Math.PI/2; mat2.position.set(bx + 1, F + 0.06, hz1 - 1.6);
   add(mat2);
 
-  addInteriorSign('🏡 ТВОЙ ДОМ — ЛОФТ 40×30', bx, F + FH - 0.3, hz0 + 0.35, add);
+  addInteriorSign('🏡 КОТТЕДЖ — ЛОФТ 40×30', bx, F + FH - 0.3, hz0 + 0.35, add);
 }
 
 
@@ -13369,6 +13401,12 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
     }
   } else {
     isGrounded = false;
+  }
+
+  // --- Анимация полёта при прыжке (физика уже подбросила — покажем позу) ---
+  window._fzAirV = (!sittingOn && !isGrounded && !window.isAdminFly) ? velocity.y : 0;
+  if (window._fzAirV !== 0 && !currentDance) {
+    localPlayer.currentAnimation = 'jumpAir';
   }
 
   // --- Анимация персонажа ---
@@ -16315,7 +16353,7 @@ function claimFPReward(r, isPlus, claimKey) {
   .fpp-row-label { font-size: 9px !important; }
 }
 </style>
-<script src="update_script.js?v=27"></script>
+<script src="update_script.js?v=28"></script>
 </body>
 
 <script>
