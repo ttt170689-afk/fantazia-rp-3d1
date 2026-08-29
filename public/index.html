@@ -49,7 +49,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Fantazia RP 3D · v2.6</title>
+<title>Fantazia RP 3D · v2.7</title>
 <!-- ===== PWA MANIFEST (встроенный) ===== -->
 <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22Fantazia+RP+3D%22%2C%22short_name%22%3A%22Fantazia%22%2C%22description%22%3A%22Fantazia+RP+3D+%E2%80%94+%D0%BC%D0%BE%D0%B1%D0%B8%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+3D+%D0%B8%D0%B3%D1%80%D0%B0%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22fullscreen%22%2C%22orientation%22%3A%22landscape%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%236c5ce7%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABJQTFRFAAAAbEjiqqr%2F6%2BXz1s77////aoCa9AAAAARdFJlcAMEBQYHCJ%2BZAAAAsklEQVR42u3BMQEAAADCoPVP7WsIoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAMBuAABHwAAAABJRU5ErkJggg%3D%3D%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
 <meta name="theme-color" content="#6c5ce7">
@@ -2568,7 +2568,7 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
   </div>
 </div>
 
-<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v2.6</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v2.6 — РУКИ/НОГИ НА МЕСТЕ 🦾</div>
+<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v2.7</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v2.7 — СТАРАЯ МОДЕЛЬ · ПЛАВНЫЕ АНИМАЦИИ 🕺</div>
 <script>setTimeout(function(){var t=document.getElementById('fzVerToast');if(t){t.style.transition='opacity 1s';t.style.opacity='0';setTimeout(function(){t.remove()},1100)}},6000)</script>
 
 <!-- ========== HUD ========== -->
@@ -3242,11 +3242,11 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
 </div>
 
 <!-- ========== СКРИПТЫ ========== -->
-<script src="/socket.io/socket.io.js?v=26"></script>
-<script src="assets/three.min.js?v=26"></script>
+<script src="/socket.io/socket.io.js?v=27"></script>
+<script src="assets/three.min.js?v=27"></script>
 <script>if (!window.THREE) document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\\/script>');</script>
 <!-- ===== НОВАЯ 3D-МОДЕЛЬ ИГРОКА (после Three.js!) ===== -->
-<script src="assets/fantazia-player.js?v=26"></script>
+<script src="assets/fantazia-player.js?v=27"></script>
 <script>
 /*!
  * ============================================================
@@ -7418,10 +7418,14 @@ function createCarDriverGhost(car) {
 
   // Сажаем в позу водителя: ноги согнуты, тело прямо
   const ud = ghost.userData;
-  if (ud.leftLeg)  { ud.leftLeg.rotation.x  = -1.5; ud.leftLeg.position.y  = 0.15; ud.leftLeg.position.z  = 0.3; }
-  if (ud.rightLeg) { ud.rightLeg.rotation.x = -1.5; ud.rightLeg.position.y = 0.15; ud.rightLeg.position.z = 0.3; }
-  if (ud.leftArm)  { ud.leftArm.rotation.x  = -0.8; ud.leftArm.rotation.z  =  0.3; ud.leftArm.position.z  = 0.2; }
-  if (ud.rightArm) { ud.rightArm.rotation.x = -0.8; ud.rightArm.rotation.z = -0.3; ud.rightArm.position.z = 0.2; }
+  if (ud.leftLeg)  { ud.leftLeg.rotation.x  = -1.45; ud.leftLeg.position.set(-0.22, 1.05, 0); }
+  if (ud.rightLeg) { ud.rightLeg.rotation.x = -1.45; ud.rightLeg.position.set(0.22, 1.05, 0); }
+  if (ud.leftShin)  { ud.leftShin.rotation.x  = 1.35; ud.leftShin.position.set(0, -0.55, 0); }
+  if (ud.rightShin) { ud.rightShin.rotation.x = 1.35; ud.rightShin.position.set(0, -0.55, 0); }
+  if (ud.leftArm)  { ud.leftArm.rotation.x  = -0.85; ud.leftArm.rotation.z  =  0.25; ud.leftArm.position.set(-0.65, 1.95, 0); }
+  if (ud.rightArm) { ud.rightArm.rotation.x = -0.85; ud.rightArm.rotation.z = -0.25; ud.rightArm.position.set(0.65, 1.95, 0); }
+  if (ud.leftForearm)  { ud.leftForearm.rotation.x  = -0.55; ud.leftForearm.position.set(0, -0.55, 0); }
+  if (ud.rightForearm) { ud.rightForearm.rotation.x = -0.55; ud.rightForearm.position.set(0, -0.55, 0); }
   if (ud.body)     { ud.body.rotation.x = 0.05; }
 
   // Позиция внутри машины
@@ -8454,6 +8458,12 @@ function showMallMap() {
 // Новая модель (assets/fantazia-player.js) с фолбэком на старую блочную,
 // если файл модели вдруг не загрузился.
 function createCharacter(appearance, isLocal) {
+  // ✔ ВЕРНУЛИ СТАРУЮ БЛОЧНУЮ МОДЕЛЬ (просьба игрока).
+  // Новая модель из assets/fantazia-player.js не используется (код оставлен).
+  return createCharacterLegacy(appearance, isLocal);
+}
+
+function _createCharacterNew(appearance, isLocal) {
   if (typeof FantaziaPlayerModel === 'undefined') {
     return createCharacterLegacy(appearance, isLocal);
   }
@@ -8527,20 +8537,21 @@ function createCharacterLegacy(appearance, isLocal) {
   // Глаза
   const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
   const eyeGeo = new THREE.SphereGeometry(0.06, 6, 6);
+  // Глаза и рот — крепятся К ГОЛОВЕ (поворачиваются вместе с ней)
   const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-  leftEye.position.set(-0.15, 2.4, 0.35);
-  group.add(leftEye);
+  leftEye.position.set(-0.15, 0.05, 0.35);
+  head.add(leftEye);
   const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-  rightEye.position.set(0.15, 2.4, 0.35);
-  group.add(rightEye);
+  rightEye.position.set(0.15, 0.05, 0.35);
+  head.add(rightEye);
 
   // Рот
   const mouth = new THREE.Mesh(
     new THREE.BoxGeometry(0.2, 0.05, 0.05),
     new THREE.MeshBasicMaterial({ color: 0xCC6666 })
   );
-  mouth.position.set(0, 2.2, 0.35);
-  group.add(mouth);
+  mouth.position.set(0, -0.15, 0.35);
+  head.add(mouth);
 
   // Волосы
   let hair;
@@ -8567,35 +8578,65 @@ function createCharacterLegacy(appearance, isLocal) {
   group.add(hair);
   group.userData.hair = hair;
 
-  // Руки
-  const armGeo = new THREE.BoxGeometry(0.3, 1, 0.3);
+  // Руки — ШАРНИР В ПЛЕЧЕ + локоть (плавные махи как в нормальных играх)
   const armMat = new THREE.MeshLambertMaterial({ color: skinColor });
-  const leftArm = new THREE.Mesh(armGeo, armMat);
-  leftArm.position.set(-0.65, 1.4, 0);
+  const upperArmGeo = new THREE.BoxGeometry(0.3, 0.55, 0.3);
+  upperArmGeo.translate(0, -0.275, 0);            // ноль геометрии = сустав плеча
+  const foreArmGeo = new THREE.BoxGeometry(0.28, 0.5, 0.28);
+  foreArmGeo.translate(0, -0.25, 0);              // ноль = локоть
+  const leftArm = new THREE.Mesh(upperArmGeo, armMat);
+  leftArm.position.set(-0.65, 1.95, 0);
   leftArm.castShadow = true;
   group.add(leftArm);
   group.userData.leftArm = leftArm;
 
-  const rightArm = new THREE.Mesh(armGeo, armMat);
-  rightArm.position.set(0.65, 1.4, 0);
+  const leftForearm = new THREE.Mesh(foreArmGeo, armMat);
+  leftForearm.position.set(0, -0.55, 0);          // локоть внизу плеча
+  leftForearm.castShadow = true;
+  leftArm.add(leftForearm);
+  group.userData.leftForearm = leftForearm;
+
+  const rightArm = new THREE.Mesh(upperArmGeo, armMat);
+  rightArm.position.set(0.65, 1.95, 0);
   rightArm.castShadow = true;
   group.add(rightArm);
   group.userData.rightArm = rightArm;
 
-  // Ноги
-  const legGeo = new THREE.BoxGeometry(0.35, 1, 0.35);
+  const rightForearm = new THREE.Mesh(foreArmGeo, armMat);
+  rightForearm.position.set(0, -0.55, 0);
+  rightForearm.castShadow = true;
+  rightArm.add(rightForearm);
+  group.userData.rightForearm = rightForearm;
+
+  // Ноги — ШАРНИР В БЕДРЕ + колено
   const legMat = new THREE.MeshLambertMaterial({ color: pantsColor });
-  const leftLeg = new THREE.Mesh(legGeo, legMat);
-  leftLeg.position.set(-0.22, 0.5, 0);
+  const thighGeo = new THREE.BoxGeometry(0.35, 0.55, 0.35);
+  thighGeo.translate(0, -0.275, 0);               // ноль = тазобедренный сустав
+  const shinGeo = new THREE.BoxGeometry(0.34, 0.5, 0.34);
+  shinGeo.translate(0, -0.25, 0);                 // ноль = колено
+  const leftLeg = new THREE.Mesh(thighGeo, legMat);
+  leftLeg.position.set(-0.22, 1.05, 0);
   leftLeg.castShadow = true;
   group.add(leftLeg);
   group.userData.leftLeg = leftLeg;
 
-  const rightLeg = new THREE.Mesh(legGeo, legMat);
-  rightLeg.position.set(0.22, 0.5, 0);
+  const leftShin = new THREE.Mesh(shinGeo, legMat);
+  leftShin.position.set(0, -0.55, 0);
+  leftShin.castShadow = true;
+  leftLeg.add(leftShin);
+  group.userData.leftShin = leftShin;
+
+  const rightLeg = new THREE.Mesh(thighGeo, legMat);
+  rightLeg.position.set(0.22, 1.05, 0);
   rightLeg.castShadow = true;
   group.add(rightLeg);
   group.userData.rightLeg = rightLeg;
+
+  const rightShin = new THREE.Mesh(shinGeo, legMat);
+  rightShin.position.set(0, -0.55, 0);
+  rightShin.castShadow = true;
+  rightLeg.add(rightShin);
+  group.userData.rightShin = rightShin;
 
   // Тень под персонажем
   const shadowGeo = new THREE.CircleGeometry(0.5, 12);
@@ -8779,6 +8820,8 @@ function animateCharacter(character, animation, time, delta) {
   const ud = character.userData;
   if (!ud.leftArm) return;
   const parts = [ud.leftArm, ud.rightArm, ud.leftLeg, ud.rightLeg, ud.body, ud.head];
+  if (ud.leftForearm) parts.push(ud.leftForearm, ud.rightForearm);
+  if (ud.leftShin)    parts.push(ud.leftShin, ud.rightShin);
 
   // 1) Запоминаем текущую позу
   const prev = parts.map(p => ({
@@ -8802,88 +8845,98 @@ function animateCharacter(character, animation, time, delta) {
 }
 
 function computeCharacterPose(character, animation, time, delta) {
-  const { leftArm, rightArm, leftLeg, rightLeg, body, head } = character.userData;
+  const ud = character.userData;
+  const { leftArm, rightArm, leftLeg, rightLeg, body, head } = ud;
   if (!leftArm) return;
+  const lf = ud.leftForearm, rf = ud.rightForearm, ls = ud.leftShin, rs = ud.rightShin;
 
-  const speed = 8;
-  const t = time * speed;
-
-  switch(animation) {
+  switch (animation) {
     case 'walk': {
-      const sw = Math.sin(t);
-      const sw2 = Math.sin(t * 2);
-      // Руки: раскачка + лёгкий сгиб в локте (комбинация осей)
-      leftArm.rotation.x  =  sw * 0.72;
-      leftArm.rotation.z  =  0.06 + sw * 0.09;
-      rightArm.rotation.x = -sw * 0.72;
-      rightArm.rotation.z = -0.06 - sw * 0.09;
-      // Ноги: широкий шаг + подъём колена (пружинистый шаг)
-      leftLeg.rotation.x  = -sw * 0.72 + Math.max(0, Math.sin(t + Math.PI)) * 0.12;
-      rightLeg.rotation.x =  sw * 0.72 + Math.max(0, Math.sin(t)) * 0.12;
-      leftLeg.rotation.z  = 0;
-      rightLeg.rotation.z = 0;
-      // Тело: подпрыг + боковое покачивание (перенос веса) + скручивание
-      body.position.y = 1.4 + Math.abs(sw2) * 0.075;
+      const t = time * 8;
+      const sw = Math.sin(t);                       // фаза шага
+      const sw2 = Math.sin(t * 2);                  // тело качается 2 раза за цикл
+      const flexL = Math.max(0, Math.cos(t));       // левая нога в фазе переноса
+      const flexR = Math.max(0, Math.cos(t + Math.PI));
+
+      // Ноги: мах от БЕДРА, колено подгибается при переносе ступни
+      leftLeg.rotation.x  = -sw * 0.6;
+      rightLeg.rotation.x =  sw * 0.6;
+      if (ls) { ls.rotation.x = 0.1 + flexL * flexL * 0.95; rs.rotation.x = 0.1 + flexR * flexR * 0.95; }
+
+      // Руки: противофаза к ногам, локти чуть согнуты и дозгибаются вперёд
+      leftArm.rotation.x  =  sw * 0.5;
+      rightArm.rotation.x = -sw * 0.5;
+      leftArm.rotation.z  =  0.05 + Math.abs(sw) * 0.06;
+      rightArm.rotation.z = -0.05 - Math.abs(sw) * 0.06;
+      if (lf) { lf.rotation.x = -0.3 - Math.max(0,  sw) * 0.35; rf.rotation.x = -0.3 - Math.max(0, -sw) * 0.35; }
+
+      // Тело: пружинистый шаг — перенос веса, скручивание торса
+      body.position.y = 1.4 + Math.abs(sw2) * 0.055;
       body.position.x = sw * 0.025;
-      body.rotation.x = 0.03;
-      body.rotation.y = sw * 0.08;
-      body.rotation.z = sw * 0.025;
-      // Голова: стабилизация взгляда + такт шагов
-      head.rotation.x = sw2 * 0.03;
-      head.rotation.y = -sw * 0.08;
-      head.rotation.z = -sw * 0.02;
+      body.rotation.x = 0.035;
+      body.rotation.y = sw * 0.075;
+      body.rotation.z = sw * 0.02;
+
+      // Голова: стабилизированный взгляд, лёгкий такт
+      head.rotation.x = sw2 * 0.02;
+      head.rotation.y = -sw * 0.07;
+      head.rotation.z = -sw * 0.015;
       break;
     }
     case 'run': {
-      const sr = Math.sin(t * 1.5);
-      const sr2 = Math.sin(t * 3);
-      // Руки: согнуты в локтях, мощная раскачка как у спринтера
-      leftArm.rotation.x  =  sr * 1.35 - 0.35;
-      leftArm.rotation.z  =  0.12 + sr * 0.18;
-      rightArm.rotation.x = -sr * 1.35 - 0.35;
-      rightArm.rotation.z = -0.12 - sr * 0.18;
-      // Ноги: высокий подъём колена, широкая амплитуда
-      leftLeg.rotation.x  = -sr * 1.25 + Math.max(0, Math.sin(t * 1.5 + Math.PI)) * 0.3;
-      rightLeg.rotation.x =  sr * 1.25 + Math.max(0, Math.sin(t * 1.5)) * 0.3;
-      leftLeg.rotation.z  = 0;
-      rightLeg.rotation.z = 0;
-      // Тело: сильный наклон вперёд, подпрыг, скручивание торса
-      body.position.y = 1.4 + Math.abs(sr2) * 0.16;
-      body.position.x = sr * 0.035;
-      body.rotation.x = -0.22;
-      body.rotation.y = sr * 0.13;
-      body.rotation.z = sr * 0.03;
-      // Голова: взгляд вперёд, лёгкое покачивание
-      head.rotation.x =  0.14 + sr2 * 0.02;
-      head.rotation.y = -sr * 0.09;
-      head.rotation.z = -sr * 0.025;
+      const t = time * 12;
+      const sr = Math.sin(t);
+      const sr2 = Math.sin(t * 2);
+      const flexL = Math.max(0, Math.cos(t));
+      const flexR = Math.max(0, Math.cos(t + Math.PI));
+
+      leftLeg.rotation.x  = -sr * 1.05;
+      rightLeg.rotation.x =  sr * 1.05;
+      if (ls) { ls.rotation.x = 0.2 + flexL * flexL * 1.35; rs.rotation.x = 0.2 + flexR * flexR * 1.35; }
+
+      leftArm.rotation.x  =  sr * 0.95;
+      rightArm.rotation.x = -sr * 0.95;
+      leftArm.rotation.z  =  0.1;
+      rightArm.rotation.z = -0.1;
+      if (lf) { lf.rotation.x = -1.15; rf.rotation.x = -1.15; }   // спринтерские локти
+
+      body.position.y = 1.4 + Math.abs(sr2) * 0.13;
+      body.position.x = sr * 0.03;
+      body.rotation.x = -0.2;                                      // наклон вперёд
+      body.rotation.y = sr * 0.12;
+      body.rotation.z = sr * 0.025;
+
+      head.rotation.x = 0.16 + sr2 * 0.02;
+      head.rotation.y = -sr * 0.08;
+      head.rotation.z = -sr * 0.02;
       break;
     }
     case 'dance':
-      applyDance(character, currentDance || 'disco', t);
+      applyDance(character, currentDance || 'disco', time * 8);
       break;
     case 'idle':
     default: {
-      // Дыхание: плавный подъём груди + микро-движения
+      const t = time * 8;
       const breathe = Math.sin(t * 0.45);
       body.position.y = 1.4 + breathe * 0.028;
       body.position.x = 0;
-      body.rotation.x = breathe * 0.011;
+      body.rotation.x = breathe * 0.012;
       body.rotation.y = Math.sin(t * 0.15) * 0.02;
       body.rotation.z = Math.sin(t * 0.22) * 0.008;
-      // Руки дышат вместе с телом, чуть разведены
+
       leftArm.rotation.x  = Math.sin(t * 0.42 + 0.3) * 0.05 + breathe * 0.015;
-      leftArm.rotation.z  =  0.07 + breathe * 0.012;
+      leftArm.rotation.z  =  0.06 + breathe * 0.015;
       rightArm.rotation.x = Math.sin(t * 0.42 + 0.6) * 0.05 + breathe * 0.015;
-      rightArm.rotation.z = -0.07 - breathe * 0.012;
-      // Лёгкий перенос веса с ноги на ногу
+      rightArm.rotation.z = -0.06 - breathe * 0.015;
+      if (lf) { lf.rotation.x = -0.12 + breathe * 0.02; rf.rotation.x = -0.12 + breathe * 0.02; }
+
       leftLeg.rotation.x  = Math.sin(t * 0.1) * 0.012;
       rightLeg.rotation.x = -Math.sin(t * 0.1) * 0.012;
-      leftLeg.rotation.z  = 0;
-      rightLeg.rotation.z = 0;
-      // Голова лениво оглядывается по сторонам
-      head.rotation.y = Math.sin(t * 0.28) * 0.12;
-      head.rotation.x = Math.sin(t * 0.18) * 0.035 + breathe * 0.01;
+      leftLeg.rotation.z  = 0; rightLeg.rotation.z = 0;
+      if (ls) { ls.rotation.x = 0.04; rs.rotation.x = 0.04; }
+
+      head.rotation.y = Math.sin(t * 0.28) * 0.14;
+      head.rotation.x = Math.sin(t * 0.18) * 0.035 + breathe * 0.012;
       head.rotation.z = Math.sin(t * 0.12) * 0.015;
       break;
     }
@@ -8892,12 +8945,18 @@ function computeCharacterPose(character, animation, time, delta) {
 
 function applyDance(character, danceType, t) {
   const { leftArm, rightArm, leftLeg, rightLeg, body, head } = character.userData;
+  const _lf = character.userData.leftForearm, _rf = character.userData.rightForearm;
+  const _ls = character.userData.leftShin,    _rs = character.userData.rightShin;
+  // сброс суставов-сегментов (отдельные пляски переопределят сами)
+  if (_lf) { _lf.rotation.set(0,0,0); _rf.rotation.set(0,0,0); _ls.rotation.set(0,0,0); _rs.rotation.set(0,0,0); }
   switch(danceType) {
     case 'wave':
-      rightArm.rotation.x = -2.5;
-      rightArm.rotation.z = Math.sin(t*3) * 0.5;
-      leftArm.rotation.x = 0;
-      body.position.y = 1.4;
+      rightArm.rotation.x = -2.55;
+      rightArm.rotation.z = Math.sin(t*3) * 0.25;
+      if (_rf) { _rf.rotation.x = -0.25; _rf.rotation.z = Math.sin(t*4) * 0.45; }
+      leftArm.rotation.x = Math.sin(t*1.5) * 0.06;
+      body.position.y = 1.4 + Math.sin(t*1.5) * 0.02;
+      head.rotation.z = Math.sin(t*3) * 0.05;
       break;
     case 'disco':
       leftArm.rotation.x = Math.sin(t*2) * 1.2;
@@ -8906,6 +8965,8 @@ function applyDance(character, danceType, t) {
       rightArm.rotation.z = -Math.sin(t) * 0.3;
       leftLeg.rotation.x = Math.sin(t*2) * 0.3;
       rightLeg.rotation.x = Math.cos(t*2) * 0.3;
+      if (_ls) { _ls.rotation.x = 0.25 + Math.abs(Math.sin(t*2)) * 0.35; _rs.rotation.x = 0.25 + Math.abs(Math.cos(t*2)) * 0.35; }
+      if (_lf) { _lf.rotation.x = -0.5 + Math.sin(t*2) * 0.3; _rf.rotation.x = -0.5 + Math.cos(t*2) * 0.3; }
       body.position.y = 1.4 + Math.abs(Math.sin(t*2)) * 0.15;
       head.rotation.y = Math.sin(t*2) * 0.3;
       break;
@@ -8921,10 +8982,13 @@ function applyDance(character, danceType, t) {
       body.position.y = 1.4 + Math.abs(Math.sin(t*3)) * 0.5;
       leftArm.rotation.x = -Math.abs(Math.sin(t*3)) * 1.5;
       rightArm.rotation.x = -Math.abs(Math.sin(t*3)) * 1.5;
+      if (_lf) { _lf.rotation.x = -0.4; _rf.rotation.x = -0.4; }
       leftLeg.rotation.x = Math.sin(t*3) * 0.3;
       rightLeg.rotation.x = -Math.sin(t*3) * 0.3;
+      if (_ls) { _ls.rotation.x = Math.abs(Math.sin(t*3)) * 0.7; _rs.rotation.x = Math.abs(Math.sin(t*3)) * 0.7; }
       break;
     case 'robot':
+      if (_lf) { _lf.rotation.x = -0.9; _rf.rotation.x = -0.9; }
       leftArm.rotation.x = Math.round(Math.sin(t)*2)/2 * 0.8;
       rightArm.rotation.x = Math.round(Math.cos(t)*2)/2 * 0.8;
       leftLeg.rotation.x = Math.round(Math.sin(t+1)*2)/2 * 0.3;
@@ -8933,12 +8997,14 @@ function applyDance(character, danceType, t) {
       body.position.y = 1.4;
       break;
     case 'sit':
-      leftLeg.rotation.x = -1.5;
-      rightLeg.rotation.x = -1.5;
-      body.position.y = 0.8;
-      leftArm.rotation.x = -0.3;
-      rightArm.rotation.x = -0.3;
-      head.rotation.x = 0;
+      leftLeg.rotation.x = -1.45;
+      rightLeg.rotation.x = -1.45;
+      if (_ls) { _ls.rotation.x = 1.3; _rs.rotation.x = 1.3; }
+      body.position.y = 0.95;
+      leftArm.rotation.x = -0.45;
+      rightArm.rotation.x = -0.45;
+      if (_lf) { _lf.rotation.x = -0.5; _rf.rotation.x = -0.5; }
+      head.rotation.x = 0.05;
       break;
     case 'dab':
       rightArm.rotation.x = -2.5;
@@ -16249,7 +16315,7 @@ function claimFPReward(r, isPlus, claimKey) {
   .fpp-row-label { font-size: 9px !important; }
 }
 </style>
-<script src="update_script.js?v=26"></script>
+<script src="update_script.js?v=27"></script>
 </body>
 
 <script>
