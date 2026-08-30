@@ -49,7 +49,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Fantazia RP 3D · v2.13</title>
+<title>Fantazia RP 3D · v2.14</title>
 <!-- ===== PWA MANIFEST (встроенный) ===== -->
 <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22Fantazia+RP+3D%22%2C%22short_name%22%3A%22Fantazia%22%2C%22description%22%3A%22Fantazia+RP+3D+%E2%80%94+%D0%BC%D0%BE%D0%B1%D0%B8%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+3D+%D0%B8%D0%B3%D1%80%D0%B0%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22fullscreen%22%2C%22orientation%22%3A%22landscape%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%236c5ce7%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABJQTFRFAAAAbEjiqqr%2F6%2BXz1s77////aoCa9AAAAARdFJlcAMEBQYHCJ%2BZAAAAsklEQVR42u3BMQEAAADCoPVP7WsIoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAMBuAABHwAAAABJRU5ErkJggg%3D%3D%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
 <meta name="theme-color" content="#6c5ce7">
@@ -2568,7 +2568,7 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
   </div>
 </div>
 
-<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v2.13</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v2.13 — НОВЫЕ МОСТЫ 🌉</div>
+<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v2.14</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v2.14 — НОРМАЛЬНЫЕ МОСТЫ 🌉</div>
 <script>setTimeout(function(){var t=document.getElementById('fzVerToast');if(t){t.style.transition='opacity 1s';t.style.opacity='0';setTimeout(function(){t.remove()},1100)}},6000)</script>
 
 <!-- ========== HUD ========== -->
@@ -3269,11 +3269,11 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
 </div>
 
 <!-- ========== СКРИПТЫ ========== -->
-<script src="/socket.io/socket.io.js?v=213"></script>
-<script src="assets/three.min.js?v=213"></script>
+<script src="/socket.io/socket.io.js?v=214"></script>
+<script src="assets/three.min.js?v=214"></script>
 <script>if (!window.THREE) document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\\/script>');</script>
 <!-- ===== НОВАЯ 3D-МОДЕЛЬ ИГРОКА (после Three.js!) ===== -->
-<script src="assets/fantazia-player.js?v=213"></script>
+<script src="assets/fantazia-player.js?v=214"></script>
 <script>
 /*!
  * ============================================================
@@ -6903,92 +6903,74 @@ function buildBridges() {
 }
 
 function buildBridge(cx, cz, isNS, label, length) {
-  // ═══ 🌉 НОВЫЙ МОСТ (v2.13): вантовый, с рекой, перилами и подсветкой ═══
+  // ═══ 🌉 НОРМАЛЬНЫЙ БАЛОЧНЫЙ МОСТ (v2.14): без воды, палуба в уровень дороги ═══
   const deckMat  = new THREE.MeshLambertMaterial({ color: 0x3a3f46 });
   const railMat  = new THREE.MeshLambertMaterial({ color: 0xb0bec5 });
   const pierMat  = new THREE.MeshLambertMaterial({ color: 0x8d8d92 });
-  const pylonMat = new THREE.MeshLambertMaterial({ color: 0x546e7a });
-  const cableMat = new THREE.MeshLambertMaterial({ color: 0xcfd8dc });
   const L = length, W = 10;
-  const along = (t, off) => [cx + (isNS ? off : t), cz + (isNS ? t : off)]; // точка на мосту
+  const along = (t, off) => [cx + (isNS ? off : t), cz + (isNS ? t : off)];
 
-  // ── РЕКА под мостом (течёт поперёк дороги, видна с боков палубы) ──
-  const water = new THREE.Mesh(
-    new THREE.PlaneGeometry(isNS ? 120 : 44, isNS ? 44 : 120),
-    new THREE.MeshLambertMaterial({ color: 0x1565c0, transparent: true, opacity: 0.92 })
-  );
-  water.rotation.x = -Math.PI / 2;
-  water.position.set(cx, 0.04, cz);
-  scene.add(water);
-
-  // ── ПАЛУБА (на уровне дороги — можно ехать и ходить) ──
-  const deck = new THREE.Mesh(new THREE.BoxGeometry(isNS ? W : L, 0.16, isNS ? L : W), deckMat);
-  deck.position.set(cx, 0.08, cz); scene.add(deck);
-  // жёлтая разметка по центру
+  // ── ПАЛУБА в уровень дороги ──
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(isNS ? W : L, 0.5, isNS ? L : W), deckMat);
+  deck.position.set(cx, 0.25, cz); scene.add(deck);
+  // бортик тротуара + жёлтая разметка
   const dashMat = new THREE.MeshBasicMaterial({ color: 0xFFE97F });
+  const walkMat = new THREE.MeshLambertMaterial({ color: 0x9aa0a6 });
+  [-3.5, 3.5].forEach(off => {
+    const [wx, wz] = along(0, off);
+    const strip = new THREE.Mesh(new THREE.PlaneGeometry(isNS ? 1.6 : L, isNS ? L : 1.6), walkMat);
+    strip.rotation.x = -Math.PI / 2; strip.position.set(wx, 0.505, wz); scene.add(strip);
+  });
   for (let t = -L / 2 + 4; t <= L / 2 - 4; t += 9) {
     const [dx1, dz1] = along(t, 0);
     const dash = new THREE.Mesh(new THREE.PlaneGeometry(isNS ? 0.3 : 3.6, isNS ? 3.6 : 0.3), dashMat);
-    dash.rotation.x = -Math.PI / 2; dash.position.set(dx1, 0.17, dz1); scene.add(dash);
+    dash.rotation.x = -Math.PI / 2; dash.position.set(dx1, 0.51, dz1); scene.add(dash);
   }
 
-  // ── ПАРАПЕТЫ: бортик + стойки + поручень ──
-  [-4.7, 4.7].forEach(off => {
+  // ── МАССИВНЫЕ ПАРАПЕТЫ (бетонная стена + поручень) ──
+  [-4.8, 4.8].forEach(off => {
     const [bx, bz] = along(0, off);
-    const curb = new THREE.Mesh(new THREE.BoxGeometry(isNS ? 0.4 : L, 0.5, isNS ? L : 0.4), pierMat);
-    curb.position.set(bx, 0.35, bz); scene.add(curb);
-    const hand = new THREE.Mesh(new THREE.BoxGeometry(isNS ? 0.16 : L, 0.14, isNS ? L : 0.16), railMat);
-    hand.position.set(bx, 1.5, bz); scene.add(hand);
-    for (let t = -L / 2 + 2; t <= L / 2 - 2; t += 6) {
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(isNS ? 0.45 : L, 1.0, isNS ? L : 0.45), pierMat);
+    wall.position.set(bx, 1.0, bz); scene.add(wall);
+    const hand = new THREE.Mesh(new THREE.BoxGeometry(isNS ? 0.2 : L, 0.12, isNS ? L : 0.2), railMat);
+    hand.position.set(bx, 1.56, bz); scene.add(hand);
+    // декоративные столбики каждые 10м
+    for (let t = -L / 2 + 5; t <= L / 2 - 5; t += 10) {
       const [px, pz] = along(t, off);
-      const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.15, 0.12), railMat);
-      post.position.set(px, 0.95, pz); scene.add(post);
+      const cap = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.25, 0.6), railMat);
+      cap.position.set(px, 1.62, pz); scene.add(cap);
     }
   });
 
-  // ── БЕРЕГОВЫЕ УСТОИ ──
-  [-1, 1].forEach(sn => {
-    const [ax, az] = along(sn * (L / 2 - 1), 0);
-    const abut = new THREE.Mesh(new THREE.BoxGeometry(isNS ? W + 4 : 2.6, 1.1, isNS ? 2.6 : W + 4), pierMat);
-    abut.position.set(ax, 0.1, az); scene.add(abut);
+  // ── ПРОДОЛЬНЫЕ БАЛКИ под палубой (видны с боков) ──
+  [-3.6, 0, 3.6].forEach(off => {
+    const [gx, gz] = along(0, off);
+    const girder = new THREE.Mesh(new THREE.BoxGeometry(isNS ? 0.7 : L, 0.7, isNS ? L : 0.7), pierMat);
+    girder.position.set(gx, 0.02, gz); scene.add(girder);
   });
 
-  // ── ПИЛОНЫ + ВАНТЫ (2 H-пилона) ──
-  [-1, 1].forEach(sn => {
-    const t = sn * L * 0.25;
-    [-5.9, 5.9].forEach(off => {
-      const [plx, plz] = along(t, off);
-      const col = new THREE.Mesh(new THREE.BoxGeometry(1.1, 13, 1.1), pylonMat);
-      col.position.set(plx, 6.5, plz); scene.add(col);
-      const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.22, 6, 6),
-        new THREE.MeshBasicMaterial({ color: 0xff3355 }));
-      beacon.position.set(plx, 13.25, plz); scene.add(beacon);
-      // ванты: веер к палубе
-      [-14, -7, 0, 7, 14].forEach(sp => {
-        const run = sp, rise = 12.5 - 1.5;
-        const len = Math.sqrt(run * run + rise * rise);
-        const cab = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, len, 4), cableMat);
-        const [tx, tz] = along(t + sp, off - (off > 0 ? 1.2 : -1.2));
-        cab.position.set((plx + tx) / 2, (12.5 + 1.5) / 2, (plz + tz) / 2);
-        if (isNS) cab.rotation.x = -Math.atan2(run, rise); else cab.rotation.z = Math.atan2(run, rise);
-        scene.add(cab);
-      });
+  // ── ОПОРЫ-быки каждые 20м (стойки от земли до палубы) ──
+  const nPiers = Math.floor(L / 20);
+  for (let i = 0; i <= nPiers; i++) {
+    const t = (i / nPiers - 0.5) * L * 0.8;
+    [-3.6, 3.6].forEach(off => {
+      const [px, pz] = along(t, off);
+      const pier = new THREE.Mesh(new THREE.BoxGeometry(1.0, 2.2, 1.0), pierMat);
+      pier.position.set(px, -0.6, pz); scene.add(pier);
+      const capB = new THREE.Mesh(new THREE.BoxGeometry(isNS ? 2.2 : 1.6, 0.5, isNS ? 1.6 : 2.2), pierMat);
+      capB.position.set(px, 0.55, pz); scene.add(capB);
     });
-    // перекладина pylона
-    const [bxx, bzz] = along(t, 0);
-    const beam = new THREE.Mesh(new THREE.BoxGeometry(isNS ? 2.4 : 1.2, 1.1, isNS ? 1.2 : 2.4), pylonMat);
-    beam.position.set(bxx, 12.6, bzz); scene.add(beam);
-  });
+  }
 
-  // ── ФОНАРИ на въездах ──
+  // ── ФОНАРИ на всех 4 углах ──
   const lampSpotsB = [];
-  [-1, 1].forEach(sn => {
-    const [lx, lz] = along(sn * (L / 2 - 3), 6.4);
+  [-1, 1].forEach(sn => [-6.4, 6.4].forEach(off => {
+    const [lx, lz] = along(sn * (L / 2 - 3), off);
     lampSpotsB.push({ x: lx, z: lz });
-  });
+  }));
   nzLamps(lampSpotsB);
 
-  // ── ТАБЛИЧКА с названием ──
+  // ── ТАБЛИЧКА с названием на въезде ──
   const signTex = nzCanvas(256, 64, (g) => {
     g.fillStyle = '#1c2b3a'; g.fillRect(0, 0, 256, 64);
     g.fillStyle = '#ffffff'; g.font = 'bold 22px Arial'; g.textAlign = 'center';
@@ -6997,7 +6979,7 @@ function buildBridge(cx, cz, isNS, label, length) {
   const [sgx, sgz] = along(-L / 2 + 3, 0);
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.5),
     new THREE.MeshBasicMaterial({ map: signTex, side: THREE.DoubleSide }));
-  sign.position.set(sgx + (isNS ? 4.9 : 0), 1.9, sgz + (isNS ? 0 : 4.9));
+  sign.position.set(sgx + (isNS ? 5.6 : 0), 2.1, sgz + (isNS ? 0 : 5.6));
   if (isNS) sign.rotation.y = Math.PI / 2;
   scene.add(sign);
 }
@@ -16854,7 +16836,7 @@ function claimFPReward(r, isPlus, claimKey) {
   .fpp-row-label { font-size: 9px !important; }
 }
 </style>
-<script src="update_script.js?v=213"></script>
+<script src="update_script.js?v=214"></script>
 </body>
 
 <script>
