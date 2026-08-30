@@ -54,7 +54,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Fantazia RP 3D · v2.19</title>
+<title>Fantazia RP 3D · v2.20</title>
 <!-- ===== PWA MANIFEST (встроенный) ===== -->
 <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22Fantazia+RP+3D%22%2C%22short_name%22%3A%22Fantazia%22%2C%22description%22%3A%22Fantazia+RP+3D+%E2%80%94+%D0%BC%D0%BE%D0%B1%D0%B8%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+3D+%D0%B8%D0%B3%D1%80%D0%B0%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22fullscreen%22%2C%22orientation%22%3A%22landscape%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%236c5ce7%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABJQTFRFAAAAbEjiqqr%2F6%2BXz1s77////aoCa9AAAAARdFJlcAMEBQYHCJ%2BZAAAAsklEQVR42u3BMQEAAADCoPVP7WsIoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAMBuAABHwAAAABJRU5ErkJggg%3D%3D%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
 <meta name="theme-color" content="#6c5ce7">
@@ -2573,7 +2573,7 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
   </div>
 </div>
 
-<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v2.19</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v2.19 — GRAND MALL ПЕРЕСОБРАН 🏬✨</div>
+<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v2.20</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v2.20 — ТЦ: ВЫСОКИЕ ЭТАЖИ + ЭСКАЛАТОРЫ 🏬⬆</div>
 <script>setTimeout(function(){var t=document.getElementById('fzVerToast');if(t){t.style.transition='opacity 1s';t.style.opacity='0';setTimeout(function(){t.remove()},1100)}},6000)</script>
 
 <!-- ========== HUD ========== -->
@@ -3274,11 +3274,11 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
 </div>
 
 <!-- ========== СКРИПТЫ ========== -->
-<script src="/socket.io/socket.io.js?v=219"></script>
-<script src="assets/three.min.js?v=219"></script>
+<script src="/socket.io/socket.io.js?v=220"></script>
+<script src="assets/three.min.js?v=220"></script>
 <script>if (!window.THREE) document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\\/script>');</script>
 <!-- ===== НОВАЯ 3D-МОДЕЛЬ ИГРОКА (после Three.js!) ===== -->
-<script src="assets/fantazia-player.js?v=219"></script>
+<script src="assets/fantazia-player.js?v=220"></script>
 <script>
 /*!
  * ============================================================
@@ -4543,11 +4543,13 @@ let elevatorDoors = []; // meshes of doors (left, right) inside current elevator
 
 // ---- Эскалаторы ТЦ ----
 const MALL_ESC = { xUp: [-14, -12], zBottom: 10, zTop: 0 }; // x: [вверх, вниз]
+const MALL_FH = 5.5; // ВЫСОКИЕ этажи ТЦ (было 3.5 — потолок давил)
+function interiorFH() { return currentBuildingType === 'mall' ? MALL_FH : 3.5; }
 let escalatorRide = { active:false };
 
 function startEscalatorRide(dir) {
   if (escalatorRide.active || elevatorAnim.active) return;
-  const FH = 3.5;
+  const FH = interiorFH();
   const maxF = (INTERIOR_CONFIGS[currentBuildingType] || INTERIOR_CONFIGS.office).floors || 1;
   const target = currentFloor + dir;
   if (target < 0 || target >= maxF) {
@@ -8693,7 +8695,7 @@ function closeElevatorModal() {
 
 function startElevatorRide(targetFloor) {
   if (elevatorAnim.active) return;
-  const FH = 3.5;
+  const FH = interiorFH();
   const fromY = currentFloor * FH + 0.01;
   const toY = targetFloor * FH + 0.01;
 
@@ -12208,7 +12210,7 @@ function buildInterior(type) {
   let W = 30, D = 24;
   if (type === 'mall') { W = 44; D = 36; } // ТЦ — большой зал
   if (type === 'house') { W = 40; D = 30; } // дом — огромный лофт
-  const FH = 3.5;
+  const FH = type === 'mall' ? MALL_FH : 3.5; // ТЦ — ВЫСОКИЕ этажи
 
   const addObj = (mesh) => { scene.add(mesh); interiorObjects.push(mesh); return mesh; };
   const mat = (color, emissive=0, em=0) => new THREE.MeshLambertMaterial({ color, emissiveIntensity:em, emissive });
@@ -12342,11 +12344,10 @@ function buildInterior(type) {
 }
 
 function buildMallInterior(bx, bz, floor, FH, add, mat) {
-  // ═══ 🏬 GRAND MALL — ПОЛНОСТЬЮ ПЕРЕСОБРАН v2.19 (44×36, 3 этажа) ═══
-  // Планировка: эскалаторы x=-14/-12 (зонf z 0..10) · лифт (16,-8) · запад — стеклянный фасад
+  // ═══ 🏬 GRAND MALL v2.20 — ВЫСОКИЕ ЭТАЖИ (5.5м), чисто и просторно ═══
   const F = floor * FH;
   const MW = 44, MD = 36;
-  const themes = ['👗 БУТИКИ И МОДА', '📱 ЭЛЕКТРОНИКА + ИГРЫ', '🍿 ФУДКОРТ + КИНО'];
+  const themes = ['👗 МОДА', '📱 ЭЛЕКТРОНИКА + ИГРЫ', '🍿 ФУДКОРТ + КИНО'];
   const B = (w, h, d, color, x, y, z, ry, emissive, em) => {
     const m2 = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, emissive || 0, em || 0));
     m2.position.set(bx + x, F + y, bz + z); if (ry) m2.rotation.y = ry;
@@ -12354,24 +12355,22 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
   };
   const colp = (x, z, w, d) => interiorColliders.push({ minX: bx + x - w/2, maxX: bx + x + w/2, minZ: bz + z - d/2, maxZ: bz + z + d/2 });
 
-  // ── Мраморный пол (шахматка одной текстурой) ──
+  // ── Пол: мрамор ──
   const floorTex = nzCanvas(256, 256, (g, w, h) => {
     for (let x = 0; x < 8; x++) for (let y = 0; y < 8; y++) {
       g.fillStyle = (x + y) % 2 ? '#f4f1ea' : '#e6dfd2';
       g.fillRect(x*32, y*32, 32, 32);
     }
-    g.strokeStyle = 'rgba(0,0,0,0.06)';
-    for (let i2 = 0; i2 <= 8; i2++) { g.beginPath(); g.moveTo(i2*32,0); g.lineTo(i2*32,256); g.stroke(); g.beginPath(); g.moveTo(0,i2*32); g.lineTo(256,i2*32); g.stroke(); }
   });
   floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping;
   floorTex.repeat.set(6, 5);
-  // Пол/потолок с проёмом над эскалаторами: x∈[-16,-10], z∈[-1,11]
+  // проём атриума над эскалаторами: x∈[-16,-10], z∈[-1,11]
   const slabWithHole = (y, material, isFloor) => {
     [
-      { w: MW, d: 17, x: 0,  z: -9.5 },
-      { w: MW, d: 7,  x: 0,  z: 14.5 },
+      { w: MW, d: 17, x: 0,   z: -9.5 },
+      { w: MW, d: 7,  x: 0,   z: 14.5 },
       { w: 6,  d: 12, x: -19, z: 5 },
-      { w: 32, d: 12, x: 6,  z: 5 },
+      { w: 32, d: 12, x: 6,   z: 5 },
     ].forEach(pt => {
       const m2 = new THREE.Mesh(new THREE.PlaneGeometry(pt.w, pt.d), material);
       m2.rotation.x = isFloor ? -Math.PI/2 : Math.PI/2;
@@ -12385,29 +12384,26 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
   } else {
     slabWithHole(F + 0.02, new THREE.MeshLambertMaterial({ map: floorTex }), true);
   }
-  if (floor < 2) {
-    slabWithHole(F + FH, mat(0xece7dc), false);
-  } else {
+  if (floor < 2) slabWithHole(F + FH, mat(0xece7dc), false);
+  else {
     const ceil = new THREE.Mesh(new THREE.PlaneGeometry(MW, MD), mat(0xece7dc));
     ceil.rotation.x = Math.PI/2; ceil.position.set(bx, F + FH, bz); add(ceil);
   }
-  // Световые полосы потолка — НЕ пересекаем проём эскалатора (x -16..-10)
-  [-18, -9, -1.5, 6, 13.5].forEach(sx => {
-    const strip = new THREE.Mesh(new THREE.PlaneGeometry(2.2, MD - 6), mat(0xfff8e2, 0xfff2c0, 1));
-    strip.rotation.x = Math.PI/2; strip.position.set(bx + sx, F + FH - 0.05, bz); add(strip);
-  });
-  [[-12, -8], [12, -8], [-1, 8], [13, 8]].forEach(([lx, lz]) => {
-    const pl = new THREE.PointLight(0xFFF6E0, 0.55, 16);
-    pl.position.set(bx + lx, F + FH - 0.6, bz + lz); add(pl);
+  // световые кольца под потолком (высоким!)
+  [[-12, -8], [12, -8], [-12, 8], [12, 8]].forEach(([lx, lz]) => {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.09, 8, 24), mat(0xfff8e2, 0xfff2c0, 0.9));
+    ring.rotation.x = Math.PI/2; ring.position.set(bx + lx, F + FH - 0.35, bz + lz); add(ring);
+    const pl = new THREE.PointLight(0xFFF6E0, 0.6, 20);
+    pl.position.set(bx + lx, F + FH - 0.9, bz + lz); add(pl);
   });
 
-  // ── Стены: север/юг/восток кремовые, запад — стекло ──
+  // ── Стены + стеклянный фасад ──
   const wallM = mat(0xf0ebe0);
   [[MW, 0, -MD/2, 0], [MW, 0, MD/2, Math.PI], [MD, MW/2, 0, -Math.PI/2]].forEach(([w, x, z, ry]) => {
     const wll = new THREE.Mesh(new THREE.PlaneGeometry(w, FH), wallM);
     wll.position.set(bx + x, F + FH/2, bz + z); wll.rotation.y = ry; add(wll);
   });
-  const glass = new THREE.Mesh(new THREE.PlaneGeometry(MD, FH - 0.4),
+  const glass = new THREE.Mesh(new THREE.PlaneGeometry(MD, FH - 0.5),
     new THREE.MeshBasicMaterial({ color: 0x9ad4ff, transparent: true, opacity: 0.25, side: THREE.DoubleSide }));
   glass.position.set(bx - MW/2, F + FH/2, bz); glass.rotation.y = Math.PI/2; add(glass);
   for (let gz = -MD/2 + 4; gz <= MD/2; gz += 6) B(0.14, FH, 0.14, 0x8a8f98, -MW/2, FH/2, gz, 0);
@@ -12419,75 +12415,63 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
     B(1.2, 0.22, 1.2, 0xe6dfd2, cx, FH - 0.11, cz, 0);
     colp(cx, cz, 1.1, 1.1);
   });
-
-  // Границы зала
   interiorColliders.push(
     { minX: bx-MW/2-1, maxX: bx-MW/2+0.6, minZ: bz-MD/2, maxZ: bz+MD/2 },
     { minX: bx+MW/2-0.6, maxX: bx+MW/2+1, minZ: bz-MD/2, maxZ: bz+MD/2 },
     { minX: bx-MW/2, maxX: bx+MW/2, minZ: bz-MD/2-1, maxZ: bz-MD/2+0.6 },
     { minX: bx-MW/2, maxX: bx+MW/2, minZ: bz+MD/2-0.6, maxZ: bz+MD/2+1 }
   );
-  addInteriorSign(themes[floor] || '🏬 GRAND MALL', bx, F + FH - 0.4, bz - MD/2 + 0.35, add);
+  addInteriorSign(themes[floor] || '🏬 GRAND MALL', bx, F + FH - 0.45, bz - MD/2 + 0.35, add);
 
-  // ═══ ЭСКАЛАТОРЫ (только 0→1 и 1→2; на 3 этаже их НЕТ) ═══
+  // ═══ ЭСКАЛАТОРЫ (0→1, 1→2; на 3 этаже нет) ═══
   const escZ0 = MALL_ESC.zBottom, escZ1 = MALL_ESC.zTop;
-  const run = escZ0 - escZ1, riseS = FH - 0.55; // верх заподлицо с полом следующего этажа
+  const run = escZ0 - escZ1, riseS = FH - 0.55;
   const escAng = Math.atan2(riseS, run);
   const slopeLen = Math.sqrt(run*run + riseS*riseS);
   if (floor < 2) {
     MALL_ESC.xUp.forEach((ex, ei) => {
       const dirUp = ei === 0;
       const g = new THREE.Group();
-      g.userData = { isEscalator: true, dir: dirUp ? 1 : -1, steps: [], speed: 0.09, baseX: bx + ex, baseY: F, baseZ: bz };
-      [-0.8, 0.8].forEach(sx => {
-        const truss = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.55, slopeLen), mat(0x8a8f98));
-        truss.position.set(bx+ex+sx, F + riseS/2 + 0.4, bz + (escZ0+escZ1)/2);
-        truss.rotation.x = -escAng; g.add(truss);
-        const glow = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, slopeLen), mat(dirUp ? 0x00e5ff : 0xffaa00, dirUp ? 0x00e5ff : 0xffaa00, 0.9));
-        glow.position.set(bx+ex+sx, F + riseS/2 + 0.72, bz + (escZ0+escZ1)/2);
-        glow.rotation.x = -escAng; g.add(glow);
-      });
+      g.userData = { isEscalator: true, dir: dirUp ? 1 : -1, steps: [], speed: 0.09, rise: riseS,
+        baseX: bx + ex, baseY: F, baseZ: bz };
+      // несущая ферма
+      const truss = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.5, slopeLen), mat(0x8a8f98));
+      truss.position.set(bx+ex, F + riseS/2 + 0.35, bz + (escZ0+escZ1)/2);
+      truss.rotation.x = -escAng; g.add(truss);
+      // полотно ступеней
       const deck = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.1, slopeLen), mat(0x3a3f4a));
-      deck.position.set(bx+ex, F + riseS/2 + 0.5, bz + (escZ0+escZ1)/2);
+      deck.position.set(bx+ex, F + riseS/2 + 0.62, bz + (escZ0+escZ1)/2);
       deck.rotation.x = -escAng; g.add(deck);
-      for (let st = 0; st < 12; st++) {
-        const step = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.07, 0.6), mat(0xc8ccd4, 0x555f6e, 0.06));
-        step.userData.s = st / 12;
+      for (let st = 0; st < 14; st++) {
+        const step = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.07, 0.62), mat(0xc8ccd4, 0x555f6e, 0.06));
+        step.userData.s = st / 14;
         step.position.set(bx+ex, F + 0.62 + riseS * step.userData.s, bz + escZ0 - run * step.userData.s);
         g.add(step); g.userData.steps.push(step);
       }
+      // сплошные балюстрады с поручнями
       [-0.85, 0.85].forEach(sx => {
-        const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, slopeLen, 8), mat(0x22262e, 0x6c5ce7, 0.35));
-        rail.rotation.x = Math.PI/2 - escAng;
-        rail.position.set(bx+ex+sx, F + riseS/2 + 1.35, bz + (escZ0+escZ1)/2);
-        g.add(rail);
+        const bal = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.95, slopeLen), mat(0x22262e));
+        bal.position.set(bx+ex+sx, F + riseS/2 + 1.15, bz + (escZ0+escZ1)/2);
+        bal.rotation.x = -escAng; g.add(bal);
+        const hr = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, slopeLen, 8), mat(0x39424e, 0x00e5ff, 0.35));
+        hr.rotation.x = Math.PI/2 - escAng;
+        hr.position.set(bx+ex+sx, F + riseS/2 + 1.68, bz + (escZ0+escZ1)/2);
+        g.add(hr);
       });
-      [escZ0, escZ1].forEach(ez => {
-        const comb = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.06, 0.5), mat(0xffce38));
-        comb.position.set(bx+ex, F + (ez === escZ0 ? 0.03 : FH + 0.03), bz + ez + (ez === escZ0 ? 0.3 : -0.3));
-        g.add(comb);
-      });
+      // гребёнки внизу и вверху
+      B(1.7, 0.06, 0.9, 0xffce38, ex, 0.03, escZ0 + 0.4, 0);
+      if (floor > 0) B(1.7, 0.06, 0.9, 0xffce38, ex, FH + 0.03, escZ1 - 0.4, 0);
       add(g);
-      // столбик с направлением у входа
-      B(0.07, 2.2, 0.07, 0x39424e, ex, 1.1, escZ0 + 1.6, 0);
-      addInteriorSign(dirUp ? '⬆️ ВВЕРХ' : '⬇️ ВНИЗ', ex, F + 2.35, bz + escZ0 + 1.6, add);
+      // табличка направления у входа
+      B(0.07, 1.4, 0.07, 0x39424e, ex + 1.1, 0.7, escZ0 + 1.2, 0);
+      addInteriorSign(dirUp ? '⬆️ ВВЕРХ' : '⬇️ ВНИЗ', bx + ex + 1.1, F + 1.6, bz + escZ0 + 1.2, add);
+      // машинное отделение под наклоном (нельзя пройти под лестницей)
+      colp(ex, (escZ0+escZ1)/2, 1.9, run);
     });
   } else {
-    // 3 этаж: площадки прибытия у проёма (эскалаторов наверх больше нет)
-    [[-14, '🔝 ЭТАЖ 3'], [-12, '⬇️ ВНИЗ']].forEach(([ex, lbl]) => {
-      B(1.6, 0.06, 1.3, 0xffce38, ex, 0.03, -1.7, 0); // гребёнка
-      [-0.85, 0.85].forEach(sx => {
-        B(0.05, 1.05, 1.3, 0x22262e, ex + sx, 0.55, -1.7, 0, 0x6c5ce7, 0.3);
-      });
-      addInteriorSign(lbl, ex, F + 1.5, bz - 2.6, add);
-    });
-    // ограждение атриума по краям проёма (чтобы не смотреть в пустоту)
-    [[-16.4, 5, 0.06, 11.6], [-9.6, 5, 0.06, 11.6], [-13, 11.3, 6.8, 0.06]].forEach(([x, z, w2, d2]) => {
-      B(w2, 0.08, d2, 0x22262e, x, 1.05, z, 0, 0x6c5ce7, 0.25);
-      B(w2, 0.05, d2, 0xc8ccd4, x, 0.6, z, 0);
-      for (let pz = z - d2/2 + 0.4; pz <= z + d2/2; pz += 1.6) B(0.05, 1.05, 0.05, 0x39424e, x + (d2 > w2 ? 0 : 0), 0.52, pz, 0);
-      for (let px = x - w2/2 + 0.4; px <= x + w2/2; px += 1.6) if (w2 > d2) B(0.05, 1.05, 0.05, 0x39424e, px, 0.52, z, 0);
-    });
+    // 3 этаж: гребёнки прибытия у проёма
+    MALL_ESC.xUp.forEach(ex => B(1.7, 0.06, 0.9, 0xffce38, ex, 0.03, escZ1 - 0.4, 0));
+    addInteriorSign('⬇️ ВНИЗ', bx - 12, F + 1.6, bz + escZ1 - 1.4, add);
   }
   if (floor < 2) {
     interactables.push({ position:{ x: bx + MALL_ESC.xUp[0], y: F, z: bz + escZ0 + 0.9 },
@@ -12498,41 +12482,44 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
       type:'escalator_down', name:'🛗⬇ На эскалаторе вниз', range: 2.6, interior: true });
   }
 
-  // ═══ ЛИФТ (у восточной стены) ═══
-  const liftX = bx + 16, liftZ = bz - 8;
-  const shaft = new THREE.Mesh(new THREE.BoxGeometry(4.4, FH, 0.4), mat(0xdcd6c8));
-  shaft.position.set(liftX, F + FH/2, liftZ - 2.4); add(shaft);
-  const dl = new THREE.Mesh(new THREE.BoxGeometry(1.25, 2.5, 0.12), mat(0xb8b8c0));
-  dl.position.set(liftX - 0.65, F + 1.25, liftZ - 2.18); dl.userData.isElevDoorL = true; add(dl);
-  const dr = new THREE.Mesh(new THREE.BoxGeometry(1.25, 2.5, 0.12), mat(0xb8b8c0));
-  dr.position.set(liftX + 0.65, F + 1.25, liftZ - 2.18); dr.userData.isElevDoorR = true; add(dr);
-  addInteriorSign('🛗 ЛИФТ', liftX, F + FH - 0.4, liftZ - 2.1, add);
-  interiorColliders.push({ minX: liftX - 2.3, maxX: liftX + 2.3, minZ: liftZ - 2.6, maxZ: liftZ - 2.2 });
+  // ═══ ПЕРИЛА АТРИУМА (этажи 1-2): стеклянные панели + коллайдеры, проходы только к эскалаторам ═══
+  if (floor > 0) {
+    const rail = (x, z, w2, d2) => {
+      B(w2, 1.0, d2, 0x9ad4ff, x, 0.55, z, 0, 0x66c6ff, 0.08); // стекло
+      B(w2, 0.09, d2, 0x39424e, x, 1.08, z, 0);                 // поручень
+      colp(x, z, Math.max(w2, 0.3), Math.max(d2, 0.3));
+    };
+    rail(-15.4, -1, 1.2, 0.12);   // север: слева от верхнего эскалатора
+    rail(-13, -1, 1.6, 0.12);     // север: между эскалаторами
+    rail(-10.6, -1, 1.2, 0.12);   // север: справа
+    rail(-13, 11, 6.2, 0.12);     // юг проёма
+    rail(-16, 5, 0.12, 12.2);     // запад проёма
+    rail(-10, 5, 0.12, 12.2);     // восток проёма
+  }
 
-  // ═══ 1 ЭТАЖ: БУТИКИ + ФОНТАН + КАРУСЕЛЬ ═══
+  // ═══ ЛИФТ ═══
+  const liftX = 16, liftZ = -8;
+  B(4.4, FH, 0.4, 0xdcd6c8, liftX, FH/2, liftZ - 2.4, 0);
+  const dl = new THREE.Mesh(new THREE.BoxGeometry(1.25, 2.6, 0.12), mat(0xb8b8c0));
+  dl.position.set(bx + liftX - 0.65, F + 1.3, bz + liftZ - 2.18); dl.userData.isElevDoorL = true; add(dl);
+  const dr = new THREE.Mesh(new THREE.BoxGeometry(1.25, 2.6, 0.12), mat(0xb8b8c0));
+  dr.position.set(bx + liftX + 0.65, F + 1.3, bz + liftZ - 2.18); dr.userData.isElevDoorR = true; add(dr);
+  addInteriorSign('🛗 ЛИФТ', bx + liftX, F + FH - 0.4, bz + liftZ - 2.1, add);
+  colp(liftX, liftZ - 2.4, 4.4, 0.5);
+
+  // ═══ КОНТЕНТ (минимум, без хлама) ═══
   if (floor === 0) {
-    const shops = [
-      { n: '👑 LUXE', c: 0xffd700, m: 0xe74c3c },
-      { n: '👟 STREET', c: 0x00b4d8, m: 0x2980b9 },
-      { n: '👗 CHIC', c: 0xff6b9d, m: 0x9b59b6 },
-      { n: '🧢 URBAN', c: 0x2ecc71, m: 0x27ae60 },
-    ];
-    shops.forEach((sh, i) => {
-      const sx = -15 + i * 10, sz = -MD/2 + 4.4;
-      [-3.6, 3.6].forEach(ox => {
-        B(0.25, FH - 0.6, 7, 0xe8e2d4, sx + ox, (FH-0.6)/2, sz, 0);
-        colp(sx + ox, sz, 0.4, 7);
-      });
-      B(7, 2.6, 0.5, sh.c, sx, 1.3, sz - 3.4, 0);
-      for (let c2 = 0; c2 < 6; c2++) B(0.5, 0.9, 0.12, [0xe74c3c,0x3498db,0x2ecc71,0xf39c12,0x9b59b6,0xecf0f1][c2], sx - 2.5 + c2, 1.7, sz - 2.95, 0);
-      B(0.6, 1.3, 0.35, sh.m, sx - 2.2, 0.95, sz + 2.4, 0);
-      const mnh = new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 8), mat(0xf0e8dc));
-      mnh.position.set(bx + sx - 2.2, F + 1.85, bz + sz + 2.4); add(mnh);
-      addInteriorSign(sh.n, bx + sx, F + FH - 0.5, bz + sz + 3.6, add);
-      spawnInteriorNPC(bx + sx + 2, F, bz + sz - 1.5, 'clerk', add);
-      colp(sx, sz - 3.2, 6.8, 0.6);
+    // 4 открытых бутика вдоль северной стены
+    [['👑 LUXE', 0xffd700], ['👟 STREET', 0x00b4d8], ['👗 CHIC', 0xff6b9d], ['🧢 URBAN', 0x2ecc71]].forEach(([n, c], i) => {
+      const sx = -15 + i * 10;
+      B(7, 3.2, 0.4, c, sx, 1.6, -MD/2 + 0.3, 0);                        // задняя панель
+      for (let c2 = 0; c2 < 6; c2++) B(0.5, 0.9, 0.12, [0xe74c3c,0x3498db,0x2ecc71,0xf39c12,0x9b59b6,0xecf0f1][c2], sx - 2.5 + c2, 1.7, -MD/2 + 0.75, 0);
+      B(0.6, 0.06, 0.6, 0x8a8f98, sx, 0.03, -MD/2 + 2.2, 0);            // подиум-витрина
+      B(0.45, 0.75, 0.45, c, sx, 0.45, -MD/2 + 2.2, 0);
+      addInteriorSign(n, bx + sx, F + 3.6, bz - MD/2 + 0.5, add);
+      colp(sx, -MD/2 + 0.3, 7, 0.6);
     });
-    // ⛲ Фонтан желаний (юго-восток, НЕ на путях)
+    // ⛲ фонтан + 🎠 карусель (юго-восток)
     const fbas = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.9, 0.55, 20), mat(0x8fa8b2));
     fbas.position.set(bx + 7.5, F + 0.28, bz - 4); add(fbas);
     const water = new THREE.Mesh(new THREE.CylinderGeometry(2.35, 2.35, 0.12, 20), mat(0x35c4f0, 0x35c4f0, 0.35));
@@ -12541,20 +12528,19 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
     fmid.position.set(bx + 7.5, F + 1.0, bz - 4); add(fmid);
     const jet = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.3, 1.5, 10), mat(0x9adfff, 0x35c4f0, 0.55));
     jet.position.set(bx + 7.5, F + 2.1, bz - 4); add(jet);
-    const jetL = new THREE.PointLight(0x35c4f0, 0.8, 6);
-    jetL.position.set(bx + 7.5, F + 1.6, bz - 4); jetL.userData = { isClubLight: true, phase: 0 }; add(jetL);
+    const jetL = new THREE.PointLight(0x35c4f0, 0.8, 7);
+    jetL.position.set(bx + 7.5, F + 1.8, bz - 4); jetL.userData = { isClubLight: true, phase: 0 }; add(jetL);
     colp(7.5, -4, 5.8, 5.8);
-    addInteriorSign('⛲ ФОНТАН ЖЕЛАНИЙ', bx + 7.5, F + 3.0, bz - 4, add);
-    // 🎠 Карусель (юго-восток ближе к югу)
+    addInteriorSign('⛲ ФОНТАН', bx + 7.5, F + 3.4, bz - 4, add);
     const carousel = new THREE.Group();
     const plat = new THREE.Mesh(new THREE.CylinderGeometry(2.7, 2.7, 0.35, 18), mat(0xd4a05a));
     plat.position.y = 0.18; carousel.add(plat);
     const cupola = new THREE.Mesh(new THREE.ConeGeometry(2.9, 1.3, 18), mat(0xc0392b, 0xff4d5e, 0.25));
-    cupola.position.y = 3.9; carousel.add(cupola);
+    cupola.position.y = 4.4; carousel.add(cupola);
     for (let k = 0; k < 6; k++) {
       const a = k / 6 * Math.PI * 2;
-      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 3.4, 8), mat(0xd8d8d8, 0xfff6c0, 0.3));
-      pole.position.set(Math.cos(a) * 2.1, 1.9, Math.sin(a) * 2.1); carousel.add(pole);
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 3.8, 8), mat(0xd8d8d8, 0xfff6c0, 0.3));
+      pole.position.set(Math.cos(a) * 2.1, 2.1, Math.sin(a) * 2.1); carousel.add(pole);
       const horse = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.5, 0.35), mat([0xf4f0e8, 0xa23b3b, 0x3b6ba2, 0x3ba25a, 0xa2893b, 0x6b3ba2][k]));
       horse.position.set(Math.cos(a) * 2.1, 1.05 + (k % 2) * 0.4, Math.sin(a) * 2.1);
       horse.rotation.y = -a + Math.PI / 2; carousel.add(horse);
@@ -12562,86 +12548,59 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
     carousel.position.set(bx + 7.5, F, bz + 4);
     carousel.userData = { isCarousel: true };
     add(carousel); colp(7.5, 4, 5.8, 5.8);
-    addInteriorSign('🎠 КАРУСЕЛЬ', bx + 7.5, F + 4.6, bz + 4, add);
-    // киоск мороженого у фасада (юго-запад)
-    const kiosk = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 2.6, 10), mat(0xff9f43));
-    kiosk.position.set(bx - 16, F + 1.3, bz + MD/2 - 3.4); add(kiosk);
+    addInteriorSign('🎠 КАРУСЕЛЬ', bx + 7.5, F + 5.1, bz + 4, add);
+    // киоск мороженого
+    const kiosk = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 2.8, 10), mat(0xff9f43));
+    kiosk.position.set(bx - 16, F + 1.4, bz + MD/2 - 3.4); add(kiosk);
     const kRoof = new THREE.Mesh(new THREE.ConeGeometry(1.8, 1, 10), mat(0xe17055));
-    kRoof.position.set(bx - 16, F + 3.1, bz + MD/2 - 3.4); add(kRoof);
-    addInteriorSign('🍦 МОРОЖЕНОЕ', bx - 16, F + 1.9, bz + MD/2 - 1.9, add);
-    spawnInteriorNPC(bx - 14.5, F, bz + MD/2 - 3.4, 'chef', add);
+    kRoof.position.set(bx - 16, F + 3.3, bz + MD/2 - 3.4); add(kRoof);
+    addInteriorSign('🍦 МОРОЖЕНОЕ', bx - 16, F + 2.1, bz + MD/2 - 1.9, add);
     colp(-16, MD/2 - 3.4, 2.8, 2);
-    // люди
     spawnInteriorNPC(bx + 18, F, bz + 12, 'guard', add);
     spawnInteriorNPC(bx - 8, F, bz + 6, 'shopper', add);
     spawnInteriorNPC(bx + 3, F, bz - 1, 'shopper', add);
   }
 
-  // ═══ 2 ЭТАЖ: ЭЛЕКТРОНИКА + GAME ZONE + ФОТО-ЗОНА ═══
   if (floor === 1) {
     for (let tv = 0; tv < 6; tv++) {
       const c = [0x0af, 0xfa0, 0xaf0, 0xf0a, 0xaff, 0xa0f][tv];
-      B(2.8, 1.7, 0.12, 0x111111, -17 + tv * 3.2, 1.9, -MD/2 + 0.28, 0);
+      B(2.8, 1.7, 0.12, 0x111111, -17 + tv * 3.2, 2.2, -MD/2 + 0.28, 0);
       const scr = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.5), mat(c, c, 0.8));
-      scr.position.set(bx - 17 + tv * 3.2, F + 1.9, bz - MD/2 + 0.35); add(scr);
+      scr.position.set(bx - 17 + tv * 3.2, F + 2.2, bz - MD/2 + 0.35); add(scr);
     }
     addInteriorSign('📺 ТВ-ЦЕНТР', bx - 8, F + FH - 0.5, bz - MD/2 + 0.35, add);
-    // стеллажи со смартфонами (запад-центр, не пересекают проход z=0 у эскалаторов)
-    for (let row = 0; row < 3; row++) {
-      const rz = -7 + row * 5;
-      B(14, 1.3, 1.2, 0x34495e, -10, 0.75, rz, 0);
-      for (let ph = 0; ph < 10; ph++) {
-        B(0.35, 0.6, 0.08, [0x1a1a2e, 0x2d3436, 0x0984e3, 0xd63031, 0xfdcb6e][(ph + row) % 5], -16 + ph * 1.35, 1.5, rz, 0);
-      }
-      colp(-10, rz, 14, 1.2);
-    }
-    spawnInteriorNPC(bx - 10, F, bz + 2, 'clerk', add);
-    // 📸 Фотозона (между рядами стеллажей: z=2 свободен)
-    const arch = new THREE.Mesh(new THREE.TorusGeometry(1.9, 0.13, 10, 28, Math.PI), mat(0x111, 0xff4d9d, 0.95));
-    arch.position.set(bx - 7.5, F + 1.6, bz + 2); add(arch);
-    [[-2.6, 0x4dd2ff], [2.6, 0xffd700]].forEach(([ox, c]) => {
-      const sp = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), mat(0xffffff, c, 0.9));
-      sp.position.set(bx - 7.5 + ox, F + 1.5, bz + 2); add(sp);
+    // 2 стола-витрины со смартфонами
+    [[-10, -5], [-4, -5]].forEach(([tx, tz], ti) => {
+      B(4.5, 0.95, 1.3, 0x34495e, tx, 0.48, tz, 0);
+      for (let ph = 0; ph < 5; ph++) B(0.35, 0.6, 0.08, [0x1a1a2e, 0x0984e3, 0xd63031, 0xfdcb6e, 0x2d3436][(ph + ti) % 5], tx - 1.6 + ph * 0.8, 1.25, tz, 0);
+      colp(tx, tz, 4.5, 1.3);
     });
-    B(1.8, 0.35, 1.8, 0xd4a05a, -7.5, 0.18, 2, 0, 0xffd166, 0.2); colp(-7.5, 2, 2, 2);
-    const fl2 = new THREE.PointLight(0xff4d9d, 0.9, 8);
-    fl2.position.set(bx - 7.5, F + 2.4, bz + 3); fl2.userData = { isClubLight: true, phase: 0 }; add(fl2);
-    addInteriorSign('📸 ФОТО-ЗОНА', bx - 7.5, F + 3.4, bz + 2, add);
-    // геймзона у восточной стены
+    spawnInteriorNPC(bx - 7, F, bz - 2.5, 'clerk', add);
+    // гейм-подиумы у восточной стены
     for (let gz2 = 0; gz2 < 3; gz2++) {
       const pod = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.1, 0.5, 8), mat(0x6c5ce7));
       pod.position.set(bx + 12, F + 0.25, bz - 6 + gz2 * 5); add(pod);
       const scrn = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.9), mat(0x00e5ff, 0x00e5ff, 0.8));
-      scrn.position.set(bx + 12, F + 1.8, bz - 6 + gz2 * 5); scrn.rotation.y = -Math.PI/2; add(scrn);
+      scrn.position.set(bx + 12, F + 2.0, bz - 6 + gz2 * 5); scrn.rotation.y = -Math.PI/2; add(scrn);
       colp(12, -6 + gz2 * 5, 2, 2);
     }
-    // аркадные автоматы у северной стены
-    [[-2.5, -14], [2.5, -14]].forEach(([x, z]) => {
-      B(1, 2.1, 0.9, 0x2a2240, x, 1.05, z, 0);
-      B(0.8, 0.7, 0.08, 0x0a0d14, x, 1.5, z + 0.5, 0, x > 0 ? 0xffd700 : 0x4dd2ff, 0.7);
-      colp(x, z, 1.2, 1.1);
-    });
     addInteriorSign('🎮 GAME ZONE', bx + 15, F + FH - 0.5, bz - 6, add);
     spawnInteriorNPC(bx + 12, F, bz + 4, 'shopper', add);
     spawnInteriorNPC(bx + 2, F, bz + 10, 'shopper', add);
   }
 
-  // ═══ 3 ЭТАЖ: ФУДКОРТ (восток) + КИНОЗАЛ (запад) ═══
   if (floor === 2) {
-    const foods = [
-      { n: '🍕 ПИЦЦЕРИЯ', c: 0xe74c3c }, { n: '🍔 БУРГЕРЫ', c: 0xf39c12 }, { n: '☕ КОФЕ ХАУС', c: 0x8e5a2f },
-    ];
-    foods.forEach((fd, i) => {
-      const fx = 6 + (i % 3) * 5.2, fz = -MD/2 + 4.2;
-      B(4.4, 1.1, 1.4, fd.c, fx, 0.55, fz, 0);
+    const foods = [['🍕 ПИЦЦЕРИЯ', 0xe74c3c], ['🍔 БУРГЕРЫ', 0xf39c12], ['☕ КОФЕ', 0x8e5a2f]];
+    foods.forEach(([n, c], i) => {
+      const fx = 6 + i * 5.2, fz = -MD/2 + 4.2;
+      B(4.4, 1.1, 1.4, c, fx, 0.55, fz, 0);
       B(4.6, 0.12, 1.6, 0xecf0f1, fx, 1.16, fz, 0);
-      B(3.6, 1.5, 0.15, 0x2c3e50, fx, 2.6, fz - 1.4, 0);
-      addInteriorSign(fd.n, bx + fx, F + FH - 0.5, bz + fz - 2, add);
-      spawnInteriorNPC(bx + fx, F, bz + fz + 1.6, 'chef', add);
+      addInteriorSign(n, bx + fx, F + 3.4, bz + fz, add);
+      if (i === 0) spawnInteriorNPC(bx + fx, F, bz + fz + 1.6, 'chef', add);
       colp(fx, fz, 4.6, 1.6);
     });
-    for (let t = 0; t < 5; t++) {
-      const tx = 6 + (t % 3) * 5.2, tz = 2 + Math.floor(t / 3) * 4;
+    for (let t = 0; t < 4; t++) {
+      const tx = 6 + (t % 2) * 6, tz = 3 + Math.floor(t / 2) * 4.5;
       const tbl = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.09, 12), mat(0xecf0f1));
       tbl.position.set(bx + tx, F + 0.85, bz + tz); add(tbl);
       B(0.18, 0.85, 0.18, 0x95a5a6, tx, 0.42, tz, 0);
@@ -12652,15 +12611,11 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
       }
       colp(tx, tz, 2, 2);
     }
-    spawnInteriorNPC(bx + 4, F, bz + 9.5, 'shopper', add);
-
-    // ═══ КИНОЗАЛ «FANTAZIA» (западная половина) ═══
+    spawnInteriorNPC(bx + 4, F, bz + 10, 'shopper', add);
+    // 🍿 открытый кинозал (запад)
     const cinX0 = -MW/2 + 0.6;
-    const carpet = new THREE.Mesh(new THREE.PlaneGeometry(14, MD - 2), mat(0x3a2a4a));
+    const carpet = new THREE.Mesh(new THREE.PlaneGeometry(13, MD - 2), mat(0x3a2a4a));
     carpet.rotation.x = -Math.PI/2; carpet.position.set(bx - 14, F + 0.03, bz); add(carpet);
-    const cinWallM = mat(0x2c1f38);
-    B(0.3, FH, MD - 6, 0x2c1f38, -7.2, FH/2, -3, 0); colp(-7.2, -3, 0.4, MD - 6);
-    B(0.3, FH, MD - 6, 0x2c1f38, -7.2, FH/2, 3, 0);  colp(-7.2, 3, 0.4, MD - 6);
     const screenTex = nzCanvas(512, 224, (g, w, h) => {
       const grad = g.createLinearGradient(0, 0, 0, h);
       grad.addColorStop(0, '#1a0533'); grad.addColorStop(1, '#3d1160');
@@ -12668,70 +12623,46 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
       g.fillStyle = '#ffe9a8'; g.font = 'bold 44px Arial'; g.textAlign = 'center';
       g.fillText('🎬 FANTAZIA CINEMA', w/2, h/2 - 8);
       g.fillStyle = '#a29bfe'; g.font = '24px Arial';
-      g.fillText('СЕАНСЫ КАЖДЫЙ ЧАС · ЗАЛ 1', w/2, h/2 + 34);
+      g.fillText('СЕАНСЫ КАЖДЫЙ ЧАС', w/2, h/2 + 34);
     });
-    const screen = new THREE.Mesh(new THREE.PlaneGeometry(9, 3.4), new THREE.MeshBasicMaterial({ map: screenTex }));
-    screen.position.set(bx + cinX0 + 0.35, F + 2.0, bz); screen.rotation.y = Math.PI/2; add(screen);
-    [-5.2, 5.2].forEach(cz => B(0.25, 3.6, 1.8, 0x8e1d2c, cinX0 + 0.4, 1.9, cz, 0));
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(9, 3.6), new THREE.MeshBasicMaterial({ map: screenTex }));
+    screen.position.set(bx + cinX0 + 0.35, F + 2.4, bz); screen.rotation.y = Math.PI/2; add(screen);
+    const spot = new THREE.SpotLight(0xffffff, 0.8, 20, 0.5, 0.4);
+    spot.position.set(bx - 2, F + FH - 0.5, bz);
+    spot.target.position.set(bx + cinX0, F + 2.4, bz); add(spot); add(spot.target);
+    [-5.2, 5.2].forEach(cz => B(0.25, 4.2, 1.8, 0x8e1d2c, cinX0 + 0.4, 2.1, cz, 0));
     for (let row = 0; row < 4; row++) {
-      const rx = cinX0 + 3.4 + row * 2.7;
+      const rx = cinX0 + 3.6 + row * 2.7;
       for (let seat = 0; seat < 8; seat++) {
         const sz2 = -7 + seat * 2;
-        const seatColor = [0xe74c3c, 0x3498db, 0xe67e22, 0x16a085][row];
-        B(1.1, 0.55, 1, seatColor, rx, 0.35, sz2, 0);
-        B(0.25, 0.9, 1, seatColor, rx + 0.5, 0.8, sz2, 0);
+        const sc = [0xe74c3c, 0x3498db, 0xe67e22, 0x16a085][row];
+        B(1.1, 0.55, 1, sc, rx, 0.35, sz2, 0);
+        B(0.25, 0.9, 1, sc, rx + 0.5, 0.8, sz2, 0);
       }
       colp(rx, -5.3, 1.5, 10.8); colp(rx, 5.3, 1.5, 10.8);
     }
-    B(1.6, 1, 1.6, 0x2c1f38, -6.4, FH - 0.5, 0, 0);
-    const projL = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.2, 0.5, 8), mat(0xffffff, 0xffffff, 1));
-    projL.rotation.z = Math.PI/2; projL.position.set(bx - 5.6, F + FH - 0.5, bz); add(projL);
-    addInteriorSign('🍿 КИНОТЕАТР FANTAZIA', bx - 7.2, F + FH - 0.45, bz, add);
-    const posters = ['🚀 КОСМОС', '🐉 ДРАКОН', '💞 ЛЮБОВЬ'];
-    posters.forEach((ptxt, pi) => {
-      const pt = nzCanvas(128, 192, (g, w, h) => {
-        g.fillStyle = ['#8e44ad', '#c0392b', '#d35400'][pi]; g.fillRect(0, 0, w, h);
-        g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(8, 8, w-16, h*0.55);
-        g.fillStyle = '#fff'; g.font = 'bold 22px Arial'; g.textAlign = 'center';
-        g.fillText(ptxt.split(' ')[1] || ptxt, w/2, h*0.38);
-        g.font = '14px Arial'; g.fillText('БИЛЕТЫ НА 1 ЭТАЖЕ', w/2, h - 16);
-      });
-      const poster = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 2.2), new THREE.MeshBasicMaterial({ map: pt }));
-      poster.position.set(bx - 6.9, F + 2.2, bz - 12 + pi * 4);
-      poster.rotation.y = Math.PI/2; add(poster);
-    });
+    addInteriorSign('🍿 КИНОТЕАТР', bx - 6, F + FH - 0.5, bz, add);
     spawnInteriorNPC(bx - 8.6, F, bz, 'clerk', add);
-    // 🌟 Аллея славы вдоль прохода (x=2.5)
     for (let k = 0; k < 15; k++) {
       const star = new THREE.Mesh(new THREE.CircleGeometry(0.45, 5), mat(0xd8b04a, 0xffd700, 0.35));
       star.rotation.x = -Math.PI / 2; star.rotation.z = k * 0.4;
       star.position.set(bx + 2.5, F + 0.04, bz - 14 + k * 2); add(star);
     }
-    const sl = new THREE.PointLight(0xffd700, 0.6, 10);
-    sl.position.set(bx + 2.5, F + 2.5, bz); sl.userData = { isClubLight: true, phase: 2 }; add(sl);
   }
 
-  // ═══ 🪑 ОБЩАЯ МЕБЕЛЬ: скамейки между колоннами + растения (БЕЗ конфликтов) ═══
-  const benchXs = floor === 2 ? [7.5] : [-7.5, 7.5];
-  benchXs.forEach(bxk => {
-    [-9, 9].forEach(zk => {
-      const ry = zk > 0 ? Math.PI : 0;
-      B(2.6, 0.12, 0.7, 0x8a6a4a, bxk, 0.5, zk, ry);
-      B(2.6, 0.55, 0.12, 0x8a6a4a, bxk, 0.28, zk + (zk > 0 ? -0.3 : 0.3), ry);
-      B(0.12, 0.5, 0.6, 0x39424e, bxk - 1, 0.25, zk, ry); B(0.12, 0.5, 0.6, 0x39424e, bxk + 1, 0.25, zk, ry);
-      colp(bxk, zk, 2.8, 0.9);
-    });
-  });
-  // растения у колонн (на 3 этаже не ставим внутрь кинозала x<-7)
-  const plantXs = floor === 0 ? [-10, 0, 10] : (floor === 2 ? [0, 15, -4] : [-15, 0, 15]);
-  plantXs.forEach(px => {
-    [-11.2, 11.2].forEach(pz => {
-      B(0.75, 0.55, 0.75, 0xa8703d, px, 0.28, pz, 0);
-      const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.75, 8, 7), mat(0x2d6b1e));
-      leaf.position.set(bx + px, F + 1.15, bz + pz); leaf.scale.y = 1.4; add(leaf);
-      colp(px, pz, 0.9, 0.9);
-    });
-  });
+  // ═══ скамейки + растения ═══
+  [-7.5, 7.5].forEach(bxk => [-9, 9].forEach(zk => {
+    const ry = zk > 0 ? Math.PI : 0;
+    B(2.6, 0.12, 0.7, 0x8a6a4a, bxk, 0.5, zk, ry);
+    B(2.6, 0.55, 0.12, 0x8a6a4a, bxk, 0.28, zk + (zk > 0 ? -0.3 : 0.3), ry);
+    colp(bxk, zk, 2.8, 0.9);
+  }));
+  (floor === 2 ? [0, 15] : [-10, 0, 10]).forEach(px => [-11.2, 11.2].forEach(pz => {
+    B(0.75, 0.55, 0.75, 0xa8703d, px, 0.28, pz, 0);
+    const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.75, 8, 7), mat(0x2d6b1e));
+    leaf.position.set(bx + px, F + 1.15, bz + pz); leaf.scale.y = 1.4; add(leaf);
+    colp(px, pz, 0.9, 0.9);
+  }));
 }
 function spawnInteriorNPC(x, floorY, z, role, add) {
   const shirtC = { shopper:0xe74c3c, guard:0x1a3a6e, clerk:0x8e44ad, chef:0xffffff };
@@ -14369,7 +14300,7 @@ function changeFloor(delta) {
     return;
   }
   currentFloor = newFloor;
-  const FH = 3.5;
+  const FH = interiorFH();
   localPlayer.mesh.position.set(INTERIOR_BASE.x, currentFloor * FH + 0.01, INTERIOR_BASE.z);
   buildInterior(currentBuildingType);
   document.getElementById('floorIndicator').textContent = `🏬 Этаж ${currentFloor + 1} / ${maxFloors}`;
@@ -14409,7 +14340,7 @@ function animate(timestamp) {
   if (sittingOn && (keys['KeyW'] || keys['KeyA'] || keys['KeyS'] || keys['KeyD'] || keys['Space'])) {
     standUpFromSeat();
   }
-  if ((isPointerLocked || window.mobileReady || window.fzControlsReady || (localPlayer && localPlayer.isOffline)) && !currentDance && !sittingOn && !escalatorRide.active) {
+  if ((isPointerLocked || window.mobileReady || window.fzControlsReady || (localPlayer && localPlayer.isOffline)) && !currentDance && !sittingOn && !escalatorRide.active && !elevatorAnim.active) {
     const isSprint = keys['ShiftLeft'] || keys['ShiftRight'] || mobileSprintOn;
     const speed = isSprint ? CONFIG.SPRINT_SPEED : CONFIG.MOVE_SPEED;
 
@@ -14471,7 +14402,7 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
   } else if (!window.isAdminFly) {
     velocity.y -= CONFIG.GRAVITY;
     mesh.position.y += velocity.y;
-    const groundY = isInsideBuilding ? currentFloor * 3.5 : 0.035; // чуть выше дорожного полотна
+    const groundY = isInsideBuilding ? currentFloor * interiorFH() : 0.035; // чуть выше дорожного полотна
     if (mesh.position.y <= groundY) {
       mesh.position.y = groundY;
       velocity.y = 0;
@@ -14584,7 +14515,7 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
       }
       // ── Эскалаторы: ступени едут вдоль наклона ──
       if (o.userData && o.userData.isEscalator) {
-        const FHesc = 2.95, runE = MALL_ESC.zBottom - MALL_ESC.zTop; // заподлицо с полом следующего этажа
+        const FHesc = o.userData.rise || 2.95, runE = MALL_ESC.zBottom - MALL_ESC.zTop;
         const steps = o.userData.steps;
         for (let si = 0; si < steps.length; si++) {
           const st = steps[si];
@@ -17497,7 +17428,7 @@ function claimFPReward(r, isPlus, claimKey) {
   .fpp-row-label { font-size: 9px !important; }
 }
 </style>
-<script src="update_script.js?v=219"></script>
+<script src="update_script.js?v=220"></script>
 </body>
 
 <script>
