@@ -49,7 +49,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Fantazia RP 3D · v2.10</title>
+<title>Fantazia RP 3D · v2.11</title>
 <!-- ===== PWA MANIFEST (встроенный) ===== -->
 <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22Fantazia+RP+3D%22%2C%22short_name%22%3A%22Fantazia%22%2C%22description%22%3A%22Fantazia+RP+3D+%E2%80%94+%D0%BC%D0%BE%D0%B1%D0%B8%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+3D+%D0%B8%D0%B3%D1%80%D0%B0%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22fullscreen%22%2C%22orientation%22%3A%22landscape%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%236c5ce7%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABJQTFRFAAAAbEjiqqr%2F6%2BXz1s77////aoCa9AAAAARdFJlcAMEBQYHCJ%2BZAAAAsklEQVR42u3BMQEAAADCoPVP7WsIoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAMBuAABHwAAAABJRU5ErkJggg%3D%3D%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
 <meta name="theme-color" content="#6c5ce7">
@@ -2568,7 +2568,7 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
   </div>
 </div>
 
-<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v2.10</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v2.10 — ЧИСТЫЕ ДОРОГИ 🛣️</div>
+<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v2.11</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v2.11 — КВЕСТЫ · ПАРКОВКА · ЗЕБРЫ 🅿️</div>
 <script>setTimeout(function(){var t=document.getElementById('fzVerToast');if(t){t.style.transition='opacity 1s';t.style.opacity='0';setTimeout(function(){t.remove()},1100)}},6000)</script>
 
 <!-- ========== HUD ========== -->
@@ -2732,9 +2732,11 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
     </div>
     <div style="font-size:10px;color:#888;margin-top:5px;">Таймер ивента: <span id="questTimer" style="color:#ff9800;">...</span></div>
   </div>
-  <!-- Список заданий -->
-  <div style="font-size:12px;color:#aaa;margin-bottom:8px;letter-spacing:1px;">ЗАДАНИЯ</div>
-  <div id="questList" style="display:flex;flex-direction:column;gap:7px;"></div>
+  <!-- Список заданий (СКРОЛЛ) -->
+  <div style="font-size:12px;color:#aaa;margin-bottom:8px;letter-spacing:1px;">🥚 ЗАДАНИЯ ИВЕНТА</div>
+  <div id="questList" style="display:flex;flex-direction:column;gap:7px;max-height:26vh;overflow-y:auto;padding-right:4px;"></div>
+  <div style="font-size:12px;color:#4dc3ff;margin:12px 0 8px;letter-spacing:1px;">🏙️ ГОРОДСКИЕ КВЕСТЫ</div>
+  <div id="cityQuestList" style="display:flex;flex-direction:column;gap:7px;max-height:34vh;overflow-y:auto;padding-right:4px;"></div>
 </div>
 
 <!-- ========== FANTAZIA PASS PANEL ========== -->
@@ -3267,11 +3269,11 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
 </div>
 
 <!-- ========== СКРИПТЫ ========== -->
-<script src="/socket.io/socket.io.js?v=210"></script>
-<script src="assets/three.min.js?v=210"></script>
+<script src="/socket.io/socket.io.js?v=211"></script>
+<script src="assets/three.min.js?v=211"></script>
 <script>if (!window.THREE) document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\\/script>');</script>
 <!-- ===== НОВАЯ 3D-МОДЕЛЬ ИГРОКА (после Three.js!) ===== -->
-<script src="assets/fantazia-player.js?v=210"></script>
+<script src="assets/fantazia-player.js?v=211"></script>
 <script>
 /*!
  * ============================================================
@@ -4564,6 +4566,7 @@ function startEscalatorRide(dir) {
 
   const duration = 3.4;
   let elapsed = 0;
+  if (window.fzQP) window.fzQP('escalator', 1);
   showNotification(dir > 0 ? '🛗 Едем вверх...' : '🛗 Едем вниз...', 'info');
 
   const iv = setInterval(() => {
@@ -5397,14 +5400,22 @@ function buildFantaziaCityV3() {
       plane(4, 0.35, i, off, NZ.line, 0.02);
     });
   }
-  // зебры на главных перекрёстках
-  [ -150, 0, 150 ].forEach(cx => {
-    [ -150, 0, 150 ].forEach(cz => {
-      if (cx === 0 && cz === 0) return; // площадь без зебры
-      for (let s = -4; s <= 4; s++) {
-        plane(0.7, 3.2, cx + s*1.1, cz + 9.5, NZ.zebra, 0.02);
-        plane(3.2, 0.7, cx + 9.5, cz + s*1.1, NZ.zebra, 0.02);
-      }
+  // 🦓 ЗЕБРЫ на ВСЕХ перекрёстках сетки (текстура — 1 плоскость на переход)
+  const zebraTex = nzCanvas(64, 32, (g) => {
+    g.fillStyle = '#dadce0'; g.fillRect(0, 0, 64, 32);
+    g.fillStyle = '#2e2e34';
+    for (let i = 0; i < 8; i++) g.fillRect(i * 8, 0, 4, 32);
+  });
+  const zebraMat = new THREE.MeshBasicMaterial({ map: zebraTex });
+  [-150, -100, -50, 0, 50, 100, 150].forEach(cx => {
+    [-150, -100, -50, 0, 50, 100, 150].forEach(cz => {
+      if (cx === 0 && cz === 0) return;
+      plane(9, 3.2, cx, cz + 9.5, zebraMat, 0.022);
+      plane(9, 3.2, cx, cz - 9.5, zebraMat, 0.022);
+      const zv = new THREE.Mesh(new THREE.PlaneGeometry(9, 3.2), zebraMat);
+      zv.rotation.x = -Math.PI/2; zv.rotation.z = Math.PI/2;
+      zv.position.set(cx - 9.5, 0.022, cz); scene.add(zv);
+      const zv2 = zv.clone(); zv2.position.x = cx + 9.5; scene.add(zv2);
     });
   });
 
@@ -5478,8 +5489,8 @@ function buildFantaziaCityV3() {
   ];
   towers.forEach(([x, z, w, d, h, st]) => nzTower(x, z, w, d, h, st));
   // банк — входной
-  createBuilding(-27.8, -122.6, 14, 22, 12, 0x1c2e40, '🏦 ФАНТА-БАНК', 'bank');
-  createBuilding(-28.8, -80, 12, 30, 10, 0x2c3e50, '🏢 ОФИСНАЯ БАШНЯ', 'office');
+  createBuilding(-37, -131.2, 14, 22, 12, 0x1c2e40, '🏦 ФАНТА-БАНК', 'bank');
+  createBuilding(-14.2, -81.6, 12, 30, 10, 0x2c3e50, '🏢 ОФИСНАЯ БАШНЯ', 'office');
 
   // ── 4. СТАРЫЙ ГОРОД (ЮВ) ──
   const oldPal = [
@@ -5495,8 +5506,8 @@ function buildFantaziaCityV3() {
   ];
   oldHouses.forEach(([x, z, r, pi], idx) => nzHouse(x, z, r, { ...oldPal[pi], name: '🏡 Старый дом ' + (idx+1) }));
   // кофейня и ресторан — входные
-  nzHouse(120, 74, -Math.PI/2, { ...oldPal[0], name: '🍽️ ЛАСТОЧКА', type: 'restaurant', awning: 0xc0392b });
-  nzHouse(76.2, 117.7, Math.PI/2, { ...oldPal[2], name: '🎤 ЗОЛОТОЙ ГОЛОС', type: 'karaoke' });
+  nzHouse(120, 75.9, -Math.PI/2, { ...oldPal[0], name: '🍽️ ЛАСТОЧКА', type: 'restaurant', awning: 0xc0392b });
+  nzHouse(76.2, 122.9, Math.PI/2, { ...oldPal[2], name: '🎤 ЗОЛОТОЙ ГОЛОС', type: 'karaoke' });
   // кафе-столики на улице
   for (let i = 0; i < 4; i++) {
     const tbl = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.08, 10), NZ.stone);
@@ -5512,12 +5523,12 @@ function buildFantaziaCityV3() {
   }
 
   // ── 5. СПАЛЬНЫЙ РАЙОН (СВ) ──
-  nzBlock(70, -70, 0, 9, '#b0b8a8', '🏢 ЖК ЗАРЯ', 'apartment');
-  nzBlock(128.7, -70, 0, 7, '#a8b4c2', '🏢 ЖК ЛУГОВОЙ', 'apartment');
-  nzBlock(70, -110, 0, 8, '#c2b4a8', '🏢 ЖК ПАРУС', 'apartment');
-  nzBlock(128.7, -110, 0, 9, '#b4c2b0', '🏢 ЖК ВОЛНА', 'apartment');
+  nzBlock(70, -66.8, 0, 9, '#b0b8a8', '🏢 ЖК ЗАРЯ', 'apartment');
+  nzBlock(118.7, -66.3, 0, 7, '#a8b4c2', '🏢 ЖК ЛУГОВОЙ', 'apartment');
+  nzBlock(70, -110.8, 0, 8, '#c2b4a8', '🏢 ЖК ПАРУС', 'apartment');
+  nzBlock(128.7, -110.4, 0, 9, '#b4c2b0', '🏢 ЖК ВОЛНА', 'apartment');
   createBuilding(88, -32.3, 16, 5, 12, 0xFFF3C4, '🏫 ШКОЛА №7', 'office');
-  createBuilding(120, -32.3, 10, 5, 8, 0x81C784, '🛒 ПРОДУКТЫ 24', 'shop_food');
+  createBuilding(122, -32.3, 10, 5, 8, 0x81C784, '🛒 ПРОДУКТЫ 24', 'shop_food');
   createBuilding(27.8, -31.8, 14, 6, 10, 0xdfe6ec, '🏥 ПОЛИКЛИНИКА', 'hospital');
   // детская площадка
   const pg = new THREE.Group();
@@ -5604,7 +5615,7 @@ function buildFantaziaCityV3() {
   // ── 7. РАЗВЛЕЧЕНИЯ (ЮВ угол: у старого города) ──
   createBuilding(25.8, 29.8, 18, 10, 14, 0x8E44AD, '🎵 CLUB NEON', 'club');
   createBuilding(27.3, 75, 15, 10, 12, 0x2C3E50, '🎬 КИНО ЛУНА', 'cinema');
-  createBuilding(125, 30.8, 12, 8, 10, 0xD35400, '🏋️ ЖЕЛЕЗНЫЙ ЗАЛ', 'gym');
+  createBuilding(125, 32.8, 12, 8, 10, 0xD35400, '🏋️ ЖЕЛЕЗНЫЙ ЗАЛ', 'gym');
 
   // ── 8. БУЛЬВАР на проспекте x=0: газон, деревья, лавочки ──
   const median = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 200), NZ.grass);
@@ -5670,29 +5681,29 @@ function buildFantaziaCityV3() {
     createBuilding(-36 + i * 14.5, 68, 10, 6, 8, cotC2[i % 8], '🏡 Коттедж ' + (100 + i), 'house');
     createBuilding(-36 + i * 14.5, 82, 10, 6, 8, cotC2[(i + 3) % 8], '🏡 Коттедж ' + (110 + i), 'house');
   }
-  nzBlock(21.7, 122, 0, 6, '#b8c4b0', '🏢 ЖК СЕВЕРНАЯ ЗВЕЗДА', 'apartment');
+  nzBlock(21.7, 113.6, 0, 6, '#b8c4b0', '🏢 ЖК СЕВЕРНАЯ ЗВЕЗДА', 'apartment');
   // Южная полоса: ЖК + дома
-  nzBlock(-28, -76, 0, 8, '#c2b8a8', '🏢 ЖК ЮЖНЫЙ', 'apartment');
+  nzBlock(-30.5, -40, 0, 8, '#c2b8a8', '🏢 ЖК ЮЖНЫЙ', 'apartment');
   nzBlock(28, -76, 0, 6, '#a8bac2', '🏢 ЖК МОРСКОЙ', 'apartment');
   for (let i = 0; i < 6; i++) {
     createBuilding(-36 + i * 14.5, -110, 10, 6, 8, cotC2[(i + 5) % 8], '🏡 Дом ' + (200 + i), 'house');
   }
   createBuilding(16.2, -120, 16, 5, 12, 0xFFD54F, '🏫 ГИМНАЗИЯ', 'office');
-  createBuilding(-60, -120, 10, 5, 8, 0xFF8A65, '🥐 ПЕКАРНЯ', 'shop_food');
-  createBuilding(60, -120, 12, 6, 10, 0xAED581, '🏥 ДЕТСКАЯ БОЛЬНИЦА', 'hospital');
+  createBuilding(-58.6, -120, 10, 5, 8, 0xFF8A65, '🥐 ПЕКАРНЯ', 'shop_food');
+  createBuilding(60, -121, 12, 6, 10, 0xAED581, '🏥 ДЕТСКАЯ БОЛЬНИЦА', 'hospital');
   // Западная полоса: дома + офисы
   nzBlock(-80, -22, Math.PI/2, 7, '#b0bac8', '🏢 ЖК ЗАКАТНЫЙ', 'apartment');
   nzBlock(-80, 26, Math.PI/2, 9, '#c0b0c8', '🏢 ЖК ЛУННЫЙ', 'apartment');
   for (let i = 0; i < 4; i++) {
     createBuilding(-64, 9 + i * 9, 9, 5, 8, cotC2[(i + 2) % 8], '🏡 Таунхаус ' + (300 + i), 'house');
   }
-  createBuilding(-110, 82.2, 12, 14, 10, 0x5D6D7E, '🏢 БИЗНЕС-ЦЕНТР АЛЬФА', 'office');
-  createBuilding(-110, 90, 12, 10, 10, 0x34495E, '🏢 БИЗНЕС-ЦЕНТР БЕТА', 'office');
+  createBuilding(-110, 78.4, 12, 14, 10, 0x5D6D7E, '🏢 БИЗНЕС-ЦЕНТР АЛЬФА', 'office');
+  createBuilding(-110, 91.2, 12, 10, 10, 0x34495E, '🏢 БИЗНЕС-ЦЕНТР БЕТА', 'office');
   // Восточная полоса: ещё дома
   for (let i = 0; i < 5; i++) {
     createBuilding(66, -36 + i * 12, 9, 5, 8, cotC2[(i + 6) % 8], '🏡 Вилла ' + (400 + i), 'house');
   }
-  createBuilding(90, 30, 12, 8, 10, 0x7F8C8D, '🏢 ДОМ МЕЧТЫ', 'apartment');
+  createBuilding(121, 24.2, 12, 8, 10, 0x7F8C8D, '🏢 ДОМ МЕЧТЫ', 'apartment');
 
   // ── 15. ПАРК: улучшаем (деревья, фонари, клумбы, качели, киоск) ──
   // дополнительные деревья по всему парку
@@ -6035,11 +6046,7 @@ function buildRoads() {
 }
 
 function buildCentralPlaza() {
-  // Площадь (мощение) — фонтан и лавочки убраны по просьбе игрока
-  const plazaGeo = new THREE.CircleGeometry(20, 32);
-  const plazaMat = new THREE.MeshLambertMaterial({ color: 0xD4A574 });
-  const plaza = new THREE.Mesh(plazaGeo, plazaMat);
-  plaza.rotation.x = -Math.PI/2; plaza.position.y = 0.02; scene.add(plaza);
+  // Круг-мощение УБРАН с дороги по просьбе игрока (проспекты x=0/z=0 свободны)
 
   // массив частиц оставляем пустым (цикл анимации на него ссылается)
   window.fountainParticles = [];
@@ -6239,6 +6246,7 @@ function buildGrandMall() {
     const l = new THREE.Mesh(new THREE.BoxGeometry(0.8,0.8,0.8), new THREE.MeshLambertMaterial({color:0xffeeaa, emissive:0xffeeaa}));
     l.position.set(MX + (i-3)*12, MH/2 + 2, MZ + (i%2===0?10:-10)); scene.add(l);
   }
+  buildParkingLot();
   spawnCarsInParking();
   const mallGroup = new THREE.Group(); scene.add(mallGroup);
   buildMallInteriorWorld(scene, mallGroup);
@@ -6429,11 +6437,11 @@ function spawnMallNPCs(cx, cz) {
 }
 
 function buildResidentialArea() {
-  createBuilding(80, 70, 16, 24, 12, 0x7F8C8D, '🏢 ДОМ АВРОРА', 'apartment');
-  createBuilding(80, 115.2, 16, 20, 12, 0x95A5A6, '🏢 ДОМ БРИЗ', 'apartment');
-  createBuilding(132.2, 70, 14, 18, 10, 0x636E72, '🏢 ДОМ ВОСХОД', 'apartment');
-  createBuilding(132.2, 116.2, 14, 22, 10, 0x546E7A, '🏢 ДОМ ГОРИЗОНТ', 'apartment');
-  createBuilding(80, 82, 16, 28, 12, 0x607D8B, '🏢 ДОМ ДЕЛЬФИН', 'apartment');
+  createBuilding(62, 118.2, 16, 24, 12, 0x7F8C8D, '🏢 ДОМ АВРОРА', 'apartment');
+  createBuilding(62.9, 85.2, 16, 20, 12, 0x95A5A6, '🏢 ДОМ БРИЗ', 'apartment');
+  createBuilding(132.2, 80.5, 14, 18, 10, 0x636E72, '🏢 ДОМ ВОСХОД', 'apartment');
+  createBuilding(132.2, 115, 14, 22, 10, 0x546E7A, '🏢 ДОМ ГОРИЗОНТ', 'apartment');
+  createBuilding(80, 80.8, 16, 28, 12, 0x607D8B, '🏢 ДОМ ДЕЛЬФИН', 'apartment');
   createBuilding(110, 130, 12, 20, 10, 0x455A64, '🏢 ДОМ ЗЕНИТ', 'apartment');
   // Частные дома — вдали от дорог
   for (let i = 0; i < 4; i++) {
@@ -6448,38 +6456,38 @@ function buildResidentialArea() {
   // Детский сад
   createBuilding(124.8, 138, 14, 5, 12, 0xFFF9C4, '🧸 ДЕТСКИЙ САД', 'office');
   // Магазин продуктов в жилом квартале
-  createBuilding(80, 170.7, 10, 5, 8, 0x81C784, '🛒 ПРОДУКТЫ', 'shop_food');
+  createBuilding(80, 166.2, 10, 5, 8, 0x81C784, '🛒 ПРОДУКТЫ', 'shop_food');
   // NPC убраны для оптимизации
 }
 
 function buildEntertainmentDistrict() {
-  createBuilding(75, -75, 18, 8, 14, 0x8E44AD, '🎵 CLUB FANTAZIA', 'club');
-  createBuilding(75, -119.7, 16, 9, 12, 0xD35400, '🏋️ СПОРТЗАЛ', 'gym');
-  createBuilding(122.2, -75, 14, 10, 12, 0x2C3E50, '🎬 КИНО', 'cinema');
-  createBuilding(121.2, -118.7, 12, 7, 10, 0xC0392B, '🍽️ РЕСТОРАН', 'restaurant');
-  createBuilding(130, -75, 10, 7, 8, 0xE91E63, '🎤 КАРА-ОКЕ', 'karaoke');
+  createBuilding(75, -78.1, 18, 8, 14, 0x8E44AD, '🎵 CLUB FANTAZIA', 'club');
+  createBuilding(75, -122.6, 16, 9, 12, 0xD35400, '🏋️ СПОРТЗАЛ', 'gym');
+  createBuilding(116.4, -78.6, 14, 10, 12, 0x2C3E50, '🎬 КИНО', 'cinema');
+  createBuilding(119.7, -121.1, 12, 7, 10, 0xC0392B, '🍽️ РЕСТОРАН', 'restaurant');
+  createBuilding(127.6, -78.9, 10, 7, 8, 0xE91E63, '🎤 КАРА-ОКЕ', 'karaoke');
   createBuilding(75, -130, 18, 7, 14, 0xFF7043, '🎳 БОУЛИНГ', 'cinema');
   createBuilding(122.2, -130, 14, 6, 12, 0x5C6BC0, '🎱 БИЛЬЯРД', 'club');
-  createBuilding(130, -117.7, 10, 5, 8, 0xFFA726, '🍕 PIZZA 24/7', 'shop_food');
+  createBuilding(131.5, -120.2, 10, 5, 8, 0xFFA726, '🍕 PIZZA 24/7', 'shop_food');
   // NPC убраны для оптимизации
 }
 function buildBusinessDistrict() {
   // Небоскрёбы делового центра — вдали от центральных дорог
-  createBuilding(-90, -76.5, 12, 35, 12, 0x34495E, '🏦 БАНК', 'bank');
-  createBuilding(-115, -68.8, 10, 28, 10, 0x2C3E50, '🏢 ОФИС 1', 'office');
-  createBuilding(-70, -73, 10, 30, 10, 0x1A237E, '🏢 ОФИС 2', 'office');
-  createBuilding(-140, -90, 12, 32, 10, 0x263238, '🏢 БАШНЯ ЗАПАД', 'office');
-  createBuilding(-29.3, -79.8, 11, 26, 10, 0x1B2631, '🏢 PREMIUM CENTER', 'office');
+  createBuilding(-90, -78.7, 12, 35, 12, 0x34495E, '🏦 БАНК', 'bank');
+  createBuilding(-136, -118.1, 10, 28, 10, 0x2C3E50, '🏢 ОФИС 1', 'office');
+  createBuilding(-70, -79.4, 10, 30, 10, 0x1A237E, '🏢 ОФИС 2', 'office');
+  createBuilding(-135.8, -78.8, 12, 32, 10, 0x263238, '🏢 БАШНЯ ЗАПАД', 'office');
+  createBuilding(-39.3, -79.8, 11, 26, 10, 0x1B2631, '🏢 PREMIUM CENTER', 'office');
   // Полиция
-  createBuilding(-115, -65, 14, 8, 10, 0x0D47A1, '🚔 ПОЛИЦИЯ', 'job_police');
+  createBuilding(-115, -58, 14, 8, 10, 0x0D47A1, '🚔 ПОЛИЦИЯ', 'job_police');
   // Больница
-  createBuilding(-70, -65, 14, 10, 12, 0xFFFFFF, '🏥 БОЛЬНИЦА', 'job_doctor');
+  createBuilding(-70, -58.6, 14, 10, 12, 0xFFFFFF, '🏥 БОЛЬНИЦА', 'job_doctor');
   // Такси
-  createBuilding(-90, -65, 10, 6, 8, 0xF1C40F, '🚕 ТАКСИ', 'job_taxi');
+  createBuilding(-90, -57.4, 10, 6, 8, 0xF1C40F, '🚕 ТАКСИ', 'job_taxi');
   // Автосервис
-  createBuilding(-115.8, -65, 12, 7, 10, 0x607D8B, '🔧 АВТОСЕРВИС', 'job_mechanic');
+  createBuilding(-115.8, -66.3, 12, 7, 10, 0x607D8B, '🔧 АВТОСЕРВИС', 'job_mechanic');
   // Суд
-  createBuilding(-26.8, -65, 16, 12, 12, 0xECEFF1, '⚖️ СУД', 'office');
+  createBuilding(-26.8, -59.8, 16, 12, 12, 0xECEFF1, '⚖️ СУД', 'office');
   // Почта
   createBuilding(-173.2, -65, 10, 6, 8, 0xF57F17, '📮 ПОЧТА', 'office');
   // Мэрия
@@ -6540,11 +6548,11 @@ function buildPark() {
 
 function buildNorthernDistrict() {
   // Северный жилой район — z=120..160
-  createBuilding(30, 130, 16, 22, 12, 0x546E7A, '🏢 ДОМ СЕВЕР-1', 'apartment');
-  createBuilding(82.2, 130, 14, 18, 10, 0x607D8B, '🏢 ДОМ СЕВЕР-2', 'apartment');
-  createBuilding(90, 130, 12, 26, 10, 0x455A64, '🏢 ДОМ СЕВЕР-3', 'apartment');
+  createBuilding(30, 131.9, 16, 22, 12, 0x546E7A, '🏢 ДОМ СЕВЕР-1', 'apartment');
+  createBuilding(61.1, 165.8, 14, 18, 10, 0x607D8B, '🏢 ДОМ СЕВЕР-2', 'apartment');
+  createBuilding(89.9, 130, 12, 26, 10, 0x455A64, '🏢 ДОМ СЕВЕР-3', 'apartment');
   createBuilding(30, 175.2, 14, 14, 10, 0x78909C, '🏢 ДОМ ПОЛЯРНЫЙ', 'apartment');
-  createBuilding(84.2, 176.2, 18, 16, 12, 0x90A4AE, '🏢 ДОМ АРКТИКА', 'apartment');
+  createBuilding(84.2, 177.5, 18, 16, 12, 0x90A4AE, '🏢 ДОМ АРКТИКА', 'apartment');
   // Частные коттеджи
   createBuilding(-20, 120, 10, 6, 8,  0xA1887F, '🏡 Коттедж А', 'house');
   createBuilding(-20, 140, 10, 6, 8,  0x80CBC4, '🏡 Коттедж Б', 'house');
@@ -6560,7 +6568,7 @@ function buildNorthernDistrict() {
     createTree(75 + Math.random()*30, 145 + Math.random()*20);
   }
   // Школа — сдвинута восточнее (x=148), чтобы не пересекаться с ДОМ ЗЕНИТ (x=104-116)
-  createBuilding(126.8, 130, 22, 9, 16, 0xFFF176, '🏫 ШКОЛА №1', 'office');
+  createBuilding(126.8, 131.3, 22, 9, 16, 0xFFF176, '🏫 ШКОЛА №1', 'office');
   createBuilding(128.8, 177.7, 18, 7, 14, 0xFFE082, '📚 БИБЛИОТЕКА', 'office');
   // NPC на улице
   // NPC убраны для оптимизации
@@ -6568,10 +6576,10 @@ function buildNorthernDistrict() {
 
 function buildSouthernIndustrialZone() {
   // Промышленная зона — z=-120..-165 (сдвинута южнее, чтобы не пересекаться с бизнес-районом z=-65..-96)
-  createBuilding(-30.4, -122, 20, 12, 16, 0x546E7A, '🏭 ЗАВОД №1', 'office');
-  createBuilding(-70, -122, 18, 14, 14, 0x455A64, '🏭 ЗАВОД №2', 'office');
+  createBuilding(-30.4, -113.4, 20, 12, 16, 0x546E7A, '🏭 ЗАВОД №1', 'office');
+  createBuilding(-113.2, -164, 18, 14, 14, 0x455A64, '🏭 ЗАВОД №2', 'office');
   createBuilding(-86.8, -122, 16, 10, 14, 0x37474F, '🏭 СКЛАД', 'office');
-  createBuilding(-27.4, -129.8, 22, 16, 18, 0x263238, '🏗️ ПРОИЗВОДСТВО', 'office');
+  createBuilding(-18.2, -129.8, 22, 16, 18, 0x263238, '🏗️ ПРОИЗВОДСТВО', 'office');
   createBuilding(-75, -133.8, 14, 8, 12, 0x4E342E, '⚙️ МАСТЕРСКАЯ', 'job_mechanic');
   createBuilding(-120.2, -134.8, 10, 6, 10, 0x33691E, '🚚 ГАРАЖ', 'job_mechanic');
   // Трубы заводов
@@ -6597,14 +6605,14 @@ function buildSouthernIndustrialZone() {
 
 function buildEasternDistrict() {
   // Восточный деловой район — x=100..140
-  createBuilding(110, -25, 12, 34, 12, 0x1A237E, '🏢 БАШНЯ ВОСТОК', 'office');
+  createBuilding(110.2, -26.6, 12, 34, 12, 0x1A237E, '🏢 БАШНЯ ВОСТОК', 'office');
   createBuilding(110,  10, 10, 32, 10, 0x283593, '🏢 БИЗНЕС-ЦЕНТР E1', 'office');
-  createBuilding(130, -68, 10, 28, 10, 0x1565C0, '🏢 ОФИС ПЛАЗА', 'office');
+  createBuilding(138, -69.2, 10, 28, 10, 0x1565C0, '🏢 ОФИС ПЛАЗА', 'office');
   createBuilding(130,  10, 12, 22, 10, 0x0D47A1, '🏢 TECH TOWER', 'office');
   // Восточный торговый ряд
   createBuilding(113,  40, 14, 7, 10, 0xF57F17, '🍔 ФАСТ-ФУД', 'shop_food');
   createBuilding(130,  40, 12, 7, 10, 0x1B5E20, '☕ КОФЕЙНЯ', 'shop_food');
-  createBuilding(133.2, 60, 16, 8, 12, 0x880E4F, '🎮 GAME CLUB', 'cinema');
+  createBuilding(115.2, 58, 16, 8, 12, 0x880E4F, '🎮 GAME CLUB', 'cinema');
   createBuilding(130,  60, 14, 9, 10, 0x311B92, '🃏 КАЗИНО', 'club');
   // Стадион
   const stadiumBase = new THREE.Mesh(new THREE.CylinderGeometry(22,22,4,32),
@@ -6807,15 +6815,15 @@ function buildDesert() {
 function buildCaves() {
   // Тёмная скалистая земля
   const rockMat = new THREE.MeshLambertMaterial({ color: 0x3a3a3a });
-  const rockGround = new THREE.Mesh(new THREE.PlaneGeometry(200,200), rockMat);
+  const rockGround = new THREE.Mesh(new THREE.PlaneGeometry(140,140), rockMat);
   rockGround.rotation.x = -Math.PI/2;
-  rockGround.position.set(-200, 0.05, 200);
+  rockGround.position.set(-230, 0.05, 230);
   scene.add(rockGround);
 
-  // Скалы
+  // Скалы (перенесены прочь от дорог — дороги чистые)
   for (let i = 0; i < 20; i++) {
-    const rx = -140 - Math.random()*120;
-    const rz = 140 + Math.random()*120;
+    const rx = -180 - Math.random()*110;
+    const rz = 175 + Math.random()*110;
     const rs = 3 + Math.random()*8;
     const rock = new THREE.Mesh(
       new THREE.DodecahedronGeometry ? new THREE.DodecahedronGeometry(rs) : new THREE.SphereGeometry(rs,5,4),
@@ -6826,7 +6834,7 @@ function buildCaves() {
 
   // Входы в пещеры (арки из камней)
   const caveEntrances = [
-    [-160, 160], [-200, 180], [-175, 220], [-230, 160]
+    [-178, 178], [-200, 195], [-195, 225], [-240, 180]
   ];
   caveEntrances.forEach(([cx, cz], idx) => {
     // Арка
@@ -7345,18 +7353,41 @@ function createCar(type, x, z) {
 }
 
 function spawnCarsInParking() {
-  // Mall parking
-  const types = ['sedan','sport','suv','taxi','limo','coupe','pickup','van'];
-  types.forEach((t,i) => {
-    const px = 10 - 24 + i*6.5;
-    createCar(t, px, -78);
+  // 🅿️ ВСЕ машины — на новой парковке у площади (два ряда)
+  const row1 = ['sedan','sport','suv','taxi','limo','coupe','pickup'];
+  const row2 = ['van','sedan','suv','taxi','police','truck'];
+  row1.forEach((t, i) => createCar(t, 59.5 + i * 6, 26));
+  row2.forEach((t, i) => createCar(t, 62.5 + i * 6, 38));
+}
+
+function buildParkingLot() {
+  // Асфальт 40×28 + заезд с проспекта z=50
+  const asMat = new THREE.MeshLambertMaterial({ color: 0x2b2b31 });
+  const as = new THREE.Mesh(new THREE.PlaneGeometry(40, 28), asMat);
+  as.rotation.x = -Math.PI/2; as.position.set(76, 0.015, 32); scene.add(as);
+  const dr = new THREE.Mesh(new THREE.PlaneGeometry(8, 10), asMat);
+  dr.rotation.x = -Math.PI/2; dr.position.set(76, 0.015, 50); scene.add(dr);
+  // Разметка мест
+  const lineMat = new THREE.MeshBasicMaterial({ color: 0xE8E8E0 });
+  for (let i = 0; i <= 7; i++) {
+    [21.5, 42.5].forEach(lz => {
+      const ln = new THREE.Mesh(new THREE.PlaneGeometry(0.25, 10.5), lineMat);
+      ln.rotation.x = -Math.PI/2; ln.position.set(56.5 + i * 6, 0.03, lz); scene.add(ln);
+    });
+  }
+  // Центральный проезд
+  const mid = new THREE.Mesh(new THREE.PlaneGeometry(0.35, 26), new THREE.MeshBasicMaterial({ color: 0xF1C40F }));
+  mid.rotation.x = -Math.PI/2; mid.position.set(76, 0.03, 32); scene.add(mid);
+  // Знак 🅿️
+  const signTex = nzCanvas(128, 128, (g) => {
+    g.fillStyle = '#1a5fd0'; g.beginPath(); g.arc(64, 64, 60, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#fff'; g.font = 'bold 74px Arial'; g.textAlign = 'center'; g.fillText('P', 64, 90);
   });
-  // Street cars
-  createCar('sedan', 20, 10);
-  createCar('suv',   -20, -10);
-  createCar('taxi',  30, -5);
-  createCar('police', -30, 5);
-  createCar('truck', 0, 30);
+  const sign = new THREE.Mesh(new THREE.CircleGeometry(1.1, 20), new THREE.MeshBasicMaterial({ map: signTex }));
+  sign.position.set(56, 4.4, 18); scene.add(sign);
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 4.4, 6), new THREE.MeshLambertMaterial({ color: 0x555555 }));
+  pole.position.set(56, 2.2, 18); scene.add(pole);
+  nzLamps([{ x: 58, z: 46 }, { x: 94, z: 46 }]);
 }
 
 function renderCarsModal() {
@@ -7403,6 +7434,7 @@ function handleCarInteraction() {
 
 function enterCar(car) {
   localCar = car;
+  if (window.fzQP) window.fzQP('car', 1);
   carSpeed = 0;
   carSteerAngle = 0;
   // Скрываем персонажа — он теперь сидит внутри машины как клон
@@ -7739,6 +7771,7 @@ function renderAccessoriesGrid(gridId, itemsList) {
         document.getElementById('coinsDisplay').textContent = localCoins;
         document.getElementById('skinPreviewCoins').textContent = localCoins;
         ownedAccessories.add(acc.id);
+        if (window.fzQP) window.fzQP(FZ_JEWELRY.has(acc.id) ? 'jewelry' : 'buy', 1);
         showNotification(`Куплено: ${acc.name}!`, 'success');
       }
       equippedAccessory = acc.id;
@@ -8037,6 +8070,7 @@ function applySkinEditor() {
     blush:  (document.getElementById('seBlushOn')  && document.getElementById('seBlushOn').checked)  ? document.getElementById('seBlush').value  : null
   };
   applyMakeup(mesh, mkApply);
+  if (window.fzQP && (mkApply.shadow || mkApply.blush)) window.fzQP('makeup', 1);
 
   // Update server
   const newAppearance = {
@@ -10075,6 +10109,7 @@ function addChatMessage(msg) {
 // =================== ТАНЦЫ ===================
 function doDance(type) {
   currentDance = type;
+  if (window.fzQP) { window.fzQP('dance', 1); if (type === 'wave') window.fzQP('wave', 1); }
   if (localPlayer) localPlayer.currentAnimation = 'dance';
   socket.emit('startDance', type);
 
@@ -13565,6 +13600,7 @@ function addInteriorSign(text, x, y, z, add) {
 
 function enterBuilding(buildingType, buildingName) {
   if (isInsideBuilding) return;
+  if (window.fzQP) { window.fzQP('enter', 1); if (buildingType === 'mall') window.fzQP('mall', 1); }
   const cfg = INTERIOR_CONFIGS[buildingType] || INTERIOR_CONFIGS.office;
   isInsideBuilding = true;
   currentBuildingType = buildingType;
@@ -13713,6 +13749,7 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
       // Поворот персонажа в сторону движения
       const angle = Math.atan2(direction.x, direction.z);
       mesh.rotation.y = angle;
+      if (window.fzQP) window.fzQP('walk', speed * (delta || 0.016));
       localPlayer.currentAnimation = isSprint ? 'run' : 'walk';
     } else {
       localPlayer.currentAnimation = 'idle';
@@ -13722,6 +13759,7 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
     if (keys['Space'] && isGrounded) {
       velocity.y = CONFIG.JUMP_FORCE;
       isGrounded = false;
+      if (window.fzQP) window.fzQP('jump', 1);
     }
     // ── ADMIN FLY MODE ──
     if (window.isAdminFly) {
@@ -14994,6 +15032,66 @@ function updateQuestsPanel() {
     `;
     list.appendChild(div);
   });
+  renderCityQuests();
+}
+
+// ═══ 🏙️ ГОРОДСКИЕ КВЕСТЫ (всегда активны) ═══
+const CITY_QUESTS = [
+  { id:'cj1',  key:'jump',      target:10,  label:'Прыгнуть 10 раз',            reward:'🪙 50',  coins:50 },
+  { id:'cj2',  key:'jump',      target:50,  label:'Прыгнуть 50 раз',            reward:'🪙 200', coins:200 },
+  { id:'cj3',  key:'dance',     target:5,   label:'Станцевать 5 раз',           reward:'🪙 60',  coins:60 },
+  { id:'cj4',  key:'wave',      target:3,   label:'Помахать рукой 3 раза',      reward:'🪙 40',  coins:40 },
+  { id:'cj5',  key:'walk',      target:500, label:'Пройти 500 м пешком',        reward:'🪙 80',  coins:80, isMeters:true },
+  { id:'cj6',  key:'walk',      target:2500,label:'Пройти 2500 м пешком',       reward:'🪙 300', coins:300, isMeters:true },
+  { id:'cj7',  key:'car',       target:1,   label:'Сесть в машину',             reward:'🪙 100', coins:100 },
+  { id:'cj8',  key:'car',       target:10,  label:'Покататься 10 раз',          reward:'🪙 250', coins:250 },
+  { id:'cj9',  key:'mall',      target:1,   label:'Сходить в GRAND MALL 🛍️',    reward:'🪙 100', coins:100 },
+  { id:'cj10', key:'enter',     target:5,   label:'Зайти в 5 зданий',           reward:'🪙 120', coins:120 },
+  { id:'cj11', key:'buy',       target:1,   label:'Купить аксессуар',           reward:'🪙 80',  coins:80 },
+  { id:'cj12', key:'jewelry',   target:1,   label:'Купить ювелирку 💎',         reward:'🪙 120', coins:120 },
+  { id:'cj13', key:'makeup',    target:1,   label:'Сделать макияж 💄',          reward:'🪙 60',  coins:60 },
+  { id:'cj14', key:'escalator', target:2,   label:'Прокатиться на эскалаторе 🛗',reward:'🪙 80', coins:80 },
+];
+window.fzQP = function(key, inc) {
+  try {
+    const k = 'fz_cq_' + key;
+    const v = parseFloat(localStorage.getItem(k) || '0') + (inc || 1);
+    localStorage.setItem(k, String(Math.round(v * 10) / 10));
+    if (document.getElementById('cityQuestList')) renderCityQuests();
+  } catch (e) {}
+};
+function fzQPV(key) { return parseFloat(localStorage.getItem('fz_cq_' + key) || '0') || 0; }
+function renderCityQuests() {
+  const list = document.getElementById('cityQuestList');
+  if (!list) return;
+  list.innerHTML = '';
+  CITY_QUESTS.forEach(q => {
+    const prog = Math.min(fzQPV(q.key), q.target);
+    const done = prog >= q.target;
+    const claimed = localStorage.getItem('fz_cqc_' + q.id) === '1';
+    const div = document.createElement('div');
+    div.style.cssText = 'background:rgba(77,195,255,0.06);border:1px solid rgba(77,195,255,0.2);border-radius:10px;padding:8px 12px;display:flex;align-items:center;gap:10px;';
+    div.innerHTML = `
+      <div style="flex:1">
+        <div style="font-size:13px;color:${done ? '#4dc3ff' : '#ccc'};font-weight:${done ? 'bold' : 'normal'}">${done ? '✅' : '⬜'} ${q.label}</div>
+        <div style="font-size:11px;color:#888;margin-top:2px">Награда: ${q.reward}</div>
+        <div style="height:5px;background:rgba(255,255,255,0.08);border-radius:3px;margin-top:6px;overflow:hidden;">
+          <div style="height:100%;width:${(prog / q.target) * 100}%;background:linear-gradient(90deg,#1976d2,#4dc3ff);border-radius:3px;"></div>
+        </div>
+        <div style="font-size:10px;color:#888;margin-top:3px">${q.isMeters ? Math.round(prog) + 'м' : Math.floor(prog) + '/' + q.target}</div>
+      </div>
+      ${done && !claimed ? `<button onclick="claimCityQuest('${q.id}',${q.coins})" style="padding:5px 10px;border-radius:7px;border:none;background:linear-gradient(135deg,#1976d2,#4dc3ff);color:#fff;font-size:11px;font-weight:bold;cursor:pointer;white-space:nowrap;">Забрать!</button>` : ''}
+      ${claimed ? '<span style="font-size:11px;color:#888;">Получено</span>' : ''}
+    `;
+    list.appendChild(div);
+  });
+}
+function claimCityQuest(id, coins) {
+  localStorage.setItem('fz_cqc_' + id, '1');
+  localCoins += coins;
+  if (typeof updateCoinsDisplay === 'function') updateCoinsDisplay();
+  showNotification('🎉 Квест выполнен! +' + coins + ' 🪙', 'levelup');
+  renderCityQuests();
 }
 
 function claimJasonQuest(id, coins) {
@@ -16702,7 +16800,7 @@ function claimFPReward(r, isPlus, claimKey) {
   .fpp-row-label { font-size: 9px !important; }
 }
 </style>
-<script src="update_script.js?v=210"></script>
+<script src="update_script.js?v=211"></script>
 </body>
 
 <script>
