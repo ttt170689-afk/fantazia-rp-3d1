@@ -54,7 +54,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Fantazia RP 3D · v2.17</title>
+<title>Fantazia RP 3D · v2.18</title>
 <!-- ===== PWA MANIFEST (встроенный) ===== -->
 <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22Fantazia+RP+3D%22%2C%22short_name%22%3A%22Fantazia%22%2C%22description%22%3A%22Fantazia+RP+3D+%E2%80%94+%D0%BC%D0%BE%D0%B1%D0%B8%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+3D+%D0%B8%D0%B3%D1%80%D0%B0%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22fullscreen%22%2C%22orientation%22%3A%22landscape%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%236c5ce7%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABJQTFRFAAAAbEjiqqr%2F6%2BXz1s77////aoCa9AAAAARdFJlcAMEBQYHCJ%2BZAAAAsklEQVR42u3BMQEAAADCoPVP7WsIoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAMBuAABHwAAAABJRU5ErkJggg%3D%3D%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
 <meta name="theme-color" content="#6c5ce7">
@@ -2573,7 +2573,7 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
   </div>
 </div>
 
-<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v2.17</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v2.17 — ФИКС КРАША + ЗЕБРЫ 🦓</div>
+<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v2.18</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v2.18 — ВСЕ ИНТЕРЬЕРЫ НОВЫЕ 🏠🏢</div>
 <script>setTimeout(function(){var t=document.getElementById('fzVerToast');if(t){t.style.transition='opacity 1s';t.style.opacity='0';setTimeout(function(){t.remove()},1100)}},6000)</script>
 
 <!-- ========== HUD ========== -->
@@ -3274,11 +3274,11 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
 </div>
 
 <!-- ========== СКРИПТЫ ========== -->
-<script src="/socket.io/socket.io.js?v=217"></script>
-<script src="assets/three.min.js?v=217"></script>
+<script src="/socket.io/socket.io.js?v=218"></script>
+<script src="assets/three.min.js?v=218"></script>
 <script>if (!window.THREE) document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\\/script>');</script>
 <!-- ===== НОВАЯ 3D-МОДЕЛЬ ИГРОКА (после Three.js!) ===== -->
-<script src="assets/fantazia-player.js?v=217"></script>
+<script src="assets/fantazia-player.js?v=218"></script>
 <script>
 /*!
  * ============================================================
@@ -12283,7 +12283,7 @@ function buildInterior(type) {
   } // конец оболочки не-ТЦ
 
   // Интерьер зависит от типа
-  if (type === 'office') buildOfficeInterior(bx, bz, currentFloor, FH, addObj, mat);
+  if (type === 'office') (currentFloor === 0 ? buildOfficeInterior : buildOfficeOpenSpace)(bx, bz, currentFloor, FH, addObj, mat);
   else if (type === 'cinema') buildCinemaInterior(bx, bz, currentFloor, FH, addObj, mat);
   else if (type === 'club') buildClubInterior(bx, bz, currentFloor, FH, addObj, mat);
   else if (type === 'house') buildSuperHouseInterior(bx, bz, currentFloor, FH, addObj, mat);
@@ -12292,6 +12292,8 @@ function buildInterior(type) {
   else if (type === 'restaurant') buildRestaurantInterior(bx, bz, currentFloor, FH, addObj, mat);
   else if (type === 'mall') buildMallInterior(bx, bz, currentFloor, FH, addObj, mat);
   else if (type === 'hospital') buildHospitalInterior(bx, bz, currentFloor, FH, addObj, mat);
+  else if (type === 'bank') buildBankInterior(bx, bz, currentFloor, FH, addObj, mat);
+  else if (type === 'karaoke') buildKaraokeInterior(bx, bz, currentFloor, FH, addObj, mat);
   else buildGenericInterior(bx, bz, currentFloor, FH, addObj, mat);
 
   // Лестница (всегда в углу)
@@ -12742,6 +12744,92 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
     // билетёр
     spawnInteriorNPC(bx - 8.6, F, bz, 'clerk', add);
   }
+
+  // ═══ 🎀 ОБЩИЕ ДОВЕСКИ v2.18: уют + развлечения на каждом этаже ═══
+  {
+    const B = (w, h, d, color, x, y, z, ry, emissive, em) => {
+      const m2 = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, emissive || 0, em || 0));
+      m2.position.set(bx + x, F + y, bz + z); if (ry) m2.rotation.y = ry;
+      add(m2); return m2;
+    };
+    const colp = (x, z, w, d) => interiorColliders.push({ minX: bx + x - w/2, maxX: bx + x + w/2, minZ: bz + z - d/2, maxZ: bz + z + d/2 });
+
+    // Скамейки между колоннами (север и юг) + растения у колонн — все этажи
+    [[-7.5, -14.5, 0], [7.5, -14.5, Math.PI], [-7.5, 14.5, Math.PI], [7.5, 14.5, 0]].forEach(([x, z, ry]) => {
+      B(2.6, 0.12, 0.7, 0x8a6a4a, x, 0.5, z, ry);
+      B(2.6, 0.55, 0.12, 0x8a6a4a, x, 0.28, z + (z > 0 ? -0.3 : 0.3), ry);
+      B(0.12, 0.5, 0.6, 0x39424e, x - 1, 0.25, z, ry); B(0.12, 0.5, 0.6, 0x39424e, x + 1, 0.25, z, ry);
+      colp(x, z, 2.8, 0.9);
+    });
+    [[-15, -11.2], [0, -11.2], [15, -11.2], [-15, 11.2], [0, 11.2], [15, 11.2]].forEach(([x, z]) => {
+      B(0.75, 0.55, 0.75, 0xa8703d, x, 0.28, z, 0);
+      const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.75, 8, 7), mat(0x2d6b1e));
+      leaf.position.set(bx + x, F + 1.15, bz + z); leaf.scale.y = 1.4; add(leaf);
+      colp(x, z, 0.9, 0.9);
+    });
+
+    if (floor === 0) {
+      // 🌊 Чаша-фонтан с каскадами и подсветкой
+      const fbas = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.9, 0.55, 20), mat(0x8fa8b2));
+      fbas.position.set(bx + 7.5, F + 0.28, bz - 4); add(fbas);
+      const water = new THREE.Mesh(new THREE.CylinderGeometry(2.35, 2.35, 0.12, 20), mat(0x35c4f0, 0x35c4f0, 0.35));
+      water.position.set(bx + 7.5, F + 0.56, bz - 4); add(water);
+      const fmid = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.4, 0.9, 14), mat(0xa8c0ca));
+      fmid.position.set(bx + 7.5, F + 1.0, bz - 4); add(fmid);
+      const jet = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.3, 1.5, 10), mat(0x9adfff, 0x35c4f0, 0.55));
+      jet.position.set(bx + 7.5, F + 2.1, bz - 4); add(jet);
+      const jetL = new THREE.PointLight(0x35c4f0, 0.8, 6);
+      jetL.position.set(bx + 7.5, F + 1.6, bz - 4); jetL.userData = { isClubLight: true, phase: 0 };
+      add(jetL); colp(7.5, -4, 5.8, 5.8);
+      addInteriorSign('⛲ ФОНТАН ЖЕЛАНИЙ · БРОСЬ МОНЕТКУ', bx + 7.5, F + 3.0, bz - 4, add);
+      // 🎠 Карусель: платформа + poles + лошадки-бруски + купол
+      const carousel = new THREE.Group();
+      const plat = new THREE.Mesh(new THREE.CylinderGeometry(2.7, 2.7, 0.35, 18), mat(0xd4a05a));
+      plat.position.y = 0.18; carousel.add(plat);
+      const cupola = new THREE.Mesh(new THREE.ConeGeometry(2.9, 1.3, 18), mat(0xc0392b, 0xff4d5e, 0.25));
+      cupola.position.y = 3.9; carousel.add(cupola);
+      for (let k = 0; k < 6; k++) {
+        const a = k / 6 * Math.PI * 2;
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 3.4, 8), mat(0xd8d8d8, 0xfff6c0, 0.3));
+        pole.position.set(Math.cos(a) * 2.1, 1.9, Math.sin(a) * 2.1); carousel.add(pole);
+        const horse = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.5, 0.35), mat([0xf4f0e8, 0xa23b3b, 0x3b6ba2, 0x3ba25a, 0xa2893b, 0x6b3ba2][k]));
+        horse.position.set(Math.cos(a) * 2.1, 1.05 + (k % 2) * 0.4, Math.sin(a) * 2.1);
+        horse.rotation.y = -a + Math.PI / 2; carousel.add(horse);
+      }
+      carousel.position.set(bx + 7.5, F, bz + 4);
+      carousel.userData = { isEscalator: false, isCarousel: true };
+      add(carousel); colp(7.5, 4, 5.8, 5.8);
+      addInteriorSign('🎠 КАРУСЕЛЬ · 1 ЖЕТОН', bx + 7.5, F + 4.6, bz + 4, add);
+    } else if (floor === 1) {
+      // 📸 Фотозона: неон-арка LOVE + куб-подиум
+      const arch = new THREE.Mesh(new THREE.TorusGeometry(1.9, 0.13, 10, 28, Math.PI), mat(0x111, 0xff4d9d, 0.95));
+      arch.position.set(bx - 7.5, F + 1.6, bz - 5); add(arch);
+      [[-2.6, 0x4dd2ff], [2.6, 0xffd700]].forEach(([ox, c]) => {
+        const sp = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), mat(0xfff, c, 0.9));
+        sp.position.set(bx - 7.5 + ox, F + 1.5, bz - 5); add(sp);
+      });
+      const pod = B(1.8, 0.35, 1.8, 0xd4a05a, -7.5, 0.18, -5, 0, 0xffd166, 0.2); colp(-7.5, -5, 2, 2);
+      const fl2 = new THREE.PointLight(0xff4d9d, 0.9, 8);
+      fl2.position.set(bx - 7.5, F + 2.4, bz - 4); fl2.userData = { isClubLight: true, phase: 0 }; add(fl2);
+      addInteriorSign('📸 ФОТО-ЗОНА', bx - 7.5, F + 3.4, bz - 5, add);
+      // 🕹️ Столбы аркадных автоматов вдоль прохода
+      [[-2.5, -14], [2.5, -14]].forEach(([x, z]) => {
+        B(1, 2.1, 0.9, 0x2a2240, x, 1.05, z, 0);
+        B(0.8, 0.7, 0.08, 0x0a0d14, x, 1.5, z + 0.5, 0, [0x4dd2ff, 0xffd700][x > 0 ? 1 : 0], 0.7);
+        colp(x, z, 1.2, 1.1);
+      });
+    } else {
+      // 🌟 Аллея славы: звёзды-плитки к кинозалу
+      for (let k = 0; k < 8; k++) {
+        const star = new THREE.Mesh(new THREE.CircleGeometry(0.45, 5), mat(0xd8b04a, 0xffd700, 0.35));
+        star.rotation.x = -Math.PI / 2; star.rotation.z = k * 0.4;
+        star.position.set(bx + 7.5 + Math.cos(k / 8 * Math.PI * 2) * 2.2, F + 0.03, bz - 5 + k * 1.5 - 5);
+        add(star);
+      }
+      const sl = new THREE.PointLight(0xffd700, 0.6, 10); sl.position.set(bx + 7.5, F + 2.5, bz - 2);
+      sl.userData = { isClubLight: true, phase: 2 }; add(sl);
+    }
+  }
 }
 
 
@@ -12904,45 +12992,130 @@ function buildElevator(bx, bz, floor, FH, add, mat, maxF) {
 }
 
 function buildOfficeInterior(bx, bz, floor, FH, add, mat) {
-  const floorThemes = [
-    { label:'🏢 РЕСЕПШН', fn: buildOfficeReception },
-    { label:'💼 OPEN SPACE', fn: buildOfficeOpenSpace },
-    { label:'📊 ПЕРЕГОВОРНЫЕ', fn: buildOfficeMeeting },
-    { label:'🍽️ КАФЕТЕРИЙ', fn: buildOfficeCafeteria },
-    { label:'💡 R&D ЛАБОРАТОРИЯ', fn: buildOfficeLab },
-    { label:'🖥️ IT ОТДЕЛ', fn: buildOfficeIT },
-    { label:'🏋️ КОМНАТА ОТДЫХА', fn: buildOfficeRelax },
-    { label:'🏦 РУКОВОДСТВО', fn: buildOfficeCEO },
-  ];
-  const theme = floorThemes[floor % floorThemes.length];
-  addInteriorSign(theme.label, bx, floor*FH + FH - 0.3, bz - 9.9, add);
-  theme.fn(bx, bz, floor, FH, add, mat);
-}
+  // ═══ 🏢 ОФИС "FANTAZIA DIGITAL" — опенспейс + переговорка ═══
+  const F = floor * FH;
+  const B = (w, h, d, color, x, y, z, ry, emissive, em) => {
+    const m2 = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, emissive || 0, em || 0));
+    m2.position.set(x, F + y, z); if (ry) m2.rotation.y = ry;
+    add(m2); return m2;
+  };
+  const col = (x1, z1, x2, z2) => interiorColliders.push({ minX: x1, maxX: x2, minZ: z1, maxZ: z2 });
 
-function buildOfficeOpenSpace(bx, bz, floor, FH, add, mat) {
-  const deskColor = 0xc8a87a, chairColor = 0x2c3e50;
-  const positions = [[-6,-4],[-6,0],[-6,4],[0,-4],[0,0],[0,4],[6,-4],[6,0],[6,4]];
-  positions.forEach(([dx,dz]) => {
-    const desk = new THREE.Mesh(new THREE.BoxGeometry(2.5,0.1,1.2), mat(deskColor));
-    desk.position.set(bx+dx, floor*3.5+0.8, bz+dz); desk.castShadow = true; add(desk);
-    const leg1 = new THREE.Mesh(new THREE.BoxGeometry(0.1,0.8,0.1), mat(0x888888));
-    leg1.position.set(bx+dx-1.1, floor*3.5+0.4, bz+dz); add(leg1);
-    const leg2 = leg1.clone(); leg2.position.x = bx+dx+1.1; add(leg2);
-    const monitor = new THREE.Mesh(new THREE.BoxGeometry(1.2,0.8,0.1), mat(0x222222));
-    monitor.position.set(bx+dx, floor*3.5+1.35, bz+dz-0.4); add(monitor);
-    const screen = new THREE.Mesh(new THREE.PlaneGeometry(1.0,0.6), mat(0x1a5276));
-    screen.position.set(bx+dx, floor*3.5+1.35, bz+dz-0.34); add(screen);
-    const chairSeat = new THREE.Mesh(new THREE.BoxGeometry(0.8,0.1,0.8), mat(chairColor));
-    chairSeat.position.set(bx+dx, floor*3.5+0.6, bz+dz+1); add(chairSeat);
-    const chairBack = new THREE.Mesh(new THREE.BoxGeometry(0.8,0.7,0.1), mat(chairColor));
-    chairBack.position.set(bx+dx, floor*3.5+1.0, bz+dz+1.4); add(chairBack);
+  // Светлый пол + ковролин-зона
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(30, 24), mat(0xd8d4cc));
+  fl.rotation.x = -Math.PI/2; fl.position.set(bx, F + 0.015, bz); add(fl);
+  const rug = new THREE.Mesh(new THREE.PlaneGeometry(14, 9), mat(0x39424e));
+  rug.rotation.x = -Math.PI/2; rug.position.set(bx, F + 0.02, bz - 3); add(rug);
+
+  // 8 рабочих станций (2 ряда × 4)
+  for (let r = 0; r < 2; r++) for (let c = 0; c < 4; c++) {
+    const x = bx - 9 + c * 6, z = bz - 7 + r * 5;
+    B(2.2, 0.07, 1.1, 0xb9b2a6, x, 0.74, z, 0);                       // столешница
+    B(0.1, 0.72, 1, 0x6b675e, x - 1, 0.36, z, 0); B(0.1, 0.72, 1, 0x6b675e, x + 1, 0.36, z, 0);
+    const scr = B(0.62, 0.42, 0.05, 0x0d1114, x, 1.15, z - 0.15, 0, 0x2d6cb5, 0.6); scr.userData = { isTVLight: true };
+    B(0.16, 0.3, 0.12, 0x1a1d21, x, 0.9, z - 0.15, 0);                 // подставка
+    B(0.45, 0.05, 0.16, 0x22262e, x + 0.5, 0.79, z + 0.25, 0.3);       // клавиатура
+    B(0.5, 0.08, 0.5, 0x22262e, x, 0.42, z + 0.75, r ? Math.PI : 0);   // кресло-база
+    B(0.5, 0.7, 0.1, 0x2c313a, x, 0.8, z + 1.05, r ? Math.PI : 0);     // спинка
+    col(x - 1.2, z - 0.7, x + 1.2, z + 1.2);
+  }
+
+  // Переговорка (северо-восток): стеклянные перегородки + стол + ТВ
+  B(0.08, 2.6, 8, 0x9ad4ff, bx + 9.5, 1.3, bz - 4, 0.15, 0x66c6ff, 0.15);
+  B(8, 0.07, 2.6, 0x8a6a4a, bx + 6, 0.74, bz - 4, 0); col(bx + 2.4, bz - 5.4, bx + 9.6, bz - 2.6);
+  for (let c = 0; c < 4; c++) {
+    B(0.5, 0.5, 0.5, 0x2c313a, bx + 4 + c * 1.4, 0.45, bz - 5.1, Math.PI);
+    B(0.5, 0.5, 0.5, 0x2c313a, bx + 4 + c * 1.4, 0.45, bz - 2.9, 0);
+  }
+  const tv = B(2.4, 1.4, 0.08, 0x0a0d10, bx + 11.4, 1.8, bz - 4, -Math.PI / 2, 0x4d7dff, 0.5);
+  tv.userData = { isTVLight: true };
+
+  // Кофе-поинт + кулер
+  B(3, 0.9, 0.8, 0x6b675e, bx - 11.5, 0.45, bz + 6, 0); col(bx - 13, bz + 5.5, bx - 10, bz + 6.5);
+  B(0.5, 0.5, 0.4, 0x22262e, bx - 12.3, 1.15, bz + 6, 0, 0x4dd2ff, 0.4); // кофемашина
+  B(0.45, 1.2, 0.45, 0x9ad4ff, bx - 10.6, 0.6, bz + 6, 0, 0x2d6cb5, 0.2); // кулер
+
+  // Диван-зона ожидания
+  B(3.4, 0.55, 1.2, 0x39424e, bx + 8, 0.35, bz + 7.5, 0);
+  B(3.4, 0.7, 0.24, 0x2f3742, bx + 8, 0.85, bz + 8.2, 0); col(bx + 6.2, bz + 6.8, bx + 9.8, bz + 8.6);
+
+  // Неон-лого на стене
+  B(5.5, 0.5, 0.1, 0x0a0d12, bx, 2.7, bz - 11.7, 0, 0x4dd2ff, 0.85);
+  addInteriorSign('FANTAZIA DIGITAL · OPEN SPACE', bx, F + FH - 0.4, bz + 11.6, add);
+
+  [[-8, -6], [8, -6], [-8, 6], [8, 6]].forEach(([lx, lz]) => {
+    const pl = new THREE.PointLight(0xfff4e0, 0.6, 14);
+    pl.position.set(bx + lx, F + FH - 0.6, bz + lz); add(pl);
   });
-  const windowPanel = new THREE.Mesh(new THREE.PlaneGeometry(8,2.5), mat(0x88ccff, 0x88ccff, 0.1));
-  windowPanel.position.set(bx, floor*3.5+1.8, bz-9.95); add(windowPanel);
-  spawnInteriorNPC(bx-4, floor*3.5, bz, 'clerk', add);
-  spawnInteriorNPC(bx+4, floor*3.5, bz-3, 'clerk', add);
 }
+function buildOfficeOpenSpace(bx, bz, floor, FH, add, mat) {
+  // ═══ 🏢 ОПЕНСПЕЙС — стартап-лофт "FANTAZIA DEV" ═══
+  const F = floor * FH;
+  const B = (w, h, d, color, x, y, z, ry, emissive, em) => {
+    const m2 = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, emissive || 0, em || 0));
+    m2.position.set(x, F + y, z); if (ry) m2.rotation.y = ry;
+    add(m2); return m2;
+  };
+  const col = (x1, z1, x2, z2) => interiorColliders.push({ minX: x1, maxX: x2, minZ: z1, maxZ: z2 });
 
+  // Бетонный пол + ковры-острова
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(30, 24), mat(0x8f8a82));
+  fl.rotation.x = -Math.PI/2; fl.position.set(bx, F + 0.015, bz); add(fl);
+  [[-7, -3, 0x3e4a5a], [4, 2, 0x5a3e46]].forEach(([ox, oz, c]) => {
+    const r = new THREE.Mesh(new THREE.PlaneGeometry(8, 6), mat(c));
+    r.rotation.x = -Math.PI/2; r.position.set(bx + ox, F + 0.02, bz + oz); add(r);
+  });
+
+  // 6 островов рабочих станций с двойными мониторами
+  for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) {
+    const x = bx - 8 + c * 8, z = bz - 6 + r * 7;
+    B(2.6, 0.08, 1.3, 0xa88a5a, x, 0.76, z, 0);
+    B(0.12, 0.74, 1.1, 0x4a4238, x - 1.2, 0.38, z, 0); B(0.12, 0.74, 1.1, 0x4a4238, x + 1.2, 0.38, z, 0);
+    [-0.35, 0.35].forEach(mo => {
+      const scr = B(0.7, 0.45, 0.05, 0x0d1114, x + mo, 1.2, z - 0.2, mo * 0.4, 0x2d6cb5, 0.55);
+      scr.userData = { isTVLight: true };
+    });
+    B(0.55, 0.05, 0.18, 0x22262e, x, 0.81, z + 0.35, 0.2);       // клавиатура
+    B(0.14, 0.22, 0.24, 0x1a1d21, x + 0.9, 0.92, z + 0.3, 0);     // кружка кофе
+    B(0.55, 0.1, 0.55, 0x2c313a, x, 0.45, z + 0.95, r ? Math.PI : 0);
+    B(0.55, 0.75, 0.1, 0x23272e, x, 0.85, z + 1.25, r ? Math.PI : 0);
+    col(x - 1.4, z - 0.8, x + 1.4, z + 1.4);
+    // настольный фикус у каждого 3-го стола
+    if ((r + c) % 3 === 0) { B(0.5, 1, 0.5, 0x2d5a1b, x + 1.7, 0.5, z - 0.5, 0); B(0.4, 0.35, 0.4, 0x6b4a2a, x + 1.7, 0.06, z - 0.5, 0); }
+  }
+
+  // Стойка-кухня: барная столешница + табуреты
+  B(7, 0.09, 0.9, 0x7a5a3a, bx, 1.06, bz + 8, 0);
+  B(6.8, 1, 0.7, 0x3a3228, bx, 0.5, bz + 8, 0); col(bx - 3.5, bz + 7.5, bx + 3.5, bz + 8.5);
+  [-2.5, 0, 2.5].forEach(tx => {
+    B(0.36, 0.08, 0.36, 0x22262e, bx + tx, 0.66, bz + 6.8, 0);
+    B(0.09, 0.64, 0.09, 0x8a8f98, bx + tx, 0.33, bz + 6.8, 0);
+  });
+  B(0.7, 1.9, 0.7, 0xd8dde2, bx + 5, 0.95, bz + 9.5, 0); col(bx + 4.5, bz + 9, bx + 5.5, bz + 10); // холодильник
+  B(0.8, 0.12, 0.6, 0x22262e, bx - 4.5, 1.12, bz + 8, 0, 0xff6b35, 0.35); // плита-гриль
+
+  // Доска-стена идей (стикеры)
+  B(6, 2.4, 0.08, 0xf4efe4, bx - 11.5, 1.7, bz - 2, Math.PI / 2);
+  for (let k = 0; k < 12; k++) {
+    B(0.45, 0.45, 0.02, [0xfff176, 0x81d4fa, 0xffab91, 0xa5d6a7][k % 4],
+      bx - 11.42, 0.75 + Math.floor(k / 4) * 0.6, bz - 4.6 + (k % 4) * 1.7, Math.PI / 2);
+  }
+
+  // Гамак-зона отдыха
+  B(0.12, 2.2, 0.12, 0x6b4a2a, bx + 11, 1.1, bz + 5, 0);
+  B(0.12, 2.2, 0.12, 0x6b4a2a, bx + 11, 1.1, bz + 8, 0);
+  const hammock = B(1.4, 0.08, 3, 0xe07b39, bx + 11, 1.7, bz + 6.5, 0);
+  hammock.rotation.z = 0.15;
+  B(3, 0.45, 1, 0x39424e, bx + 7, 0.25, bz - 9.5, 0); // пуф
+
+  // Неон-надпись + свет
+  B(4.6, 0.45, 0.1, 0x0a0d12, bx, 3.05, bz - 11.7, 0, 0xff6b35, 0.9);
+  addInteriorSign('🚀 FANTAZIA DEV · BUILD v2.18', bx, F + FH - 0.35, bz + 11.6, add);
+  [[-7, 0], [7, 0]].forEach(([lx, lz]) => {
+    const pl = new THREE.PointLight(0xfff0dd, 0.55, 14);
+    pl.position.set(bx + lx, F + FH - 0.6, bz + lz); add(pl);
+  });
+}
 function buildOfficeReception(bx, bz, floor, FH, add, mat) {
   // Big reception desk
   const desk = new THREE.Mesh(new THREE.BoxGeometry(8, 1.1, 1.5), mat(0xeeeeee));
@@ -13105,91 +13278,156 @@ function buildOfficeCEO(bx, bz, floor, FH, add, mat) {
 }
 
 function buildCinemaInterior(bx, bz, floor, FH, add, mat) {
-  // Экран
-  const screen = new THREE.Mesh(new THREE.PlaneGeometry(16, 8), mat(0xfafafa, 0x8888ff, 0.3));
-  screen.position.set(bx, floor*FH+4.5, bz-9.5);
-  add(screen);
-  const screenFrame = new THREE.Mesh(new THREE.BoxGeometry(16.5, 8.5, 0.2), mat(0x111111));
-  screenFrame.position.set(bx, floor*FH+4.5, bz-9.6);
-  add(screenFrame);
-  addInteriorSign('🎬 FANTAZIA CINEMA', bx, floor*FH+1.5, bz-9.7, add);
-  // Ряды кресел
-  const seatMat = mat(0x8B0000);
-  for(let row=0; row<4; row++){
-    for(let col=-4; col<=4; col++){
-      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.7,0.6,0.7), seatMat);
-      seat.position.set(bx+col*1.1, floor*FH+row*0.3+0.5, bz-5+row*2);
-      add(seat);
-      const seatBack = new THREE.Mesh(new THREE.BoxGeometry(0.7,0.7,0.1), seatMat);
-      seatBack.position.set(bx+col*1.1, floor*FH+row*0.3+0.9, bz-4.6+row*2);
-      add(seatBack);
-    }
-  }
-  // Свет — подсветка прохода
-  for(let i=-4; i<=4; i+=2){
-    const pathLight = new THREE.Mesh(new THREE.SphereGeometry(0.08), mat(0xff8800, 0xff8800, 1));
-    pathLight.position.set(bx+i*1.1, floor*FH+0.1, bz+5);
-    add(pathLight);
-  }
-}
+  // ═══ 🎬 КИНОТЕАТР "ЛУНА" — красный кинозал с фойе ═══
+  const F = floor * FH;
+  const B = (w, h, d, color, x, y, z, ry, emissive, em) => {
+    const m2 = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, emissive || 0, em || 0));
+    m2.position.set(x, F + y, z); if (ry) m2.rotation.y = ry;
+    add(m2); return m2;
+  };
+  const col = (x1, z1, x2, z2) => interiorColliders.push({ minX: x1, maxX: x2, minZ: z1, maxZ: z2 });
 
-function buildClubInterior(bx, bz, floor, FH, add, mat) {
-  // Танцпол
-  const danceFloor = new THREE.Mesh(new THREE.PlaneGeometry(12,12), mat(0x111111));
-  danceFloor.rotation.x = -Math.PI/2;
-  danceFloor.position.set(bx, floor*FH+0.02, bz);
-  add(danceFloor);
-  // Цветные плитки
-  const tileColors = [0xff0040,0x00ffff,0xffff00,0xff00ff,0x00ff00,0xff8000];
-  for(let ti=-2; ti<=2; ti++){
-    for(let tj=-2; tj<=2; tj++){
-      const tile = new THREE.Mesh(new THREE.PlaneGeometry(1.9,1.9), mat(tileColors[Math.abs(ti+tj)%6], tileColors[Math.abs(ti+tj)%6], 0.5));
-      tile.rotation.x = -Math.PI/2;
-      tile.position.set(bx+ti*2, floor*FH+0.03, bz+tj*2);
-      add(tile);
-    }
-  }
-  // Барная стойка
-  const bar = new THREE.Mesh(new THREE.BoxGeometry(10, 1.1, 1.5), mat(0x3d1c02));
-  bar.position.set(bx, floor*FH+0.55, bz-7.5);
-  add(bar);
-  const barTop = new THREE.Mesh(new THREE.BoxGeometry(10.2,0.15,1.7), mat(0x6b3a2a));
-  barTop.position.set(bx, floor*FH+1.1, bz-7.5);
-  add(barTop);
-  // Табуреты
-  for(let bi=-4; bi<=4; bi+=2){
-    const stool = new THREE.Mesh(new THREE.CylinderGeometry(0.25,0.25,0.8,8), mat(0x222222));
-    stool.position.set(bx+bi, floor*FH+0.4, bz-6);
-    add(stool);
-    const stoolSeat = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,0.1,8), mat(0x8B0000));
-    stoolSeat.position.set(bx+bi, floor*FH+0.85, bz-6);
-    add(stoolSeat);
-  }
-  // Зеркальный шар
-  const discoGeo = new THREE.SphereGeometry(0.8, 12, 12);
-  const discoMat = new THREE.MeshLambertMaterial({ color:0xffffff, emissive:0xaaaaaa, emissiveIntensity:0.5 });
-  const discoBall = new THREE.Mesh(discoGeo, discoMat);
-  discoBall.position.set(bx, floor*FH+FH-0.9, bz);
-  discoBall.userData.isDisco = true;
-  add(discoBall);
-  // Цветные огни
-  const clubColors = [0xff0000, 0x0000ff, 0x00ff00, 0xff00ff];
-  clubColors.forEach((c,i) => {
-    const cl = new THREE.PointLight(c, 1.5, 15);
-    const a = (i/4)*Math.PI*2;
-    cl.position.set(bx+Math.cos(a)*5, floor*FH+FH-1, bz+Math.sin(a)*5);
-    cl.userData.isClubLight = true;
-    cl.userData.phase = i * Math.PI/2;
-    add(cl);
+  // Фойе (юг): красная ковровая дорожка от входа
+  const carpet = new THREE.Mesh(new THREE.PlaneGeometry(4, 16), mat(0x8e1c2f));
+  carpet.rotation.x = -Math.PI/2; carpet.position.set(bx, F + 0.02, bz + 4); add(carpet);
+
+  // Касса с окошком
+  B(7, 1.1, 1.2, 0x3e2a1a, bx - 8, 0.55, bz + 9, 0); col(bx - 11.5, bz + 8.4, bx - 4.5, bz + 9.6);
+  B(7, 0.9, 0.1, 0x9ad4ff, bx - 8, 1.6, bz + 8.5, 0, 0x66c6ff, 0.25); // стекло кассы
+  B(0.9, 0.5, 0.3, 0x111111, bx - 9.5, 1.35, bz + 8.6, 0.4, 0x00e5ff, 0.8); // экранчик
+
+  // Попкорн-машина (светящийся куб) + холодильник
+  const pop = B(1.4, 1.8, 1.4, 0xe74c3c, bx + 6, 0.9, bz + 9, 0);
+  B(1, 0.9, 1, 0xfff3c0, bx + 6, 1.15, bz + 9, 0, 0xffe082, 0.9); // стекло с попкорном
+  B(0.9, 2, 0.9, 0xecf0f1, bx + 8.5, 1, bz + 9, 0); col(bx + 5.2, bz + 8.2, bx + 9, bz + 9.8);
+  const popL = new THREE.PointLight(0xffd56b, 0.7, 6); popL.position.set(bx + 6, F + 2, bz + 9); add(popL);
+
+  // Афиши с подсветкой (северная стена зала)
+  [' КОСМОС 3Д ', ' ЛЮБОВЬ В ГОРОДЕ ', ' ДРАКОН '].forEach((t, i) => {
+    const poster = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 3.2),
+      new THREE.MeshBasicMaterial({ map: nzCanvas(128, 192, (g) => {
+        const gr = g.createLinearGradient(0, 0, 0, 192);
+        gr.addColorStop(0, ['#1a0533', '#33051c', '#03221f'][i]); gr.addColorStop(1, '#0a0a12');
+        g.fillStyle = gr; g.fillRect(0, 0, 128, 192);
+        g.fillStyle = ['#ffd700', '#ff6b9d', '#4dff88'][i]; g.font = 'bold 17px Arial'; g.textAlign = 'center';
+        g.fillText(t, 64, 90); g.font = '11px Arial'; g.fillStyle = '#ccc';
+        g.fillText('СЕАНСЫ 14:00 18:00 22:00', 64, 120);
+      }) }));
+    poster.position.set(bx - 8 + i * 8, F + 2.6, bz - 11.9); add(poster);
+    const pl = new THREE.PointLight(0xfff2d0, 0.4, 5); pl.position.set(bx - 8 + i * 8, F + 3.6, bz - 10.5); add(pl);
   });
-  addInteriorSign('🎵 CLUB FANTAZIA', bx, floor*FH+2.8, bz-9.9, add);
-}
 
-// ═══════════════════════════════════════════════════
-// 🏡 СУПЕРДОМ ВНУТРИ (тип house) — 2 этажа
-// 1 этаж: прихожая + гостиная (камин, ТВ) + кухня
-// 2 этаж: спальня + ванная + гардероб + гейминг
-// ═══════════════════════════════════════════════════
+  // Кинозал: экран 11×4.5 + проекторный свет
+  B(11.5, 5, 0.3, 0x0a0a12, bx, 2.9, bz - 11.7, 0, 0x1a2a4a, 0.15);
+  const screen = B(10.5, 4.4, 0.1, 0x0d1b3e, bx, 2.9, bz - 11.5, 0, 0x3d6bd6, 0.7);
+  screen.userData = { isTVLight: true };
+  const projL = new THREE.SpotLight(0xdfefff, 1.1, 24, 0.5, 0.6);
+  projL.position.set(bx, F + 3.2, bz + 9); projL.target.position.set(bx, F + 2.5, bz - 11);
+  add(projL); add(projL.target);
+
+  // Ряды кресел на ступенях-подиумах (4 ряда × 6)
+  for (let r = 0; r < 4; r++) {
+    const z = bz + 4 - r * 2.2;
+    B(14, 0.25 + r * 0.18, 2, 0x241820, bx, (0.25 + r * 0.18) / 2, z, 0); // ступень
+    for (let c = 0; c < 6; c++) {
+      const x = bx - 6 + c * 2.4;
+      B(1.9, 0.55, 1.6, 0x8e1c2f, x, 0.55 + r * 0.18, z - 0.2, 0);      // сиденье
+      B(1.9, 1, 0.35, 0x741625, x, 1.2 + r * 0.18, z + 0.75, 0);          // спинка
+    }
+  }
+  col(bx - 7.5, bz - 3.5, bx + 7.5, bz + 5.5); // ряды кресел
+
+  // Боковые неоны-огни по стенам зала
+  [-13.5, 13.5].forEach(sx => {
+    for (let k = 0; k < 6; k++) {
+      const nl = new THREE.PointLight(k % 2 ? 0xff4d6d : 0x4dd2ff, 0.5, 7);
+      nl.position.set(bx + sx, F + 2.4, bz - 9 + k * 3.4);
+      nl.userData = { isClubLight: true, phase: k }; add(nl);
+    }
+    B(0.12, 0.12, 20, 0x22262e, bx + sx, 2.5, bz - 2, 0, k0Neon(sx), 0.8);
+  });
+  function k0Neon(x) { return x < 0 ? 0xff4d6d : 0x4dd2ff; }
+
+  // Диван ожидания + растения в фойе
+  B(4, 0.5, 1.4, 0x2c1810, bx + 9, 0.35, bz + 6, 0); col(bx + 7, bz + 5.2, bx + 11, bz + 6.8);
+  [B(0.7, 1.4, 0.7, 0x2d5a1b, bx + 12.5, 0.7, bz + 10.5), B(0.7, 1.4, 0.7, 0x2d5a1b, bx - 12.5, 0.7, bz + 10.5)]
+    .forEach(pt => { pt.castShadow = true; });
+
+  addInteriorSign(floor === 0 ? '🎬 КИНО ЛУНА — ЗАЛ №1' : '🎬 ЗАЛ №2', bx, F + FH - 0.4, bz - 11.55, add);
+}
+function buildClubInterior(bx, bz, floor, FH, add, mat) {
+  // ═══ 🎵 КЛУБ "NEON" — танцпол, DJ, бар, VIP ═══
+  const F = floor * FH;
+  const B = (w, h, d, color, x, y, z, ry, emissive, em) => {
+    const m2 = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, emissive || 0, em || 0));
+    m2.position.set(x, F + y, z); if (ry) m2.rotation.y = ry;
+    add(m2); return m2;
+  };
+  const col = (x1, z1, x2, z2) => interiorColliders.push({ minX: x1, maxX: x2, minZ: z1, maxZ: z2 });
+
+  // Тёмный пол + танцпол 8×8 из светящихся плиток
+  const danceTiles = [];
+  for (let tx = 0; tx < 4; tx++) for (let tz = 0; tz < 4; tz++) {
+    const tile = B(1.9, 0.06, 1.9, 0x111122, bx - 3 + tx * 2, 0.05, bz - 3 + tz * 2, 0,
+      [0x6c5ce7, 0x00e5ff, 0xff00aa, 0x4dff88][(tx + tz) % 4], 0.55);
+    danceTiles.push(tile);
+  }
+  // Пульсирующая подсветка над танцполом
+  for (let k = 0; k < 4; k++) {
+    const cl = new THREE.PointLight([0x6c5ce7, 0x00e5ff, 0xff00aa, 0xffe08a][k], 1.1, 12);
+    cl.position.set(bx - 3 + (k % 2) * 6, F + 3, bz - 3 + Math.floor(k / 2) * 6);
+    cl.userData = { isClubLight: true, phase: k * 1.6 }; add(cl);
+  }
+
+  // Дискобол (вращается)
+  const ball = new THREE.Mesh(new THREE.SphereGeometry(0.55, 12, 10),
+    mat(0xcfd8dc, 0xffffff, 0.5));
+  ball.position.set(bx, F + 3.1, bz); add(ball);
+  ball.userData = { isDisco: true };
+  const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.6, 6), mat(0x222222));
+  rope.position.set(bx, F + 3.6, bz); add(rope);
+
+  // DJ-будка: стол, пульт, колонки, неон DJ
+  B(6, 1.05, 1.6, 0x14141c, bx, 0.55, bz - 8.5, 0); col(bx - 3, bz - 9.3, bx + 3, bz - 7.7);
+  B(2.4, 0.12, 0.7, 0x22222e, bx - 1, 1.15, bz - 8.5, 0, 0x00e5ff, 0.4); // пульт
+  B(0.7, 0.5, 0.4, 0x0a0a12, bx + 1.6, 1.3, bz - 8.5, 0.3, 0xff00aa, 0.6); // ноутбук
+  [-3.6, 3.6].forEach(sx => {
+    B(1.3, 2.6, 1.3, 0x0e0e16, bx + sx, 1.3, bz - 9.2, 0);  // колонки
+    B(1, 0.7, 0.1, 0x1a1a24, bx + sx, 2.1, bz - 8.55, 0, 0x6c5ce7, 0.3);
+  });
+  B(2.6, 0.5, 0.1, 0x0a0a12, bx, 2.6, bz - 10.9, 0, 0x00e5ff, 0.9); // неон DJ
+
+  // Бар: Г-стойка, бутылки, табуреты
+  B(9, 1.15, 1.1, 0x1c1220, bx + 8, 0.6, bz + 6.5, 0); col(bx + 3.5, bz + 5.9, bx + 12.5, bz + 7.1);
+  B(1.1, 1.15, 6, 0x1c1220, bx + 12.5, 0.6, bz + 3.5, 0); col(bx + 11.9, bz + 0.5, bx + 13.1, bz + 6.5);
+  B(9, 0.08, 0.3, 0x6c5ce7, bx + 8, 1.22, bz + 6.1, 0, 0x6c5ce7, 0.8); // неон-полоса бара
+  for (let k = 0; k < 9; k++) {
+    B(0.16, 0.5, 0.16, [0x00e5ff, 0xffd700, 0xff4d6d, 0x4dff88][k % 4],
+      bx + 4.5 + k * 0.85, 1.5, bz + 6.9, 0, [0x00e5ff, 0xffd700, 0xff4d6d, 0x4dff88][k % 4], 0.7);
+  }
+  for (let k = 0; k < 4; k++) {
+    B(0.5, 0.75, 0.5, 0x22222e, bx + 4.5 + k * 1.7, 0.4, bz + 8.6, 0); // табуреты
+  }
+
+  // VIP-ложа на подиуме
+  B(7, 0.35, 5, 0x181022, bx - 9, 0.18, bz + 7, 0); col(bx - 12.5, bz + 4.5, bx - 5.5, bz + 9.5);
+  B(4.5, 0.6, 1.3, 0x2a1535, bx - 10.5, 0.65, bz + 8.7, 0);  // диван
+  B(4.5, 0.6, 1.3, 0x2a1535, bx - 7.2, 0.65, bz + 4.9, Math.PI);
+  B(1.1, 0.5, 0.8, 0x0a0a12, bx - 9, 0.65, bz + 6.8, 0, 0xffd700, 0.5); // столик
+  const vipL = new THREE.PointLight(0xffd700, 0.8, 8); vipL.position.set(bx - 9, F + 2.6, bz + 7); add(vipL);
+
+  // Лазерные лучи (декоративные балки от потолка)
+  for (let k = 0; k < 3; k++) {
+    const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.01, 5.5, 4),
+      mat(0x000000, [0xff00aa, 0x00e5ff, 0x4dff88][k], 0.7));
+    beam.material.transparent = true; beam.material.opacity = 0.65;
+    beam.position.set(bx - 4 + k * 4, F + 1.6, bz - 5);
+    beam.rotation.z = (k - 1) * 0.35; beam.rotation.x = 0.2;
+    add(beam);
+  }
+
+  addInteriorSign('🎵 NEON CLUB', bx, F + FH - 0.4, bz - 11.55, add);
+}
 function buildSuperHouseInterior(bx, bz, floor, FH, add, mat) {
   // ═══ 🏡 ТВОЙ ДОМ — ОДИН ОГРОМНЫЙ ЛОФТ-ЗАЛ 40×30 (без лестниц) ═══
   const F = floor * FH;
@@ -13498,213 +13736,645 @@ function buildSuperHouseInterior(bx, bz, floor, FH, add, mat) {
 
 
 function buildApartmentInterior(bx, bz, floor, FH, add, mat) {
-  const roomTypes = [
-    'lobby', 'living', 'bedroom', 'kitchen', 'bathroom',
-    'office', 'gym', 'rooftop', 'penthouse', 'storage'
-  ];
-  const roomType = roomTypes[floor % roomTypes.length];
-  const roomLabels = {
-    lobby:'🏢 ВЕСТИБЮЛЬ', living:'🛋️ ГОСТИНАЯ', bedroom:'🛏️ СПАЛЬНЯ',
-    kitchen:'🍳 КУХНЯ', bathroom:'🚿 ВАННАЯ', office:'💻 КАБИНЕТ',
-    gym:'🏋️ СПОРТЗАЛ', rooftop:'🌇 КРЫША', penthouse:'👑 ПЕНТХАУС', storage:'📦 СКЛАД'
+  // ═══ 🏠 ЖИЛОЙ ДОМ — 10 типов квартир по этажам, всё супер-детально ═══
+  const F = floor * FH;
+  const B = (w, h, d, color, x, y, z, ry, emissive, em) => {
+    const m2 = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, emissive || 0, em || 0));
+    m2.position.set(x, F + y, z); if (ry) m2.rotation.y = ry;
+    add(m2); return m2;
   };
-  addInteriorSign(roomLabels[roomType] || 'КВАРТИРА', bx, floor*FH + FH - 0.3, bz + 9.9, add);
+  const col = (x1, z1, x2, z2) => interiorColliders.push({ minX: x1, maxX: x2, minZ: z1, maxZ: z2 });
+  const lamp = (color, x, y, z, i, d) => { const l = new THREE.PointLight(color, i, d || 8); l.position.set(x, F + y, z); add(l); return l; };
+  const plant = (x, z, s) => { s = s || 1;
+    B(0.8*s, 0.5*s, 0.8*s, 0x8a5a2a, x, 0.25*s, z, 0);
+    B(0.9*s, 1.5*s, 0.9*s, 0x2d6b1e, x, 1.2*s, z, 0);
+    B(0.7*s, 0.9*s, 0.7*s, 0x37942a, x, 2.1*s, z, 0);
+  };
+
+  const roomTypes = ['lobby','living','bedroom','kitchen','bathroom','office','gym','rooftop','penthouse','storage'];
+  const roomType = roomTypes[floor % roomTypes.length];
+  const roomLabels = { lobby:'🏢 ВЕСТИБЮЛЬ', living:'🛋️ ГОСТИНАЯ', bedroom:'🛏️ СПАЛЬНЯ',
+    kitchen:'🍳 КУХНЯ-СТОЛОВАЯ', bathroom:'🚿 ВАННАЯ', office:'💻 КАБИНЕТ',
+    gym:'🏋️ МИНИ-СПОРТЗАЛ', rooftop:'🌇 КРЫША', penthouse:'👑 ПЕНТХАУС', storage:'📦 КЛАДОВКА' };
+  addInteriorSign(roomLabels[roomType], bx, F + FH - 0.3, bz + 11.6, add);
+
+  // Паркет везде (кроме крыши/ванной)
+  const flC = { rooftop: 0x555a5e, bathroom: 0xcfe4ea }[roomType] || 0x9a7448;
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(30, 24), mat(flC));
+  fl.rotation.x = -Math.PI/2; fl.position.set(bx, F + 0.015, bz); add(fl);
 
   if (roomType === 'lobby') {
-    // Mailboxes
+    // Почтовые ящики + доска + диваны + консьерж
     for (let m = 0; m < 8; m++) {
-      const box = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.35, 0.25), mat(0x888888));
-      box.position.set(bx - 7 + m * 1.1, floor*FH + 1.2, bz - 9); add(box);
+      B(0.5, 0.4, 0.3, 0x9aa2a8, bx - 7 + m * 2, 1.2, bz - 11.2, 0);
+      B(0.4, 0.06, 0.02, 0x6b7075, bx - 7 + m * 2, 1.25, bz - 11.03, 0);
     }
-    // Notice board
-    const board = new THREE.Mesh(new THREE.PlaneGeometry(3, 2), mat(0x8B4513));
-    board.position.set(bx + 7, floor*FH + 1.8, bz - 9.9); add(board);
-    // Sofa
-    const sofa = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.6, 1.1), mat(0x708090));
-    sofa.position.set(bx, floor*FH + 0.35, bz + 5); add(sofa);
-    spawnInteriorNPC(bx, floor*FH, bz + 3, 'guard', add);
+    B(3.4, 2.2, 0.1, 0x8B4513, bx + 8, 1.8, bz - 11.4, 0);
+    for (let k = 0; k < 6; k++) B(0.6, 0.6, 0.02, [0xfff176, 0x81d4fa, 0xffab91][k % 3], bx + 7 + (k % 3) * 1.1, 1.2 + Math.floor(k / 3) * 0.8, bz - 11.32, 0);
+    B(4, 0.55, 1.2, 0x4a6a5e, bx - 5, 0.3, bz + 5, 0); B(4, 0.7, 0.22, 0x3d5a50, bx - 5, 0.8, bz + 5.6, 0);
+    B(4, 0.55, 1.2, 0x4a6a5e, bx + 5, 0.3, bz + 5, 0); B(4, 0.7, 0.22, 0x3d5a50, bx + 5, 0.8, bz + 5.6, 0);
+    col(bx - 7, bz + 4.3, bx - 3, bz + 5.9); col(bx + 3, bz + 4.3, bx + 7, bz + 5.9);
+    B(2.2, 0.1, 1, 0x8a6a4a, bx, 0.5, bz + 5, 0); // журнальный стол
+    B(3, 1.1, 1, 0x6b4a2a, bx, 0.55, bz + 9, 0); col(bx - 1.5, bz + 8.4, bx + 1.5, bz + 9.6); // стойка консьержа
+    spawnInteriorNPC(bx - 1, F, bz + 9, 'guard', add);
+    plant(bx - 13, bz + 10, 1.2); plant(bx + 13, bz + 10, 1.2);
+    lamp(0xffe8c0, bx, 3, bz, 0.7, 18);
   } else if (roomType === 'living') {
-    // Sofa
-    const sofa = new THREE.Mesh(new THREE.BoxGeometry(4, 0.6, 1.2), mat(0x4a6fa5));
-    sofa.position.set(bx - 2, floor*FH + 0.35, bz + 4); add(sofa);
-    const sofaBack = new THREE.Mesh(new THREE.BoxGeometry(4, 0.8, 0.2), mat(0x3a5a8a));
-    sofaBack.position.set(bx - 2, floor*FH + 0.85, bz + 4.6); add(sofaBack);
-    // Coffee table
-    const table = new THREE.Mesh(new THREE.BoxGeometry(2, 0.1, 1.2), mat(0x8b6914));
-    table.position.set(bx - 2, floor*FH + 0.55, bz + 2.5); add(table);
-    // TV
-    const tv = new THREE.Mesh(new THREE.BoxGeometry(3, 1.8, 0.15), mat(0x111111));
-    tv.position.set(bx + 4, floor*FH + 1.5, bz - 8); add(tv);
-    const tvScr = new THREE.Mesh(new THREE.PlaneGeometry(2.7, 1.5), mat(0x001a33, 0x0044aa, 0.4));
-    tvScr.position.set(bx + 4, floor*FH + 1.5, bz - 7.92); add(tvScr);
-    // Plant
-    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.2, 0.5, 8), mat(0xa0522d));
-    pot.position.set(bx - 8, floor*FH + 0.25, bz + 8); add(pot);
-    const plant = new THREE.Mesh(new THREE.SphereGeometry(0.5, 6, 6), mat(0x228b22));
-    plant.position.set(bx - 8, floor*FH + 0.85, bz + 8); add(plant);
+    // Гостиная: диван-угол + ТВ-тумба + ковёр + камин + полки
+    const rug = new THREE.Mesh(new THREE.PlaneGeometry(10, 7), mat(0x7a3b3b));
+    rug.rotation.x = -Math.PI/2; rug.position.set(bx - 2, F + 0.02, bz + 2); add(rug);
+    B(5, 0.55, 1.3, 0x54626f, bx - 2, 0.3, bz + 4.5, 0); B(5, 0.75, 0.25, 0x46525d, bx - 2, 0.85, bz + 5.2, 0);
+    B(1.3, 0.55, 3.4, 0x54626f, bx - 4.6, 0.3, bz + 2.6, 0); B(0.25, 0.75, 3.4, 0x46525d, bx - 5.2, 0.85, bz + 2.6, 0);
+    col(bx - 5, bz + 3.9, bx + 0.5, bz + 5.5);
+    B(2.2, 0.1, 1.2, 0x8a6a4a, bx - 2, 0.45, bz + 2, 0); // журнальный стол
+    B(0.4, 0.12, 0.4, 0x0d1114, bx - 2.7, 0.56, bz + 2, 0); // книги
+    B(3, 0.5, 1, 0x5a4a35, bx - 2, 0.25, bz - 2, 0); col(bx - 3.5, bz - 2.6, bx - 0.5, bz - 1.4); // ТВ-тумба
+    const tv = B(2.6, 1.5, 0.1, 0x0a0d10, bx - 2, 1.3, bz - 2.2, 0, 0x4d7dff, 0.5); tv.userData = { isTVLight: true };
+    // Камин
+    B(2.4, 1.6, 0.5, 0x6a5a4a, bx + 9, 0.8, bz - 11, 0);
+    const fire = B(1.4, 0.7, 0.3, 0xff6b1a, bx + 9, 0.5, bz - 10.8, 0, 0xffa733, 0.9); fire.userData = { isFireLight: true, ph: 0 };
+    const fl2 = lamp(0xff9a3d, bx + 9, 0.8, bz - 10, 0.9, 7); fl2.userData = { isFireLight: true, ph: 0.5 };
+    col(bx + 7.7, bz - 11.4, bx + 10.3, bz - 10.3);
+    // Стеллаж-полка с книгами
+    B(3.4, 2, 0.4, 0x6b4a2a, bx - 13, 1, bz + 6, Math.PI / 2);
+    for (let k = 0; k < 8; k++) B(0.3, 0.5, 0.28, [0xa23b3b, 0x3b6ba2, 0x3ba25a, 0xa2893b][k % 4], bx - 12.8, 0.5 + Math.floor(k / 4) * 1.1, bz + 4.9 + (k % 4) * 0.75, 0);
+    plant(bx + 12, bz + 8, 1.1); plant(bx - 12, bz - 8, 0.9);
+    spawnInteriorNPC(bx + 4, F, bz + 7, 'shopper', add);
+    lamp(0xffe0b0, bx - 2, 3, bz + 2, 0.7, 14);
   } else if (roomType === 'bedroom') {
-    // Bed
-    const bed = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.5, 5), mat(0xffffff));
-    bed.position.set(bx + 5, floor*FH + 0.35, bz + 4); add(bed);
-    const pillow = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.3, 0.8), mat(0xf0f0f0));
-    pillow.position.set(bx + 5, floor*FH + 0.65, bz + 1.8); add(pillow);
-    const blanket = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.18, 3), mat(0x4682b4));
-    blanket.position.set(bx + 5, floor*FH + 0.65, bz + 5.5); add(blanket);
-    // Wardrobe
-    const wardrobe = new THREE.Mesh(new THREE.BoxGeometry(3, FH - 0.5, 0.7), mat(0x6b3a2a));
-    wardrobe.position.set(bx - 7, floor*FH + (FH-0.5)/2, bz - 8); add(wardrobe);
-    // Lamp
-    const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.8, 8), mat(0xdddddd));
-    lampBase.position.set(bx + 3, floor*FH + 0.4, bz + 1.8); add(lampBase);
-    const lampShade = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.5, 8, 1, true), mat(0xffffcc));
-    lampShade.position.set(bx + 3, floor*FH + 1.05, bz + 1.8); add(lampShade);
+    // Спальня: кровать king + тумбы + шкаф + туалетный столик + люстра
+    B(2.6, 0.4, 2.2, 0x4a3a2a, bx, 0.35, bz - 2, 0);            // каркас
+    B(2.4, 0.25, 2, 0xf4f0e8, bx, 0.65, bz - 2, 0);             // матрас
+    B(2.2, 0.35, 1, 0x7a3b52, bx, 0.75, bz - 2.7, 0);           // одеяло
+    B(1.8, 0.16, 0.5, 0xffffff, bx, 0.85, bz - 3.3, 0);         // подушки
+    B(2.6, 1.5, 0.18, 0x3d2e20, bx, 0.9, bz - 3.5, 0);          // изголовье
+    col(bx - 1.4, bz - 3.7, bx + 1.4, bz - 0.6);
+    B(0.55, 0.55, 0.55, 0x5a4a35, bx - 1.8, 0.28, bz - 3.9, 0); // тумба Л
+    B(0.55, 0.55, 0.55, 0x5a4a35, bx + 1.8, 0.28, bz - 3.9, 0); // тумба П
+    B(0.22, 0.3, 0.22, 0xfff3c0, bx - 1.8, 0.7, bz - 3.9, 0, 0xffd56b, 0.8); // светильники
+    B(0.22, 0.3, 0.22, 0xfff3c0, bx + 1.8, 0.7, bz - 3.9, 0, 0xffd56b, 0.8);
+    const nl = lamp(0xffd56b, bx, 1.2, bz - 3.9, 0.5, 6);
+    B(3, 2.6, 0.7, 0x4a3a2a, bx + 12.5, 1.3, bz + 6, -Math.PI / 2); // шкаф
+    B(0.05, 2.2, 2.6, 0x39424e, bx + 12.1, 1.3, bz + 6, 0);      // щель дверей
+    col(bx + 11.8, bz + 4.4, bx + 13, bz + 7.6);
+    B(1.6, 0.75, 0.5, 0x8a6a4a, bx - 10, 0.38, bz + 8, 0);       // туалетный столик
+    B(0.7, 0.9, 0.06, 0xcfe8ef, bx - 10, 1.5, bz + 8.3, 0.2, 0xbfe8f5, 0.3); // зеркало
+    col(bx - 10.8, bz + 7.6, bx - 9.2, bz + 8.4);
+    plant(bx - 12, bz - 9, 1);
+    spawnInteriorNPC(bx - 6, F, bz + 6, 'shopper', add);
+    lamp(0xffdf9e, bx, 3, bz - 1, 0.6, 14);
   } else if (roomType === 'kitchen') {
-    // Kitchen units
-    const kitchen = new THREE.Mesh(new THREE.BoxGeometry(8, 2.5, 1), mat(0x996633));
-    kitchen.position.set(bx - 2, floor*FH + 1.25, bz - 8); add(kitchen);
-    const kitchenTop = new THREE.Mesh(new THREE.BoxGeometry(8.2, 0.1, 1.2), mat(0x555555));
-    kitchenTop.position.set(bx - 2, floor*FH + 2.55, bz - 8); add(kitchenTop);
-    // Fridge
-    const fridge = new THREE.Mesh(new THREE.BoxGeometry(1, 3.2, 0.85), mat(0xeeeeee));
-    fridge.position.set(bx + 5, floor*FH + 1.6, bz - 8); add(fridge);
-    // Dining table
-    const dt = new THREE.Mesh(new THREE.BoxGeometry(3, 0.1, 1.8), mat(0xc8a87a));
-    dt.position.set(bx - 2, floor*FH + 0.78, bz + 4); add(dt);
-    for (let c = -1; c <= 1; c += 2) {
-      const ch = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.1, 0.7), mat(0x4a4a4a));
-      ch.position.set(bx - 2 + c * 2, floor*FH + 0.55, bz + 4); add(ch);
+    // Кухня-столовая: гарнитур Г + остров + обеденный стол на 6
+    B(9, 0.9, 1, 0xe8e2d8, bx - 5, 0.45, bz - 10.8, 0); col(bx - 9.5, bz - 11.4, bx - 0.5, bz - 10.2); // нижние шкафы
+    B(9, 0.08, 1.1, 0x3a3228, bx - 5, 0.92, bz - 10.8, 0);
+    B(9, 0.8, 0.5, 0xe8e2d8, bx - 5, 2.2, bz - 11.2, 0); // верхние шкафы
+    B(1.2, 0.06, 0.9, 0x22262e, bx - 8, 0.96, bz - 10.8, 0, 0xff6b35, 0.3); // плита
+    for (let b2 = 0; b2 < 4; b2++) { const o = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.035, 6, 14), mat(0x111418)); o.position.set(bx - 8.6 + b2 % 2 * 0.9, F + 0.99, bz - 11 + Math.floor(b2 / 2) * 0.7); o.rotation.x = Math.PI / 2; add(o); }
+    B(0.9, 1.9, 0.9, 0xd8dde2, bx - 0.6, 0.95, bz - 10.8, 0); col(bx - 1.1, bz - 11.4, bx - 0.1, bz - 10.2); // холодильник
+    const kz = lamp(0xfff6e0, bx - 5, 2.6, bz - 10.5, 0.55, 6);
+    // Остров + барные табуреты
+    B(4, 0.9, 1.6, 0x3a3228, bx + 3, 0.45, bz - 3, 0); B(4.2, 0.1, 1.8, 0xe8e2d8, bx + 3, 0.95, bz - 3, 0);
+    col(bx + 0.9, bz - 3.9, bx + 5.1, bz - 2.1);
+    [1.8, 4.2].forEach(tx => { B(0.36, 0.07, 0.36, 0x22262e, bx + tx, 0.62, bz - 1.2, 0); B(0.09, 0.6, 0.09, 0x8a8f98, bx + tx, 0.31, bz - 1.2, 0); });
+    // Обеденный стол + 6 стульев + люстра
+    B(3, 0.09, 1.6, 0x8a5a2a, bx + 2, 0.78, bz + 6, 0);
+    B(0.14, 0.75, 1.4, 0x5a3a1a, bx + 0.7, 0.38, bz + 6, 0); B(0.14, 0.75, 1.4, 0x5a3a1a, bx + 3.3, 0.38, bz + 6, 0);
+    col(bx + 0.5, bz + 5.1, bx + 3.5, bz + 6.9);
+    [-0.5, 0.5].forEach(sx => [-0.6, 0, 0.6].forEach(sz => {
+      B(0.45, 0.45, 0.45, 0x5a3a1a, bx + 2 + sx * 2, 0.24, bz + 6 + sz * 1.5, 0);
+      B(0.45, 0.9, 0.1, 0x5a3a1a, bx + 2 + sx * 2.4, 0.7, bz + 6 + sz * 1.5, sx > 0 ? Math.PI / 2 : -Math.PI / 2);
+    }));
+    B(0.06, 0.5, 0.06, 0xb0a080, bx + 2, FH - 0.3, bz + 6, 0);
+    const ch = new THREE.Mesh(new THREE.SphereGeometry(0.35, 10, 8), mat(0xffd700, 0xffaa00, 0.5));
+    ch.position.set(bx + 2, F + FH - 0.6, bz + 6); add(ch);
+    lamp(0xffe8a0, bx + 2, FH - 0.7, bz + 6, 0.9, 10);
+    plant(bx + 11, bz + 9, 1.1);
+    spawnInteriorNPC(bx + 4, F, bz + 8.5, 'chef', add);
+  } else if (roomType === 'bathroom') {
+    // Ванная: плитка + ванна + раковина + унитаз + зеркала + стиралка
+    const tile = new THREE.Mesh(new THREE.PlaneGeometry(30, 24), mat(0xcfe4ea));
+    tile.rotation.x = -Math.PI/2; tile.position.set(bx, F + 0.015, bz); add(tile);
+    // Ванна-остров
+    B(2.8, 0.7, 1.4, 0xf4fafc, bx - 6, 0.35, bz - 6, 0); B(2.5, 0.15, 1.1, 0x9ad4e8, bx - 6, 0.68, bz - 6, 0, 0x66c6e8, 0.25);
+    col(bx - 7.5, bz - 6.8, bx - 4.5, bz - 5.2);
+    B(0.5, 1.1, 0.5, 0x8fa8b2, bx - 6.8, 1.2, bz - 6.9, 0); // смеситель
+    // Двойная раковина + зеркала
+    B(3, 0.9, 0.7, 0xe8f2f5, bx + 5, 0.45, bz - 10.5, 0); col(bx + 3.4, bz - 10.9, bx + 6.6, bz - 10.1);
+    [-1, 1].forEach(sx => {
+      const basin = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.22, 0.22, 12), mat(0xf4fafc));
+      basin.position.set(bx + 5 + sx * 0.8, F + 0.98, bz - 10.5); add(basin);
+      B(1.1, 1.3, 0.06, 0xd8f0f8, bx + 5 + sx * 0.8, 2, bz - 11.4, 0, 0xbfe8f5, 0.35);
+    });
+    // Унитаз + биде
+    B(0.55, 0.45, 0.75, 0xf4fafc, bx + 11, 0.22, bz - 8, 0); B(0.5, 0.7, 0.2, 0xf4fafc, bx + 11, 0.6, bz - 8.35, 0);
+    B(0.5, 0.4, 0.6, 0xf4fafc, bx + 11, 0.2, bz - 6.5, 0);
+    col(bx + 10.5, bz - 8.5, bx + 11.5, bz - 6);
+    // Стиральная + сушильная машины
+    [[bz + 9, 0x4dd2ff], [bz + 10.5, 0xffd166]].forEach(([z, c]) => {
+      B(0.85, 0.95, 0.85, 0xf2f4f6, bx + 11, 0.48, z, -Math.PI / 2);
+      const w2 = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.06, 14), mat(0x1c2530, c, 0.5));
+      w2.rotation.z = Math.PI / 2; w2.position.set(bx + 10.55, F + 0.55, z); add(w2);
+    });
+    col(bx + 10.4, bz + 8.5, bx + 11.6, bz + 11);
+    plant(bx - 12, bz + 9, 0.7);
+    lamp(0xe8f6ff, bx, 3, bz, 0.7, 16);
+  } else if (roomType === 'office') {
+    // Кабинет: стол-компьютер + библиотека + сейф + глобус
+    B(3, 0.08, 1.5, 0x6b4a2a, bx - 3, 0.78, bz - 3, 0);
+    B(0.15, 0.76, 1.3, 0x4a3220, bx - 4.4, 0.38, bz - 3, 0); B(0.15, 0.76, 1.3, 0x4a3220, bx - 1.6, 0.38, bz - 3, 0);
+    col(bx - 4.6, bz - 3.8, bx - 1.4, bz - 2.2);
+    const scr = B(0.9, 0.55, 0.06, 0x0d1114, bx - 3, 1.25, bz - 3.4, 0, 0x2d6cb5, 0.55); scr.userData = { isTVLight: true };
+    B(0.6, 0.06, 0.2, 0x22262e, bx - 3, 0.83, bz - 2.6, 0);   // клавиатура
+    B(0.6, 0.7, 0.1, 0x23272e, bx - 3, 0.5, bz - 1.9, Math.PI); // кресло
+    B(5, 2.6, 0.45, 0x4a3220, bx - 13, 1.3, bz + 2, Math.PI / 2); // библиотека
+    for (let k = 0; k < 10; k++) B(0.32, 0.55, 0.3, [0xa23b3b, 0x3b6ba2, 0x3ba25a, 0xa2893b, 0x6b3ba2][k % 5], bx - 12.78, 0.5 + Math.floor(k / 5) * 1.3, bz - 0.5 + (k % 5) * 1.05, 0);
+    const glob = new THREE.Mesh(new THREE.SphereGeometry(0.4, 12, 10), mat(0x2d6cb5, 0x1a4a8a, 0.15));
+    glob.position.set(bx + 4, F + 1.3, bz - 5); add(glob);
+    B(0.08, 1, 0.08, 0x6b4a2a, bx + 4, 0.5, bz - 5, 0);
+    B(1.2, 1.4, 1, 0x39424e, bx + 12, 0.7, bz - 10, 0); col(bx + 11.3, bz - 10.6, bx + 12.7, bz - 9.4); // сейф
+    B(0.06, 0.5, 0.06, 0x22262e, bx + 11.45, 0.7, bz - 10, 0, 0x4dd2ff, 0.5);
+    spawnInteriorNPC(bx + 5, F, bz + 6, 'clerk', add);
+    lamp(0xffeccf, bx - 3, 2.9, bz - 2, 0.65, 10);
+  } else if (roomType === 'gym') {
+    // Мини-спортзал: стойка гантелей + беговая + боксёрская груша + коврики
+    B(2.4, 0.1, 0.9, 0x22262e, bx - 8, 0.5, bz - 8, 0);
+    B(0.12, 0.5, 0.8, 0x39424e, bx - 9.1, 0.25, bz - 8, 0); B(0.12, 0.5, 0.8, 0x39424e, bx - 6.9, 0.25, bz - 8, 0);
+    for (let k = 0; k < 5; k++) {
+      const dsize = 0.12 + k * 0.03;
+      const dumb = new THREE.Mesh(new THREE.CylinderGeometry(dsize, dsize, 0.08, 8), mat(0x1a1d21));
+      dumb.rotation.z = Math.PI / 2; dumb.position.set(bx - 8.8 + k * 0.42, F + 0.62, bz - 8); add(dumb);
+      B(0.03, dsize * 2, dsize * 2, 0x39424e, bx - 8.8 + k * 0.42, 0.62, bz - 8 - dsize - 0.04, 0);
+      B(0.03, dsize * 2, dsize * 2, 0x39424e, bx - 8.8 + k * 0.42, 0.62, bz - 8 + dsize + 0.04, 0);
     }
-    // Stove
-    const stove = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.1, 0.9), mat(0x333333));
-    stove.position.set(bx, floor*FH + 2.57, bz - 8); add(stove);
-    for (let br = 0; br < 4; br++) {
-      const burner = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.04, 10), mat(0x222222));
-      burner.position.set(bx - 0.25 + (br%2)*0.5, floor*FH + 2.62, bz - 8 + (Math.floor(br/2)-0.5)*0.35); add(burner);
+    col(bx - 9.3, bz - 8.5, bx - 6.7, bz - 7.5);
+    B(0.7, 0.14, 2.2, 0x22262e, bx + 6, 0.12, bz - 4, 0); B(0.75, 0.1, 0.3, 0x39424e, bx + 6, 0.24, bz - 5.2, 0); // беговая
+    col(bx + 5.6, bz - 5.4, bx + 6.4, bz - 2.8);
+    B(0.09, 0.5, 0.09, 0x39424e, bx + 8, FH - 0.4, bz + 6, 0); // крепление
+    const bag = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.3, 1.1, 10), mat(0x8a2f2f));
+    bag.position.set(bx + 8, F + 2.2, bz + 6); add(bag); col(bx + 7.5, bz + 5.5, bx + 8.5, bz + 6.5);
+    B(0.09, 1.2, 0.09, 0x39424e, bx + 8, FH - 0.15, bz + 6, 0);
+    [[bx - 3, bz + 6], [bx - 1.5, bz + 6], [bx, bz + 6]].forEach(([x, z]) => {
+      B(1.3, 0.04, 2.4, 0x6b3b8a, x, 0.03, z, 0); // йога-коврики
+    });
+    B(3, 1.1, 0.9, 0x39424e, bx + 2, 0.55, bz + 10, 0); col(bx + 0.4, bz + 9.5, bx + 3.6, bz + 10.5); // скамья
+    B(0.6, 0.5, 0.06, 0x0a0d10, bx - 13, 2, bz, Math.PI / 2, 0x4dff88, 0.6); // плакат FIT
+    lamp(0xeaf6ff, bx, 3, bz, 0.8, 16);
+  } else if (roomType === 'rooftop') {
+    // Крыша-терраса: настил + шезлонги + барбекю + джакузи + периметр
+    const deck = new THREE.Mesh(new THREE.PlaneGeometry(30, 24), mat(0x8a6a48));
+    deck.rotation.x = -Math.PI/2; deck.position.set(bx, F + 0.015, bz); add(deck);
+    for (let k = 0; k < 12; k++) B(1.15, 0.06, 0.5, 0x6b4a2a, bx - 6.3 + (k % 6) * 2.5, 0.05, bz - 8 + Math.floor(k / 6) * 0.6, 0);
+    [[bx - 8, bz + 4], [bx - 5, bz + 4]].forEach(([x, z]) => {
+      B(0.8, 0.16, 2, 0xe8e2d8, x, 0.35, z, 0); B(0.75, 0.65, 0.12, 0xe8e2d8, x, 0.55, z + 1, -0.4); // шезлонг
+      col(x - 0.5, z - 1.1, x + 0.5, z + 1.1);
+    });
+    // Джакузи-бассейн с подсветкой
+    B(3.4, 0.6, 3.4, 0x55606a, bx + 7, 0.3, bz + 6, 0);
+    const wat = B(3, 0.1, 3, 0x2fa8d5, bx + 7, 0.55, bz + 6, 0, 0x35c4f0, 0.5);
+    wat.userData = { isClubLight: true, phase: 0 };
+    const jl = lamp(0x35c4f0, bx + 7, 0.4, bz + 6, 0.8, 5); jl.userData = { isClubLight: true, phase: 1 };
+    col(bx + 5.2, bz + 4.2, bx + 8.8, bz + 7.8);
+    // Барбекю + столик
+    B(1.6, 1.1, 0.8, 0x6a5a4a, bx + 12, 0.55, bz - 6, 0); col(bx + 11.1, bz - 6.5, bx + 12.9, bz - 5.5);
+    const bbq = B(1.2, 0.16, 0.5, 0xff6b1a, bx + 12, 1.18, bz - 6, 0, 0xffa733, 0.9); bbq.userData = { isFireLight: true, ph: 2 };
+    const bl = lamp(0xff9a3d, bx + 12, 1.4, bz - 6, 0.6, 5); bl.userData = { isFireLight: true, ph: 2.6 };
+    B(1.4, 0.07, 1.4, 0x8a6a4a, bx - 12, 0.55, bz - 4, 0); B(0.14, 0.55, 0.14, 0x5a3a1a, bx - 12, 0.28, bz - 4, 0);
+    [-1, 1].forEach(sx => B(0.45, 0.5, 0.45, 0x39424e, bx - 12 + sx * 1.1, 0.25, bz - 4, sx > 0 ? -Math.PI / 2 : Math.PI / 2));
+    plant(bx - 13, bz + 9, 1.3); plant(bx + 13, bz + 9, 1.3);
+    // Гирлянда-огни по периметру
+    for (let k = 0; k < 10; k++) {
+      const gl2 = lamp([0xffd700, 0xff4d9d, 0x4dd2ff][k % 3], bx - 13 + k * 2.9, 2.6, bz - 11.5, 0.35, 4);
+      gl2.userData = { isClubLight: true, phase: k * 0.7 };
     }
   } else if (roomType === 'penthouse') {
-    // Luxury penthouse
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(6, 1.1, 1), mat(0x2c1810));
-    bar.position.set(bx, floor*FH + 0.55, bz - 6); add(bar);
-    const barTop = new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.12, 1.2), mat(0x1a1a1a));
-    barTop.position.set(bx, floor*FH + 1.16, bz - 6); add(barTop);
-    // Wine glasses on bar
-    for (let w = -2; w <= 2; w++) {
-      const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 0.3, 6), mat(0x88ccff, 0x3399ff, 0.2));
-      glass.position.set(bx + w * 0.7, floor*FH + 1.3, bz - 6); add(glass);
-    }
-    // Grand piano shape
-    const piano = new THREE.Mesh(new THREE.BoxGeometry(3, 1, 2), mat(0x111111));
-    piano.position.set(bx + 5, floor*FH + 0.5, bz + 5); add(piano);
-    const pianoLid = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.1, 2.1), mat(0x0a0a0a));
-    pianoLid.position.set(bx + 5, floor*FH + 1.05, bz + 5); add(pianoLid);
-    // Chandelier
-    const chandelier = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 8), mat(0xffd700, 0xffaa00, 0.6));
-    chandelier.position.set(bx, floor*FH + FH - 0.4, bz + 2);
-    const chanLight = new THREE.PointLight(0xffe8a0, 1.5, 18);
-    chanLight.position.set(bx, floor*FH + FH - 0.4, bz + 2);
-    add(chandelier); add(chanLight);
-    addInteriorSign('👑 ПЕНТХАУС', bx, floor*FH + FH - 0.3, bz - 9.9, add);
+    // Пентхаус: рояль + бар + арт + панорамные шторы + люстра
+    const rug = new THREE.Mesh(new THREE.PlaneGeometry(12, 8), mat(0x3b2a2a));
+    rug.rotation.x = -Math.PI/2; rug.position.set(bx, F + 0.02, bz); add(rug);
+    const piano = B(3.2, 1, 2.1, 0x111111, bx - 5, 0.5, bz - 3, 0);
+    B(3.3, 0.1, 2.2, 0x0a0a0a, bx - 5, 1.05, bz - 3, 0);
+    for (let k = 0; k < 14; k++) B(0.12, 0.04, 0.5, 0xf4f0e8, bx - 6.3 + k * 0.2, 1.11, bz - 2.2, 0); // клавиши
+    B(1.2, 0.9, 0.5, 0x222222, bx - 5, 0.45, bz - 4.4, 0); // пюпитр
+    col(bx - 6.7, bz - 4.4, bx - 3.3, bz - 1.8);
+    spawnInteriorNPC(bx - 3.5, F, bz - 1, 'clerk', add); // пианист
+    // Бар с напитками
+    B(5, 1.1, 1, 0x1c1220, bx + 7, 0.55, bz - 6, 0); B(5.2, 0.09, 1.2, 0x3a2a55, bx + 7, 1.15, bz - 6, 0);
+    col(bx + 4.4, bz - 6.6, bx + 9.6, bz - 5.4);
+    for (let k = 0; k < 7; k++) B(0.16, 0.5, 0.16, [0x00e5ff, 0xffd700, 0xff4d6d, 0x4dff88][k % 4], bx + 5 + k * 0.65, 1.45, bz - 6, 0, [0x00e5ff, 0xffd700, 0xff4d6d, 0x4dff88][k % 4], 0.6);
+    // Винная полка-стена
+    B(3.4, 2.6, 0.4, 0x2a1c10, bx + 12.5, 1.3, bz + 4, -Math.PI / 2);
+    for (let k = 0; k < 12; k++) B(0.14, 0.4, 0.14, [0x722f37, 0x2d6b1e, 0xf4d03f][k % 3], bx + 12.3, 0.4 + Math.floor(k / 4) * 0.85, bz + 2.7 + (k % 4) * 0.8, 0);
+    // Диван-полукруг + стеклянный стол
+    B(5, 0.55, 1.4, 0x39424e, bx - 1, 0.3, bz + 5, 0); B(5, 0.75, 0.25, 0x2f3742, bx - 1, 0.85, bz + 5.7, 0);
+    B(1.6, 0.7, 0.25, 0x39424e, bx - 3.8, 0.5, bz + 4, Math.PI / 2); B(1.6, 0.7, 0.25, 0x39424e, bx + 1.8, 0.5, bz + 4, -Math.PI / 2);
+    const gt = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.06, 16), mat(0x9ad4ff, 0x66c6ff, 0.2));
+    gt.position.set(bx - 1, F + 0.5, bz + 3.8); add(gt); B(0.12, 0.48, 0.12, 0x39424e, bx - 1, 0.24, bz + 3.8, 0);
+    col(bx - 4, bz + 4.2, bx + 2, bz + 5.9);
+    // Арт-инсталляция: светящиеся кольца
+    [[0, 3.2, 0xffd700], [2.2, 3.9, 0xff4d9d], [-2.2, 4.6, 0x4dd2ff]].forEach(([ox, h2, c]) => {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.8, 0.06, 8, 24), mat(0x111, c, 0.8));
+      ring.position.set(bx + 10 + ox, F + h2 - 1, bz + 9); ring.rotation.y = ox; add(ring);
+    });
+    // Люстра каскадом
+    B(0.06, 0.6, 0.06, 0xb0a080, bx - 1, FH - 0.35, bz, 0);
+    const chandelier = new THREE.Mesh(new THREE.SphereGeometry(0.45, 10, 8), mat(0xffd700, 0xffaa00, 0.6));
+    chandelier.position.set(bx - 1, F + FH - 0.7, bz); add(chandelier);
+    lamp(0xffe8a0, bx - 1, FH - 0.8, bz, 1.1, 16);
+    plant(bx - 13, bz - 8, 1.4); plant(bx + 13, bz - 8, 1.4);
+    addInteriorSign('👑 ПЕНТХАУС', bx + 6, F + FH - 0.4, bz - 11.55, add);
   } else {
-    // Generic room fallback
-    const sofa = new THREE.Mesh(new THREE.BoxGeometry(4, 0.6, 1.2), mat(0x4a6fa5));
-    sofa.position.set(bx - 2, floor*FH + 0.35, bz + 4); add(sofa);
-    const table = new THREE.Mesh(new THREE.BoxGeometry(2, 0.1, 1.2), mat(0x8b6914));
-    table.position.set(bx - 2, floor*FH + 0.55, bz + 2.5); add(table);
-  }
-}
-
-function buildGymInterior(bx, bz, floor, FH, add, mat) {
-  const eqColor = mat(0x333333);
-  // Тренажёры
-  for(let gi=-3; gi<=3; gi+=2){
-    // Штанга
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(2.5,0.1,0.1), mat(0x777777));
-    bar.position.set(bx+gi*2, floor*FH+1.5, bz-4);
-    add(bar);
-    const weight1 = new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.35,0.3,12), mat(0x333333));
-    weight1.rotation.z = Math.PI/2;
-    weight1.position.set(bx+gi*2-1.1, floor*FH+1.5, bz-4);
-    add(weight1);
-    const weight2 = weight1.clone();
-    weight2.position.x = bx+gi*2+1.1;
-    add(weight2);
-    // Стойка
-    const rack = new THREE.Mesh(new THREE.BoxGeometry(2.6,0.1,0.5), mat(0x666666));
-    rack.position.set(bx+gi*2, floor*FH+1.6, bz-4.2);
-    add(rack);
-  }
-  // Беговые дорожки
-  for(let ti=-3; ti<=3; ti+=2.5){
-    const treadmill = new THREE.Mesh(new THREE.BoxGeometry(1.5,0.3,3.5), mat(0x222222));
-    treadmill.position.set(bx+ti, floor*FH+0.2, bz+4);
-    add(treadmill);
-    const belt = new THREE.Mesh(new THREE.BoxGeometry(1.2,0.05,3), mat(0x444444));
-    belt.position.set(bx+ti, floor*FH+0.36, bz+4);
-    add(belt);
-  }
-  // Зеркало
-  const mirror = new THREE.Mesh(new THREE.PlaneGeometry(18,3), mat(0x88bbcc, 0x88bbcc, 0.2));
-  mirror.position.set(bx, floor*FH+1.8, bz-9.8);
-  add(mirror);
-  addInteriorSign('💪 FANTAZIA GYM', bx, floor*FH+2.8, bz-9.7, add);
-}
-
-function buildRestaurantInterior(bx, bz, floor, FH, add, mat) {
-  // Столики
-  for(let ri=-2; ri<=2; ri+=2){
-    for(let ci=-2; ci<=2; ci+=2){
-      const table = new THREE.Mesh(new THREE.CylinderGeometry(0.7,0.7,0.08,12), mat(0xffffff));
-      table.position.set(bx+ri*3, floor*FH+0.78, bz+ci*3);
-      add(table);
-      const tableLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.08,0.8,8), mat(0xcccccc));
-      tableLeg.position.set(bx+ri*3, floor*FH+0.4, bz+ci*3);
-      add(tableLeg);
-      // Стулья вокруг стола
-      for(let s=0; s<4; s++){
-        const sa = (s/4)*Math.PI*2;
-        const chair = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.05,0.5), mat(0xf0e0c8));
-        chair.position.set(bx+ri*3+Math.cos(sa)*1.1, floor*FH+0.6, bz+ci*3+Math.sin(sa)*1.1);
-        add(chair);
+    // storage: кладовка — стеллажи с коробками + велосипеды + лыжи
+    for (let r = 0; r < 3; r++) {
+      const z = bz - 7 + r * 6;
+      B(12, 0.07, 1.1, 0x8a7d6a, bx, 0.6 + 0, z, 0); B(12, 0.07, 1.1, 0x8a7d6a, bx, 1.3, z, 0); B(12, 0.07, 1.1, 0x8a7d6a, bx, 2, z, 0);
+      B(0.12, 2.1, 1.1, 0x6b6152, bx - 6, 1.05, z, 0); B(0.12, 2.1, 1.1, 0x6b6152, bx + 6, 1.05, z, 0);
+      for (let k = 0; k < 7; k++) {
+        const bs = 0.55 + ((r * 7 + k) % 3) * 0.12;
+        B(bs, bs, bs, [0xb08a5a, 0x8aa0b0, 0xa08a6a][(r + k) % 3], bx - 5 + k * 1.7, 0.6 + bs / 2, z, 0);
       }
+      col(bx - 6.2, z - 0.7, bx + 6.2, z + 0.7);
     }
+    // Велосипеды у стены (рама+колёса)
+    [[bx - 10, 0x2d6cb5], [bx + 10, 0xa23b3b]].forEach(([x, c]) => {
+      B(0.08, 1, 1.7, c, x, 1.1, bz + 10.5, 0);
+      const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.05, 6, 16), mat(0x22262e));
+      wheel.position.set(x, F + 0.4, bz + 10.5); add(wheel);
+      const wheel2 = wheel.clone(); wheel2.position.z = bz + 11.2; wheel2.position.x = x; add(wheel2);
+      col(x - 0.5, bz + 9.8, x + 0.5, bz + 11.4);
+    });
+    B(0.08, 2.2, 0.3, 0xb0a26e, bx - 5, 1.2, bz + 11, 0); B(0.08, 2.2, 0.3, 0xb0a26e, bx - 4.7, 1.2, bz + 11, 0); // лыжи
+    lamp(0xfff2d8, bx, 3, bz, 0.6, 16);
   }
-  // Стойка бара / кассы
-  const counter = new THREE.Mesh(new THREE.BoxGeometry(8,1,1.2), mat(0x6b3522));
-  counter.position.set(bx, floor*FH+0.5, bz-8);
-  add(counter);
-  addInteriorSign('🍽️ РЕСТОРАН', bx, floor*FH+2.8, bz-9.8, add);
+}
+function buildGymInterior(bx, bz, floor, FH, add, mat) {
+  // ═══ 🏋️ ЖЕЛЕЗНЫЙ ЗАЛ — кардио, веса, ринг, зеркала ═══
+  const F = floor * FH;
+  const B = (w, h, d, color, x, y, z, ry, emissive, em) => {
+    const m2 = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, emissive || 0, em || 0));
+    m2.position.set(x, F + y, z); if (ry) m2.rotation.y = ry;
+    add(m2); return m2;
+  };
+  const col = (x1, z1, x2, z2) => interiorColliders.push({ minX: x1, maxX: x2, minZ: z1, maxZ: z2 });
+
+  // Резиновый тёмный пол + разметка зон
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(30, 24), mat(0x23262b));
+  fl.rotation.x = -Math.PI/2; fl.position.set(bx, F + 0.015, bz); add(fl);
+
+  // Зеркальная стена (север)
+  const mir = new THREE.Mesh(new THREE.PlaneGeometry(20, 3.2), new THREE.MeshBasicMaterial({ color: 0xbfd9e8 }));
+  mir.position.set(bx, F + 1.7, bz - 11.85); add(mir);
+
+  // Кардио-зона: 4 беговые дорожки
+  for (let k = 0; k < 4; k++) {
+    const x = bx - 11 + k * 2.6;
+    B(1.1, 0.25, 2.3, 0x111, x, 0.13, bz - 8, 0);                       // база
+    B(1, 0.08, 2, 0x16181c, x, 0.28, bz - 8, 0, 0x222, 0.1);            // полотно
+    B(0.9, 0.7, 0.25, 0x0d0d12, x, 0.75, bz - 9, 0, 0x00e5ff, 0.35);    // консоль
+    B(0.7, 0.08, 0.08, 0x333, x - 0.45, 1.05, bz - 8.9, 0);             // поручни
+    B(0.7, 0.08, 0.08, 0x333, x + 0.45, 1.05, bz - 8.9, 0);
+  }
+  col(bx - 12.3, bz - 9.3, bx - 2.2, bz - 6.7);
+
+  // 3 велотренажёра
+  for (let k = 0; k < 3; k++) {
+    const x = bx - 10 + k * 2.2;
+    B(0.4, 0.7, 0.4, 0x333, x, 0.35, bz - 3.6, 0);       // стойка
+    B(1, 0.12, 0.35, 0x16181c, x, 0.72, bz - 3.6, 0);    // седло
+    B(0.08, 0.75, 0.08, 0x444, x, 0.9, bz - 3, 0);       // руль
+    B(0.55, 0.55, 0.12, 0x0d0d12, x, 1.1, bz - 3.15, 0, 0x4dff88, 0.3);
+  }
+  col(bx - 11, bz - 4.3, bx - 6.6, bz - 2.9);
+
+  // Свободные веса: стойка гантелей + 2 скамьи со штангами
+  B(2.4, 0.9, 0.9, 0x14161a, bx + 8, 0.45, bz - 8.5, 0); col(bx + 6.7, bz - 9, bx + 9.3, bz - 8);
+  for (let k = 0; k < 5; k++) {
+    B(0.5, 0.16, 0.16, 0x22262e, bx + 7 + (k % 3) * 0.6, 1.05, bz - 8.6 - Math.floor(k / 3) * 0.5, 0); // гантель-блок
+  }
+  [[bx + 8, bz - 2], [bx + 11, bz - 2]].forEach(([x, z]) => {
+    B(1.8, 0.1, 0.7, 0x1a1c22, x, 0.65, z, 0);       // скамья
+    B(1.6, 0.5, 0.5, 0x14161a, x, 0.25, z, 0);       // опора
+    B(2.2, 0.07, 0.07, 0x444, x, 1.75, z, 0);        // гриф
+    B(0.5, 0.5, 0.09, 0x22262e, x - 1.05, 1.75, z, 0); B(0.5, 0.5, 0.09, 0x22262e, x + 1.05, 1.75, z, 0); // блины
+    B(0.1, 1.75, 0.1, 0x333, x - 0.95, 0.87, z, 0); B(0.1, 1.75, 0.1, 0x333, x + 0.95, 0.87, z, 0);       // стойки
+  });
+  col(bx + 6.8, bz - 3, bx + 12.3, bz - 1.2);
+
+  // Боксёрский ринг: подиум + канаты
+  B(5, 0.5, 5, 0x2a4130, bx + 9, 0.25, bz + 7, 0); col(bx + 6.4, bz + 4.4, bx + 11.6, bz + 9.6);
+  [[-2.2, -2.2], [2.2, -2.2], [2.2, 2.2], [-2.2, 2.2]].forEach(([ox, oz]) => {
+    B(0.16, 1.3, 0.16, 0x333, bx + 9 + ox, 1.1, bz + 7 + oz, 0); // столбы
+  });
+  for (let hgt = 0; hgt < 3; hgt++) {
+    const rope = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.06, 0.06),
+      mat([0xff4444, 0xffffff, 0x4d7dff][hgt]));
+    rope.position.set(bx + 9, F + 0.75 + hgt * 0.35, bz + 7 + 2.25); add(rope);
+    const rope2 = rope.clone(); rope2.position.z = bz + 7 - 2.25; add(rope2);
+    const rope3 = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 4.6), rope.material);
+    rope3.position.set(bx + 9 + 2.25, F + 0.75 + hgt * 0.35, bz + 7); add(rope3);
+    const rope4 = rope3.clone(); rope4.position.x = bx + 9 - 2.25; add(rope4);
+  }
+
+  // Турник-рама + коврики для йоги
+  B(0.12, 2.4, 0.12, 0x333, bx - 9, 1.2, bz + 8, 0); B(0.12, 2.4, 0.12, 0x333, bx - 6, 1.2, bz + 8, 0);
+  B(3.2, 0.09, 0.09, 0x444, bx - 7.5, 2.35, bz + 8, 0);
+  [[0xe74c3c, bx - 3, bz + 7], [0x3498db, bx - 3, bz + 5.4], [0xf1c40f, bx - 1.4, bz + 7]].forEach(([c, x, z]) => {
+    B(1.4, 0.04, 2, c, x, 0.03, z, 0);
+  });
+
+  // Протеиновый бар
+  B(4, 1.05, 0.9, 0x14161a, bx + 2, 0.55, bz + 10.5, 0); col(bx, bz + 10, bx + 4, bz + 11);
+  B(0.4, 0.5, 0.3, 0x0d0d12, bx + 0.8, 1.3, bz + 10.4, 0, 0x4dff88, 0.4); // блендер
+  B(0.5, 0.35, 0.4, 0xf39c12, bx + 2.4, 1.25, bz + 10.4, 0); // шейкеры
+
+  // Подсветка зала
+  [[-8, -6], [8, -6], [-8, 6], [8, 6]].forEach(([lx, lz]) => {
+    const pl = new THREE.PointLight(0xfff0d8, 0.55, 14);
+    pl.position.set(bx + lx, F + FH - 0.6, bz + lz); add(pl);
+  });
+  addInteriorSign('🏋️ ЖЕЛЕЗНЫЙ ЗАЛ', bx, F + FH - 0.4, bz - 11.55, add);
+}
+function buildRestaurantInterior(bx, bz, floor, FH, add, mat) {
+  // ═══ 🍽️ РЕСТОРАН "ЛАСТОЧКА" — свечи, люстры, кухня за стеклом ═══
+  const F = floor * FH;
+  const B = (w, h, d, color, x, y, z, ry, emissive, em) => {
+    const m2 = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, emissive || 0, em || 0));
+    m2.position.set(x, F + y, z); if (ry) m2.rotation.y = ry;
+    add(m2); return m2;
+  };
+  const col = (x1, z1, x2, z2) => interiorColliders.push({ minX: x1, maxX: x2, minZ: z1, maxZ: z2 });
+
+  // Паркет + ковры под столиками
+  const parq = new THREE.Mesh(new THREE.PlaneGeometry(30, 24), mat(0x4a3524));
+  parq.rotation.x = -Math.PI/2; parq.position.set(bx, F + 0.015, bz); add(parq);
+
+  // 6 столиков: круглая скатерть + свеча + стулья
+  const spots = [[-9, -5], [-3, -5], [3, -5], [9, -5], [-6, 2], [6, 2]];
+  spots.forEach(([x, z], i) => {
+    const rug = new THREE.Mesh(new THREE.CircleGeometry(2.1, 18), mat(0x5d2a35));
+    rug.rotation.x = -Math.PI/2; rug.position.set(bx + x, F + 0.02, bz + z); add(rug);
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.14, 1.15, 8), mat(0x2c1810));
+    leg.position.set(bx + x, F + 0.57, bz + z); add(leg);
+    B(1.7, 0.08, 1.7, 0xf5eef0, bx + x, 1.16, bz + z, 0);               // столешница-скатерть
+    const candle = B(0.09, 0.22, 0.09, 0xfff3c0, bx + x, 1.32, bz + z, 0, 0xffd56b, 0.9);
+    const cL = new THREE.PointLight(0xffb347, 0.55, 4);
+    cL.position.set(bx + x, F + 1.7, bz + z); cL.userData = { isFireLight: true, ph: i * 2.2 }; add(cL);
+    const nCh = (i % 2) ? 4 : 2;
+    for (let c = 0; c < nCh; c++) {
+      const a = (c / nCh) * Math.PI * 2 + i;
+      const cx2 = x + Math.cos(a) * 1.55, cz2 = z + Math.sin(a) * 1.55;
+      B(0.5, 0.5, 0.5, 0x3a2013, bx + cx2, 0.25, bz + cz2, -a);           // сиденье
+      B(0.5, 0.9, 0.12, 0x33200f, bx + cx2 + Math.cos(a) * 0.24, 0.75, bz + cz2 + Math.sin(a) * 0.24, -a);
+    }
+    col(x + bx - 1, z + bz - 1, x + bx + 1, z + bz + 1);
+  });
+
+  // Бар: стойка + винная полка + табуреты
+  B(10, 1.15, 1, 0x33200f, bx, 0.58, bz + 8.5, 0); col(bx - 5, bz + 8, bx + 5, bz + 9);
+  B(10.2, 0.08, 1.2, 0xf5eef0, bx, 1.2, bz + 8.5, 0);
+  B(8, 2.6, 0.5, 0x2c1810, bx, 1.5, bz + 10.9, 0); // полка
+  for (let k = 0; k < 12; k++) {
+    B(0.14, 0.44, 0.14, [0x8e44ad, 0x27ae60, 0xc0392b, 0xf1c40f][k % 4],
+      bx - 3.5 + (k % 6) * 1.4, 2.35 - Math.floor(k / 6) * 0.7, bz + 10.7, 0);
+  }
+  for (let k = 0; k < 4; k++) B(0.5, 0.8, 0.5, 0x2c1810, bx - 3 + k * 2, 0.4, bz + 6.9, 0);
+
+  // Кухня за стеклом (север)
+  B(12, 1.05, 2, 0x555c66, bx - 6, 0.53, bz - 10, 0); col(bx - 12, bz - 11, bx, bz - 9);
+  B(12, 1.4, 0.08, 0x9ad4ff, bx - 6, 2.1, bz - 9, 0, 0x66c6ff, 0.2); // стекло
+  for (let k = 0; k < 3; k++) { // конфорки с огнём
+    const burner = new THREE.PointLight(0xff6a00, 0.7, 4);
+    burner.position.set(bx - 10 + k * 1.6, F + 1.4, bz - 10);
+    burner.userData = { isFireLight: true, ph: k * 3.1 }; add(burner);
+    B(0.5, 0.06, 0.5, 0x1a1a1a, bx - 10 + k * 1.6, 1.08, bz - 10, 0);
+  }
+  B(3, 0.8, 1.2, 0x7f8c8d, bx - 3, 1.9, bz - 10.6, 0); // вытяжка
+
+  // Люстры (3 шт)
+  [-7, 0, 7].forEach(x => {
+    const ch = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.7, 0.4, 10), mat(0xf5eef0, 0xffe9b0, 0.5));
+    ch.position.set(bx + x, F + FH - 0.8, bz - 2); add(ch);
+    const chL = new THREE.PointLight(0xffe9b0, 0.75, 10);
+    chL.position.set(bx + x, F + FH - 1.1, bz - 2); add(chL);
+    B(0.05, 0.5, 0.05, 0xb0a080, bx + x, F + FH - 0.35, bz - 2, 0);
+  });
+
+  // Гардероб + касса у входа
+  B(3, 1.1, 0.9, 0x33200f, bx + 11, 0.55, bz + 5, 0); col(bx + 9.5, bz + 4.5, bx + 12.5, bz + 5.5);
+  B(0.9, 0.5, 0.6, 0x111, bx + 11, 1.35, bz + 5, 0, 0x4dff88, 0.5); // касса-экран
+
+  addInteriorSign('🍽️ РЕСТОРАН ЛАСТОЧКА', bx, F + FH - 0.4, bz - 11.55, add);
+}
+function buildHospitalInterior(bx, bz, floor, FH, add, mat) {
+  // ═══ 🏥 БОЛЬНИЦА — ресепшн, палаты, операционная ═══
+  const F = floor * FH;
+  const B = (w, h, d, color, x, y, z, ry, emissive, em) => {
+    const m2 = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, emissive || 0, em || 0));
+    m2.position.set(x, F + y, z); if (ry) m2.rotation.y = ry;
+    add(m2); return m2;
+  };
+  const col = (x1, z1, x2, z2) => interiorColliders.push({ minX: x1, maxX: x2, minZ: z1, maxZ: z2 });
+
+  // Белый плиточный пол + зелёная направляющая линия
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(30, 24), mat(0xe8f0ef));
+  fl.rotation.x = -Math.PI/2; fl.position.set(bx, F + 0.015, bz); add(fl);
+  const guide = new THREE.Mesh(new THREE.PlaneGeometry(1, 22), mat(0x2ecc71));
+  guide.rotation.x = -Math.PI/2; guide.position.set(bx, F + 0.02, bz); add(guide);
+
+  // Ресепшн + светящийся крест
+  B(8, 1.1, 1.2, 0xdfe8e6, bx, 0.55, bz + 9.5, 0); col(bx - 4, bz + 8.9, bx + 4, bz + 10.1);
+  const cross1 = B(1.6, 0.5, 0.12, 0x0a3d2a, bx, 2.5, bz + 11.6, 0, 0x2ecc71, 0.9);
+  const cross2 = B(0.5, 1.6, 0.12, 0x0a3d2a, bx, 2.5, bz + 11.6, 0, 0x2ecc71, 0.9);
+  cross1.material = cross2.material = mat(0x0a3d2a, 0x2ecc71, 0.9);
+
+  // Зона ожидания: скамьи + аптека-окошко
+  [[bx - 11, bz + 7], [bx - 8.5, bz + 7]].forEach(([x, z]) => {
+    B(2.2, 0.1, 0.8, 0x4a6a5e, x, 0.55, z, 0); B(2.2, 0.5, 0.12, 0x4a6a5e, x, 0.85, z + 0.35, 0);
+  });
+  col(bx - 12.2, bz + 6.5, bx - 7.4, bz + 7.5);
+  B(3, 1.05, 0.9, 0xdfe8e6, bx + 11, 0.53, bz + 7, 0); col(bx + 9.4, bz + 6.5, bx + 12.6, bz + 7.5);
+  B(2.6, 0.4, 0.1, 0x143d2e, bx + 11, 1.7, bz + 6.6, 0, 0x2ecc71, 0.5); // вывеска АПТЕКА
+
+  // Палаты: 3 кровати с капельницами и мониторами
+  [[-9, -4], [-2, -4], [5, -4]].forEach(([x, z], i) => {
+    B(1.1, 0.55, 2.4, 0xf4f8f7, bx + x, 0.28, bz + z, 0);              // кровать
+    B(1, 0.16, 0.9, 0xffffff, bx + x, 0.62, bz + z - 0.9, 0);          // подушка
+    B(1, 0.1, 1.2, 0xd6e4e1, bx + x, 0.62, bz + z + 0.4, 0);           // одеяло
+    col(bx + x - 0.7, bz + z - 1.3, bx + x + 0.7, bz + z + 1.3);
+    B(0.08, 1.9, 0.08, 0x9aa8a5, bx + x - 0.85, 0.95, bz + z + 0.9, 0); // стойка капельницы
+    B(0.22, 0.4, 0.1, 0xc8e6f5, bx + x - 0.85, 1.85, bz + z + 0.9, 0, 0x9ad4ff, 0.3);
+    const mon = B(0.6, 0.45, 0.08, 0x0a0f12, bx + x + 0.85, 1.4, bz + z + 0.9, -Math.PI / 2, 0x00e676, 0.7); // монитор
+    const mLight = new THREE.PointLight(0x00e676, 0.35, 3);
+    mLight.position.set(bx + x + 0.85, F + 1.4, bz + z + 0.5);
+    mLight.userData = { isClubLight: true, phase: i * 2 }; add(mLight);
+    // ширма
+    B(0.05, 1.8, 2.6, 0xdce8e6, bx + x + 1.3, 0.9, bz + z - 0.2, 0);
+  });
+
+  // Операционная (северо-восток): большая лампа + стол
+  B(6, 0.25, 6, 0xcfe0dc, bx + 9, 0.12, bz - 7, 0);
+  const opLamp = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.1, 0.35, 16), mat(0xf4f8f7, 0xffffff, 0.85));
+  opLamp.position.set(bx + 9, F + 2.6, bz - 7); add(opLamp);
+  const opLight = new THREE.PointLight(0xffffff, 1.2, 10);
+  opLight.position.set(bx + 9, F + 2.3, bz - 7); add(opLight);
+  B(2, 0.75, 0.9, 0xdfe8e6, bx + 9, 0.62, bz - 7, 0); col(bx + 7.8, bz - 7.6, bx + 10.2, bz - 6.4);
+  B(0.1, 2.6, 0.1, 0x9aa8a5, bx + 9, FH - 0.2, bz - 7, 0); // подвес лампы
+
+  // Указатели на стенах
+  addInteriorSign('→ ПАЛАТЫ   ← ОПЕРАЦИОННАЯ', bx - 4, F + 2.6, bz - 11.55, add);
+  addInteriorSign('🏥 БОЛЬНИЦА · ЭТАЖ ' + (floor + 1), bx, F + FH - 0.4, bz + 11.6, add);
+
+  [[-10, 0], [10, 0], [0, -8]].forEach(([lx, lz]) => {
+    const pl = new THREE.PointLight(0xeef6f4, 0.6, 12);
+    pl.position.set(bx + lx, F + FH - 0.6, bz + lz); add(pl);
+  });
+}
+function buildBankInterior(bx, bz, floor, FH, add, mat) {
+  // ═══ 🏦 БАНК — кассы, лента очереди, хранилище ═══
+  const F = floor * FH;
+  const B = (w, h, d, color, x, y, z, ry, emissive, em) => {
+    const m2 = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, emissive || 0, em || 0));
+    m2.position.set(x, F + y, z); if (ry) m2.rotation.y = ry;
+    add(m2); return m2;
+  };
+  const col = (x1, z1, x2, z2) => interiorColliders.push({ minX: x1, maxX: x2, minZ: z1, maxZ: z2 });
+
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(30, 24), mat(0xe0dacf));
+  fl.rotation.x = -Math.PI/2; fl.position.set(bx, F + 0.015, bz); add(fl);
+
+  // 3 кассы со стеклом
+  for (let k = 0; k < 3; k++) {
+    const x = bx - 7 + k * 7;
+    B(4.4, 1.1, 1.2, 0x5a4a35, x, 0.55, bz - 5, 0);
+    B(4.2, 1.1, 0.08, 0x9ad4ff, x, 2.1, bz - 4.6, 0, 0x66c6ff, 0.2);
+    B(4.4, 0.7, 1.2, 0x5a4a35, x, 2.75, bz - 5, 0); // козырёк кассы
+    B(0.6, 0.4, 0.2, 0x0d1114, x - 1.4, 1.25, bz - 4.3, 0, 0x4dff88, 0.5);
+    col(x - 2.2, bz - 5.7, x + 2.2, bz - 4.3);
+  }
+
+  // Лента очереди (столбики с ремнями)
+  for (let k = 0; k < 5; k++) {
+    const x = bx - 10 + k * 5;
+    B(0.09, 1, 0.09, 0xb0a26e, x, 0.5, bz + 1, 0);
+    B(0.28, 0.06, 0.28, 0xb0a26e, x, 1, bz + 1, 0);
+    if (k < 4) B(5, 0.05, 0.05, 0x8a7d5a, x + 2.5, 0.95, bz + 1, 0);
+  }
+
+  // Банкоматы ×2
+  [[bx + 11, bz - 8], [bx + 11, bz - 6]].forEach(([x, z]) => {
+    B(1.1, 2, 0.8, 0x2c313a, x, 1, z, Math.PI / 2); col(x - 0.6, z - 0.7, x + 0.6, z + 0.7);
+    B(0.7, 0.5, 0.08, 0x0a0d10, x - 0.45, 1.3, z, -Math.PI / 2, 0x4dd2ff, 0.7);
+  });
+
+  // Хранилище: круглая дверь + вентиляция (юго-запад)
+  const vault = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 0.5, 20), mat(0x6a7080, 0x8a94a8, 0.1));
+  vault.rotation.x = Math.PI / 2; vault.position.set(bx - 11, F + 1.8, bz + 9.5); add(vault);
+  const vh = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.09, 8, 18), mat(0x39424e));
+  vh.position.set(bx - 11, F + 1.8, bz + 9.2); add(vh);
+  B(4, 3.4, 0.3, 0x4a5160, bx - 11, 1.7, bz + 10, 0); col(bx - 13, bz + 8.6, bx - 9, bz + 10.6);
+  addInteriorSign('ХРАНИЛИЩЕ · ДОСТУП ОГРАНИЧЕН', bx - 11, F + 3.3, bz + 9.8, add);
+
+  // Скамьи и растения
+  B(4, 0.5, 1.1, 0x5a4a35, bx, 0.3, bz + 7, 0); col(bx - 2, bz + 6.4, bx + 2, bz + 7.6);
+  [[bx + 12.5, bz + 10.5], [bx - 2, bz + 10.5]].forEach(([x, z]) => {
+    B(0.7, 1.4, 0.7, 0x2d5a1b, x, 0.7, z, 0);
+  });
+  addInteriorSign('🏦 ФАНТА-БАНК', bx, F + FH - 0.4, bz - 11.55, add);
+  [[-8, 0], [8, 0]].forEach(([lx, lz]) => {
+    const pl = new THREE.PointLight(0xfff2d8, 0.65, 14);
+    pl.position.set(bx + lx, F + FH - 0.6, bz + lz); add(pl);
+  });
 }
 
-function buildHospitalInterior(bx, bz, floor, FH, add, mat) {
-  // Стойка ресепшн
-  const desk = new THREE.Mesh(new THREE.BoxGeometry(6,1.1,1.2), mat(0xffffff));
-  desk.position.set(bx, floor*FH+0.55, bz-6);
-  add(desk);
-  const cross = new THREE.Mesh(new THREE.PlaneGeometry(0.8,0.8), mat(0xff0000));
-  cross.position.set(bx, floor*FH+1.5, bz-5.39);
-  add(cross);
-  // Кушетки
-  for(let bi=-3; bi<=3; bi+=3){
-    const bed = new THREE.Mesh(new THREE.BoxGeometry(1.5,0.4,3), mat(0xffffff));
-    bed.position.set(bx+bi*1.5, floor*FH+0.25, bz+4);
-    add(bed);
-    const pillow = new THREE.Mesh(new THREE.BoxGeometry(1.2,0.2,0.6), mat(0xf8f8f8));
-    pillow.position.set(bx+bi*1.5, floor*FH+0.5, bz+2.7);
-    add(pillow);
+function buildKaraokeInterior(bx, bz, floor, FH, add, mat) {
+  // ═══ 🎤 КАРА-ОКЕ — сцена, неон, столы-диваны ═══
+  const F = floor * FH;
+  const B = (w, h, d, color, x, y, z, ry, emissive, em) => {
+    const m2 = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, emissive || 0, em || 0));
+    m2.position.set(x, F + y, z); if (ry) m2.rotation.y = ry;
+    add(m2); return m2;
+  };
+  const col = (x1, z1, x2, z2) => interiorColliders.push({ minX: x1, maxX: x2, minZ: z1, maxZ: z2 });
+
+  // Тёмный пол + световая сцена
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(30, 24), mat(0x14101c));
+  fl.rotation.x = -Math.PI/2; fl.position.set(bx, F + 0.015, bz); add(fl);
+
+  // Сцена: подиум + неон-арка + экран текста + микрофоны
+  B(8, 0.45, 4.5, 0x1e1830, bx, 0.22, bz - 7.5, 0); col(bx - 4, bz - 9.8, bx + 4, bz - 5.2);
+  B(0.2, 3.2, 0.2, 0x2a2240, bx - 3.8, 1.6, bz - 9.5, 0);
+  B(0.2, 3.2, 0.2, 0x2a2240, bx + 3.8, 1.6, bz - 9.5, 0);
+  B(7.8, 0.25, 0.25, 0x0a0a12, bx, 3.15, bz - 9.5, 0, 0xff4d9d, 0.9);
+  const karaokeScreen = B(5, 2, 0.12, 0x0a0d14, bx, 2.3, bz - 9.7, 0, 0x4dd2ff, 0.55);
+  karaokeScreen.userData = { isTVLight: true };
+  [-1.6, 1.6].forEach(mx => {
+    B(0.07, 1.5, 0.07, 0x333, bx + mx, 1.2, bz - 7, 0);      // стойка микрофона
+    B(0.13, 0.3, 0.13, 0x0a0a12, bx + mx, 2, bz - 7, 0, 0xc9a227, 0.7);
+  });
+
+  // Столы-диваны (4 зоны по периметру)
+  [[-9, -1], [9, -1], [-9, 7], [9, 7]].forEach(([x, z], i) => {
+    B(2.2, 0.08, 1.4, 0x33254d, bx + x, 0.75, bz + z, 0);   // стол
+    B(0.35, 0.75, 0.35, 0x221836, bx + x - 0.8, 0.37, bz + z, 0);
+    B(0.35, 0.75, 0.35, 0x221836, bx + x + 0.8, 0.37, bz + z, 0);
+    B(2.6, 0.6, 1, 0x2a1f45, bx + x, 0.4, bz + z + 1.3, Math.PI); // диван
+    B(0.5, 0.14, 0.5, 0x0a0a12, bx + x, 0.86, bz + z, 0, [0xff4d9d, 0x4dd2ff, 0xffd700, 0x4dff88][i], 0.6); // лампа стола
+    col(bx + x - 1.3, bz + z - 0.8, bx + x + 1.3, bz + z + 1.8);
+  });
+
+  // Дискошар + цветные огни
+  const ball = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 10), mat(0xcfd8dc, 0xffffff, 0.5));
+  ball.position.set(bx, F + 3.1, bz - 4); add(ball); ball.userData = { isDisco: true };
+  for (let k = 0; k < 4; k++) {
+    const cl = new THREE.PointLight([0xff4d9d, 0x4dd2ff, 0xffd700, 0x4dff88][k], 0.9, 10);
+    cl.position.set(bx - 6 + k * 4, F + 2.8, bz + 2);
+    cl.userData = { isClubLight: true, phase: k * 1.5 }; add(cl);
   }
-  addInteriorSign('🏥 БОЛЬНИЦА', bx, floor*FH+2.8, bz-9.8, add);
+
+  // Бар-уголок
+  B(4.5, 1.1, 0.9, 0x1c1220, bx, 0.55, bz + 10.5, 0); col(bx - 2.3, bz + 10, bx + 2.3, bz + 11);
+  B(4.7, 0.08, 1.1, 0x3a2a55, bx, 1.15, bz + 10.5, 0);
+  for (let k = 0; k < 6; k++) B(0.15, 0.45, 0.15, [0x00e5ff, 0xffd700, 0xff4d6d][k % 3],
+    bx - 1.7 + k * 0.68, 1.42, bz + 10.6, 0, [0x00e5ff, 0xffd700, 0xff4d6d][k % 3], 0.6);
+
+  addInteriorSign('🎤 КАРА-ОКЕ ЗОЛОТОЙ ГОЛОС', bx, F + FH - 0.4, bz - 11.55, add);
 }
 
 function buildGenericInterior(bx, bz, floor, FH, add, mat) {
-  // Простой интерьер — несколько объектов
-  const desk = new THREE.Mesh(new THREE.BoxGeometry(3,0.1,1.5), mat(0xb8860b));
-  desk.position.set(bx, floor*FH+0.8, bz);
-  add(desk);
-  const chair = new THREE.Mesh(new THREE.BoxGeometry(0.7,0.6,0.7), mat(0x444444));
-  chair.position.set(bx, floor*FH+0.35, bz+1.2);
-  add(chair);
-}
+  // ═══ 🏪 УНИВЕРСАЛЬНЫЙ МАГАЗИН — стеллажи, прилавок, касса ═══
+  const F = floor * FH;
+  const B = (w, h, d, color, x, y, z, ry, emissive, em) => {
+    const m2 = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, emissive || 0, em || 0));
+    m2.position.set(x, F + y, z); if (ry) m2.rotation.y = ry;
+    add(m2); return m2;
+  };
+  const col = (x1, z1, x2, z2) => interiorColliders.push({ minX: x1, maxX: x2, minZ: z1, maxZ: z2 });
+  const goods = [0xe74c3c, 0x3498db, 0xf1c40f, 0x2ecc71, 0x9b59b6, 0xe67e22];
 
+  // Стеллажи (3 ряда)
+  for (let r = 0; r < 3; r++) {
+    const z = bz - 6 + r * 5;
+    B(16, 0.07, 1.1, 0x8a7d6a, bx, 0.85, z, 0);
+    B(16, 0.07, 1.1, 0x8a7d6a, bx, 1.55, z, 0);
+    B(0.1, 1.9, 1.1, 0x6b6152, bx - 8, 0.95, z, 0); B(0.1, 1.9, 1.1, 0x6b6152, bx, 0.95, z, 0); B(0.1, 1.9, 1.1, 0x6b6152, bx + 8, 0.95, z, 0);
+    for (let k = 0; k < 11; k++) {
+      B(1, 0.5, 0.85, goods[(k + r) % 6], bx - 7.3 + k * 1.46, 0.6, z, 0);
+      if (k % 2 === 0) B(0.8, 0.45, 0.8, goods[(k + r + 3) % 6], bx - 7.3 + k * 1.46, 1.32, z, 0);
+    }
+    col(bx - 8.2, z - 0.7, bx + 8.2, z + 0.7);
+  }
+
+  // Прилавок + касса
+  B(7, 1.05, 1.1, 0x5a4a35, bx, 0.53, bz + 8.5, 0); col(bx - 3.5, bz + 7.9, bx + 3.5, bz + 9.1);
+  const reg = B(0.55, 0.4, 0.4, 0x0d1114, bx - 2, 1.28, bz + 8.5, 0, 0x4dff88, 0.6); reg.userData = { isTVLight: true };
+  B(0.5, 0.75, 0.5, 0x2c313a, bx + 3.8, 0.38, bz + 6.8, Math.PI); // стул кассира
+
+  // Витрина-холодильник у стены
+  B(4, 2.2, 0.9, 0x1c2530, bx - 10.5, 1.1, bz + 10.5, 0); col(bx - 12.5, bz + 10, bx - 8.5, bz + 11);
+  B(3.6, 1.6, 0.08, 0x9ad4ff, bx - 10.5, 1.15, bz + 10, 0, 0x66c6ff, 0.25);
+  for (let k = 0; k < 4; k++) B(0.4, 0.55, 0.4, goods[k], bx - 11.5 + k * 0.7, 0.65, bz + 10.4, 0);
+
+  addInteriorSign('🏪 МАГАЗИН', bx, F + FH - 0.4, bz + 11.6, add);
+  const pl = new THREE.PointLight(0xfff2d8, 0.7, 16); pl.position.set(bx, F + FH - 0.6, bz); add(pl);
+}
 function addInteriorSign(text, x, y, z, add) {
   const cv = document.createElement('canvas');
   cv.width = 512; cv.height = 96;
@@ -13997,6 +14667,10 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
     interiorObjects.forEach(o => {
       if (o.userData && o.userData.isDisco) {
         o.rotation.y = animationTime * 0.8;
+      }
+      if (o.userData && o.userData.isCarousel) {
+        o.rotation.y = animationTime * 0.55;
+        o.children.forEach(ch => { if (ch.position.y > 0.5 && ch.position.y < 1.6) ch.position.y = 1.05 + Math.sin(animationTime * 2 + ch.position.x * 2) * 0.18; });
       }
       if (o.userData && o.userData.isClubLight) {
         o.intensity = 1.2 + Math.sin(animationTime * 3 + o.userData.phase) * 0.8;
@@ -16923,7 +17597,7 @@ function claimFPReward(r, isPlus, claimKey) {
   .fpp-row-label { font-size: 9px !important; }
 }
 </style>
-<script src="update_script.js?v=217"></script>
+<script src="update_script.js?v=218"></script>
 </body>
 
 <script>
