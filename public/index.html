@@ -54,7 +54,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Fantazia RP 3D · v2.16</title>
+<title>Fantazia RP 3D · v2.17</title>
 <!-- ===== PWA MANIFEST (встроенный) ===== -->
 <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22Fantazia+RP+3D%22%2C%22short_name%22%3A%22Fantazia%22%2C%22description%22%3A%22Fantazia+RP+3D+%E2%80%94+%D0%BC%D0%BE%D0%B1%D0%B8%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+3D+%D0%B8%D0%B3%D1%80%D0%B0%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22fullscreen%22%2C%22orientation%22%3A%22landscape%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%236c5ce7%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABJQTFRFAAAAbEjiqqr%2F6%2BXz1s77////aoCa9AAAAARdFJlcAMEBQYHCJ%2BZAAAAsklEQVR42u3BMQEAAADCoPVP7WsIoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAMBuAABHwAAAABJRU5ErkJggg%3D%3D%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
 <meta name="theme-color" content="#6c5ce7">
@@ -2573,7 +2573,7 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
   </div>
 </div>
 
-<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v2.16</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v2.16 — ОШИБКИ НЕ МЕШАЮТ 🩹</div>
+<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v2.17</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v2.17 — ФИКС КРАША + ЗЕБРЫ 🦓</div>
 <script>setTimeout(function(){var t=document.getElementById('fzVerToast');if(t){t.style.transition='opacity 1s';t.style.opacity='0';setTimeout(function(){t.remove()},1100)}},6000)</script>
 
 <!-- ========== HUD ========== -->
@@ -3274,11 +3274,11 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
 </div>
 
 <!-- ========== СКРИПТЫ ========== -->
-<script src="/socket.io/socket.io.js?v=216"></script>
-<script src="assets/three.min.js?v=216"></script>
+<script src="/socket.io/socket.io.js?v=217"></script>
+<script src="assets/three.min.js?v=217"></script>
 <script>if (!window.THREE) document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\\/script>');</script>
 <!-- ===== НОВАЯ 3D-МОДЕЛЬ ИГРОКА (после Three.js!) ===== -->
-<script src="assets/fantazia-player.js?v=216"></script>
+<script src="assets/fantazia-player.js?v=217"></script>
 <script>
 /*!
  * ============================================================
@@ -5529,9 +5529,9 @@ function buildFantaziaCityV3() {
   }
 
   // ── 5. СПАЛЬНЫЙ РАЙОН (СВ) ──
-  nzBlock(70, -66.8, 0, 9, '#b0b8a8', '🏢 ЖК ЗАРЯ', 'apartment');
-  nzBlock(118.7, -66.3, 0, 7, '#a8b4c2', '🏢 ЖК ЛУГОВОЙ', 'apartment');
-  nzBlock(70, -110.8, 0, 8, '#c2b4a8', '🏢 ЖК ПАРУС', 'apartment');
+  nzBlock(78.7, -46.8, 0, 9, '#b0b8a8', '🏢 ЖК ЗАРЯ', 'apartment');
+  nzBlock(98.7, -91.7, 0, 7, '#a8b4c2', '🏢 ЖК ЛУГОВОЙ', 'apartment');
+  nzBlock(78.7, -110.8, 0, 8, '#c2b4a8', '🏢 ЖК ПАРУС', 'apartment');
   nzBlock(128.7, -110.4, 0, 9, '#b4c2b0', '🏢 ЖК ВОЛНА', 'apartment');
   createBuilding(88, -32.3, 16, 5, 12, 0xFFF3C4, '🏫 ШКОЛА №7', 'office');
   createBuilding(122, -32.3, 10, 5, 8, 0x81C784, '🛒 ПРОДУКТЫ 24', 'shop_food');
@@ -5695,8 +5695,8 @@ function buildFantaziaCityV3() {
     createBuilding(-36 + i * 14.5, -110, 10, 6, 8, cotC2[(i + 5) % 8], '🏡 Дом ' + (200 + i), 'house');
   }
   createBuilding(16.2, -120, 16, 5, 12, 0xFFD54F, '🏫 ГИМНАЗИЯ', 'office');
-  createBuilding(-58.6, -120, 10, 5, 8, 0xFF8A65, '🥐 ПЕКАРНЯ', 'shop_food');
-  createBuilding(60, -121, 12, 6, 10, 0xAED581, '🏥 ДЕТСКАЯ БОЛЬНИЦА', 'hospital');
+  createBuilding(-49.8, -120, 10, 5, 8, 0xFF8A65, '🥐 ПЕКАРНЯ', 'shop_food');
+  createBuilding(71.2, -137, 12, 6, 10, 0xAED581, '🏥 ДЕТСКАЯ БОЛЬНИЦА', 'hospital');
   // Западная полоса: дома + офисы
   nzBlock(-80, -22, Math.PI/2, 7, '#b0bac8', '🏢 ЖК ЗАКАТНЫЙ', 'apartment');
   nzBlock(-80, 26, Math.PI/2, 9, '#c0b0c8', '🏢 ЖК ЛУННЫЙ', 'apartment');
@@ -5991,7 +5991,7 @@ function buildNewCityDistricts() {
     createBuilding(207, -90 + i * 30, 10, 6, 9, cotColors[i % 5], '🏡 ТАУНХАУС ' + (i+1), 'house');
   }
   createBuilding(233, -50, 12, 8, 12, 0xD35400, '🏋️ ФИТНЕС EAST', 'gym');
-  createBuilding(233, 0, 12, 7, 12, 0xC0392B, '🍽️ РЕСТОРАН ПАНОРАМА', 'restaurant');
+  createBuilding(233, 10.7, 12, 7, 12, 0xC0392B, '🍽️ РЕСТОРАН ПАНОРАМА', 'restaurant');
   createBuilding(233, 50, 12, 8, 12, 0xE91E63, '🎤 КАРАОКЕ СТАР', 'karaoke');
 
   // ═══ 6. ДВА НОВЫХ ТЦ ═══
@@ -6049,6 +6049,20 @@ function buildRoads() {
   [-8, 8].forEach(offset => {
     const sw = new THREE.Mesh(new THREE.PlaneGeometry(CONFIG.WORLD_SIZE, 3), sidewalkMat);
     sw.rotation.x = -Math.PI/2; sw.position.set(0, 0.02, offset); scene.add(sw);
+  });
+
+  // 🦓 ЗЕБРЫ на всех перекрёстках реальных дорог (0 и ±60)
+  const zebraMat = new THREE.MeshBasicMaterial({ color: 0xE8E8E8 });
+  [0, 60, -60].forEach(cx => {
+    [0, 60, -60].forEach(cz => {
+      if (cx === 0 && cz === 0) return; // спавн-площадь без зебры
+      for (let k = -3; k <= 3; k++) {
+        const zv = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 2.6), zebraMat);
+        zv.rotation.x = -Math.PI/2; zv.position.set(cx + k*1.05, 0.025, cz + (cx === 0 ? 7.4 : 5.4)); scene.add(zv);
+        const zh = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.7), zebraMat);
+        zh.rotation.x = -Math.PI/2; zh.position.set(cx + (cz === 0 ? 7.4 : 5.4), 0.025, cz + k*1.05); scene.add(zh);
+      }
+    });
   });
 }
 
@@ -6443,12 +6457,12 @@ function spawnMallNPCs(cx, cz) {
 }
 
 function buildResidentialArea() {
-  createBuilding(62, 118.2, 16, 24, 12, 0x7F8C8D, '🏢 ДОМ АВРОРА', 'apartment');
-  createBuilding(62.9, 85.2, 16, 20, 12, 0x95A5A6, '🏢 ДОМ БРИЗ', 'apartment');
+  createBuilding(73.2, 106.2, 16, 24, 12, 0x7F8C8D, '🏢 ДОМ АВРОРА', 'apartment');
+  createBuilding(89.2, 105.2, 16, 20, 12, 0x95A5A6, '🏢 ДОМ БРИЗ', 'apartment');
   createBuilding(132.2, 80.5, 14, 18, 10, 0x636E72, '🏢 ДОМ ВОСХОД', 'apartment');
   createBuilding(132.2, 115, 14, 22, 10, 0x546E7A, '🏢 ДОМ ГОРИЗОНТ', 'apartment');
   createBuilding(80, 80.8, 16, 28, 12, 0x607D8B, '🏢 ДОМ ДЕЛЬФИН', 'apartment');
-  createBuilding(15, 170, 12, 20, 10, 0x455A64, '🏢 ДОМ ЗЕНИТ', 'apartment');
+  createBuilding(15, 158.8, 12, 20, 10, 0x455A64, '🏢 ДОМ ЗЕНИТ', 'apartment');
   // Частные дома — вдали от дорог
   for (let i = 0; i < 4; i++) {
     createBuilding(145, 70 + i*22, 10, 6, 8,
@@ -6479,23 +6493,23 @@ function buildEntertainmentDistrict() {
 }
 function buildBusinessDistrict() {
   // Небоскрёбы делового центра — вдали от центральных дорог
-  createBuilding(-90, -78.7, 12, 35, 12, 0x34495E, '🏦 БАНК', 'bank');
+  createBuilding(-90, -82.7, 12, 35, 12, 0x34495E, '🏦 БАНК', 'bank');
   createBuilding(-136, -118.1, 10, 28, 10, 0x2C3E50, '🏢 ОФИС 1', 'office');
   createBuilding(-70, -79.4, 10, 30, 10, 0x1A237E, '🏢 ОФИС 2', 'office');
-  createBuilding(-135.8, -78.8, 12, 32, 10, 0x263238, '🏢 БАШНЯ ЗАПАД', 'office');
+  createBuilding(-135.8, -81.2, 12, 32, 10, 0x263238, '🏢 БАШНЯ ЗАПАД', 'office');
   createBuilding(-39.3, -79.8, 11, 26, 10, 0x1B2631, '🏢 PREMIUM CENTER', 'office');
   // Полиция
-  createBuilding(-115, -58, 14, 8, 10, 0x0D47A1, '🚔 ПОЛИЦИЯ', 'job_police');
+  createBuilding(-115, -50.8, 14, 8, 10, 0x0D47A1, '🚔 ПОЛИЦИЯ', 'job_police');
   // Больница
-  createBuilding(-70, -58.6, 14, 10, 12, 0xFFFFFF, '🏥 БОЛЬНИЦА', 'job_doctor');
+  createBuilding(-76.2, -50.6, 14, 10, 12, 0xFFFFFF, '🏥 БОЛЬНИЦА', 'job_doctor');
   // Такси
-  createBuilding(-90, -57.4, 10, 6, 8, 0xF1C40F, '🚕 ТАКСИ', 'job_taxi');
+  createBuilding(-90, -51.8, 10, 6, 8, 0xF1C40F, '🚕 ТАКСИ', 'job_taxi');
   // Автосервис
-  createBuilding(-115.8, -66.3, 12, 7, 10, 0x607D8B, '🔧 АВТОСЕРВИС', 'job_mechanic');
+  createBuilding(-115.8, -68.7, 12, 7, 10, 0x607D8B, '🔧 АВТОСЕРВИС', 'job_mechanic');
   // Суд
-  createBuilding(-26.8, -59.8, 16, 12, 12, 0xECEFF1, '⚖️ СУД', 'office');
+  createBuilding(-46.8, -24.8, 16, 12, 12, 0xECEFF1, '⚖️ СУД', 'office');
   // Почта
-  createBuilding(-173.2, -65, 10, 6, 8, 0xF57F17, '📮 ПОЧТА', 'office');
+  createBuilding(-165.2, -76.2, 10, 6, 8, 0xF57F17, '📮 ПОЧТА', 'office');
   // Мэрия
   const mayorBody = new THREE.Mesh(new THREE.BoxGeometry(24,14,18),
     new THREE.MeshLambertMaterial({color:0xF5F5F5}));
@@ -6568,12 +6582,13 @@ function buildCityExpansion() {
       wh.rotation.x = -Math.PI/2; wh.position.set(0, 0.014, off + sd*6.2); scene.add(wh);
     });
   });
-  // зебры на пересечениях с проспектом
+  // зебры на пересечениях с главной (собственный материал — NZ может быть null!)
+  const zebraMatE = new THREE.MeshBasicMaterial({ color: 0xdadce0 });
   [[175,0],[-175,0],[0,175],[0,-175]].forEach(([zx,zz]) => {
     for (let k = -4; k <= 4; k++) {
-      const z1 = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 3.2), NZ.zebra);
+      const z1 = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 3.2), zebraMatE);
       z1.rotation.x = -Math.PI/2; z1.position.set(zx + k*1.1, 0.02, zz + (zz === 0 ? 7.5 : 0)); scene.add(z1);
-      const z2 = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 0.7), NZ.zebra);
+      const z2 = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 0.7), zebraMatE);
       z2.rotation.x = -Math.PI/2; z2.position.set(zx + (zx === 0 ? 7.5 : 0), 0.02, zz + k*1.1); scene.add(z2);
     }
   });
@@ -6624,10 +6639,10 @@ function buildCityExpansion() {
 function buildNorthernDistrict() {
   // Северный жилой район — z=120..160
   createBuilding(30, 131.9, 16, 22, 12, 0x546E7A, '🏢 ДОМ СЕВЕР-1', 'apartment');
-  createBuilding(61.1, 165.8, 14, 18, 10, 0x607D8B, '🏢 ДОМ СЕВЕР-2', 'apartment');
+  createBuilding(72.2, 153.8, 14, 18, 10, 0x607D8B, '🏢 ДОМ СЕВЕР-2', 'apartment');
   createBuilding(89.9, 130, 12, 26, 10, 0x455A64, '🏢 ДОМ СЕВЕР-3', 'apartment');
-  createBuilding(30, 175.2, 14, 14, 10, 0x78909C, '🏢 ДОМ ПОЛЯРНЫЙ', 'apartment');
-  createBuilding(84.2, 177.5, 18, 16, 12, 0x90A4AE, '🏢 ДОМ АРКТИКА', 'apartment');
+  createBuilding(30, 188.2, 14, 14, 10, 0x78909C, '🏢 ДОМ ПОЛЯРНЫЙ', 'apartment');
+  createBuilding(84.2, 189.2, 18, 16, 12, 0x90A4AE, '🏢 ДОМ АРКТИКА', 'apartment');
   // Частные коттеджи
   createBuilding(-20, 120, 10, 6, 8,  0xA1887F, '🏡 Коттедж А', 'house');
   createBuilding(-20, 140, 10, 6, 8,  0x80CBC4, '🏡 Коттедж Б', 'house');
@@ -6644,7 +6659,7 @@ function buildNorthernDistrict() {
   }
   // Школа — сдвинута восточнее (x=148), чтобы не пересекаться с ДОМ ЗЕНИТ (x=104-116)
   createBuilding(116, 131.3, 22, 9, 16, 0xFFF176, '🏫 ШКОЛА №1', 'office');
-  createBuilding(118.5, 177.7, 18, 7, 14, 0xFFE082, '📚 БИБЛИОТЕКА', 'office');
+  createBuilding(118.5, 184.7, 18, 7, 14, 0xFFE082, '📚 БИБЛИОТЕКА', 'office');
   // NPC на улице
   // NPC убраны для оптимизации
 }
@@ -6652,7 +6667,7 @@ function buildNorthernDistrict() {
 function buildSouthernIndustrialZone() {
   // Промышленная зона — z=-120..-165 (сдвинута южнее, чтобы не пересекаться с бизнес-районом z=-65..-96)
   createBuilding(-30.4, -113.4, 20, 12, 16, 0x546E7A, '🏭 ЗАВОД №1', 'office');
-  createBuilding(-113.2, -164, 18, 14, 14, 0x455A64, '🏭 ЗАВОД №2', 'office');
+  createBuilding(-113.2, -161.8, 18, 14, 14, 0x455A64, '🏭 ЗАВОД №2', 'office');
   createBuilding(-86.8, -122, 16, 10, 14, 0x37474F, '🏭 СКЛАД', 'office');
   createBuilding(-18.2, -129.8, 22, 16, 18, 0x263238, '🏗️ ПРОИЗВОДСТВО', 'office');
   createBuilding(-75, -133.8, 14, 8, 12, 0x4E342E, '⚙️ МАСТЕРСКАЯ', 'job_mechanic');
@@ -6682,13 +6697,13 @@ function buildEasternDistrict() {
   // Восточный деловой район — x=100..140
   createBuilding(110.2, -26.6, 12, 34, 12, 0x1A237E, '🏢 БАШНЯ ВОСТОК', 'office');
   createBuilding(110,  24, 10, 32, 10, 0x283593, '🏢 БИЗНЕС-ЦЕНТР E1', 'office');
-  createBuilding(138, -69.2, 10, 28, 10, 0x1565C0, '🏢 ОФИС ПЛАЗА', 'office');
+  createBuilding(138, -79.2, 10, 28, 10, 0x1565C0, '🏢 ОФИС ПЛАЗА', 'office');
   createBuilding(136.5,  20, 12, 22, 10, 0x0D47A1, '🏢 TECH TOWER', 'office');
   // Восточный торговый ряд
   createBuilding(113,  88, 14, 7, 10, 0xF57F17, '🍔 ФАСТ-ФУД', 'shop_food');
   createBuilding(130,  40, 12, 7, 10, 0x1B5E20, '☕ КОФЕЙНЯ', 'shop_food');
-  createBuilding(115.2, 58, 16, 8, 12, 0x880E4F, '🎮 GAME CLUB', 'cinema');
-  createBuilding(130,  60, 14, 9, 10, 0x311B92, '🃏 КАЗИНО', 'club');
+  createBuilding(115.2, 50.8, 16, 8, 12, 0x880E4F, '🎮 GAME CLUB', 'cinema');
+  createBuilding(130,  69.7, 14, 9, 10, 0x311B92, '🃏 КАЗИНО', 'club');
   // Стадион
   const stadiumBase = new THREE.Mesh(new THREE.CylinderGeometry(22,22,4,32),
     new THREE.MeshLambertMaterial({ color:0x558B2F }));
@@ -6758,7 +6773,7 @@ function buildWesternVillage() {
     new THREE.MeshLambertMaterial({ color:0x795548 }));
   wellRoof.position.set(-140,-33.2,0); scene.add(wellRoof);
   // Деревенский базарчик (маленький)
-  createBuilding(-135,-57, 10, 4, 8, 0xFFD54F, '🫙 ЛАВКА', 'shop_food');
+  createBuilding(-135,-52.8, 10, 4, 8, 0xFFD54F, '🫙 ЛАВКА', 'shop_food');
   // Деревья и атмосфера
   for (let i = 0; i < 12; i++) {
     createTree(-105 - Math.random()*80, -50 + Math.random()*100);
@@ -6776,24 +6791,24 @@ function buildMegaSkyscraperDistrict() {
   // Дополнительные небоскрёбы вокруг центра
   const towers = [
     [62, -38, 14, 70, 14, 0x1a1a2e, '🏙 ULTRA TOWER 1'],
-    [-62, -38, 14, 65, 14, 0x16213e, '🏙 ULTRA TOWER 2'],
-    [38, 64, 12, 58, 12, 0x0f3460, '🏙 SKY PLAZA'],
-    [26, 64, 12, 62, 12, 0x3f5c8a, '🏙 PURPLE PEAK'],
-    [62, -90, 10, 50, 10, 0x2c2c54, '🏢 DARK SPIRE'],
+    [-72.2, -38, 14, 65, 14, 0x16213e, '🏙 ULTRA TOWER 2'],
+    [42, 71.2, 12, 58, 12, 0x0f3460, '🏙 SKY PLAZA'],
+    [14, 71.2, 12, 62, 12, 0x3f5c8a, '🏙 PURPLE PEAK'],
+    [70.2, -90, 10, 50, 10, 0x2c2c54, '🏢 DARK SPIRE'],
     [-27, -90, 10, 55, 10, 0x1b1b2f, '🏢 MIDNIGHT'],
-    [114, 167, 11, 45, 11, 0x222831, '🏢 VERTEX'],
+    [114, 163.3, 11, 45, 11, 0x222831, '🏢 VERTEX'],
     [-30, 38, 11, 48, 11, 0x393e46, '🏢 ECLIPSE'],
     // Дополнительный ряд высоток
-    [200, 64, 16, 80, 16, 0x0d0d0d, '🏙 ONYX TOWER'],
+    [200, 73.2, 16, 80, 16, 0x0d0d0d, '🏙 ONYX TOWER'],
     [220, 30, 12, 65, 12, 0x1a0a2e, '🏙 OBSIDIAN'],
     [220,-30, 12, 72, 12, 0x0a1628, '🏙 NEPTUNE'],
-    [-200, -64, 16, 75, 16, 0x1e1e3f, '🏙 COSMOS HQ'],
+    [-200, -73.2, 16, 75, 16, 0x1e1e3f, '🏙 COSMOS HQ'],
     [-220, 30, 12, 60, 12, 0x1c2b45, '🏙 MAGENTA'],
     [-220,-30, 12, 68, 12, 0x12232e, '🏙 ABYSSAL'],
-    [64, -200, 16, 85, 16, 0x0a0a1a, '🏙 ZENITH'],
+    [73.2, -200, 16, 85, 16, 0x0a0a1a, '🏙 ZENITH'],
     [30, -220, 12, 60, 12, 0x1a2744, '🏙 AZURE'],
     [-30, -220, 12, 55, 12, 0x1d2b1d, '🏙 JADE PEAK'],
-    [-64, 200, 16, 78, 16, 0x1a1a1a, '🏙 POLARIS'],
+    [-73.2, 200, 16, 78, 16, 0x1a1a1a, '🏙 POLARIS'],
     [30, 220, 12, 62, 12, 0x2a1a3a, '🏙 VIOLET HQ'],
     [-30, 220, 12, 58, 12, 0x1a2a1a, '🏙 EMERALD'],
   ];
@@ -6971,10 +6986,7 @@ function buildBridges() {
   buildBridge(-260, 0, true, '🌉 МОСТ ЗАПАДНЫЙ', 120);
   // Мост на востоке (x=260, вертикальный)
   buildBridge(260, 0, true, '🌉 МОСТ ВОСТОЧНЫЙ', 120);
-  // Пустынный подвесной мост
-  buildBridge(200, 100, false, '🌉 ПУСТЫННЫЙ МОСТ', 80);
-  // Пещерный мост
-  buildBridge(-200, 100, false, '🌉 ГОРНЫЙ МОСТ', 80);   // вдоль дороги z=100 (продолжает её)
+  // Пустынный и Горный мосты УБРАНЫ — стояли посреди травы, вдали от дорог
 }
 
 function buildBridge(cx, cz, isNS, label, length) {
@@ -16911,7 +16923,7 @@ function claimFPReward(r, isPlus, claimKey) {
   .fpp-row-label { font-size: 9px !important; }
 }
 </style>
-<script src="update_script.js?v=216"></script>
+<script src="update_script.js?v=217"></script>
 </body>
 
 <script>
