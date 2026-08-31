@@ -13459,6 +13459,7 @@ function fzPlayTeaser() {
   window._fzTeaserState.boss.rotation.y = Math.PI; // спиной к камере
   window._fzTeaserState.eyes.forEach(e => { e.material.emissiveIntensity = 0; });
   window._fzTeaserState.eyeLight.intensity = 0;
+  (window._fzTeaserState.halos || []).forEach(h => { h.material.opacity = 0; });
   window.fzTEASER = {
     active: true, t: 0, shake: 0,
     camPos: new THREE.Vector3(), look: new THREE.Vector3(),
@@ -13499,26 +13500,46 @@ function fzBuildTeaserRoom() {
   }
   // босс (спиной)
   const b = new THREE.Group();
+  // V3.8: тело-ТЕНЬ — почти невидимо
   const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 1.25, 2.4, 12), mat(0x0d0a14, 0x300818, 0.25));
   robe.position.y = 1.2; b.add(robe);
   const shoulders = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.35, 0.7), mat(0x120e1c));
   shoulders.position.y = 2.35; b.add(shoulders);
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.33, 12, 10), mat(0x8a8f98));
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.33, 12, 10), mat(0x1a1626, 0x200814, 0.3));
   head.position.y = 2.72; b.add(head);
   const hatBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.05, 12), mat(0x0a0a10));
   hatBrim.position.y = 2.95; b.add(hatBrim);
   const hatTop = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.34, 0.55, 12), mat(0x0a0a10));
   hatTop.position.y = 3.25; b.add(hatTop);
   [-0.13, 0.13].forEach(ex => {
-    const e = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 8),
-      new THREE.MeshLambertMaterial({ color: 0x1a1a1a, emissive: 0xffffff, emissiveIntensity: 0 }));
-    e.position.set(ex, 2.76, 0.28); b.add(e); st.eyes.push(e);
+    const e = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 8),
+      new THREE.MeshLambertMaterial({ color: 0x1a1a1a, emissive: 0xff2818, emissiveIntensity: 0 }));
+    e.position.set(ex, 2.76, 0.28); e.scale.set(1, 1.4, 0.7); b.add(e); st.eyes.push(e);
   });
   [-1, 1].forEach(sx => {
     const claw = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.8, 6), mat(0x1c1626, 0x501020, 0.4));
     claw.position.set(sx * 1.05, 1.7, 0.35); claw.rotation.x = 1.2; b.add(claw);
   });
-  const eyeLight = new THREE.PointLight(0xff5050, 0, 12);
+  // тело — прозрачная тень (глаза не трогаем)
+  const bodyMeshes = [];
+  b.traverse(o => { if (o.isMesh && !st.eyes.includes(o)) { o.material.transparent = true; o.material.opacity = 0.08; bodyMeshes.push(o); } });
+  st.bodyMeshes = bodyMeshes;
+  // красные ореолы глаз (загораются при вспышке)
+  const glowTex = (function () {
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const q = c.getContext('2d');
+    const gr = q.createRadialGradient(32, 32, 2, 32, 32, 32);
+    gr.addColorStop(0, 'rgba(255,130,100,1)'); gr.addColorStop(0.4, 'rgba(255,40,25,0.55)'); gr.addColorStop(1, 'rgba(255,40,25,0)');
+    q.fillStyle = gr; q.fillRect(0, 0, 64, 64);
+    return new THREE.CanvasTexture(c);
+  })();
+  st.halos = [];
+  [-0.13, 0.13].forEach(ex => {
+    const h = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, transparent: true,
+      opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+    h.scale.setScalar(0.95); h.position.set(ex, 2.76, 0.36); b.add(h); st.halos.push(h);
+  });
+  const eyeLight = new THREE.PointLight(0xff2818, 0, 12);
   eyeLight.position.set(0, 2.76, 0.5); b.add(eyeLight);
   st.eyeLight = eyeLight;
   const aura = new THREE.PointLight(0xff2040, 0.55, 10);
@@ -13597,7 +13618,10 @@ function fzTeaserAnim(dt) {
   if (T.flashed) {
     st.eyes.forEach(e2 => { e2.material.emissiveIntensity = 2.2 + Math.sin(t * 14) * 0.4; });
     st.eyeLight.intensity = 2.6 + Math.sin(t * 14) * 0.6;
+    (st.halos || []).forEach((h, i) => { h.material.opacity = 0.6 + Math.sin(t * 14 + i * 2) * 0.3; });
   }
+  // тень мерцает на грани видимости
+  (st.bodyMeshes || []).forEach(m => { m.material.opacity = 0.045 + Math.abs(Math.sin(t * 3.1)) * 0.06 + (T.flashed ? 0.1 : 0); });
   // тряска камеры
   if (T.shake > 0) {
     T.shake = Math.max(0, T.shake - dt);
