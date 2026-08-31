@@ -3,46 +3,68 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>🎬 Тизер — Тень Парка Фантазии</title>
+<title>FANTAZIA RP 3D — Official Teaser</title>
 <style>
   html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:'Segoe UI',system-ui,sans-serif;}
-  #c{position:fixed;inset:0;width:100%;height:100%;display:block;}
+  #c{position:fixed;inset:0;width:100%;height:100%;display:block;transition:filter 1.8s ease;}
   #fx{position:fixed;inset:0;pointer-events:none;z-index:6;}
   #vig{position:fixed;inset:0;pointer-events:none;z-index:5;
-    background:radial-gradient(ellipse at center,transparent 42%,rgba(0,0,0,.82) 100%);}
-  #scan{position:fixed;inset:0;pointer-events:none;z-index:7;opacity:.09;
+    background:radial-gradient(ellipse at center,transparent 46%,rgba(0,0,0,.72) 100%);}
+  #scan{position:fixed;inset:0;pointer-events:none;z-index:7;opacity:.06;
     background:repeating-linear-gradient(0deg,rgba(255,255,255,.5) 0 1px,transparent 1px 3px);}
-  .bar{position:fixed;left:0;right:0;height:12vh;background:#000;z-index:10;pointer-events:none;
-    transition:transform .8s cubic-bezier(.6,0,.3,1);}
+  .bar{position:fixed;left:0;right:0;height:11vh;background:#000;z-index:10;pointer-events:none;
+    transition:transform .9s cubic-bezier(.6,0,.3,1);}
   #barT{top:0;transform:translateY(-101%);}#barB{bottom:0;transform:translateY(101%);}
   #barT.on,#barB.on{transform:none;}
+  /* ── центральные титры ── */
   #cap{position:fixed;bottom:16vh;left:0;right:0;text-align:center;z-index:22;pointer-events:none;
-    color:#ffe3e3;font-weight:800;font-size:clamp(17px,3.6vmin,34px);letter-spacing:.13em;
-    text-shadow:0 0 24px rgba(255,60,60,.85),0 2px 8px #000;opacity:0;transition:opacity .5s;}
+    color:#fff;font-weight:800;font-size:clamp(18px,3.8vmin,36px);letter-spacing:.14em;
+    text-shadow:0 2px 10px #000,0 0 30px rgba(0,0,0,.6);opacity:0;transition:opacity .5s;}
   #cap.on{opacity:1;}
-  #cap .sm{display:block;font-size:.52em;letter-spacing:.34em;color:#c8a0a0;margin-top:.75em;font-weight:600;}
-  #cap.jit{animation:jit .09s infinite;}
+  #cap .sm{display:block;font-size:.5em;letter-spacing:.4em;color:#c9d4e8;margin-top:.8em;font-weight:600;}
+  #cap.jit{animation:jit .08s infinite;}
   @keyframes jit{0%{transform:translate(0,0)}25%{transform:translate(-3px,1px)}50%{transform:translate(2px,-2px)}75%{transform:translate(-1px,2px)}100%{transform:translate(3px,1px)}}
+  /* ── лоуэр-третьи (названия мест) ── */
+  #loc{position:fixed;left:6vw;bottom:17vh;z-index:22;pointer-events:none;opacity:0;
+    transition:opacity .45s;transform:translateY(8px);}
+  #loc.on{opacity:1;transform:none;}
+  #loc .l-line{width:44px;height:2px;background:#fff;margin-bottom:10px;
+    box-shadow:0 0 8px rgba(255,255,255,.7);transform-origin:left;animation:grow .6s ease;}
+  @keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  #loc .l-name{color:#fff;font:800 clamp(20px,4vmin,40px)/1 'Segoe UI';letter-spacing:.1em;
+    text-shadow:0 2px 12px #000;}
+  #loc .l-sub{color:#bfd3ee;font:600 12px/1 'Segoe UI';letter-spacing:.34em;margin-top:8px;}
+  /* ── вспышки/фейды ── */
   #flashW,#flashR,#fadeB{position:fixed;inset:0;pointer-events:none;opacity:0;}
   #flashW{background:#fff;z-index:18;}
   #flashR{background:#ff2015;z-index:18;}
-  #fadeB{background:#000;z-index:19;}
-  #start,#end{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;gap:16px;
-    align-items:center;justify-content:center;background:rgba(2,2,5,.9);color:#e8d8d8;
+  #fadeB{background:#000;z-index:19;transition:none;}
+  /* ── финальная карточка ── */
+  #title{position:fixed;inset:0;z-index:24;display:flex;flex-direction:column;gap:14px;
+    align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .8s;}
+  #title.on{opacity:1;}
+  #title .t-main{color:#fff;font:900 clamp(30px,7vmin,64px)/1.1 'Segoe UI';letter-spacing:.12em;
+    text-align:center;text-shadow:0 0 44px rgba(255,60,60,.55),0 4px 18px #000;}
+  #title .t-sub{color:#ff9d9d;font:700 clamp(12px,2vmin,18px)/1 'Segoe UI';letter-spacing:.5em;}
+  #title .t-date{color:#e8e2d8;font:600 13px/1 'Segoe UI';letter-spacing:.3em;margin-top:10px;}
+  /* ── экраны ── */
+  #start,#end{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;gap:14px;
+    align-items:center;justify-content:center;background:rgba(3,4,8,.94);color:#e8d8d8;
     transition:opacity .7s;text-align:center;padding:0 20px;}
   #end{opacity:0;pointer-events:none;}
   #end.on{opacity:1;pointer-events:auto;}
-  #start .logo,#end .logo{color:#ff9d9d;font:800 15px 'Segoe UI';letter-spacing:.55em;opacity:.9;}
-  #start .ttl{font:800 clamp(26px,6vmin,54px) 'Segoe UI';letter-spacing:.1em;color:#fff;
-    text-shadow:0 0 40px rgba(255,50,60,.75);}
-  #start .sub,#end .sub{color:#8a7070;font-size:13px;letter-spacing:.22em;}
-  #end .ttl{color:#fff;font:800 clamp(22px,5vmin,46px) 'Segoe UI';letter-spacing:.12em;
-    text-shadow:0 0 34px rgba(255,60,60,.7);}
-  #start button,#end button{margin-top:10px;background:linear-gradient(90deg,#3a0d18,#57121f);
-    color:#ffd9d9;border:1px solid #a03040;border-radius:14px;padding:16px 46px;
-    font:800 20px 'Segoe UI';letter-spacing:.1em;cursor:pointer;
-    box-shadow:0 0 44px rgba(255,50,60,.28);transition:transform .15s,box-shadow .2s;}
+  #start .logo,#end .logo{color:#ff9d9d;font:800 14px 'Segoe UI';letter-spacing:.55em;opacity:.9;}
+  #start .ttl{font:800 clamp(24px,5.4vmin,48px) 'Segoe UI';letter-spacing:.1em;color:#fff;
+    text-shadow:0 0 40px rgba(255,50,60,.7);}
+  #start .sub,#end .sub{color:#8a7a7a;font-size:12px;letter-spacing:.24em;}
+  #end .ttl{color:#fff;font:800 clamp(20px,4.4vmin,40px) 'Segoe UI';letter-spacing:.12em;
+    text-shadow:0 0 34px rgba(255,60,60,.65);}
+  #start button,#end button{margin-top:12px;background:linear-gradient(90deg,#3a0d18,#57121f);
+    color:#ffd9d9;border:1px solid #a03040;border-radius:14px;padding:15px 44px;
+    font:800 19px 'Segoe UI';letter-spacing:.1em;cursor:pointer;
+    box-shadow:0 0 44px rgba(255,50,60,.26);transition:transform .15s,box-shadow .2s;}
   #start button:hover,#end button:hover{box-shadow:0 0 70px rgba(255,60,70,.55);transform:scale(1.05);}
+  #end .cred{color:#5f5555;font:500 10px/1.7 monospace;letter-spacing:.18em;margin-top:14px;}
 </style>
 </head>
 <body>
@@ -51,11 +73,17 @@
 <div id="vig"></div><div id="scan"></div>
 <div id="barT" class="bar"></div><div id="barB" class="bar"></div>
 <div id="cap"></div>
+<div id="loc"><div class="l-line"></div><div class="l-name"></div><div class="l-sub"></div></div>
 <div id="flashW"></div><div id="flashR"></div><div id="fadeB"></div>
+<div id="title">
+  <div class="t-sub">FANTAZIA RP 3D ПРЕДСТАВЛЯЕТ</div>
+  <div class="t-main">«ТЕНЬ ПАРКА<br>ФАНТАЗИИ»</div>
+  <div class="t-date">СКОРО · ОБНОВЛЕНИЕ v3.8</div>
+</div>
 <div id="start">
   <div class="logo">FANTAZIA RP 3D</div>
-  <div class="ttl">«ТЕНЬ ПАРКА ФАНТАЗИИ»</div>
-  <div class="sub">ТИЗЕР · 18 СЕКУНД · СО ЗВУКОМ 🎧</div>
+  <div class="ttl">ОФИЦИАЛЬНЫЙ ТИЗЕР</div>
+  <div class="sub">ГОРОД · ТЕНЬ · 30 СЕКУНД · СО ЗВУКОМ 🎧</div>
   <button id="play">▶ СМОТРЕТЬ</button>
 </div>
 <div id="end">
@@ -63,6 +91,7 @@
   <div class="ttl">«ТЕНЬ ПАРКА ФАНТАЗИИ»</div>
   <div class="sub">СОБЕРИ 6 ЗАПИСОК · СПУСТИСЬ ПОД GRAND MALL</div>
   <button id="replay">↻ ЕЩЁ РАЗ</button>
+  <div class="cred">ГОРОД FANTAZIA · СИНЕМАТИК · ЗВУК — PROCEDURAL AUDIO ENGINE</div>
 </div>
 <script>
 /**
@@ -76,9 +105,11 @@
 <script id="cine">
 (function(){
 'use strict';
-// ═══ ТИЗЕР «ТЕНЬ ПАРКА ФАНТАЗИИ» — просто и мощно:
-// камера ЛЕТИТ ВНИЗ → МЕДЛЕННО к боссу → он ОБОРАЧИВАЕТСЯ. Всё.
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
+//  FANTAZIA RP 3D — ОФИЦИАЛЬНЫЙ ТИЗЕР «ТЕНЬ ПАРКА ФАНТАЗИИ»
+//  Сценарий: приветствие → экскурсия по городу (все машут) →
+//  жуткое «СКОРО ВСЁ ПОЙМЁТЕ» → падение к боссу → тьма → глаза → HELLO!
+// ═══════════════════════════════════════════════════════════════════
 const DOC = document;
 const cv = DOC.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
@@ -89,6 +120,7 @@ const fx = DOC.getElementById('fx');
 const fc = fx.getContext('2d');
 fx.width = W; fx.height = H;
 
+// ── математика ──
 const rnd = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
 const lerp = (a, b, k) => a + (b - a) * k;
@@ -96,6 +128,13 @@ const sm = (a, b, t0, t1, t) => {
   const k = clamp((t - t0) / (t1 - t0), 0, 1);
   return a + (b - a) * k * k * (3 - 2 * k);
 };
+// плавный «кинематографический» ease (медленный старт-финиш)
+const cine = (a, b, t0, t1, t) => {
+  const k = clamp((t - t0) / (t1 - t0), 0, 1);
+  return a + (b - a) * (k * k * k * (k * (k * 6 - 15) + 10));
+};
+
+// ── канвас-текстуры ──
 function cvsTex(w, h, fn) {
   const c = DOC.createElement('canvas');
   c.width = w; c.height = h;
@@ -105,42 +144,160 @@ function cvsTex(w, h, fn) {
 function glowTex(inner, mid, outer) {
   return cvsTex(64, 64, (q) => {
     const g = q.createRadialGradient(32, 32, 1, 32, 32, 32);
-    g.addColorStop(0, inner); g.addColorStop(0.45, mid); g.addColorStop(1, outer);
-    q.fillStyle = g; q.fillRect(0, 0, 64, 64);
+    g.addColorStop(0, inner);
+    g.addColorStop(0.45, mid);
+    g.addColorStop(1, outer);
+    q.fillStyle = g;
+    q.fillRect(0, 0, 64, 64);
   });
 }
 const TEX = {
-  warm: glowTex('rgba(255,220,150,1)', 'rgba(255,160,60,.4)', 'rgba(255,160,60,0)'),
-  red:  glowTex('rgba(255,120,90,1)', 'rgba(255,30,20,.5)', 'rgba(255,30,20,0)')
+  warm:  glowTex('rgba(255,235,190,1)', 'rgba(255,180,80,.45)', 'rgba(255,180,80,0)'),
+  red:   glowTex('rgba(255,120,90,1)', 'rgba(255,30,20,.5)', 'rgba(255,30,20,0)'),
+  white: glowTex('rgba(255,255,255,1)', 'rgba(220,235,255,.4)', 'rgba(220,235,255,0)'),
+  cyan:  glowTex('rgba(170,240,255,1)', 'rgba(60,170,255,.4)', 'rgba(60,170,255,0)'),
+  cloud: glowTex('rgba(255,255,255,.9)', 'rgba(255,255,255,.35)', 'rgba(255,255,255,0)')
 };
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x030204);
-scene.fog = new THREE.Fog(0x060309, 4, 52);
-const cam = new THREE.PerspectiveCamera(64, W / H, 0.1, 300);
+// ── менеджер сцен ──
+const SCN = {};
+let active = null, activeName = '';
+function mkScene(name, fov) {
+  const s = new THREE.Scene();
+  const cam = new THREE.PerspectiveCamera(fov || 55, W / H, 0.1, 900);
+  SCN[name] = { s, cam, t0: 0 };
+  return SCN[name];
+}
+function use(name) {
+  if (activeName === name) return;
+  active = SCN[name];
+  activeName = name;
+  active.t0 = T.t;
+}
+
+// ── глобальное состояние ──
+const T = { t: 0, phase: 'start', shake: 0, wall: 0 };
+
+// ── цветокоррекекция (киноплёнка) ──
+const GRADES = {
+  day:    'saturate(1.14) contrast(1.03) brightness(1.06)',
+  sunset: 'saturate(1.22) contrast(1.06) brightness(.98) sepia(.14)',
+  cold:   'saturate(.45) contrast(1.18) brightness(.72) hue-rotate(-12deg)',
+  dark:   'saturate(.25) contrast(1.3) brightness(.5)',
+  none:   'none'
+};
+function grade(name) {
+  cv.style.filter = GRADES[name] || 'none';
+}
+
 window.addEventListener('resize', () => {
   W = window.innerWidth; H = window.innerHeight;
   renderer.setSize(W, H);
   fx.width = W; fx.height = H;
-  cam.aspect = W / H; cam.updateProjectionMatrix();
+  for (const k in SCN) {
+    SCN[k].cam.aspect = W / H;
+    SCN[k].cam.updateProjectionMatrix();
+  }
 });
 
-// ═══ ЗВУК (процедурный) ═══
-let AU = null, MG = null, heartTimer = null;
+// ── титры ──
+const capEl = DOC.getElementById('cap');
+function cap(main, sub, jit) {
+  capEl.innerHTML = main + (sub ? '<span class="sm">' + sub + '</span>' : '');
+  capEl.classList.add('on');
+  capEl.classList.toggle('jit', !!jit);
+}
+const capOff = () => capEl.classList.remove('on');
+// лоуэр-третьи (названия мест, как в travel-трейлерах)
+const locEl = DOC.getElementById('loc');
+function loc(name, sub) {
+  locEl.querySelector('.l-name').textContent = name;
+  locEl.querySelector('.l-sub').textContent = sub || '';
+  // перезапуск анимации линии
+  const line = locEl.querySelector('.l-line');
+  line.style.animation = 'none';
+  void line.offsetWidth;
+  line.style.animation = '';
+  locEl.classList.add('on');
+}
+const locOff = () => locEl.classList.remove('on');
+
+// ═══ ПОСТ-ОБРАБОТКА: зерно + глитч + виньетка скорости ═══
+const grains = [];
+for (let i = 0; i < 6; i++) {
+  const c = DOC.createElement('canvas');
+  c.width = 160; c.height = 90;
+  const q = c.getContext('2d');
+  const d = q.createImageData(160, 90);
+  for (let p = 0; p < d.data.length; p += 4) {
+    const v = (Math.random() * 255) | 0;
+    d.data[p] = d.data[p + 1] = d.data[p + 2] = v;
+    d.data[p + 3] = 255;
+  }
+  q.putImageData(d, 0, 0);
+  grains.push(c);
+}
+let grainIdx = 0, grainAcc = 0, glitch = 0, speedFx = 0;
+function post2D(dt) {
+  fc.clearRect(0, 0, W, H);
+  grainAcc += dt;
+  if (grainAcc > 0.08) { grainAcc = 0; grainIdx = (grainIdx + 1) % grains.length; }
+  fc.globalAlpha = 0.085;
+  fc.drawImage(grains[grainIdx], 0, 0, W, H);
+  fc.globalAlpha = 1;
+  if (glitch > 0.01) {
+    const n = 6 + (glitch * 10) | 0;
+    for (let i = 0; i < n; i++) {
+      const sy = rnd(0, H);
+      const sh = rnd(4, 34);
+      const dx = rnd(-1, 1) * 60 * glitch;
+      fc.drawImage(cv, 0, sy * renderer.getPixelRatio(), cv.width, sh * renderer.getPixelRatio(), dx, sy, W, sh);
+      if (Math.random() < 0.4) {
+        fc.fillStyle = 'rgba(255,40,60,' + (glitch * 0.25).toFixed(3) + ')';
+        fc.fillRect(dx, sy + sh * 0.3, W, 1.5);
+      }
+    }
+    glitch = Math.max(0, glitch - dt * 2.4);
+  }
+  if (speedFx > 0.01) {
+    const cx = W / 2, cy = H / 2;
+    fc.strokeStyle = 'rgba(255,240,230,' + (speedFx * 0.5).toFixed(2) + ')';
+    for (let i = 0; i < 40; i++) {
+      const a = rnd(0, Math.PI * 2);
+      const r0 = rnd(H * 0.24, H * 0.5);
+      const r1 = r0 + rnd(60, 260) * speedFx;
+      fc.lineWidth = rnd(0.5, 1.8);
+      fc.beginPath();
+      fc.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0);
+      fc.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
+      fc.stroke();
+    }
+    speedFx = Math.max(0, speedFx - dt * 1.6);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  ЗВУКОВОЙ ДВИЖОК — всё синтезируется на лету
+// ═══════════════════════════════════════════════════════
+let AU = null, MG = null, heartTimer = null, musicOn = false;
 function audioInit() {
   if (AU) return;
   const Ctx = window.AudioContext || window.webkitAudioContext;
   if (!Ctx) return;
   AU = new Ctx();
   const comp = AU.createDynamicsCompressor();
-  comp.threshold.value = -18; comp.ratio.value = 6;
-  MG = AU.createGain(); MG.gain.value = 0.9;
-  MG.connect(comp); comp.connect(AU.destination);
+  comp.threshold.value = -16;
+  comp.ratio.value = 6;
+  MG = AU.createGain();
+  MG.gain.value = 0.9;
+  MG.connect(comp);
+  comp.connect(AU.destination);
 }
 function tone(f0, f1, dur, type, gain, when) {
   if (!AU) return;
   const t0 = AU.currentTime + (when || 0);
-  const o = AU.createOscillator(), g = AU.createGain();
+  const o = AU.createOscillator();
+  const g = AU.createGain();
   o.type = type || 'sine';
   o.frequency.setValueAtTime(Math.max(1, f0), t0);
   if (f1 && f1 !== f0) o.frequency.exponentialRampToValueAtTime(Math.max(1, f1), t0 + dur);
@@ -162,9 +319,11 @@ function noiseBurst(dur, f0, f1, q, gain, when, type) {
   if (!AU) return;
   const t0 = AU.currentTime + (when || 0);
   const src = AU.createBufferSource();
-  src.buffer = getNoise(); src.loop = true;
+  src.buffer = getNoise();
+  src.loop = true;
   const flt = AU.createBiquadFilter();
-  flt.type = type || 'bandpass'; flt.Q.value = q || 1;
+  flt.type = type || 'bandpass';
+  flt.Q.value = q || 1;
   flt.frequency.setValueAtTime(f0, t0);
   if (f1 && f1 !== f0) flt.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
   const g = AU.createGain();
@@ -182,14 +341,51 @@ function makeDist(amount) {
   }
   return c;
 }
-const aDrone = () => {
-  [36, 55, 73.5].forEach((f, i) => tone(f, f, 19, 'sawtooth', 0.03 + i * 0.012, 0));
-  noiseBurst(19, 90, 70, 0.6, 0.05, 0, 'lowpass');
-};
+// ── композиционные элементы ──
+const CHORDS = [ // приятная прогрессия для «экскурсии»
+  [130.8, 164.8, 196.0, 246.9],  // Cmaj7
+  [110.0, 130.8, 164.8, 196.0],  // Am7
+  [87.3, 110.0, 130.8, 174.6],   // Fmaj7
+  [98.0, 123.5, 146.8, 196.0]    // G
+];
+let musicTimer = null, chordI = 0;
+function musicStart() { // тёплые пэды + арпеджио + лёгкий пульс
+  musicStop();
+  musicOn = true;
+  const step = 1.65;
+  musicTimer = setInterval(() => {
+    if (!AU || !musicOn) return;
+    const ch = CHORDS[chordI % CHORDS.length];
+    ch.forEach((f, i) => tone(f, f, step * 1.15, 'triangle', 0.045 - i * 0.006, 0));
+    // арпеджио поверх
+    for (let a = 0; a < 6; a++) {
+      const f = ch[a % ch.length] * 2;
+      tone(f, f, 0.35, 'sine', 0.05, a * (step / 6));
+    }
+    // мягкий «тик» ритма
+    noiseBurst(0.05, 6000, 5000, 2, 0.03, 0);
+    noiseBurst(0.05, 6000, 5000, 2, 0.02, step / 2);
+    chordI++;
+  }, step * 1000);
+}
+function musicDark() { // музыка ломается → низкий дрон
+  musicStop();
+  [36, 55, 73.5].forEach((f, i) => tone(f, f * 0.985, 16, 'sawtooth', 0.032 + i * 0.01, 0));
+  noiseBurst(16, 90, 70, 0.6, 0.05, 0, 'lowpass');
+}
+function musicStop() {
+  musicOn = false;
+  if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
+}
 const aWind = (dur, gain) => noiseBurst(dur, 500, 120, 0.5, gain || 0.2, 0, 'lowpass');
-const aRiser = (dur, gain) => { noiseBurst(dur, 220, 3600, 1.4, gain || 0.15, 0); tone(58, 235, dur, 'sawtooth', (gain || 0.15) * 0.7, 0); };
+const aRiser = (dur, gain) => {
+  noiseBurst(dur, 220, 3600, 1.4, gain || 0.15, 0);
+  tone(58, 235, dur, 'sawtooth', (gain || 0.15) * 0.7, 0);
+};
 const aWhisper = (when, n) => {
-  for (let i = 0; i < (n || 5); i++) noiseBurst(rnd(0.12, 0.3), rnd(900, 1900), rnd(500, 1100), 6, rnd(0.03, 0.06), (when || 0) + i * rnd(0.12, 0.3));
+  for (let i = 0; i < (n || 5); i++) {
+    noiseBurst(rnd(0.12, 0.3), rnd(900, 1900), rnd(500, 1100), 6, rnd(0.03, 0.06), (when || 0) + i * rnd(0.12, 0.3));
+  }
 };
 function aHeartStart(bpm) {
   aHeartStop();
@@ -199,7 +395,14 @@ function aHeartStart(bpm) {
     tone(50, 36, 0.14, 'sine', 0.22, period * 0.28);
   }, period * 1000);
 }
-function aHeartStop() { if (heartTimer) { clearInterval(heartTimer); heartTimer = null; } }
+function aHeartStop() {
+  if (heartTimer) { clearInterval(heartTimer); heartTimer = null; }
+}
+function aImpact(when, big) {
+  tone(big ? 130 : 100, 26, big ? 1.5 : 0.8, 'sine', big ? 0.5 : 0.3, when || 0);
+  noiseBurst(big ? 0.7 : 0.4, 900, 90, 0.7, big ? 0.26 : 0.15, when || 0, 'lowpass');
+}
+function aSubDrop(when) { tone(60, 22, 2.6, 'sine', 0.4, when || 0); }
 function aScream(when) {
   if (!AU) return;
   const t0 = AU.currentTime + (when || 0);
@@ -214,150 +417,847 @@ function aScream(when) {
     o.type = i === 2 ? 'square' : 'sawtooth';
     o.frequency.setValueAtTime(f, t0);
     o.frequency.exponentialRampToValueAtTime(f * 0.22, t0 + 1.25);
-    o.connect(sh); o.start(t0); o.stop(t0 + 1.4);
+    o.connect(sh);
+    o.start(t0); o.stop(t0 + 1.4);
   });
   sh.connect(g); g.connect(MG);
   noiseBurst(1.2, 3400, 500, 1.6, 0.24, when || 0);
-  tone(130, 26, 1.5, 'sine', 0.5, when || 0);
   tone(46, 20, 2.2, 'sine', 0.42, when || 0);
 }
 
-// ═══ ЛОГОВО ═══
-scene.add(new THREE.AmbientLight(0x2a1520, 0.85));
-const fl = new THREE.Mesh(new THREE.PlaneGeometry(46, 46), new THREE.MeshLambertMaterial({ color: 0x0e0a12 }));
-fl.rotation.x = -Math.PI / 2;
-scene.add(fl);
-// ритуальные кольца
-[[7.2, 8.4, 0x4a0e16], [12.5, 13.6, 0x3a0a12], [18, 19, 0x300810]].forEach(([r0, r1, c]) => {
-  const ring = new THREE.Mesh(new THREE.RingGeometry(r0, r1, 42),
-    new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.8, side: THREE.DoubleSide }));
-  ring.rotation.x = -Math.PI / 2; ring.position.y = 0.03;
-  scene.add(ring);
-});
-// трещины
-for (let i = 0; i < 9; i++) {
-  const crack = new THREE.Mesh(new THREE.PlaneGeometry(rnd(4, 9), 0.5),
-    new THREE.MeshBasicMaterial({ color: 0x55121c, transparent: true, opacity: 0.6, side: THREE.DoubleSide }));
-  crack.rotation.x = -Math.PI / 2;
-  crack.rotation.z = rnd(0, Math.PI);
-  crack.position.set(rnd(-12, 12), 0.025, rnd(-12, 12));
-  scene.add(crack);
+// ═══════════════════════════════════════════════════════
+//  ГОЛОСА — браузерный синтез речи (по-настоящему говорит!)
+// ═══════════════════════════════════════════════════════
+const VOICE = { ru: null, en: null, ready: false };
+function pickVoices() {
+  if (!('speechSynthesis' in window)) return;
+  const vs = speechSynthesis.getVoices();
+  VOICE.ru = vs.find(v => /ru[-_]/i.test(v.lang) && /male|yuri|pavel|artem/i.test(v.name)) ||
+             vs.find(v => /^ru/i.test(v.lang)) || null;
+  VOICE.en = vs.find(v => /^en/i.test(v.lang)) || null;
+  VOICE.ready = true;
 }
-// колонны с лампами
-for (let k = 0; k < 10; k++) {
-  const a = k / 10 * Math.PI * 2 + 0.31;
-  const cx = Math.cos(a) * 16.5, cz = Math.sin(a) * 16.5;
-  const col = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.9, 10, 9),
-    new THREE.MeshLambertMaterial({ color: 0x1c1626 }));
-  col.position.set(cx, 5, cz);
-  scene.add(col);
-  const lamp = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: TEX.warm, color: 0x774433, transparent: true, opacity: 0.5,
-    depthWrite: false, blending: THREE.AdditiveBlending
+if ('speechSynthesis' in window) {
+  pickVoices();
+  speechSynthesis.onvoiceschanged = pickVoices;
+}
+// текст→речь: pitch/rate задают характер (дружелюбный / жуткий)
+function speak(text, opts) {
+  if (!('speechSynthesis' in window)) return false;
+  try {
+    const u = new SpeechSynthesisUtterance(text);
+    const o = opts || {};
+    u.voice = o.lang === 'en' ? (VOICE.en || VOICE.ru) : (VOICE.ru || VOICE.en);
+    if (u.voice) u.lang = u.voice.lang;
+    u.pitch = o.pitch != null ? o.pitch : 1;
+    u.rate = o.rate != null ? o.rate : 1;
+    u.volume = o.volume != null ? o.volume : 1;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+    return true;
+  } catch (e) { return false; }
+}
+const speechStop = () => { try { speechSynthesis.cancel(); } catch (e) {} };
+
+// ═══════════════════════════════════════════════════════════════════
+//  СЦЕНА «ГОРОД» — дневная экскурсия по реальной карте FANTAZIA RP
+// ═══════════════════════════════════════════════════════════════════
+const LAY = {
+  roads: [0, 60, -60, 175, -175, 260, -260],
+  malls: [
+    { x: 85,   z: -85,  w: 120, h: 55, d: 100, name: 'GRAND MALL', c: '#9a5cff' },
+    { x: 235,  z: 228,  w: 85,  h: 38, d: 55,  name: 'SUN MALL',   c: '#ff9d2e' },
+    { x: -235, z: -228, w: 95,  h: 38, d: 58,  name: 'MEGA PLAZA', c: '#00e5ff' }
+  ],
+  notes: [
+    { x: -26, z: 77 }, { x: 17, z: 21 }, { x: 90, z: 44 },
+    { x: 0, z: -68 }, { x: 235, z: 200 }, { x: -207, z: -75 }
+  ],
+  spawn: { x: 17, z: 21 },
+  park: { x: -26, z: 77, r: 18 }
+};
+const CTY = mkScene('city', 52);
+const CITY = { cars: [], walkers: [], wavers: [], clouds: [], birds: [], hand: null, water: null, mode: 'idle' };
+const BLDGS = [];
+
+(function buildCity() {
+  const s = CTY.s;
+  // ── НЕБО: градиентный купол + солнце + облака ──
+  const skyTex = cvsTex(16, 256, (q, w, h) => {
+    const g = q.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, '#2b6fd6');
+    g.addColorStop(0.45, '#7db4ea');
+    g.addColorStop(0.75, '#cfe3f5');
+    g.addColorStop(1, '#f6e9c8');
+    q.fillStyle = g;
+    q.fillRect(0, 0, w, h);
+  });
+  const sky = new THREE.Mesh(
+    new THREE.SphereGeometry(760, 24, 18),
+    new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide, fog: false })
+  );
+  s.add(sky);
+  const sun = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: TEX.white, color: 0xfff2cc, transparent: true, opacity: 0.95,
+    depthWrite: false, blending: THREE.AdditiveBlending, fog: false
   }));
-  lamp.scale.setScalar(4.4);
-  lamp.position.set(cx, 8.6, cz);
-  scene.add(lamp);
-}
-const l1 = new THREE.PointLight(0x9a8a70, 0.5, 34, 1.6);
-l1.position.set(-9, 8, 6);
-scene.add(l1);
-const l2 = new THREE.PointLight(0x9a8a70, 0.4, 34, 1.6);
-l2.position.set(9, 8, -6);
-scene.add(l2);
-// свечи
-const flames = [];
-for (let k = 0; k < 10; k++) {
-  const a = k / 10 * Math.PI * 2 + 0.16;
-  const cx = Math.cos(a) * 8.6, cz = Math.sin(a) * 8.6;
-  const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, rnd(0.5, 0.9), 6),
-    new THREE.MeshLambertMaterial({ color: 0x4a3b28 }));
-  stick.position.set(cx, 0.32, cz);
-  scene.add(stick);
-  const flame = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: TEX.warm, transparent: true, opacity: 0.85, depthWrite: false,
+  sun.scale.setScalar(90);
+  sun.position.set(-260, 320, 180);
+  s.add(sun);
+  for (let i = 0; i < 14; i++) {
+    const cl = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: TEX.cloud, transparent: true, opacity: rnd(0.35, 0.7),
+      depthWrite: false, fog: false
+    }));
+    cl.scale.set(rnd(60, 140), rnd(24, 44), 1);
+    cl.position.set(rnd(-500, 500), rnd(120, 260), rnd(-500, 500));
+    CITY.clouds.push(cl);
+    s.add(cl);
+  }
+  // ── свет тёплого дня ──
+  const sunL = new THREE.DirectionalLight(0xfff0d8, 1.05);
+  sunL.position.set(-160, 240, 120);
+  s.add(sunL);
+  s.add(new THREE.AmbientLight(0xbfd4e8, 0.75));
+  s.add(new THREE.HemisphereLight(0x9dc4ef, 0x3a4a35, 0.55));
+
+  // ── земля-газон ──
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(820, 820),
+    new THREE.MeshLambertMaterial({ color: 0x3f7a3a })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  s.add(ground);
+
+  // ── АСФАЛЬТ с разметкой (2 ориентации, текстуры) ──
+  function drawAsphalt(q, w, h, vert) {
+    q.fillStyle = '#565c68';
+    q.fillRect(0, 0, w, h);
+    for (let i = 0; i < 340; i++) {
+      q.fillStyle = 'rgba(255,255,255,' + rnd(0.02, 0.06).toFixed(3) + ')';
+      q.fillRect(rnd(0, w), rnd(0, h), 1.6, 1.6);
+    }
+    q.fillStyle = '#e8c94c';
+    if (vert) { q.fillRect(w / 2 - 2, 8, 4, 52); q.fillRect(w / 2 - 2, 136, 4, 52); }
+    else { q.fillRect(8, h / 2 - 2, 52, 4); q.fillRect(136, h / 2 - 2, 52, 4); }
+    q.fillStyle = '#c9ced8';
+    if (vert) { q.fillRect(3, 0, 3, h); q.fillRect(w - 6, 0, 3, h); }
+    else { q.fillRect(0, 3, w, 3); q.fillRect(0, h - 6, w, 3); }
+  }
+  const asphV = cvsTex(128, 256, (q, w, h) => drawAsphalt(q, w, h, true));
+  const asphH = cvsTex(256, 128, (q, w, h) => drawAsphalt(q, w, h, false));
+  function roadMesh(axis, r, wd) {
+    const len = 620;
+    const geo = axis === 'z' ? new THREE.PlaneGeometry(wd, len) : new THREE.PlaneGeometry(len, wd);
+    const tex = (axis === 'z' ? asphV : asphH).clone();
+    tex.needsUpdate = true;
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    if (axis === 'z') tex.repeat.set(Math.max(1, Math.round(wd / 12)), Math.max(1, Math.round(len / 26)));
+    else tex.repeat.set(Math.max(1, Math.round(len / 26)), Math.max(1, Math.round(wd / 12)));
+    const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: 0xcdd2dc, map: tex }));
+    m.rotation.x = -Math.PI / 2;
+    m.position.set(axis === 'z' ? r : 0, 0.02 + Math.random() * 0.004, axis === 'z' ? 0 : r);
+    s.add(m);
+  }
+  LAY.roads.forEach((r) => {
+    const wd = r === 0 ? 18 : (Math.abs(r) === 175 ? 12 : (Math.abs(r) === 260 ? 9 : 11));
+    roadMesh('x', r, wd);
+    roadMesh('z', r, wd);
+  });
+  // подъезды к ТЦ (как в игре)
+  [[178, 190, 251, 190], [235, 160, 235, 199], [175, 161, 175, 195],
+   [-178, -190, -251, -190], [-235, -199, -235, -160], [-175, -195, -175, -161]]
+    .forEach(([x1, z1, x2, z2]) => {
+      const L = Math.hypot(x2 - x1, z2 - z1);
+      const axis = Math.abs(x2 - x1) > Math.abs(z2 - z1) ? 'x' : 'z';
+      const m = new THREE.Mesh(
+        new THREE.PlaneGeometry(axis === 'x' ? L : 10, axis === 'x' ? 10 : L),
+        new THREE.MeshLambertMaterial({ color: 0x6a707c })
+      );
+      m.rotation.x = -Math.PI / 2;
+      m.position.set((x1 + x2) / 2, 0.03, (z1 + z2) / 2);
+      s.add(m);
+    });
+  // зебры на перекрёстках проспекта
+  const zebraMat = new THREE.MeshBasicMaterial({ color: 0xe8ecf2, transparent: true, opacity: 0.85 });
+  [-60, 60].forEach((r) => {
+    for (let k = -3; k <= 3; k++) {
+      const z1 = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 3.4), zebraMat);
+      z1.rotation.x = -Math.PI / 2;
+      z1.position.set(k * 1.3, 0.045, r + 6.6);
+      s.add(z1);
+      const z2 = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 0.8), zebraMat);
+      z2.rotation.x = -Math.PI / 2;
+      z2.position.set(r + 6.6, 0.045, k * 1.3);
+      s.add(z2);
+    }
+  });
+  // тротуары вдоль проспекта
+  const walkMat = new THREE.MeshLambertMaterial({ color: 0x9aa0aa });
+  [-10.5, 10.5].forEach((o) => {
+    [['x', 620, 3.4, o], ['z', 3.4, 620, o]].forEach(([ax, lw, ld]) => {
+      const m = new THREE.Mesh(
+        new THREE.PlaneGeometry(ax === 'x' ? lw : ld, ax === 'x' ? ld : lw),
+        walkMat
+      );
+      m.rotation.x = -Math.PI / 2;
+      if (ax === 'x') m.position.set(0, 0.035, o);
+      else m.position.set(o, 0.035, 0);
+      s.add(m);
+    });
+  });
+
+  // ── ЗДАНИЯ: ~100 с окнами и крышами ──
+  function windowsTex() {
+    return cvsTex(64, 96, (q, w, h) => {
+      q.fillStyle = '#5a6478';
+      q.fillRect(0, 0, w, h);
+      const cw = 7, ch = 9;
+      for (let y = 3; y < h - 6; y += ch) {
+        for (let x = 4; x < w - 6; x += cw) {
+          q.fillStyle = Math.random() < 0.2 ? '#cfe4f7' : '#31405c';
+          q.fillRect(x, y, cw - 2.4, ch - 3);
+        }
+      }
+    });
+  }
+  const winTexes = [windowsTex(), windowsTex(), windowsTex(), windowsTex()];
+  const bodyCols = [0xc9d2de, 0xbfc8d6, 0xd6cfc4, 0xb5c0cf, 0xcdd6c9, 0xd0c9d4];
+  let seed = 20260831;
+  const srnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+  function mkBuilding(x, z, w, h, d, type) {
+    const tex = winTexes[(srnd() * 4) | 0].clone();
+    tex.needsUpdate = true;
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(Math.max(1, Math.round(w / 10)), Math.max(1, Math.round(h / 12)));
+    const m = new THREE.Mesh(
+      new THREE.BoxGeometry(w, h, d),
+      new THREE.MeshLambertMaterial({ color: bodyCols[(srnd() * 6) | 0], map: tex })
+    );
+    m.position.set(x, h / 2, z);
+    s.add(m);
+    // крыша-парапет
+    const roof = new THREE.Mesh(
+      new THREE.BoxGeometry(w + 0.5, 0.7, d + 0.5),
+      new THREE.MeshLambertMaterial({ color: 0x8b95a5 })
+    );
+    roof.position.set(x, h + 0.3, z);
+    s.add(roof);
+    if (h > 40) {
+      const ant = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.16, 0.22, 7, 5),
+        new THREE.MeshLambertMaterial({ color: 0x5a6270 })
+      );
+      ant.position.set(x, h + 4, z);
+      s.add(ant);
+    }
+    BLDGS.push({ x, z, w, d, h, type: type || 'office' });
+    return m;
+  }
+  const centers = [-212, -150, -118, -80, -30, 30, 80, 118, 150, 212];
+  centers.forEach((bx) => {
+    centers.forEach((bz) => {
+      if (Math.abs(bx) < 30 && Math.abs(bz) < 30) return;
+      if (Math.hypot(bx - 85, bz + 85) < 95) return;
+      if (Math.hypot(bx - LAY.park.x, bz - LAY.park.z) < 26) return;
+      if (srnd() < 0.2) return;
+      const distC = Math.hypot(bx, bz);
+      const w = 9 + srnd() * 16;
+      const d = 9 + srnd() * 16;
+      const h = distC < 130 ? 22 + srnd() * 55 : 8 + srnd() * 26;
+      mkBuilding(bx + (srnd() - 0.5) * 6, bz + (srnd() - 0.5) * 6, w, h, d);
+    });
+  });
+
+  // ── ТЦ: корпуса + вывески + гирлянды ──
+  LAY.malls.forEach((M) => {
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(M.w, M.h, M.d),
+      new THREE.MeshLambertMaterial({ color: 0xdde3ec })
+    );
+    body.position.set(M.x, M.h / 2, M.z);
+    s.add(body);
+    BLDGS.push({ x: M.x, z: M.z, w: M.w, d: M.d, h: M.h, type: 'mall', name: M.name, c: M.c });
+    const strip = new THREE.Mesh(
+      new THREE.BoxGeometry(M.w + 0.6, 1.8, M.d + 0.6),
+      new THREE.MeshBasicMaterial({ color: new THREE.Color(M.c) })
+    );
+    strip.position.set(M.x, M.h - 1.5, M.z);
+    s.add(strip);
+    const signTex = cvsTex(512, 128, (q, w, h) => {
+      q.fillStyle = '#101318';
+      q.fillRect(0, 0, w, h);
+      q.font = '900 62px Segoe UI, Arial';
+      q.textAlign = 'center';
+      q.textBaseline = 'middle';
+      q.shadowColor = M.c;
+      q.shadowBlur = 30;
+      q.fillStyle = M.c;
+      q.fillText(M.name, w / 2, h / 2 + 4);
+      q.shadowBlur = 10;
+      q.fillStyle = '#ffffff';
+      q.font = '900 56px Segoe UI, Arial';
+      q.fillText(M.name, w / 2, h / 2 + 4);
+    });
+    const sign = new THREE.Mesh(
+      new THREE.PlaneGeometry(46, 11.5),
+      new THREE.MeshBasicMaterial({ map: signTex, transparent: true })
+    );
+    const toC = Math.atan2(-M.x, -M.z);
+    sign.position.set(M.x + Math.sin(toC) * (M.d / 2 + 0.4), M.h * 0.72, M.z + Math.cos(toC) * (M.d / 2 + 0.4));
+    sign.rotation.y = toC;
+    s.add(sign);
+    const glow = new THREE.PointLight(new THREE.Color(M.c), 0.6, 80, 1.7);
+    glow.position.copy(sign.position).add(new THREE.Vector3(Math.sin(toC) * 6, 4, Math.cos(toC) * 6));
+    s.add(glow);
+    // гирлянда огней по входу
+    const n = 14;
+    for (let i = 0; i <= n; i++) {
+      const bulb = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: TEX.white, color: new THREE.Color(M.c), transparent: true,
+        opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending
+      }));
+      bulb.scale.setScalar(1.8);
+      bulb.position.set(M.x - M.w / 2 + (M.w * i) / n, 3.6, M.z + M.d / 2 + 0.3);
+      s.add(bulb);
+    }
+  });
+
+  // ── ПАРК: поляна, деревья, пруд ──
+  const park = new THREE.Mesh(
+    new THREE.CircleGeometry(LAY.park.r, 26),
+    new THREE.MeshLambertMaterial({ color: 0x4f9a44 })
+  );
+  park.rotation.x = -Math.PI / 2;
+  park.position.set(LAY.park.x, 0.03, LAY.park.z);
+  s.add(park);
+  for (let i = 0; i < 14; i++) {
+    const a = rnd(0, Math.PI * 2), dd = rnd(5, 16);
+    const tx = LAY.park.x + Math.cos(a) * dd, tz = LAY.park.z + Math.sin(a) * dd;
+    const trunk = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.24, 0.34, 2.4, 5),
+      new THREE.MeshLambertMaterial({ color: 0x6b4a2a })
+    );
+    trunk.position.set(tx, 1.2, tz);
+    s.add(trunk);
+    const crown = new THREE.Mesh(
+      new THREE.SphereGeometry(rnd(1.6, 2.4), 8, 6),
+      new THREE.MeshLambertMaterial({ color: 0x3f8f3a })
+    );
+    crown.position.set(tx, 3.6, tz);
+    s.add(crown);
+  }
+  const pond = new THREE.Mesh(
+    new THREE.CircleGeometry(5, 20),
+    new THREE.MeshLambertMaterial({ color: 0x3f9edb, transparent: true, opacity: 0.8 })
+  );
+  pond.rotation.x = -Math.PI / 2;
+  pond.position.set(LAY.park.x - 4, 0.04, LAY.park.z + 4);
+  s.add(pond);
+
+  // ── ФОНТАН на спавне (анимированная вода) ──
+  const basin = new THREE.Mesh(
+    new THREE.CylinderGeometry(4.4, 4.7, 1.1, 18),
+    new THREE.MeshLambertMaterial({ color: 0xc9ced8 })
+  );
+  basin.position.set(0, 0.55, 0);
+  s.add(basin);
+  const water = new THREE.Mesh(
+    new THREE.CircleGeometry(4.1, 18),
+    new THREE.MeshBasicMaterial({ color: 0x63c5f0, transparent: true, opacity: 0.85 })
+  );
+  water.rotation.x = -Math.PI / 2;
+  water.position.set(0, 1.12, 0);
+  s.add(water);
+  CITY.water = water;
+  const jet = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: TEX.cyan, transparent: true, opacity: 0.55, depthWrite: false,
     blending: THREE.AdditiveBlending
   }));
-  flame.scale.set(0.65, 1.05, 1);
-  flame.position.set(cx, 0.95, cz);
-  flame.userData = { ph: rnd(0, 6.28) };
-  flames.push(flame);
-  scene.add(flame);
-}
-const candleLight = new THREE.PointLight(0xff9840, 0.55, 20, 1.7);
-candleLight.position.set(0, 1.4, 7);
-scene.add(candleLight);
-// кольца рун
-const runes = [];
-const runeTex = cvsTex(512, 128, (q, w, h) => {
-  q.clearRect(0, 0, w, h);
-  q.font = '700 54px Segoe UI, Arial';
-  q.textAlign = 'center'; q.textBaseline = 'middle';
-  q.shadowColor = '#ff2030'; q.shadowBlur = 18;
-  q.fillStyle = '#ff5040';
-  q.fillText('☠ ᚨ ☉ ⛧ ᚱ ☽ ⛥ ᚾ ☄', w / 2, h / 2);
-  q.fillText('☠ ᚨ ☉ ⛧ ᚱ ☽ ⛥ ᚾ ☄', w / 2, h / 2);
-});
-for (let i = 0; i < 3; i++) {
-  const ring = new THREE.Mesh(
-    new THREE.CylinderGeometry(3.4 + i * 1.1, 3.4 + i * 1.1, 0.01, 48, 1, true),
-    new THREE.MeshBasicMaterial({
-      map: runeTex, transparent: true, opacity: 0.5 - i * 0.12,
-      side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending
-    }));
-  ring.position.y = 0.06;
-  ring.userData = { dir: i % 2 ? 0.35 : -0.28 };
-  runes.push(ring);
-  scene.add(ring);
-}
-// пыль + струи падения
-const dust = [], streaks = [];
-for (let i = 0; i < 60; i++) {
-  const d = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: TEX.warm, color: 0x776655, transparent: true, opacity: rnd(0.04, 0.13),
-    depthWrite: false, blending: THREE.AdditiveBlending
+  jet.scale.set(3.6, 5.6, 1);
+  jet.position.set(0, 3.6, 0);
+  s.add(jet);
+  const jet2 = jet.clone();
+  jet2.scale.set(2.2, 3.4, 1);
+  jet2.position.set(0, 2.4, 0);
+  s.add(jet2);
+
+  // ── парковка с машинами ──
+  const lot = new THREE.Mesh(
+    new THREE.PlaneGeometry(34, 22),
+    new THREE.MeshLambertMaterial({ color: 0x6a707c })
+  );
+  lot.rotation.x = -Math.PI / 2;
+  lot.position.set(90, 0.04, 32);
+  s.add(lot);
+  for (let i = 0; i < 6; i++) {
+    const line = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.3, 16),
+      new THREE.MeshBasicMaterial({ color: 0xf0f2f5 })
+    );
+    line.rotation.x = -Math.PI / 2;
+    line.position.set(76 + i * 5.5, 0.05, 32);
+    s.add(line);
+  }
+
+  // ── ЛЮДИ: фабрика низкополигональных горожан (рост 1.8м как в игре) ──
+  const SKIN = [0xe8b48c, 0xc98d5f, 0x8c5a3c, 0xf0c8a0];
+  const SHIRT = [0xe74c3c, 0x3498db, 0xf1c40f, 0x2ecc71, 0x9b59b6, 0xe67e22, 0xecf0f1, 0x1abc9c];
+  const PANTS = [0x2c3e50, 0x34495e, 0x5d6d7e, 0x7f8c8d];
+  function mkPerson() {
+    const g = new THREE.Group();
+    const shirt = SHIRT[(Math.random() * SHIRT.length) | 0];
+    const pants = PANTS[(Math.random() * PANTS.length) | 0];
+    const skin = SKIN[(Math.random() * SKIN.length) | 0];
+    const legs = new THREE.Mesh(
+      new THREE.BoxGeometry(0.42, 0.85, 0.26),
+      new THREE.MeshLambertMaterial({ color: pants })
+    );
+    legs.position.y = 0.43;
+    g.add(legs);
+    const torso = new THREE.Mesh(
+      new THREE.BoxGeometry(0.5, 0.62, 0.3),
+      new THREE.MeshLambertMaterial({ color: shirt })
+    );
+    torso.position.y = 1.15;
+    g.add(torso);
+    const head = new THREE.Mesh(
+      new THREE.SphereGeometry(0.17, 10, 8),
+      new THREE.MeshLambertMaterial({ color: skin })
+    );
+    head.position.y = 1.66;
+    g.add(head);
+    // руки: группы с плечом-пивотом, чтобы МАХАТЬ
+    const armGeo = new THREE.BoxGeometry(0.13, 0.6, 0.16);
+    const armMat = new THREE.MeshLambertMaterial({ color: shirt });
+    const armL = new THREE.Group();
+    const armLMesh = new THREE.Mesh(armGeo, armMat);
+    armLMesh.position.y = -0.3;
+    armL.add(armLMesh);
+    armL.position.set(-0.32, 1.42, 0);
+    g.add(armL);
+    const armR = new THREE.Group();
+    const armRMesh = new THREE.Mesh(armGeo, armMat);
+    armRMesh.position.y = -0.3;
+    armR.add(armRMesh);
+    armR.position.set(0.32, 1.42, 0);
+    g.add(armR);
+    return { g, armL, armR, head };
+  }
+  CITY.mkPerson = mkPerson;
+
+  // ── машущие толпы в точках экскурсии ──
+  function waveGroup(cx, cz, count, spread) {
+    const arr = [];
+    for (let i = 0; i < count; i++) {
+      const p = mkPerson();
+      const a = (i / count) * Math.PI * 2 + rnd(-0.3, 0.3);
+      const r = spread * (0.55 + rnd(0, 0.45));
+      p.g.position.set(cx + Math.cos(a) * r, 0, cz + Math.sin(a) * r);
+      p.ph = rnd(0, 6.28);
+      p.wave = Math.random() < 0.85; // большинство машут
+      s.add(p.g);
+      arr.push(p);
+    }
+    CITY.wavers.push({ cx, cz, people: arr });
+  }
+  waveGroup(0, 8, 5, 4.4);            // у фонтана
+  waveGroup(85, -32, 6, 5.2);         // у входа GRAND MALL
+  waveGroup(LAY.park.x + 6, LAY.park.z - 6, 4, 4); // в парке
+  waveGroup(235, 196, 4, 4);          // у SUN MALL
+
+  // ── гуляющие прохожие по тротуарам ──
+  for (let i = 0; i < 14; i++) {
+    const p = mkPerson();
+    const route = [
+      { x1: -240, z1: 10.5, x2: 240, z2: 10.5 },
+      { x1: 240, z1: -10.5, x2: -240, z2: -10.5 },
+      { x1: 10.5, z1: -240, x2: 10.5, z2: 240 },
+      { x1: -10.5, z1: 240, x2: -10.5, z2: -240 }
+    ][i % 4];
+    p.route = route;
+    p.pos = rnd(0, 480);
+    p.spd = rnd(3.2, 5.2);
+    s.add(p.g);
+    CITY.walkers.push(p);
+  }
+
+  // ── МАШИНЫ ──
+  function mkCar(axis, road, lane, dir) {
+    const g = new THREE.Group();
+    const cols = [0xd8443c, 0x3c66d8, 0xe8c828, 0x38b46a, 0xd8d8e0, 0x8a44a8, 0x1a1c24];
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(1.9, 1.05, 4.4),
+      new THREE.MeshLambertMaterial({ color: cols[(Math.random() * cols.length) | 0] })
+    );
+    body.position.y = 0.72;
+    g.add(body);
+    const cab = new THREE.Mesh(
+      new THREE.BoxGeometry(1.7, 0.72, 2.1),
+      new THREE.MeshLambertMaterial({ color: 0x27313e })
+    );
+    cab.position.set(0, 1.5, -0.2);
+    g.add(cab);
+    g.rotation.y = axis === 'x' ? (dir > 0 ? Math.PI / 2 : -Math.PI / 2) : (dir > 0 ? 0 : Math.PI);
+    const wd = road === 0 ? 18 : 11;
+    const off = road + lane * (wd / 4.2);
+    CITY.cars.push({ g, axis, off, dir, pos: rnd(-330, 330), speed: rnd(18, 32) });
+    s.add(g);
+  }
+  LAY.roads.forEach((r) => {
+    const n = r === 0 ? 12 : 4;
+    for (let i = 0; i < n; i++) {
+      mkCar('x', r, Math.random() < 0.5 ? 1 : -1, Math.random() < 0.5 ? 1 : -1);
+      mkCar('z', r, Math.random() < 0.5 ? 1 : -1, Math.random() < 0.5 ? 1 : -1);
+    }
+  });
+  // припаркованные у GRAND MALL
+  const parkedCols = [0x7a4a8a, 0x4a6a8a, 0x8a6a4a, 0x4a8a6a, 0x8a4a5a];
+  for (let i = 0; i < 5; i++) {
+    const car = new THREE.Group();
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(2, 0.95, 4.5),
+      new THREE.MeshLambertMaterial({ color: parkedCols[i] })
+    );
+    body.position.y = 0.62;
+    car.add(body);
+    const top = new THREE.Mesh(
+      new THREE.BoxGeometry(1.7, 0.7, 2.2),
+      new THREE.MeshLambertMaterial({ color: 0x27313e })
+    );
+    top.position.set(0, 1.38, -0.3);
+    car.add(top);
+    car.position.set(78.7 + i * 5.5, 0, 29);
+    car.rotation.y = Math.PI / 2 + rnd(-0.04, 0.04);
+    s.add(car);
+  }
+
+  // ── фонари (дневные, декоративные) вдоль проспекта ──
+  for (let t = -240; t <= 240; t += 36) {
+    [[t, 10.8], [t, -10.8], [10.8, t], [-10.8, t]].forEach(([lx, lz]) => {
+      const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.09, 0.12, 6.4, 6),
+        new THREE.MeshLambertMaterial({ color: 0x596068 })
+      );
+      pole.position.set(lx, 3.2, lz);
+      s.add(pole);
+    });
+  }
+
+  // ── решётка спуска под GRAND MALL (сюда ныряет камера) ──
+  const grate = new THREE.Mesh(
+    new THREE.CircleGeometry(1.7, 20),
+    new THREE.MeshBasicMaterial({ color: 0x050308 })
+  );
+  grate.rotation.x = -Math.PI / 2;
+  grate.position.set(85, 0.06, -34.5);
+  s.add(grate);
+  for (let i = 0; i < 4; i++) {
+    const bar = new THREE.Mesh(
+      new THREE.BoxGeometry(3.2, 0.06, 0.12),
+      new THREE.MeshLambertMaterial({ color: 0x3a3f48 })
+    );
+    bar.position.set(85, 0.09, -34.5 - 1.2 + i * 0.8);
+    s.add(bar);
+  }
+  const grateGlow = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: TEX.red, transparent: true, opacity: 0.0, depthWrite: false,
+    blending: THREE.AdditiveBlending
   }));
-  d.scale.setScalar(rnd(0.06, 0.18));
-  d.position.set(rnd(-13, 13), rnd(0.4, 7), rnd(-13, 13));
-  dust.push(d);
-  scene.add(d);
-}
-for (let i = 0; i < 30; i++) {
-  const st = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: TEX.warm, color: 0x886655, transparent: true, opacity: rnd(0.06, 0.2),
-    depthWrite: false, blending: THREE.AdditiveBlending
-  }));
-  st.scale.set(0.4, rnd(3, 8), 1);
-  st.position.set(rnd(-6, 6), rnd(0, 30), rnd(-6, 6));
-  streaks.push(st);
-  scene.add(st);
+  grateGlow.scale.setScalar(6);
+  grateGlow.position.set(85, 0.6, -34.5);
+  s.add(grateGlow);
+  CITY.grateGlow = grateGlow;
+
+  // ── ПТИЦЫ над городом ──
+  for (let i = 0; i < 12; i++) {
+    const b = new THREE.Mesh(
+      new THREE.BoxGeometry(0.5, 0.08, 0.14),
+      new THREE.MeshBasicMaterial({ color: 0x2a2f38 })
+    );
+    b.userData = { a: rnd(0, 6.28), r: rnd(40, 130), h: rnd(40, 80), spd: rnd(0.14, 0.3) };
+    CITY.birds.push(b);
+    s.add(b);
+  }
+})();
+
+// ── РУКА «МЫ МАШЕМ» — прикреплена к камере, машет во время экскурсии ──
+(function buildHand() {
+  const g = new THREE.Group();
+  const skin = new THREE.MeshLambertMaterial({ color: 0xe8b48c });
+  const palm = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.4, 0.1), skin);
+  g.add(palm);
+  for (let i = 0; i < 4; i++) {
+    const f = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.3, 0.08), skin);
+    f.position.set(-0.12 + i * 0.08, 0.33, 0);
+    g.add(f);
+  }
+  const thumb = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.24, 0.08), skin);
+  thumb.position.set(-0.2, 0.05, 0.02);
+  thumb.rotation.z = 0.7;
+  g.add(thumb);
+  const sleeve = new THREE.Mesh(
+    new THREE.BoxGeometry(0.4, 0.34, 0.14),
+    new THREE.MeshLambertMaterial({ color: 0x2c3e50 })
+  );
+  sleeve.position.y = -0.32;
+  g.add(sleeve);
+  g.position.set(0.62, -0.5, -1.25);
+  g.rotation.set(0.35, -0.28, 0.5);
+  CTY.cam.add(g);
+  CTY.s.add(CTY.cam); // камера в сцене — дети рендерятся
+  CITY.hand = g;
+})();
+
+// ── обновление города ──
+function upCity(dt, wall) {
+  // машины
+  CITY.cars.forEach((c) => {
+    c.pos += c.speed * c.dir * dt;
+    if (c.pos > 340) c.pos = -340;
+    if (c.pos < -340) c.pos = 340;
+    if (c.axis === 'x') c.g.position.set(c.pos, 0, c.off);
+    else c.g.position.set(c.off, 0, c.pos);
+  });
+  // прохожие идут и перебирают ногами (покачивание)
+  CITY.walkers.forEach((p) => {
+    p.pos += p.spd * dt;
+    if (p.pos > 480) p.pos = 0;
+    const r = p.route;
+    const k = p.pos / 480;
+    p.g.position.set(lerp(r.x1, r.x2, k), Math.abs(Math.sin(wall * 9 + p.pos)) * 0.04, lerp(r.z1, r.z2, k));
+    p.g.rotation.y = Math.atan2(r.x2 - r.x1, r.z2 - r.z1);
+    p.armL.rotation.x = Math.sin(wall * 8) * 0.5;
+    p.armR.rotation.x = -Math.sin(wall * 8) * 0.5;
+  });
+  // МАШУЩИЕ: поворачиваются к камере и машут правой рукой
+  const cam = CTY.cam;
+  CITY.wavers.forEach((grp) => {
+    grp.people.forEach((p, i) => {
+      const dx = cam.position.x - p.g.position.x;
+      const dz = cam.position.z - p.g.position.z;
+      const want = Math.atan2(dx, dz);
+      let dy = want - p.g.rotation.y;
+      while (dy > Math.PI) dy -= Math.PI * 2;
+      while (dy < -Math.PI) dy += Math.PI * 2;
+      p.g.rotation.y += dy * Math.min(1, dt * 3);
+      if (p.wave) {
+        p.armR.rotation.z = -2.4 + Math.sin(wall * 7 + p.ph) * 0.45; // поднята и машет
+        p.armR.rotation.x = 0;
+        p.armL.rotation.x = Math.sin(wall * 3 + p.ph) * 0.1;
+      }
+      p.g.position.y = Math.abs(Math.sin(wall * 4 + p.ph)) * 0.03; // подпрыгивают от радости
+    });
+  });
+  // птицы кружат
+  CITY.birds.forEach((b) => {
+    const u = b.userData;
+    u.a += u.spd * dt;
+    b.position.set(Math.cos(u.a) * u.r, u.h + Math.sin(u.a * 3) * 2, Math.sin(u.a) * u.r);
+    b.rotation.y = -u.a + Math.PI / 2;
+    b.rotation.z = Math.sin(wall * 9 + u.a * 4) * 0.6;
+  });
+  // облака медленно плывут
+  CITY.clouds.forEach((cl) => {
+    cl.position.x += dt * 1.6;
+    if (cl.position.x > 520) cl.position.x = -520;
+  });
+  // фонтан бликует
+  if (CITY.water) CITY.water.material.opacity = 0.7 + Math.sin(wall * 5) * 0.12;
+  // решётка подвалa дышит красным, когда история темнеет
+  if (CITY.grateGlow) {
+    const gk = clamp((T.t - 16.4) / 2.2, 0, 1);
+    CITY.grateGlow.material.opacity = gk * (0.4 + Math.sin(wall * 6) * 0.15);
+  }
+  // рука машет, когда включена
+  if (CITY.hand) {
+    const on = T.handOn && T.handOn();
+    CITY.hand.visible = !!on;
+    if (on) CITY.hand.rotation.z = 0.5 + Math.sin(wall * 6.5) * 0.35;
+  }
 }
 
-// ═══ БОСС «ХРАНИТЕЛЬ БЕЗ ЛИЦА» — стоит СПИНОЙ ═══
-const BOSS = { eyes: [], halos: [], mats: [], jaw: null, arms: [], tendrils: [], grp: null, eyeLight: null, mouthGlow: null, turn: -1, lit: false, spawn: -1 };
-(function buildBoss() {
-  const g = new THREE.Group();
-  const robeMat = new THREE.MeshLambertMaterial({ color: 0x0a0510, emissive: 0x23060f, emissiveIntensity: 0.5, transparent: true, opacity: 0 });
-  const boneMat = new THREE.MeshLambertMaterial({ color: 0x8f949e, emissive: 0x1a1418, emissiveIntensity: 0.4, transparent: true, opacity: 0 });
-  const hornMat = new THREE.MeshLambertMaterial({ color: 0x2c2430, emissive: 0x351018, emissiveIntensity: 0.5, transparent: true, opacity: 0 });
-  const clawMat = new THREE.MeshLambertMaterial({ color: 0x181022, emissive: 0x40101e, emissiveIntensity: 0.7, transparent: true, opacity: 0 });
-  BOSS.mats = [{ m: robeMat, to: 0.16 }, { m: boneMat, to: 0.9 }, { m: hornMat, to: 0.95 }, { m: clawMat, to: 0.55 }];
-  const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 1.75, 2.9, 10, 1, true), robeMat);
-  robe.position.y = 1.45; g.add(robe);
-  const skirt2 = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 2.3, 1.1, 10, 1, true), robeMat);
-  skirt2.position.y = 0.62; g.add(skirt2);
-  const torso = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.9, 0.6), robeMat);
-  torso.position.y = 2.85; g.add(torso);
-  [-0.85, 0.85].forEach((sx) => {
-    const spike = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.6, 5), hornMat);
-    spike.position.set(sx, 3.45, 0); g.add(spike);
+// ── КАМЕРА-ЭКСКУРСИЯ: шоты с кейфреймами (как в настоящих трейлерах) ──
+// каждый шот: время старта, длительность, позиции from/to, look from/to, fov
+const SHOTS = [
+  { t: 0.0,  d: 3.6, p: [[-160, 205, 235], [-70, 60, 150]], l: [[0, 30, 0], [0, 10, 0]], fov: [50, 54] },        // clouds→city
+  { t: 3.6,  d: 3.4, p: [[26, 6, 30], [20, 5.2, 16]], l: [[0, 3, 0], [0, 2.2, 0]], fov: [54, 48] },              // фонтан, даете близко
+  { t: 7.0,  d: 3.9, p: [[85, 10, -20], [85, 8, -30]], l: [[85, 8, -85], [85, 6, -85]], fov: [55, 50] },         // GRAND MALL вход
+  { t: 10.9, d: 3.5, p: [[-52, 9, 92], [-38, 7, 84]], l: [[-26, 4, 77], [-26, 3, 77]], fov: [52, 48] },          // парк
+  { t: 14.4, d: 3.5, p: [[214, 12, 168], [228, 9, 182]], l: [[235, 12, 228], [235, 10, 224]], fov: [54, 50] }    // SUN MALL
+];
+const CITY_CAM = { shot: -1, handUntil: 17.6 };
+function upCityCam() {
+  const t = T.t;
+  if (CITY.mode !== 'tour') {
+    // орбита за стартовым экраном
+    const a = T.wall * 0.05;
+    CTY.cam.position.set(Math.cos(a) * 250, 130 + Math.sin(T.wall * 0.1) * 10, Math.sin(a) * 250);
+    CTY.cam.lookAt(0, 20, 0);
+    CTY.cam.fov = 52;
+    CTY.cam.updateProjectionMatrix();
+    return;
+  }
+  // тёмный поворот: после 17.9с камера ныряет к решётке у GRAND MALL
+  if (t >= 17.9) {
+    const k = clamp((t - 17.9) / 1.5, 0, 1);
+    CTY.cam.position.set(cine(85, 85, 17.9, 19.4, t), cine(9, 2.2, 17.9, 19.4, t), cine(-30, -33.5, 17.9, 19.4, t));
+    CTY.cam.lookAt(85, 1.2, -35.4 + k * 0.1);
+    CTY.cam.fov = 55 + k * 10;
+    CTY.cam.updateProjectionMatrix();
+    return;
+  }
+  // экскурсия по шотам
+  let sh = SHOTS[SHOTS.length - 1];
+  for (let i = 0; i < SHOTS.length; i++) {
+    if (t >= SHOTS[i].t && t < SHOTS[i].t + SHOTS[i].d) { sh = SHOTS[i]; break; }
+    if (t >= SHOTS[i].t) sh = SHOTS[i];
+  }
+  const k = clamp((t - sh.t) / sh.d, 0, 1);
+  const e = k * k * (3 - 2 * k);
+  CTY.cam.position.set(
+    lerp(sh.p[0][0], sh.p[1][0], e),
+    lerp(sh.p[0][1], sh.p[1][1], e) + Math.sin(T.wall * 1.3) * 0.12,
+    lerp(sh.p[0][2], sh.p[1][2], e)
+  );
+  CTY.cam.lookAt(
+    lerp(sh.l[0][0], sh.l[1][0], e),
+    lerp(sh.l[0][1], sh.l[1][1], e),
+    lerp(sh.l[0][2], sh.l[1][2], e)
+  );
+  CTY.cam.fov = lerp(sh.fov[0], sh.fov[1], e);
+  CTY.cam.updateProjectionMatrix();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  СЦЕНА «ШАХТА» — падение вглубь под GRAND MALL
+// ═══════════════════════════════════════════════════════════════════
+const SHA = mkScene('sha', 74);
+const SHAFT = { streaks: [] };
+(function buildShaft() {
+  const s = SHA.s;
+  s.background = new THREE.Color(0x030204);
+  s.fog = new THREE.Fog(0x050308, 4, 58);
+  s.add(new THREE.AmbientLight(0x241018, 0.7));
+  const rock = cvsTex(128, 256, (q, w, h) => {
+    q.fillStyle = '#10090e';
+    q.fillRect(0, 0, w, h);
+    for (let i = 0; i < 500; i++) {
+      const g = rnd(10, 42) | 0;
+      q.fillStyle = 'rgb(' + g + ',' + (g * 0.7 | 0) + ',' + (g * 0.8 | 0) + ')';
+      q.fillRect(rnd(0, w), rnd(0, h), rnd(2, 9), rnd(2, 9));
+    }
+    for (let i = 0; i < 26; i++) {
+      q.strokeStyle = 'rgba(0,0,0,.6)';
+      q.beginPath();
+      q.moveTo(rnd(0, w), 0);
+      q.lineTo(rnd(0, w), h);
+      q.stroke();
+    }
+  }, 4, 6);
+  const walls = new THREE.Mesh(
+    new THREE.CylinderGeometry(7, 7, 96, 18, 1, true),
+    new THREE.MeshLambertMaterial({ map: rock, side: THREE.BackSide })
+  );
+  walls.position.y = -6;
+  s.add(walls);
+  for (let i = 0; i < 10; i++) {
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(7.05, 0.18, 6, 26),
+      new THREE.MeshBasicMaterial({ color: 0x40101a })
+    );
+    ring.rotation.x = Math.PI / 2;
+    ring.position.y = 40 - i * 9;
+    s.add(ring);
+  }
+  const bottom = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: TEX.red, transparent: true, opacity: 0.85, depthWrite: false,
+    blending: THREE.AdditiveBlending
+  }));
+  bottom.scale.set(34, 22, 1);
+  bottom.position.set(0, -40, 0);
+  s.add(bottom);
+  const rl = new THREE.PointLight(0xff2018, 1.6, 60, 1.4);
+  rl.position.set(0, -30, 0);
+  s.add(rl);
+  for (let i = 0; i < 26; i++) {
+    const st = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: TEX.warm, color: 0x886655, transparent: true, opacity: rnd(0.06, 0.2),
+      depthWrite: false, blending: THREE.AdditiveBlending
+    }));
+    st.scale.set(0.4, rnd(4, 9), 1);
+    st.position.set(rnd(-5, 5), rnd(-40, 40), rnd(-5, 5));
+    SHAFT.streaks.push(st);
+    s.add(st);
+  }
+})();
+function upShaft(dt, wall) {
+  const cam = SHA.cam;
+  const tS = T.t - SHA.t0;
+  const fall = cine(34, -27, 0, 2.2, tS);
+  const ang = tS * 1.1;
+  cam.position.set(Math.cos(ang) * 2.2, fall, Math.sin(ang) * 2.2);
+  cam.lookAt(0, fall - (tS < 1.6 ? 9 : 3.4), 0);
+  cam.fov = 74 + tS * 5;
+  cam.updateProjectionMatrix();
+  SHAFT.streaks.forEach((st) => {
+    st.position.y += dt * 24;
+    if (st.position.y > 44) st.position.y = -42;
   });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  СЦЕНА «ЛОГОВО» — босс стоит спиной в красном круге
+// ═══════════════════════════════════════════════════════════════════
+const LAIR = mkScene('lair', 58);
+const BOSS = { grp: null, mats: [], eyes: [], halos: [], arms: [], jaw: null, eyeLight: null };
+(function buildLair() {
+  const s = LAIR.s;
+  s.background = new THREE.Color(0x030204);
+  s.fog = new THREE.Fog(0x080207, 5, 40);
+  s.add(new THREE.AmbientLight(0x2a1520, 0.8));
+  const fl = new THREE.Mesh(
+    new THREE.PlaneGeometry(40, 40),
+    new THREE.MeshLambertMaterial({ color: 0x0e0a12 })
+  );
+  fl.rotation.x = -Math.PI / 2;
+  s.add(fl);
+  [[7.2, 8.4], [12.5, 13.6]].forEach(([r0, r1]) => {
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(r0, r1, 42),
+      new THREE.MeshBasicMaterial({ color: 0x4a0e16, transparent: true, opacity: 0.8, side: THREE.DoubleSide })
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = 0.03;
+    s.add(ring);
+  });
+  for (let k = 0; k < 10; k++) {
+    const a = k / 10 * Math.PI * 2 + 0.31;
+    const col = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.7, 0.88, 10, 8),
+      new THREE.MeshLambertMaterial({ color: 0x1c1626 })
+    );
+    col.position.set(Math.cos(a) * 15.5, 5, Math.sin(a) * 15.5);
+    s.add(col);
+  }
+  const rl = new THREE.PointLight(0xff2018, 1.2, 26, 1.5);
+  rl.position.set(0, 1, 0);
+  s.add(rl);
+  // ── босс (спиной, силуэт) ──
+  const g = new THREE.Group();
+  const robeMat = new THREE.MeshLambertMaterial({ color: 0x0a0510, emissive: 0x23060f, emissiveIntensity: 0.5 });
+  const boneMat = new THREE.MeshLambertMaterial({ color: 0x8f949e, emissive: 0x1a1418, emissiveIntensity: 0.4 });
+  const hornMat = new THREE.MeshLambertMaterial({ color: 0x2c2430, emissive: 0x351018, emissiveIntensity: 0.5 });
+  const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 1.75, 2.9, 10, 1, true), robeMat);
+  robe.position.y = 1.45;
+  g.add(robe);
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.9, 0.6), robeMat);
+  torso.position.y = 2.85;
+  g.add(torso);
   const skull = new THREE.Mesh(new THREE.SphereGeometry(0.38, 12, 10), boneMat);
-  skull.scale.set(1, 1.35, 0.95); skull.position.y = 3.62; g.add(skull);
-  const socketMat = new THREE.MeshBasicMaterial({ color: 0x050208 });
-  const sokL = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), socketMat);
-  sokL.scale.set(1, 1.25, 0.5); sokL.position.set(-0.15, 3.72, 0.3); g.add(sokL);
-  const sokR = sokL.clone(); sokR.position.x = 0.15; g.add(sokR);
+  skull.scale.set(1, 1.35, 0.95);
+  skull.position.y = 3.62;
+  g.add(skull);
   function horn(side) {
     const gp = new THREE.Group();
     let p = new THREE.Vector3(side * 0.3, 3.98, -0.05);
@@ -375,195 +1275,263 @@ const BOSS = { eyes: [], halos: [], mats: [], jaw: null, arms: [], tendrils: [],
     }
     return gp;
   }
-  g.add(horn(-1)); g.add(horn(1));
-  // 7 глаз (погашены)
+  g.add(horn(-1));
+  g.add(horn(1));
+  [-1, 1].forEach((sx) => {
+    const arm = new THREE.Group();
+    const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.07, 1.3, 5), boneMat);
+    upper.position.y = -0.65;
+    arm.add(upper);
+    const fore = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.045, 1.25, 5), boneMat);
+    fore.position.y = -1.85;
+    arm.add(fore);
+    arm.position.set(sx * 0.95, 3.2, 0.05);
+    arm.rotation.z = sx * 0.16;
+    g.add(arm);
+    BOSS.arms.push(arm);
+  });
+  g.rotation.y = Math.PI; // СПИНОЙ
+  s.add(g);
+  BOSS.grp = g;
+})();
+function upLair(dt, wall) {
+  const cam = LAIR.cam;
+  const tS = T.t - LAIR.t0;
+  const g = BOSS.grp;
+  g.position.y = Math.sin(wall * 1.9) * 0.07;
+  g.rotation.z = Math.sin(wall * 0.7) * 0.03;
+  BOSS.arms.forEach((arm, i) => { arm.rotation.x = Math.sin(wall * 1.1 + i * 1.7) * 0.08; });
+  cam.position.set(Math.sin(wall * 0.5) * 0.4, 2.5, cine(13.5, 8.2, 0, 2.8, tS));
+  cam.lookAt(0, 3.3, 0);
+  cam.fov = 58;
+  cam.updateProjectionMatrix();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  СЦЕНА «БЕЗДНА» — полная тьма, только ГЛАЗА и «HELLO!»
+// ═══════════════════════════════════════════════════════════════════
+const VOID = mkScene('void', 55);
+const EYES = { list: [], grp: null, punch: -1 };
+(function buildVoid() {
+  const s = VOID.s;
+  s.background = new THREE.Color(0x000000);
+  const cam = VOID.cam;
+  cam.position.set(0, 3.4, 7.5);
+  cam.lookAt(0, 3.4, 0);
+  const g = new THREE.Group();
+  // расположение глаз — как на лице Хранителя
   const eyeDefs = [
     [-0.15, 3.74, 0.34, 0.105], [0.15, 3.74, 0.34, 0.105],
     [-0.24, 3.5, 0.3, 0.055], [0.05, 3.46, 0.33, 0.05],
     [0.26, 3.56, 0.26, 0.045], [-0.08, 3.95, 0.28, 0.04], [0.19, 3.9, 0.29, 0.038]
   ];
   eyeDefs.forEach(([ex, ey, ez, er]) => {
-    const e = new THREE.Mesh(new THREE.SphereGeometry(er, 9, 7), new THREE.MeshBasicMaterial({ color: 0x1a0000 }));
-    e.position.set(ex, ey, ez); e.scale.set(1, 1.35, 0.75);
-    g.add(e); BOSS.eyes.push(e);
+    const e = new THREE.Mesh(
+      new THREE.SphereGeometry(er, 10, 8),
+      new THREE.MeshBasicMaterial({ color: 0xff2818, transparent: true, opacity: 0 })
+    );
+    e.position.set(ex, ey, ez);
+    e.scale.set(0.01, 0.01, 0.01);
+    e.userData = { on: false, tOn: 0, base: er };
+    g.add(e);
+    EYES.list.push(e);
     const h = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: TEX.red, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending
+      map: TEX.red, transparent: true, opacity: 0, depthWrite: false,
+      blending: THREE.AdditiveBlending
     }));
-    h.scale.setScalar(er * 14);
-    h.position.set(ex, ey, ez + 0.06);
-    g.add(h); BOSS.halos.push(h);
+    h.scale.setScalar(er * 15);
+    h.position.set(ex, ey, ez + 0.05);
+    g.add(h);
+    e.userData.halo = h;
   });
-  // челюсть с зубами
-  const jaw = new THREE.Group();
-  const chin = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.22, 0.34), boneMat);
-  jaw.add(chin);
-  for (let i = 0; i < 6; i++) {
-    const tooth = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.14, 4), boneMat);
-    tooth.position.set(-0.15 + i * 0.06, 0.16, 0.1);
-    jaw.add(tooth);
-  }
-  jaw.position.set(0, 3.36, 0.1);
-  g.add(jaw);
-  BOSS.jaw = jaw;
-  [-0.14, 0.14].forEach((tx) => {
-    const fang = new THREE.Mesh(new THREE.ConeGeometry(0.034, 0.2, 4), boneMat);
-    fang.position.set(tx, 3.38, 0.32);
-    fang.rotation.x = Math.PI;
-    g.add(fang);
-  });
-  const mouthGlow = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: TEX.red, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending
-  }));
-  mouthGlow.scale.setScalar(1.6);
-  mouthGlow.position.set(0, 3.45, 0.42);
-  g.add(mouthGlow);
-  BOSS.mouthGlow = mouthGlow;
-  // руки с когтями
-  [-1, 1].forEach((sx) => {
-    const arm = new THREE.Group();
-    const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.07, 1.3, 5), boneMat);
-    upper.position.y = -0.65; arm.add(upper);
-    const fore = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.045, 1.25, 5), boneMat);
-    fore.position.y = -1.85; arm.add(fore);
-    for (let c = 0; c < 3; c++) {
-      const claw = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.62, 4), clawMat);
-      claw.position.set((c - 1) * 0.09, -2.75, 0.05);
-      claw.rotation.x = 0.25 + c * 0.06;
-      arm.add(claw);
-    }
-    arm.position.set(sx * 0.95, 3.2, 0.05);
-    arm.rotation.z = sx * 0.16;
-    g.add(arm);
-    BOSS.arms.push(arm);
-  });
-  // щупальца-тени
-  for (let i = 0; i < 6; i++) {
-    const sx = (i - 2.5) * 0.5;
-    const chain = [];
-    for (let k = 0; k < 4; k++) {
-      const t = new THREE.Sprite(new THREE.SpriteMaterial({
-        map: TEX.red, color: 0x1a060e, transparent: true, opacity: 0.5, depthWrite: false
-      }));
-      t.scale.set(0.9 - k * 0.15, 0.55, 1);
-      t.position.set(sx * (1 + k * 0.3), 3.1 + k * 0.75, -0.5 - k * 0.3);
-      g.add(t);
-      chain.push(t);
-    }
-    BOSS.tendrils.push(chain);
-  }
-  const eyeLight = new THREE.PointLight(0xff2018, 0, 16, 1.5);
-  eyeLight.position.set(0, 3.7, 0.6);
-  g.add(eyeLight);
-  BOSS.eyeLight = eyeLight;
-  g.rotation.y = Math.PI; // СПИНОЙ к камере
-  scene.add(g);
-  BOSS.grp = g;
+  s.add(g);
+  EYES.grp = g;
 })();
-
-// ═══ ТИТРЫ ═══
-const capEl = DOC.getElementById('cap');
-function cap(main, sub, jit) {
-  capEl.innerHTML = main + (sub ? '<span class="sm">' + sub + '</span>' : '');
-  capEl.classList.add('on');
-  capEl.classList.toggle('jit', !!jit);
-}
-const capOff = () => capEl.classList.remove('on');
-
-// ═══ ПОСТ: зерно + глитч ═══
-const grains = [];
-for (let i = 0; i < 6; i++) {
-  const c = DOC.createElement('canvas');
-  c.width = 160; c.height = 90;
-  const q = c.getContext('2d');
-  const d = q.createImageData(160, 90);
-  for (let p = 0; p < d.data.length; p += 4) {
-    const v = (Math.random() * 255) | 0;
-    d.data[p] = d.data[p + 1] = d.data[p + 2] = v;
-    d.data[p + 3] = 255;
+function upVoid(dt, wall) {
+  const cam = VOID.cam;
+  const g = EYES.grp;
+  // группа глаз медленно дышит и покачивается
+  g.position.y = Math.sin(wall * 0.9) * 0.06;
+  g.position.x = Math.sin(wall * 0.5) * 0.04;
+  // включённые глаза мерцают и моргают
+  EYES.list.forEach((e, i) => {
+    if (!e.userData.on) return;
+    const age = wall - e.userData.tOn;
+    const flick = 0.75 + Math.sin(wall * 9 + i * 2.1) * 0.25;
+    // редкое моргание
+    const blink = Math.sin(wall * 0.8 + i * 1.3) > 0.985 ? 0.06 : 1;
+    const er = e.userData.base;
+    e.material.opacity = Math.min(1, age * 1.4) * flick;
+    e.scale.set(1.25 * flick, 1.45 * blink, 1);
+    e.userData.halo.material.opacity = Math.min(0.6, age * 0.8) * flick;
+    e.userData.halo.scale.setScalar(er * 15 * (EYES.punch > 0 ? 1.6 : 1));
+  });
+  // панч камеры на «HELLO!»
+  if (EYES.punch > 0) {
+    EYES.punch = Math.max(0, EYES.punch - dt * 2.2);
+    cam.fov = 55 - EYES.punch * 12;
+    cam.position.z = 7.5 - EYES.punch * 1.4;
+  } else {
+    cam.fov = 55;
+    cam.position.z = 7.5;
   }
-  q.putImageData(d, 0, 0);
-  grains.push(c);
-}
-let grainIdx = 0, grainAcc = 0, glitch = 0;
-function post2D(dt) {
-  fc.clearRect(0, 0, W, H);
-  grainAcc += dt;
-  if (grainAcc > 0.08) { grainAcc = 0; grainIdx = (grainIdx + 1) % grains.length; }
-  fc.globalAlpha = 0.09;
-  fc.drawImage(grains[grainIdx], 0, 0, W, H);
-  fc.globalAlpha = 1;
-  if (glitch > 0.01) {
-    const n = 6 + (glitch * 10) | 0;
-    for (let i = 0; i < n; i++) {
-      const sy = rnd(0, H);
-      const sh = rnd(4, 34);
-      const dx = rnd(-1, 1) * 60 * glitch;
-      fc.drawImage(cv, 0, sy * renderer.getPixelRatio(), cv.width, sh * renderer.getPixelRatio(), dx, sy, W, sh);
-      if (Math.random() < 0.4) {
-        fc.fillStyle = 'rgba(255,40,60,' + (glitch * 0.25) + ')';
-        fc.fillRect(dx, sy + sh * 0.3, W, 1.5);
-      }
-    }
-    glitch = Math.max(0, glitch - dt * 2.4);
-  }
+  cam.lookAt(0, 3.4, 0);
+  cam.updateProjectionMatrix();
 }
 
-// ═══ ТАЙМЛАЙН ═══
-const T = { t: 0, phase: 'start', shake: 0, flashW: 0, flashR: 0, fade: 0, fadeT: 0 };
-const barsT = DOC.getElementById('barT'), barsB = DOC.getElementById('barB');
-const startEl = DOC.getElementById('start'), endEl = DOC.getElementById('end');
+// ═══════════════════════════════════════════════════════════════════
+//  ТАЙМЛАЙН ШОУ (~32 сек) + ГЛАВНЫЙ ЦИКЛ
+// ═══════════════════════════════════════════════════════════════════
+const barsT = DOC.getElementById('barT');
+const barsB = DOC.getElementById('barB');
+const startEl = DOC.getElementById('start');
+const endEl = DOC.getElementById('end');
+const titleEl = DOC.getElementById('title');
+const OV = { flashW: 0, flashR: 0, fade: 0, fadeT: 0 };
 let CUES = [], cueI = 0;
+const softCut = () => { OV.flashW = 0.35; };
+const ignite = (i) => {
+  const e = EYES.list[i];
+  if (e && !e.userData.on) {
+    e.userData.on = true;
+    e.userData.tOn = T.wall;
+    tone(38, 30, 0.5, 'sine', 0.18); // почти неслышный под-щелчок
+  }
+};
 CUES = [
-  { t: 0.00, fn: () => { aDrone(); aWind(5.4, 0.24); BOSS.spawn = 0; } },
-  { t: 0.30, fn: () => cap('FANTAZIA RP 3D', 'ПРЕДСТАВЛЯЕТ') },
-  { t: 2.30, fn: () => capOff() },
-  { t: 5.60, fn: () => { aHeartStart(64); } },
-  { t: 6.80, fn: () => cap('ПОД GRAND MALL', 'ЧТО-ТО ЕСТЬ') },
-  { t: 8.60, fn: () => capOff() },
-  { t: 8.80, fn: () => aWhisper(0, 5) },
-  { t: 10.60, fn: () => aWhisper(0, 3) },
-  { t: 12.20, fn: () => { aHeartStop(); aHeartStart(88); aRiser(1.35, 0.2); } },
-  { t: 13.30, fn: () => { BOSS.turn = T.t; } },                       // ОБОРОТ
-  { t: 14.05, fn: () => {                                            // ГЛАЗА + КРИК
-      BOSS.lit = true;
-      aScream(0); T.flashR = 0.95; T.shake = 1.2; glitch = 1;
-      cap('⋮ ОНО ЖДЁТ ТЕБЯ', null, true);
+  // ── АКТ I: ДОБРО ПОЖАЛОВАТЬ ──
+  { t: 0.00, fn: () => {
+      use('city');
+      CITY.mode = 'tour';
+      grade('day');
+      barsT.classList.add('on');
+      barsB.classList.add('on');
+      musicStart();
+      OV.fadeT = 0;
   } },
-  { t: 15.30, fn: () => { T.fadeT = 1; aHeartStop(); } },
-  { t: 15.90, fn: () => { cap('«ТЕНЬ ПАРКА ФАНТАЗИИ»', 'УЖЕ В ИГРЕ'); } },
-  { t: 17.60, fn: () => {
-      capOff(); barsT.classList.remove('on'); barsB.classList.remove('on');
-      endEl.classList.add('on'); T.phase = 'end';
+  { t: 0.35, fn: () => {
+      cap('ДОБРО ПОЖАЛОВАТЬ В FANTAZIA RP', 'ГОРОД, ГДЕ СБЫВАЮТСЯ ФАНТАЗИИ');
+      speak('Добро пожаловать в Фантезия, эр пи!', { pitch: 1, rate: 1.05 });
+  } },
+  { t: 3.30, fn: () => capOff() },
+  // ── экскурсия по местам ──
+  { t: 3.60, fn: () => { softCut(); loc('ЦЕНТРАЛЬНАЯ ПЛОЩАДЬ', 'ФОНТАН · СТАРТ ГОРОДА'); } },
+  { t: 6.80, fn: () => locOff() },
+  { t: 7.00, fn: () => { softCut(); loc('GRAND MALL', 'СЕРДЦЕ ТОРГОВЛИ'); } },
+  { t: 10.70, fn: () => locOff() },
+  { t: 10.90, fn: () => { softCut(); loc('ПАРК ФАНТАЗИИ', 'ЗДЕСЬ ВСЁ НАЧАЛОСЬ'); } },
+  { t: 14.20, fn: () => locOff() },
+  { t: 14.40, fn: () => { softCut(); loc('SUN MALL', 'НОВЫЙ ПОЯС ГОРОДА'); grade('sunset'); } },
+  // ── АКТ II: ПЕРЕЛОМ ──
+  { t: 16.40, fn: () => { grade('cold'); aWhisper(0, 4); } },
+  { t: 16.90, fn: () => { locOff(); musicDark(); } },
+  { t: 17.05, fn: () => {
+      cap('СКОРО ВСЁ ПОЙМЁТЕ…', null, true);
+      speak('Скоро всё поймёте', { pitch: 0.05, rate: 0.6 });
+      aWhisper(0.2, 3);
+  } },
+  { t: 18.90, fn: () => capOff() },
+  { t: 18.55, fn: () => { speedFx = 0.8; aWind(1.6, 0.3); } },
+  // ── АКТ III: ПАДЕНИЕ ──
+  { t: 19.40, fn: () => {
+      use('sha');
+      aRiser(2.1, 0.2);
+      aWhisper(0.4, 5);
+      cap('ПОД GRAND MALL', null, true);
+  } },
+  { t: 21.30, fn: () => capOff() },
+  // ── АКТ IV: ЛОГОВО ──
+  { t: 21.60, fn: () => {
+      use('lair');
+      aImpact(0, true);
+      aSubDrop(0.1);
+  } },
+  { t: 22.40, fn: () => aHeartStart(72) },
+  { t: 23.90, fn: () => aHeartStop() },
+  // ── АКТ V: ПОЛНАЯ ТЬМА → ГЛАЗА → HELLO! ──
+  { t: 24.30, fn: () => {
+      use('void');
+      OV.fade = 1; OV.fadeT = 1; // мгновенный чёрный
+      glitch = 0.3;
+  } },
+  { t: 25.40, fn: () => { OV.fadeT = 0; } }, // тьма «дышит» — открываем бездну
+  { t: 26.00, fn: () => ignite(0) },
+  { t: 26.16, fn: () => ignite(1) },
+  { t: 26.34, fn: () => ignite(2) },
+  { t: 26.52, fn: () => ignite(3) },
+  { t: 26.70, fn: () => ignite(4) },
+  { t: 26.88, fn: () => ignite(5) },
+  { t: 27.06, fn: () => ignite(6) },
+  { t: 27.40, fn: () => aHeartStart(48) },
+  { t: 28.00, fn: () => {
+      EYES.punch = 1;
+      OV.flashR = 0.75;
+      T.shake = 0.55;
+      glitch = 0.8;
+      aImpact(0, true);
+      noiseBurst(1.0, 3000, 400, 1.4, 0.2, 0);
+      tone(44, 19, 2.0, 'sine', 0.4, 0);
+      speak(VOICE.en ? 'Hello!' : 'Хеллоу!', { lang: 'en', pitch: 0.05, rate: 0.55 });
+      cap('HELLO.', null, true);
+  } },
+  { t: 28.80, fn: () => { aHeartStop(); capOff(); OV.fade = 1; OV.fadeT = 1; glitch = 0; } },
+  // ── ФИНАЛЬНАЯ КАРТОЧКА ──
+  { t: 29.30, fn: () => {
+      titleEl.classList.add('on');
+      [65.4, 98, 130.8].forEach((f) => tone(f, f * 0.99, 3.0, 'triangle', 0.05, 0));
+      tone(36, 34, 3.2, 'sine', 0.16, 0);
+  } },
+  { t: 31.80, fn: () => {
+      titleEl.classList.remove('on');
+      barsT.classList.remove('on');
+      barsB.classList.remove('on');
+      endEl.classList.add('on');
+      T.phase = 'end';
   } }
 ];
+
+// рука машет во время экскурсии
+T.handOn = () => T.phase === 'play' && T.t >= 3.6 && T.t < 17.9;
+
 function runCues() {
   while (cueI < CUES.length && T.t >= CUES[cueI].t) {
-    try { CUES[cueI].fn(); } catch (e) {}
+    try { CUES[cueI].fn(); } catch (e) { /* шоу не останавливаем */ }
     cueI++;
   }
 }
+
+// ── сброс / старт / повтор ──
 function resetShow() {
   cueI = 0;
-  T.t = 0; T.shake = 0; T.flashW = 0; T.flashR = 0; T.fade = 0; T.fadeT = 0;
-  BOSS.turn = -1; BOSS.lit = false; BOSS.spawn = -1;
-  BOSS.grp.rotation.y = Math.PI;
-  BOSS.grp.position.set(0, 0, 0);
-  BOSS.grp.scale.setScalar(1);
-  BOSS.mats.forEach((e) => { e.m.opacity = 0; });
-  BOSS.eyes.forEach((e) => e.material.color.setHex(0x1a0000));
-  BOSS.halos.forEach((h) => { h.material.opacity = 0; });
+  T.t = 0;
+  T.shake = 0;
+  glitch = 0;
+  speedFx = 0;
+  OV.flashW = 0; OV.flashR = 0; OV.fade = 0; OV.fadeT = 0;
+  CITY.mode = 'idle';
+  EYES.punch = 0;
+  EYES.list.forEach((e) => {
+    e.userData.on = false;
+    e.material.opacity = 0;
+    e.scale.set(0.01, 0.01, 0.01);
+    e.userData.halo.material.opacity = 0;
+  });
+  speechStop();
+  musicStop();
   aHeartStop();
   capOff();
+  locOff();
+  titleEl.classList.remove('on');
   endEl.classList.remove('on');
+  grade('day');
 }
 function startShow() {
   audioInit();
   if (AU && AU.state === 'suspended') AU.resume();
+  pickVoices();
   resetShow();
   T.phase = 'play';
   startEl.style.display = 'none';
-  barsT.classList.add('on');
-  barsB.classList.add('on');
 }
 DOC.getElementById('play').addEventListener('click', startShow);
 DOC.getElementById('replay').addEventListener('click', () => {
@@ -571,100 +1539,46 @@ DOC.getElementById('replay').addEventListener('click', () => {
   setTimeout(startShow, 450);
 });
 
-// ═══ ГЛАВНЫЙ ЦИКЛ: ВНИЗ → МЕДЛЕННО К БОССУ → ОБОРОТ ═══
+// ── стартовая орбита за экраном «СМОТРЕТЬ» ──
+use('city');
+CITY.mode = 'idle';
+grade('day');
+
+// ═══ ГЛАВНЫЙ ЦИКЛ ═══
 const clock = new THREE.Clock();
-const dW = DOC.getElementById('flashW'), dR = DOC.getElementById('flashR'), dB = DOC.getElementById('fadeB');
+const dW = DOC.getElementById('flashW');
+const dR = DOC.getElementById('flashR');
+const dB = DOC.getElementById('fadeB');
 function loop() {
   requestAnimationFrame(loop);
   const dt = Math.min(clock.getDelta(), 0.05);
   const wall = clock.elapsedTime;
-  if (T.phase === 'play') { T.t += dt; runCues(); }
-  const t = T.t;
-
-  // ── камера ──
-  let cx = 0, cy = 2.6, cz = 5, fov = 60, ly = 3.3;
-  if (t < 5.4) {
-    // ФАЗА 1: свободное ПАДЕНИЕ ВНИЗ сквозь тьму и пыль
-    cy = sm(30, 2.7, 0, 5.4, t);
-    cz = sm(10.5, 9.2, 0, 5.4, t);
-    cx = Math.sin(t * 0.9) * lerp(3, 0.5, t / 5.4);
-    fov = sm(80, 60, 0, 5.4, t);
-    ly = sm(0, 3.3, 2.2, 5.4, t);      // взгляд опускается → в горизонт
-  } else if (t < 13.3) {
-    // ФАЗА 2: МЕДЛЕННЫЙ подход к спине (сердцебиение, шёпоты)
-    const k = (t - 5.4) / 7.9;
-    cz = lerp(9.2, 5.6, k * 0.999);
-    cy = 2.62 + Math.sin(wall * 1.1) * 0.05;
-    cx = Math.sin(wall * 0.55) * 0.4;
-    fov = 60 - k * 4;
-    ly = 3.35;
-  } else {
-    // ФАЗА 3: разворот — камера замирает почти вплотную
-    cz = sm(5.6, 4.3, 13.3, 16.5, t);
-    cy = 2.7; cx = 0; fov = 57; ly = 3.5;
+  T.wall = wall;
+  if (T.phase === 'play') {
+    T.t += dt;
+    runCues();
   }
-  cam.position.set(cx, cy, cz);
-  cam.lookAt(0, ly, 0);
-  cam.fov = fov;
-  cam.updateProjectionMatrix();
-
-  // ── босс ──
-  const g = BOSS.grp;
-  if (BOSS.spawn >= 0) {
-    const mk = clamp((t - BOSS.spawn) / 2.2, 0, 1);
-    BOSS.mats.forEach((e) => { e.m.opacity = e.to * mk; });
-  }
-  g.position.y = Math.sin(wall * 1.9) * 0.08;
-  g.rotation.z = Math.sin(wall * 0.7) * 0.03;
-  // ОБОРОТ: резко, с ускорением в конце
-  if (BOSS.turn >= 0) {
-    const k = clamp((t - BOSS.turn) / 0.75, 0, 1);
-    g.rotation.y = Math.PI * (1 - k * k);
-  }
-  // ГЛАЗА горят
-  if (BOSS.lit) {
-    BOSS.eyes.forEach((e, i) => {
-      const f = 1 + Math.sin(wall * 11 + i * 2.4) * 0.18;
-      e.material.color.setHex(0xff2818);
-      e.scale.set(f, 1.35 * f, 0.75);
-      BOSS.halos[i].material.opacity = 0.55 + Math.sin(wall * 9 + i) * 0.25;
-    });
-    BOSS.eyeLight.intensity = 2.4 + Math.sin(wall * 13) * 0.6;
-    BOSS.jaw.rotation.x = 0.5 + Math.sin(wall * 12) * 0.06;
-    BOSS.mouthGlow.material.opacity = 0.55 + Math.sin(wall * 13) * 0.2;
-    BOSS.arms.forEach((arm, i) => { arm.rotation.x = 0.7 + Math.sin(wall * 2 + i) * 0.08; });
-  }
-  // атмосфера
-  flames.forEach((f) => {
-    f.scale.y = 1.05 + Math.sin(wall * 9 + f.userData.ph) * 0.22;
-    f.material.opacity = 0.65 + Math.sin(wall * 7 + f.userData.ph) * 0.2;
-  });
-  runes.forEach((r) => { r.rotation.y += r.userData.dir * dt; });
-  dust.forEach((d) => {
-    d.position.y += dt * 0.14;
-    if (d.position.y > 7.4) d.position.y = 0.3;
-  });
-  // струи летят вверх быстро только во время падения
-  const fallK = t < 5.4 ? 1 - t / 6 : 0.15;
-  streaks.forEach((st) => {
-    st.position.y += dt * 26 * fallK;
-    if (st.position.y > 30) st.position.y = 0.5;
-  });
-  // тряска
-  if (T.shake > 0.001) {
-    cam.position.x += rnd(-1, 1) * T.shake * 0.45;
-    cam.position.y += rnd(-1, 1) * T.shake * 0.35;
-    T.shake = Math.max(0, T.shake - dt * 1.5);
-  }
-
-  renderer.render(scene, cam);
+  try {
+    if (active) {
+      if (activeName === 'city') { upCity(dt, wall); upCityCam(); }
+      else if (activeName === 'sha') upShaft(dt, wall);
+      else if (activeName === 'lair') upLair(dt, wall);
+      else if (activeName === 'void') upVoid(dt, wall);
+      if (T.shake > 0.001) {
+        active.cam.position.x += rnd(-1, 1) * T.shake * 0.45;
+        active.cam.position.y += rnd(-1, 1) * T.shake * 0.35;
+        T.shake = Math.max(0, T.shake - dt * 1.5);
+      }
+      renderer.render(active.s, active.cam);
+    }
+  } catch (e) { /* кадр не должен ронять шоу */ }
   post2D(dt);
-  if (T.flashW > 0.002) { dW.style.opacity = T.flashW; T.flashW = Math.max(0, T.flashW - dt * 2.6); }
+  if (OV.flashW > 0.002) { dW.style.opacity = OV.flashW; OV.flashW = Math.max(0, OV.flashW - dt * 2.6); }
   else dW.style.opacity = 0;
-  if (T.flashR > 0.002) { dR.style.opacity = T.flashR; T.flashR = Math.max(0, T.flashR - dt * 2.2); }
+  if (OV.flashR > 0.002) { dR.style.opacity = OV.flashR; OV.flashR = Math.max(0, OV.flashR - dt * 2.2); }
   else dR.style.opacity = 0;
-  T.fade += (T.fadeT - T.fade) * Math.min(1, dt * 3.2);
-  dB.style.opacity = T.fade.toFixed(3);
+  OV.fade += (OV.fadeT - OV.fade) * Math.min(1, dt * 3.2);
+  dB.style.opacity = OV.fade.toFixed(3);
 }
 loop();
 })();
