@@ -54,7 +54,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Fantazia RP 3D · v3.4</title>
+<title>Fantazia RP 3D · v3.5</title>
 <!-- ===== PWA MANIFEST (встроенный) ===== -->
 <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22Fantazia+RP+3D%22%2C%22short_name%22%3A%22Fantazia%22%2C%22description%22%3A%22Fantazia+RP+3D+%E2%80%94+%D0%BC%D0%BE%D0%B1%D0%B8%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+3D+%D0%B8%D0%B3%D1%80%D0%B0%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22fullscreen%22%2C%22orientation%22%3A%22landscape%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%236c5ce7%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABJQTFRFAAAAbEjiqqr%2F6%2BXz1s77////aoCa9AAAAARdFJlcAMEBQYHCJ%2BZAAAAsklEQVR42u3BMQEAAADCoPVP7WsIoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAMBuAABHwAAAABJRU5ErkJggg%3D%3D%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
 <meta name="theme-color" content="#6c5ce7">
@@ -2781,7 +2781,7 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
   </div>
 </div>
 
-<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v3.4</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v3.4 — ТЕНЬ ПАРКА ФАНТАЗИИ: КВЕСТ + БОСС-ФАЙТ ☣️🪓</div>
+<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v3.5</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v3.5 — ИДЕАЛЬНЫЙ ГОРОД: АУДИТ + ЧИСТКА 🧹✨</div>
 <script>setTimeout(function(){var t=document.getElementById('fzVerToast');if(t){t.style.transition='opacity 1s';t.style.opacity='0';setTimeout(function(){t.remove()},1100)}},6000)</script>
 
 <!-- ========== HUD ========== -->
@@ -3508,11 +3508,11 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
 </div>
 
 <!-- ========== СКРИПТЫ ========== -->
-<script src="/socket.io/socket.io.js?v=304"></script>
-<script src="assets/three.min.js?v=304"></script>
+<script src="/socket.io/socket.io.js?v=305"></script>
+<script src="assets/three.min.js?v=305"></script>
 <script>if (!window.THREE) document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\\/script>');</script>
 <!-- ===== НОВАЯ 3D-МОДЕЛЬ ИГРОКА (после Three.js!) ===== -->
-<script src="assets/fantazia-player.js?v=304"></script>
+<script src="assets/fantazia-player.js?v=305"></script>
 <script>
 /*!
  * ============================================================
@@ -5846,7 +5846,7 @@ function buildFantaziaCityV3() {
   scene.add(gz);
   // дорожки
   [-1, 1].forEach(s => {
-    const path = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 70), NZ.walk);
+    const path = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 44), NZ.walk);
     path.rotation.x = -Math.PI/2;
     path.position.set(-85 + s * 32, 0.025, 85);
     scene.add(path);
@@ -5859,7 +5859,16 @@ function buildFantaziaCityV3() {
     const x = -85 + Math.cos(a) * r, z = 85 + Math.sin(a) * r;
     if (Math.abs(x) > 24 && Math.abs(z) > 24) parkTrees.push({ x, z });
   }
-  nzTreeField(parkTrees);
+  // V3.5: вычистить деревья с РЕАЛЬНЫХ дорог
+  const fzOffRoad = (x, z) => {
+    const roads = [0, 60, -60, 175, -175, 260, -260];
+    for (const rv of roads) {
+      if (Math.abs(x - rv) < 9) return false;
+      if (Math.abs(z - rv) < 9) return false;
+    }
+    return true;
+  };
+  nzTreeField(parkTrees.filter(t => fzOffRoad(t.x, t.z)));
   // лавочки парка
   for (let i = 0; i < 6; i++) {
     const a = (i/6) * Math.PI * 2;
@@ -5871,40 +5880,32 @@ function buildFantaziaCityV3() {
   createBuilding(27.3, 75, 15, 10, 12, 0x2C3E50, '🎬 КИНО ЛУНА', 'cinema');
   createBuilding(125, 32.8, 12, 8, 10, 0xD35400, '🏋️ ЖЕЛЕЗНЫЙ ЗАЛ', 'gym');
 
-  // ── 8. БУЛЬВАР на проспекте x=0: газон, деревья, лавочки ──
-  const median = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 200), NZ.grass);
-  median.rotation.x = -Math.PI/2; median.position.set(0, 0.018, -140);
-  scene.add(median);
+  // ── 8. V3.5: бульвар УБРАН с проезжей части x=0 (деревья стояли на асфальте!)
+  // деревья пересажены на тротуары проспекта
   const boulevardTrees = [];
   for (let i = 0; i < 13; i++) {
-    boulevardTrees.push({ x: -1.2, z: -232 + i * 15 });
-    boulevardTrees.push({ x: 1.2, z: -225 + i * 15 });
+    boulevardTrees.push({ x: -9.4, z: -232 + i * 15 });
+    boulevardTrees.push({ x: 9.4, z: -225 + i * 15 });
   }
-  nzTreeField(boulevardTrees);
+  nzTreeField(boulevardTrees.filter(t => fzOffRoad(t.x, t.z)));
 
-  // ── 9. УЛИЧНЫЕ ФОНАРИ вдоль проспектов ──
-  const lampSpots = [];
-  for (let i = -140; i <= 140; i += 28) {
-    lampSpots.push({ x: -150 + 8.6, z: i });
-    lampSpots.push({ x: 150 - 8.6, z: i });
-    lampSpots.push({ x: i, z: -150 + 8.6 });
-    lampSpots.push({ x: i, z: 150 - 8.6 });
-  }
-  nzLamps(lampSpots);
+  // ── 9. V3.5: фантомные фонари на сетке ±150 УБРАНЫ (стояли в чистом поле;
+  // реальные фонари вдоль дорог ставит buildStreetFurniture) ──
 
-  // ── 10. СВЕТОФОРЫ на главных перекрёстках ──
-  [[-150, -150], [-150, 150], [150, -150], [150, 150], [0, -100], [0, 100]].forEach(([x, z]) => {
-    nzTrafficLight(x + 9.2, z + 9.2, Math.PI * 0.75);
-    nzTrafficLight(x - 9.2, z - 9.2, -Math.PI * 0.25);
-  });
+  // ── 10. V3.5: фантомные светофоры на несуществующих перекрёстках УБРАНЫ
+  // (реальные светофоры на 4 перекрёстках — в buildStreetFurniture) ──
 
   // ── 11. ДВА ТЦ + дороги к ним ──
   createMallBuilding(235, 228, 85, 32, 55, '☀️ SUN MALL', 0xFFB300, -1);
   createMallBuilding(-235, -228, 95, 38, 58, '💎 MEGA PLAZA', 0x00E5FF, +1);
-  plane(14, 120, 235, 160, NZ.road);       // дорога к SUN MALL
-  plane(14, 120, -235, -160, NZ.road);     // дорога к MEGA PLAZA
-  plane(120, 14, 190, 190, NZ.road);       // связка
-  plane(120, 14, -190, -190, NZ.road);
+  // V3.5: подъезды к ТЦ в едином стиле + СВЯЗКА с окружной (раньше висели в воздухе).
+  // Стыки без наложений (Z-fight) и с патчами на пересечениях
+  fzMkRoad(235, 195, 70, 10, 'z', [190]);     // SUN MALL: от окружной к ТЦ
+  fzMkRoad(-235, -195, 70, 10, 'z', [-190]);  // MEGA PLAZA
+  fzMkRoad(214.5, 190, 73, 10, 'x', [235]);   // связка юга: стык x=175 ↔ дорога x=235
+  fzMkRoad(-214.5, -190, 73, 10, 'x', [-235]);
+  fzMkRoad(175, 178, 34, 10, 'z', [190]);     // стык: окружная x=175 (до z=160) ↔ связка z=190
+  fzMkRoad(-175, -178, 34, 10, 'z', [-190]);
 
   // ── 12. Деревья вдоль жилых улиц ──
   const streetTrees = [];
@@ -5913,7 +5914,7 @@ function buildFantaziaCityV3() {
     streetTrees.push({ x: 130, z: -130 + i * 9 });
     streetTrees.push({ x: -130 + i * 9, z: 30 });
   }
-  nzTreeField(streetTrees);
+  nzTreeField(streetTrees.filter(t => fzOffRoad(t.x, t.z))); // V3.5: не на дорогах
 
   // ── 13. Остановка ──
   const stop = new THREE.Group();
@@ -5925,7 +5926,7 @@ function buildFantaziaCityV3() {
   });
   const benchS = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.12, 0.5), NZ.bench);
   benchS.position.y = 0.55; stop.add(benchS);
-  stop.position.set(12, 0, -60);
+  stop.position.set(7.7, 0, -68); // V3.5: на тротуаре, не на дороге
   scene.add(stop);
 
   // ── 14. ДОПОЛНИТЕЛЬНЫЕ КВАРТАЛЫ (больше домов) ──
@@ -7743,41 +7744,41 @@ function createCar(type, x, z) {
 }
 
 function spawnCarsInParking() {
-  // 🅿️ ВСЕ машины — на новой парковке у площади (два ряда)
+  // 🅿️ V3.5: парковка сдвинута с дороги x=60 (асфальт и машины стояли НА проезжей части)
   const row1 = ['sedan','sport','suv','taxi','limo','coupe','pickup'];
   const row2 = ['van','sedan','suv','taxi','police','truck'];
-  row1.forEach((t, i) => createCar(t, 59.5 + i * 6, 26));
-  row2.forEach((t, i) => createCar(t, 62.5 + i * 6, 38));
+  row1.forEach((t, i) => createCar(t, 73.5 + i * 5.5, 26));
+  row2.forEach((t, i) => createCar(t, 76.4 + i * 5.5, 38));
 }
 
 function buildParkingLot() {
-  // Асфальт 40×28 + заезд с проспекта z=50
+  // V3.5: сдвиг +14 по X — парковка больше не перекрывает дорогу x=60
   const asMat = new THREE.MeshLambertMaterial({ color: 0x2b2b31 });
   const as = new THREE.Mesh(new THREE.PlaneGeometry(40, 28), asMat);
-  as.rotation.x = -Math.PI/2; as.position.set(76, 0.015, 32); scene.add(as);
+  as.rotation.x = -Math.PI/2; as.position.set(90, 0.015, 32); scene.add(as);
   const dr = new THREE.Mesh(new THREE.PlaneGeometry(8, 10), asMat);
-  dr.rotation.x = -Math.PI/2; dr.position.set(76, 0.015, 50); scene.add(dr);
+  dr.rotation.x = -Math.PI/2; dr.position.set(90, 0.015, 50); scene.add(dr);
   // Разметка мест
   const lineMat = new THREE.MeshBasicMaterial({ color: 0xE8E8E0 });
   for (let i = 0; i <= 7; i++) {
     [21.5, 42.5].forEach(lz => {
       const ln = new THREE.Mesh(new THREE.PlaneGeometry(0.25, 10.5), lineMat);
-      ln.rotation.x = -Math.PI/2; ln.position.set(56.5 + i * 6, 0.03, lz); scene.add(ln);
+      ln.rotation.x = -Math.PI/2; ln.position.set(70.5 + i * 5.5, 0.03, lz); scene.add(ln);
     });
   }
   // Центральный проезд
   const mid = new THREE.Mesh(new THREE.PlaneGeometry(0.35, 26), new THREE.MeshBasicMaterial({ color: 0xF1C40F }));
-  mid.rotation.x = -Math.PI/2; mid.position.set(76, 0.03, 32); scene.add(mid);
+  mid.rotation.x = -Math.PI/2; mid.position.set(90, 0.03, 32); scene.add(mid);
   // Знак 🅿️
   const signTex = nzCanvas(128, 128, (g) => {
     g.fillStyle = '#1a5fd0'; g.beginPath(); g.arc(64, 64, 60, 0, Math.PI * 2); g.fill();
     g.fillStyle = '#fff'; g.font = 'bold 74px Arial'; g.textAlign = 'center'; g.fillText('P', 64, 90);
   });
   const sign = new THREE.Mesh(new THREE.CircleGeometry(1.1, 20), new THREE.MeshBasicMaterial({ map: signTex }));
-  sign.position.set(56, 4.4, 18); scene.add(sign);
+  sign.position.set(70, 4.4, 18); scene.add(sign);
   const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 4.4, 6), new THREE.MeshLambertMaterial({ color: 0x555555 }));
-  pole.position.set(56, 2.2, 18); scene.add(pole);
-  nzLamps([{ x: 58, z: 46 }, { x: 94, z: 46 }]);
+  pole.position.set(70, 2.2, 18); scene.add(pole);
+  nzLamps([{ x: 74, z: 46 }, { x: 106, z: 46 }]);
 }
 
 function renderCarsModal() {
@@ -12266,7 +12267,7 @@ function buildStreetFurniture() {
   // ── Светофоры на перекрёстках (±60, 0) ──
   const mkTraffic = (x, z) => {
     // один столб на углу перекрёстка, две головы (для двух осей) на разной высоте
-    const cornerX = x + (x >= 0 ? 5.2 : -5.2), cornerZ = z + (z >= 0 ? 5.2 : -5.2);
+    const cornerX = x + (x >= 0 ? 6.7 : -6.7), cornerZ = z + (z >= 0 ? 4.9 : -4.9); // V3.5: на тротуаре угла
     if (!fzClearOfBuildings(cornerX, cornerZ, 0.8)) return;
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 5.2, 8), new THREE.MeshLambertMaterial({ color: 0x22262e }));
     pole.position.set(cornerX, 2.6, cornerZ); scene.add(pole);
@@ -12586,11 +12587,11 @@ function buildPedestrians() {
     return g;
   };
   const paths = [
-    [[9, -130], [9, 130]], [[-9, 130], [-9, -130]],
-    [[-130, 9], [130, 9]], [[130, -9], [-130, -9]],
-    [[-140, 68], [140, 68]], [[140, -68], [-140, -68]],
-    [[68, -140], [68, 140]], [[-68, 140], [-68, -140]],
-    [[-150, 168], [150, 168]], [[150, -168], [-150, -168]],
+    [[7.4, -130], [7.4, 130]], [[-7.4, 130], [-7.4, -130]],
+    [[-130, 7.4], [130, 7.4]], [[130, -7.4], [-130, -7.4]],
+    [[-140, 65.7], [140, 65.7]], [[140, -65.7], [-140, -65.7]],
+    [[65.7, -140], [65.7, 140]], [[-65.7, 140], [-65.7, -140]],
+    [[-150, 168.3], [150, 168.3]], [[150, -168.3], [-150, -168.3]],
   ];
   for (let k = 0; k < 14; k++) {
     const path = paths[k % paths.length];
@@ -12815,7 +12816,7 @@ const FZ_NOTE_SPOTS = [
   { x: 12, z: 10 },    // площадь у спавна
   { x: -31, z: 79 },   // детская площадка
   { x: 60, z: 195 },   // АЗС
-  { x: 76, z: 44 },    // парковка
+  { x: 90, z: 44 },    // парковка (V3.5: сдвинута с дороги)
   { x: -150, z: -168 },// юго-запад пояс
   { x: 150, z: 168 },  // северо-восток пояс
 ];
@@ -19006,7 +19007,7 @@ function claimFPReward(r, isPlus, claimKey) {
   .fpp-row-label { font-size: 9px !important; }
 }
 </style>
-<script src="update_script.js?v=304"></script>
+<script src="update_script.js?v=305"></script>
 </body>
 
 <script>
@@ -19082,7 +19083,19 @@ window.addEventListener('DOMContentLoaded', function() {
 <div id="changelogModal style="position:fixed;inset:0;background:rgba(0,0,0,0.65);display:none;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(6px);">
   <div class="changelog-box">
     <h2>📋 Что нового</h2>
-    <div class="cl-version">FANTAZIA RP 3D — ⚡ СУПЕР АПДЕЙТ v3.4 «ТЕНЬ ПАРКА ФАНТАЗИИ»</div>
+    <div class="cl-version">FANTAZIA RP 3D — ⚡ v3.5 «ИДЕАЛЬНЫЙ ГОРОД»</div>
+    <div class="cl-section">
+      <div class="cl-section-title">🧹 АУДИТ ГОРОДА v3.5</div>
+      <div class="cl-item"><span class="cl-badge fix">FIX</span><b>🅿️ Парковка сдвинута с дороги:</b> асфальт и 2 машины стояли ПРЯМО на проезжей части x=60 — теперь парковка целиком восточнее, с новой разметкой</div>
+      <div class="cl-item"><span class="cl-badge fix">FIX</span><b>🌳 Бульвар убран с проспекта x=0:</b> 26 деревьев и газон стояли на асфальте — деревья пересажены на тротуары</div>
+      <div class="cl-item"><span class="cl-badge fix">FIX</span><b>👻 Фантомные объекты удалены:</b> фонари и светофоры стояли в чистом поле на несуществующей сетке ±150 / (0,±100)</div>
+      <div class="cl-item"><span class="cl-badge fix">FIX</span><b>🛣 Подъезды к SUN MALL и MEGA PLAZA связаны с городом:</b> раньше дороги висели в воздухе ни с чем не соединённые — теперь стык с окружной через связки z=±190 в едином дорожном стиле (текстура, осевые, бордюры, тротуары)</div>
+      <div class="cl-item"><span class="cl-badge fix">FIX</span><b>Деревья больше не растут на дорогах</b> (фильтр по всем реальным осям) — парк, бульвар, улицы</div>
+      <div class="cl-item"><span class="cl-badge fix">FIX</span><b>Дорожки парка не пересекают шоссе,</b> автобусная остановка переставлена с дороги на тротуар</div>
+      <div class="cl-item"><span class="cl-badge fix">FIX</span><b>🚶 Пешеходы ходят точно по тротуарам,</b> светофоры стоят на углах тротуаров, а не на асфальте</div>
+    </div>
+    <div class="cl-section">
+      <div class="cl-section-title">✨ v3.4 «ТЕНЬ ПАРКА ФАНТАЗИИ»</div>
     <div class="cl-section">
       <div class="cl-section-title">☣️ СЮЖЕТНЫЙ КВЕСТ v3.4</div>
       <div class="cl-item"><span class="cl-badge new">NEW</span><b>📜 6 записок смотрителя парка</b> разбросаны по городу (площадь, парк, АЗС, парковка, окружная ×2). Первая открывает квест. Светятся и парят — их видно издалека. Читай дневник на бумаге-модалке!</div>
