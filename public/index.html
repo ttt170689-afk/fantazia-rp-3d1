@@ -54,7 +54,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Fantazia RP 3D · v3.3</title>
+<title>Fantazia RP 3D · v3.4</title>
 <!-- ===== PWA MANIFEST (встроенный) ===== -->
 <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22Fantazia+RP+3D%22%2C%22short_name%22%3A%22Fantazia%22%2C%22description%22%3A%22Fantazia+RP+3D+%E2%80%94+%D0%BC%D0%BE%D0%B1%D0%B8%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+3D+%D0%B8%D0%B3%D1%80%D0%B0%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22fullscreen%22%2C%22orientation%22%3A%22landscape%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%236c5ce7%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABJQTFRFAAAAbEjiqqr%2F6%2BXz1s77////aoCa9AAAAARdFJlcAMEBQYHCJ%2BZAAAAsklEQVR42u3BMQEAAADCoPVP7WsIoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAMBuAABHwAAAABJRU5ErkJggg%3D%3D%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
 <meta name="theme-color" content="#6c5ce7">
@@ -2156,6 +2156,45 @@ button:active { transform: scale(.95); }
 .gp-item .gp-name { font: 700 12.5px/1.25 'Segoe UI',sans-serif; color: var(--fz-text); }
 .gp-item .gp-sub { font: 11px/1.2 monospace; color: #7f93ad; margin-top: 2px; }
 
+/* ── КВЕСТ «ТЕНЬ ПАРКА ФАНТАЗИИ» ── */
+#fzQuestChip {
+  position: fixed; top: 200px; right: 10px; z-index: 301;
+  background: var(--fz-glass); border: 1px solid rgba(255,215,120,.5); border-radius: 10px;
+  color: #ffe9b8; font: bold 12px/1 monospace; padding: 6px 10px;
+  backdrop-filter: blur(10px); box-shadow: 0 4px 14px rgba(0,0,0,.4);
+  text-shadow: 0 0 8px rgba(255,200,100,.4); pointer-events: none;
+}
+#noteModal {
+  position: fixed; inset: 0; z-index: 950; display: none;
+  align-items: center; justify-content: center; background: rgba(5,6,10,.7);
+  backdrop-filter: blur(6px);
+}
+#noteModal .nm-paper {
+  width: min(460px, 92vw); background: linear-gradient(160deg,#f2e8cf,#e4d5b0);
+  border-radius: 6px; padding: 28px 30px; color: #3b2f1c;
+  font: 15px/1.65 'Georgia', serif; box-shadow: 0 30px 80px rgba(0,0,0,.7), inset 0 0 60px rgba(120,90,40,.25);
+  transform: rotate(-1.2deg); position: relative;
+}
+#noteModal .nm-num { position: absolute; top: -14px; left: 18px; background: #7b241c; color: #f9e79f; border-radius: 8px; padding: 4px 12px; font: bold 13px/1 monospace; transform: rotate(-3deg); }
+#noteModal .nm-close { margin-top: 16px; background: #3b2f1c; color: #f2e8cf; border: none; border-radius: 8px; padding: 9px 22px; font: bold 14px 'Segoe UI'; cursor: pointer; }
+#bossBar {
+  position: fixed; top: 62px; left: 50%; transform: translateX(-50%); z-index: 400;
+  width: min(520px, 86vw); display: none;
+}
+#bossBar .bb-name { text-align: center; color: #ff8a8a; font: 800 15px/1.2 'Segoe UI'; text-shadow: 0 0 14px rgba(255,40,40,.6), 0 2px 4px #000; margin-bottom: 5px; letter-spacing: 1px; }
+#bossBar .bb-track { height: 14px; background: rgba(0,0,0,.65); border: 1px solid rgba(255,80,80,.5); border-radius: 8px; overflow: hidden; }
+#bossBar .bb-fill { height: 100%; width: 100%; background: linear-gradient(90deg,#a01020,#ff4d4d,#ffa64d); transition: width .25s; }
+#fzDialog {
+  position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); z-index: 420;
+  width: min(640px, 92vw); display: none;
+  background: rgba(8,6,12,.9); border: 1px solid rgba(255,80,80,.35); border-radius: 14px;
+  padding: 14px 20px; color: #ffd9d9; font: 600 15px/1.5 'Segoe UI'; text-align: center;
+  box-shadow: 0 14px 50px rgba(0,0,0,.7); backdrop-filter: blur(8px);
+}
+#fzDialog b { color: #ff9d9d; }
+#fzFlash { position: fixed; inset: 0; z-index: 500; pointer-events: none; opacity: 0; background: #fff; transition: opacity .1s; }
+#fzHurt { position: fixed; inset: 0; z-index: 499; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at center, transparent 40%, rgba(255,0,0,.5)); transition: opacity .15s; }
+
 /* ── Большая карта ── */
 #bigMap .bm-box {
   background: var(--fz-glass2); border: 1px solid rgba(77,210,255,.3); border-radius: 20px;
@@ -2742,7 +2781,7 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
   </div>
 </div>
 
-<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v3.3</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v3.3 — ДОРОГИ 2.0 + ТРАФИК СО СВЕТОФОРАМИ 🛣🚦</div>
+<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v3.4</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v3.4 — ТЕНЬ ПАРКА ФАНТАЗИИ: КВЕСТ + БОСС-ФАЙТ ☣️🪓</div>
 <script>setTimeout(function(){var t=document.getElementById('fzVerToast');if(t){t.style.transition='opacity 1s';t.style.opacity='0';setTimeout(function(){t.remove()},1100)}},6000)</script>
 
 <!-- ========== HUD ========== -->
@@ -3469,11 +3508,11 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
 </div>
 
 <!-- ========== СКРИПТЫ ========== -->
-<script src="/socket.io/socket.io.js?v=303"></script>
-<script src="assets/three.min.js?v=303"></script>
+<script src="/socket.io/socket.io.js?v=304"></script>
+<script src="assets/three.min.js?v=304"></script>
 <script>if (!window.THREE) document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\\/script>');</script>
 <!-- ===== НОВАЯ 3D-МОДЕЛЬ ИГРОКА (после Three.js!) ===== -->
-<script src="assets/fantazia-player.js?v=303"></script>
+<script src="assets/fantazia-player.js?v=304"></script>
 <script>
 /*!
  * ============================================================
@@ -5305,6 +5344,7 @@ function initThreeJS() {
 
   buildCity();
   buildStreetFurniture();
+  buildQuestNotes();
   buildTraffic();
   buildPedestrians();
   buildParkPlayground();
@@ -10686,7 +10726,11 @@ function renderInventory() {
   // Merge server inventory + box drops
   const serverInv = (localPlayer && localPlayer.inventory) || [];
   const boxInv = _fzBoxInv();
-  const inv = [...serverInv, ...boxInv];
+  const questInv = [];
+  if (window.FZ_QUEST && window.FZ_QUEST.orbe) {
+    questInv.push({ uid: 'fz_orbe', id: 'fz_orbe', name: '🔮 Сфера Фантазии', type: 'special', ico: '🔮', rarity: 'mythic', fzUse: 'orbe' });
+  }
+  const inv = [...serverInv, ...boxInv, ...questInv];
   const filtered = currentInvTab === 'all' ? inv : inv.filter(i => i.type === currentInvTab);
   if (countEl) countEl.textContent = inv.length;
 
@@ -10730,8 +10774,10 @@ function renderInventory() {
       const rarityBadge = item.rarity
         ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;background:rgba(0,0,0,.3);color:${_fzBoxRarityColor(item.rarity)}">${FZ_BOX_RARITY_COLORS[item.rarity]?.label||''}</span>`
         : '';
-      // Equip buttons for box items
       let actionBtns = '';
+      if (item.fzUse === 'orbe') {
+        actionBtns = `<button class="modal-btn" style="flex:1;background:linear-gradient(90deg,#ff5aa833,#7a5aff33);border:1px solid #ff7ad9" onclick="fzUseOrbe()">🔮 Активировать</button>`;
+      }
       if (item.source === 'box') {
         if (item.type === 'clothing' || item.type === 'accessory' || item.type === 'cosmetic' || item.type === 'emote') {
           actionBtns = item.equipped
@@ -12750,6 +12796,594 @@ function buildGasStation() {
   Bx(7, 0.4, 5, 0xb03040, 60, 3.35, 197.5, 0);
 }
 
+// ═══════════════════ V3.4: КВЕСТ «ТЕНЬ ПАРКА ФАНТАЗИИ» ═══════════════════
+window.FZ_QUEST = (function () {
+  try { return JSON.parse(localStorage.getItem('FZ_QUEST_V1')) || null; } catch (e) { return null; }
+})() || { notes: [false,false,false,false,false,false], axe: false, orbe: false, boardsBroken: false, bossDead: false };
+function fzQuestSave() { try { localStorage.setItem('FZ_QUEST_V1', JSON.stringify(window.FZ_QUEST)); } catch (e) {} }
+window.fzQuestNotesFound = function () { return window.FZ_QUEST.notes.filter(Boolean).length; };
+
+const FZ_NOTE_TEXTS = [
+  { t: 'Дневник смотрителя парка. Стр. 1.\n\n«Парк Фантазия закрывали в спешке, прямо посреди сезона. Нас было трое в смене. Директор сказал: „Уходите. Объект консервируется“. Мы ушли. Все, кроме меня.»\n\n✍ Кем-то на полях приписано: СОБЕРИ ВСЕ 6 СТРАНИЦ. Они разбросаны по городу.' },
+  { t: 'Дневник смотрителя парка. Стр. 2.\n\n«Ночью в аттракционах что-то живёт. Карусель крутится сама. Я чинил её 12 лет — она не может крутиться сама. Сегодня ночью она крутилась и играла музыку. Двери были закрыты. На мне.»' },
+  { t: 'Дневник смотрителя парка. Стр. 3.\n\n«Рабочие с АЗС говорили, что видели тень с цилиндром. Смех из парадной. Коллеги звали меня уезжать. Я остался. Это же МОЙ парк. Кому я его оставлю?»' },
+  { t: 'Дневник смотрителя парка. Стр. 4.\n\n«Он заколотил проход в подвал GRAND MALL. Слушает радио на парковке и хохочет. Я видел его руки — это не руки. Это клешни. Я спрятал ТОПОР. Наверху. На самом последнем этаже. Пусть попробует достать.»' },
+  { t: 'Дневник смотрителя парка. Стр. 5.\n\n«Он живёт под полом торгового центра. Полночь — его час. Лампы щёлкают одна за другой, и тогда он приходит. Я не буду писать, чем это кончилось. Если читаешь это — я не успел.»' },
+  { t: 'Дневник смотрителя парка. Стр. 6 — ПОСЛЕДНЯЯ.\n\n«ТОПОР — на 3 этаже GRAND MALL, за кинозалом. ЗАКОЛОЧЕННЫЙ ПРОХОД — на 1 этаже. Собери страницы, возьми топор, сойди вниз. Он ждёт уже очень давно. ОСВОБОДИ ФАНТАЗИЮ.»' },
+];
+const FZ_NOTE_SPOTS = [
+  { x: 12, z: 10 },    // площадь у спавна
+  { x: -31, z: 79 },   // детская площадка
+  { x: 60, z: 195 },   // АЗС
+  { x: 76, z: 44 },    // парковка
+  { x: -150, z: -168 },// юго-запад пояс
+  { x: 150, z: 168 },  // северо-восток пояс
+];
+window._fzNoteObjs = [];
+
+function buildQuestNotes() {
+  window._fzNoteObjs = [];
+  FZ_NOTE_SPOTS.forEach((sp, i) => {
+    if (window.FZ_QUEST.notes[i]) return;
+    const g = new THREE.Group();
+    const paper = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.56),
+      new THREE.MeshBasicMaterial({ color: 0xf2e8cf, side: THREE.DoubleSide }));
+    paper.position.y = 1; g.add(paper);
+    const glow = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: (function () {
+        const c = document.createElement('canvas'); c.width = c.height = 64;
+        const gg = c.getContext('2d');
+        const gr = gg.createRadialGradient(32, 32, 2, 32, 32, 32);
+        gr.addColorStop(0, 'rgba(255,230,150,0.85)'); gr.addColorStop(1, 'rgba(255,230,150,0)');
+        gg.fillStyle = gr; gg.fillRect(0, 0, 64, 64);
+        return new THREE.CanvasTexture(c);
+      })(), transparent: true, depthWrite: false
+    }));
+    glow.scale.set(2.4, 2.4, 1); glow.position.y = 1; g.add(glow);
+    g.position.set(sp.x, 0, sp.z);
+    g.userData = { isQuestNote: true, idx: i, baseY: 1, phase: i * 1.3 };
+    scene.add(g);
+    window._fzNoteObjs.push(g);
+    interactables.push({ position: { x: sp.x, y: 0, z: sp.z }, type: 'quest_note', name: '📜 Записка (' + (fzQuestNotesFound()) + '/6)', range: 2.2 });
+  });
+  fzQuestChipUpdate();
+}
+
+function fzQuestChipUpdate() {
+  const chip = document.getElementById('fzQuestChip');
+  if (!chip) return;
+  const n = fzQuestNotesFound();
+  const done = n >= 6;
+  if (window.FZ_QUEST.bossDead) { chip.style.display = 'none'; return; }
+  chip.style.display = 'block';
+  chip.textContent = done
+    ? '📜 ВСЕ 6/6 → ТОПОР НА 3 ЭТ. ТЦ'
+    : '📜 Записки: ' + n + '/6';
+  chip.style.borderColor = done ? 'rgba(120,255,160,.6)' : 'rgba(255,215,120,.5)';
+  chip.style.color = done ? '#c8ffd9' : '#ffe9b8';
+}
+
+function closeNoteModal(ev) {
+  if (ev && ev.target && ev.target.closest && ev.target.closest('.nm-paper') && ev.type === 'click' && ev.target.tagName !== 'BUTTON') return;
+  document.getElementById('noteModal').style.display = 'none';
+}
+
+function fzPickNote(inter) {
+  // найти ближайшую записку по позиции
+  let best = null, bd = 1e9;
+  window._fzNoteObjs.forEach(g => {
+    const d = Math.hypot(g.position.x - inter.position.x, g.position.z - inter.position.z);
+    if (d < bd) { bd = d; best = g; }
+  });
+  if (!best) return;
+  const idx = best.userData.idx;
+  window.FZ_QUEST.notes[idx] = true;
+  fzQuestSave();
+  scene.remove(best);
+  window._fzNoteObjs = window._fzNoteObjs.filter(g2 => g2 !== best);
+  interactables = interactables.filter(i2 => !(i2.type === 'quest_note' && Math.abs(i2.position.x - inter.position.x) < 3 && Math.abs(i2.position.z - inter.position.z) < 3));
+  // бумага
+  fzSfx(320, 0.12, 'triangle', 0.25);
+  const n = fzQuestNotesFound();
+  document.getElementById('nmNum').textContent = 'стр. ' + (idx + 1) + '/6';
+  document.getElementById('nmText').innerHTML = FZ_NOTE_TEXTS[idx].t.replace(/\n/g, '<br>');
+  document.getElementById('noteModal').style.display = 'flex';
+  document.exitPointerLock && document.exitPointerLock();
+  showNotification('📜 Записка ' + n + '/6' + (n >= 6 ? ' — ВСЕ СОБРАНЫ!' : ''), n >= 6 ? 'success' : 'info');
+  if (n >= 6) {
+    setTimeout(() => showNotification('🪓 Ищи ТОПОР на 3 этаже GRAND MALL', 'success'), 1400);
+  } else if (n === 1) {
+    setTimeout(() => showNotification('🎯 КВЕСТ: собери все 6 записок', 'info'), 1400);
+  }
+  fzQuestChipUpdate();
+}
+
+// ── простые звуки (WebAudio) ──
+function fzSfx(freq, dur, type, gain) {
+  try {
+    const ctx = getAudioCtx();
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type || 'square'; o.frequency.value = freq;
+    g.gain.setValueAtTime(gain || 0.15, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (dur || 0.15));
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime + (dur || 0.15) + 0.02);
+  } catch (e) {}
+}
+function fzSfxChord(freqs, dur) { freqs.forEach((f, i) => setTimeout(() => fzSfx(f, dur || 0.5, 'triangle', 0.12), i * 60)); }
+
+function fzQuestNotesAnim(t) {
+  window._fzNoteObjs.forEach(g => {
+    g.position.y = Math.sin(t * 2 + g.userData.phase) * 0.12 + 0.15;
+    g.rotation.y = t * 0.8 + g.userData.phase;
+  });
+}
+
+// ═══ КВЕСТ V3.4: доски/топор/арена/босс ═══
+function fzMallBoards(bx, bz, F, FH, add, mat) {
+  const qx = bx + 18.6, qz = bz + 3;
+  const dark = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 3), new THREE.MeshBasicMaterial({ color: 0x050508 }));
+  dark.position.set(qx, F + 1.5, qz); dark.rotation.y = -Math.PI / 2; add(dark);
+  const frame2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3.2, 2.8), mat(0x2c2016));
+  frame2.position.set(qx, F + 1.6, qz); add(frame2);
+  if (window.FZ_QUEST.bossDead) {
+    addInteriorSign('☣️ ЗЛО ПОБЕЖДЕНО', qx - 0.3, F + 2.6, qz, add);
+    return;
+  }
+  if (window.FZ_QUEST.boardsBroken) {
+    interactables.push({ position: { x: qx - 0.9, y: F, z: qz }, type: 'quest_bossdoor', name: '🕳 Тёмный проём: СПУСТИТЬСЯ', range: 2.6, interior: true });
+    return;
+  }
+  window._fzBoardMeshes = [];
+  [[0.35, 0.4], [-0.3, -0.35], [0.02, 0.1]].forEach(([oy, rot]) => {
+    const bd = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.5, 3.4), mat(0x6b4a2a));
+    bd.position.set(qx - 0.25, F + 1.2 + oy, qz);
+    bd.rotation.x = rot;
+    bd.userData = { isBoard: true, vy: 0, vr: (Math.random() - 0.5) * 8, throwing: false };
+    add(bd); window._fzBoardMeshes.push(bd);
+  });
+  addInteriorSign('⛔ ЗАКОЛОЧЕНО', qx - 0.4, F + 2.9, qz, add);
+  interactables.push({ position: { x: qx - 0.9, y: F, z: qz }, type: 'quest_boards', name: '🪵 Заколоченный проход', range: 2.6, interior: true });
+}
+
+function fzTryBreakBoards() {
+  const n = fzQuestNotesFound();
+  if (n < 6) {
+    showNotification('🪵 На досках нацарапано: «СНАЧАЛА СОБЕРИ МОИ СТРАНИЦЫ» (' + n + '/6)', 'error');
+    return;
+  }
+  if (!window.FZ_QUEST.axe) {
+    showNotification('🪵 Доски не поддаются. Нужен ТОПОР — он на 3 этаже', 'error');
+    return;
+  }
+  window.FZ_QUEST.boardsBroken = true;
+  fzQuestSave();
+  fzSfx(90, 0.3, 'sawtooth', 0.3);
+  setTimeout(() => fzSfx(70, 0.35, 'sawtooth', 0.3), 160);
+  (window._fzBoardMeshes || []).forEach(bd => { bd.userData.throwing = true; bd.userData.vy = 4 + Math.random() * 2; });
+  interactables = interactables.filter(i2 => i2.type !== 'quest_boards');
+  showNotification('💥 Доски разлетелись в щепки! За ними — тёмный спуск...', 'success');
+  setTimeout(() => {
+    const bx = INTERIOR_BASE.x, bz = INTERIOR_BASE.z;
+    interactables.push({ position: { x: bx + 17.7, y: 0, z: bz + 3 }, type: 'quest_bossdoor', name: '🕳 Тёмный проём: СПУСТИТЬСЯ', range: 2.6, interior: true });
+    showNotification('🕳 Проём открыт. Внутри что-то дышит...', 'info');
+  }, 700);
+}
+
+function fzBoardsAnim(dt) {
+  if (!window._fzBoardMeshes) return;
+  window._fzBoardMeshes.forEach(bd => {
+    if (bd.userData.throwing) {
+      bd.userData.vy -= 12 * dt;
+      bd.position.x -= 5 * dt;
+      bd.position.y += bd.userData.vy * dt;
+      bd.rotation.z += bd.userData.vr * dt;
+    }
+  });
+  window._fzBoardMeshes = window._fzBoardMeshes.filter(bd => bd.position.y > -3);
+  if (!window._fzBoardMeshes.length) window._fzBoardMeshes = null;
+}
+
+function fzMallAxe(bx, bz, F, add, mat) {
+  if (window.FZ_QUEST.axe || window.FZ_QUEST.bossDead) return;
+  const stump = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.55, 0.5, 10), mat(0x5a3a1a));
+  stump.position.set(bx - 8, F + 0.25, bz + 12); add(stump);
+  const g = new THREE.Group();
+  const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 1.1, 8), mat(0x8a6a3a));
+  g.add(handle);
+  const headM = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.34, 0.5), mat(0xb8bec4, 0x8899aa, 0.2));
+  headM.position.set(0, 0.48, 0.1); g.add(headM);
+  const edge = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.3, 0.12), mat(0xe8eef2, 0xccddff, 0.5));
+  edge.position.set(0, 0.48, 0.38); g.add(edge);
+  g.position.set(bx - 8, F + 0.9, bz + 12);
+  g.rotation.z = 0.5;
+  add(g);
+  window._fzAxeMesh = g;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: (function () { const c = document.createElement('canvas'); c.width = c.height = 64;
+      const gg = c.getContext('2d'); const gr = gg.createRadialGradient(32, 32, 2, 32, 32, 32);
+      gr.addColorStop(0, 'rgba(160,220,255,0.8)'); gr.addColorStop(1, 'rgba(160,220,255,0)');
+      gg.fillStyle = gr; gg.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })(),
+    transparent: true, depthWrite: false
+  }));
+  sp.scale.set(2.2, 2.2, 1); sp.position.set(bx - 8, F + 1.2, bz + 12); add(sp);
+  interactables.push({ position: { x: bx - 8, y: F, z: bz + 12 }, type: 'quest_axe', name: '🪓 РЖАВЫЙ ТОПОР СМОТРИТЕЛЯ', range: 2.4, interior: true });
+}
+
+function fzPickAxe() {
+  window.FZ_QUEST.axe = true;
+  fzQuestSave();
+  if (window._fzAxeMesh) window._fzAxeMesh.visible = false;
+  interactables = interactables.filter(i2 => i2.type !== 'quest_axe');
+  fzSfxChord([220, 330, 440], 0.4);
+  showNotification('🪓 ТОПОР СМОТРИТЕЛЯ получен! Спускайся на 1 этаж — там заколоченный проход', 'success');
+}
+
+// ═══ АРЕНА БОССА ═══
+window.fzBOSS = null;
+function fzEnterBossArena() {
+  if (window.FZ_QUEST.bossDead) { showNotification('☣️ Тут пусто. Зло уже побеждено.', 'info'); return; }
+  if (fzQuestNotesFound() < 6 || !window.FZ_QUEST.axe) { showNotification('Дверь не пускает.', 'error'); return; }
+  const bx = INTERIOR_BASE.x, bz = INTERIOR_BASE.z;
+  outsidePos = { x: localPlayer.mesh.position.x, y: localPlayer.mesh.position.y, z: localPlayer.mesh.position.z };
+  isInsideBuilding = true;
+  currentBuildingType = 'bossarena';
+  currentBuildingName = '☣️ ПОДВАЛ GRAND MALL';
+  currentFloor = 0; maxFloors = 1;
+  localPlayer.mesh.position.set(bx, 0.01, bz + 11);
+  localPlayer.mesh.rotation.y = Math.PI;
+  interiorObjects.forEach(o => scene.remove(o));
+  interiorObjects = []; interiorColliders = [];
+  interactables = interactables.filter(i2 => i2.interior !== true);
+  const add = (m2) => { scene.add(m2); interiorObjects.push(m2); return m2; };
+  const mat = (c2, em, ei) => new THREE.MeshLambertMaterial({ color: c2, emissive: em || 0, emissiveIntensity: ei || 0 });
+
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(34, 34), mat(0x14121a));
+  fl.rotation.x = -Math.PI / 2; fl.position.set(bx, 0.02, bz); add(fl);
+  const circle = new THREE.Mesh(new THREE.RingGeometry(3.4, 3.7, 40), mat(0x6b1010, 0xff2d2d, 0.35));
+  circle.rotation.x = -Math.PI / 2; circle.position.set(bx, 0.035, bz); add(circle);
+  const wallM = mat(0x191622);
+  [[0, -17], [0, 17], [-17, 0], [17, 0]].forEach(([wx, wz]) => {
+    const w2 = new THREE.Mesh(new THREE.PlaneGeometry(34, 6), wallM);
+    w2.position.set(bx + wx, 3, bz + wz);
+    w2.rotation.y = wx === 0 ? (wz < 0 ? 0 : Math.PI) : (wx < 0 ? Math.PI / 2 : -Math.PI / 2);
+    add(w2);
+    interiorColliders.push(wx === 0
+      ? { minX: bx - 17, maxX: bx + 17, minZ: bz + wz - 0.4, maxZ: bz + wz + 0.4 }
+      : { minX: bx + wx - 0.4, maxX: bx + wx + 0.4, minZ: bz - 17, maxZ: bz + 17 });
+  });
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(34, 34), mat(0x0c0a12));
+  ceil.rotation.x = Math.PI / 2; ceil.position.set(bx, 6, bz); add(ceil);
+  scene.fog = new THREE.Fog(0x050508, 1, 26);
+  scene.background = new THREE.Color(0x050508);
+
+  window._fzArenaLamps = [];
+  for (let k = 0; k < 8; k++) {
+    const a = k / 8 * Math.PI * 2 + Math.PI / 8;
+    const cx2 = bx + Math.cos(a) * 11, cz2 = bz + Math.sin(a) * 11;
+    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 6, 10), mat(0x231e30));
+    col.position.set(cx2, 3, cz2); add(col);
+    interiorColliders.push({ minX: cx2 - 0.6, maxX: cx2 + 0.6, minZ: cz2 - 0.6, maxZ: cz2 + 0.6 });
+    const shade = new THREE.Mesh(new THREE.ConeGeometry(0.5, 0.45, 10, 1, true),
+      new THREE.MeshLambertMaterial({ color: 0x2a2438, emissive: 0xffd9a0, emissiveIntensity: 0, side: THREE.DoubleSide }));
+    shade.position.set(cx2, 4.6, cz2); add(shade);
+    const pl = new THREE.PointLight(0xffd9a0, 0, 14);
+    pl.position.set(cx2, 4.2, cz2); add(pl);
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 6), mat(0x3a3348, 0xffe8c0, 0));
+    bulb.position.set(cx2, 4.35, cz2); add(bulb);
+    window._fzArenaLamps.push({ light: pl, shade, bulb });
+  }
+  const chain = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.6, 6), mat(0x444444));
+  chain.position.set(bx, 5.2, bz); add(chain);
+  const cLight = new THREE.PointLight(0xff4444, 0, 18);
+  cLight.position.set(bx, 4.2, bz); add(cLight);
+  const cShade = new THREE.Mesh(new THREE.ConeGeometry(0.8, 0.7, 12, 1, true),
+    new THREE.MeshLambertMaterial({ color: 0x2a1420, emissive: 0xff3030, emissiveIntensity: 0.12, side: THREE.DoubleSide }));
+  cShade.position.set(bx, 4.4, bz); add(cShade);
+  window._fzArenaLamps.push({ light: cLight, shade: cShade, bulb: cShade });
+
+  document.getElementById('interiorHUD').style.display = 'block';
+  document.getElementById('buildingLabel').textContent = '☣️ ПОДВАЛ GRAND MALL';
+  document.getElementById('floorIndicator').textContent = '☣️ ???';
+  document.getElementById('mallMapBtn').style.display = 'none';
+  stopMallMusic();
+
+  window.fzBOSS = { phase: 'cutscene', hp: 120, maxHp: 120, group: null, atkCd: 0, waveCd: 6, wave: null, phase2: false, hitCd: 0, materScale: 0 };
+  setTimeout(() => fzCutsceneStart(bx, bz), 900);
+}
+
+function fzDialog(text, dur) {
+  const el = document.getElementById('fzDialog');
+  el.innerHTML = text;
+  el.style.display = 'block';
+  if (window._fzDlgT) clearTimeout(window._fzDlgT);
+  window._fzDlgT = setTimeout(() => { el.style.display = 'none'; }, dur || 2600);
+}
+
+function fzCutsceneStart(bx, bz) {
+  const B = window.fzBOSS;
+  B.phase = 'lights';
+  const lamps = window._fzArenaLamps;
+  lamps.forEach((L, i) => {
+    setTimeout(() => {
+      L.light.intensity = 0.9;
+      L.shade.material.emissiveIntensity = 0.8;
+      if (L.bulb && L.bulb !== L.shade) L.bulb.material.emissiveIntensity = 0.9;
+      fzSfx(1400 + i * 60, 0.05, 'square', 0.08);
+      if (i === 0) fzDialog('...щёлк...', 1200);
+    }, 700 + i * 620);
+  });
+  const base = 700 + lamps.length * 620;
+  setTimeout(() => {
+    fzBuildBoss(bx, bz);
+    fzDialog('<b>ХРАНИТЕЛЬ ПАРКА ФАНТАЗИИ</b> пробуждается', 2200);
+    fzSfx(60, 1.2, 'sawtooth', 0.25);
+  }, base + 800);
+  const lines = [
+    '«Ну наконец-то... кто-то собрал мои страницы.»',
+    '«Я — <b>ХРАНИТЕЛЬ ПАРКА ФАНТАЗИИ</b>. Они бросили меня тут. Гнить под этим ТЦ.»',
+    '«Твой город забыл меня. Пусть забудет и веселье...»',
+    '«ФАНТАЗИЯ БУДЕТ МОЕЙ!»'
+  ];
+  lines.forEach((ln, i) => setTimeout(() => fzDialog(ln, 2500), base + 2400 + i * 2700));
+  setTimeout(() => {
+    B.phase = 'fight';
+    document.getElementById('bossBar').style.display = 'block';
+    document.getElementById('bossFill').style.width = '100%';
+    fzDialog('♟ <b>БОСС-БОЙ!</b> Бей топором — [E] рядом с боссом. Уворачивайся от красных волн!', 3600);
+    fzSfxChord([110, 165, 220], 0.7);
+  }, base + 2400 + lines.length * 2700 + 400);
+}
+
+function fzBuildBoss(bx, bz) {
+  const g = new THREE.Group();
+  const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 1.25, 2.4, 12),
+    new THREE.MeshLambertMaterial({ color: 0x0d0a14, emissive: 0x300818, emissiveIntensity: 0.25 }));
+  robe.position.y = 1.2; g.add(robe);
+  const shoulders = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.35, 0.7),
+    new THREE.MeshLambertMaterial({ color: 0x120e1c }));
+  shoulders.position.y = 2.35; g.add(shoulders);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.33, 10, 8),
+    new THREE.MeshLambertMaterial({ color: 0x8a8f98 }));
+  head.position.y = 2.72; g.add(head);
+  const hatBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.05, 12),
+    new THREE.MeshLambertMaterial({ color: 0x0a0a10 }));
+  hatBrim.position.y = 2.95; g.add(hatBrim);
+  const hatTop = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.34, 0.55, 12),
+    new THREE.MeshLambertMaterial({ color: 0x0a0a10 }));
+  hatTop.position.y = 3.25; g.add(hatTop);
+  const eyeM = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  [-0.13, 0.13].forEach(ex => {
+    const e = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), eyeM);
+    e.position.set(ex, 2.76, 0.28); g.add(e);
+  });
+  [-1, 1].forEach(sx => {
+    const claw = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.8, 6),
+      new THREE.MeshLambertMaterial({ color: 0x1c1626, emissive: 0x501020, emissiveIntensity: 0.4 }));
+    claw.position.set(sx * 1.05, 1.7, 0.35); claw.rotation.x = 1.2; g.add(claw);
+  });
+  const aura = new THREE.PointLight(0xff2040, 0.8, 10);
+  aura.position.y = 2; g.add(aura);
+  g.position.set(bx, 1.6, bz);
+  g.scale.setScalar(0.01);
+  scene.add(g);
+  interiorObjects.push(g);
+  window.fzBOSS.group = g;
+  window.fzBOSS.spawnPos = { x: bx, z: bz };
+}
+
+function fzBossAnim(dt, t) {
+  fzBoardsAnim(dt);
+  const B = window.fzBOSS;
+  if (!B || !B.group) return;
+  if (B.materScale < 1) {
+    B.materScale = Math.min(1, B.materScale + dt * 1.4);
+    B.group.scale.setScalar(B.materScale);
+    B.group.rotation.y = t * 2;
+    B.group.position.y = 1.6 + Math.sin(t * 2) * 0.15;
+  }
+  if (B.phase !== 'fight') return;
+  const g = B.group;
+  const P = localPlayer.mesh.position;
+  g.position.y = 1.55 + Math.sin(t * 2.4) * 0.18;
+  const dx = P.x - g.position.x, dz = P.z - g.position.z;
+  const dist = Math.hypot(dx, dz);
+  let dyaw = Math.atan2(dx, dz) - g.rotation.y;
+  while (dyaw > Math.PI) dyaw -= Math.PI * 2;
+  while (dyaw < -Math.PI) dyaw += Math.PI * 2;
+  g.rotation.y += dyaw * Math.min(1, dt * 4);
+  const spd = B.phase2 ? 3.4 : 2.3;
+  if (dist > 1.6) {
+    g.position.x += dx / dist * spd * dt;
+    g.position.z += dz / dist * spd * dt;
+  }
+  B.atkCd -= dt;
+  if (dist < 1.9 && B.atkCd <= 0) {
+    B.atkCd = 1.1;
+    fzDamagePlayer(B.phase2 ? 16 : 12, dx, dz);
+  }
+  B.waveCd -= dt;
+  if (B.waveCd <= 0) {
+    B.waveCd = B.phase2 ? 4.5 : 6.5;
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.16, 8, 36),
+      new THREE.MeshBasicMaterial({ color: 0xff3040, transparent: true, opacity: 0.9 }));
+    ring.rotation.x = Math.PI / 2;
+    ring.position.set(g.position.x, 0.35, g.position.z);
+    scene.add(ring); interiorObjects.push(ring);
+    B.wave = { mesh: ring, r: 0.4, hit: false };
+    fzSfx(70, 0.5, 'sawtooth', 0.2);
+  }
+  if (B.wave) {
+    B.wave.r += dt * 6.5;
+    B.wave.mesh.scale.set(B.wave.r / 0.4, B.wave.r / 0.4, 1);
+    B.wave.mesh.material.opacity = Math.max(0, 0.95 - B.wave.r / 11);
+    if (!B.wave.hit) {
+      const pr = Math.hypot(P.x - B.wave.mesh.position.x, P.z - B.wave.mesh.position.z);
+      if (Math.abs(pr - B.wave.r) < 1.1) {
+        B.wave.hit = true;
+        fzDamagePlayer(15, P.x - B.wave.mesh.position.x, P.z - B.wave.mesh.position.z);
+      }
+    }
+    if (B.wave.r > 13) { scene.remove(B.wave.mesh); B.wave = null; }
+  }
+  B.hitCd = Math.max(0, B.hitCd - dt);
+}
+
+function fzBossHit() {
+  const B = window.fzBOSS;
+  if (!B || B.phase !== 'fight' || B.hitCd > 0) return;
+  const g = B.group;
+  const P = localPlayer.mesh.position;
+  const d = Math.hypot(P.x - g.position.x, P.z - g.position.z);
+  if (d > 3) return;
+  B.hitCd = 0.45;
+  B.hp -= 12;
+  if (!B.phase2 && B.hp <= B.maxHp * 0.35) {
+    B.phase2 = true;
+    fzDialog('«ДОСТАТОЧНО!!! ТЫ ЗНАЕШЬ, ЧТО ЭТО ЗА МОЙ ПАРК?!»', 2400);
+    fzSfxChord([80, 120], 0.6);
+  }
+  const robeM = g.children[0];
+  robeM.material.emissiveIntensity = 1.4;
+  setTimeout(() => { robeM.material.emissiveIntensity = 0.25; }, 110);
+  fzSfx(180, 0.1, 'square', 0.2);
+  const kx = g.position.x - P.x, kz = g.position.z - P.z, kd = Math.hypot(kx, kz) || 1;
+  g.position.x += kx / kd * 0.5; g.position.z += kz / kd * 0.5;
+  document.getElementById('bossFill').style.width = Math.max(0, B.hp / B.maxHp * 100) + '%';
+  if (B.hp <= 0) fzBossVictory();
+}
+
+function fzDamagePlayer(n, kx, kz) {
+  localPlayer.health = Math.max(0, localPlayer.health - n);
+  updateHealthBar();
+  const hurt = document.getElementById('fzHurt');
+  hurt.style.opacity = 0.9;
+  setTimeout(() => hurt.style.opacity = 0, 220);
+  fzSfx(140, 0.15, 'square', 0.2);
+  if (kx !== undefined && localPlayer.mesh) {
+    const kd = Math.hypot(kx, kz) || 1;
+    localPlayer.mesh.position.x += kx / kd * 1.6;
+    localPlayer.mesh.position.z += kz / kd * 1.6;
+  }
+  if (localPlayer.health <= 0 && window.fzBOSS && window.fzBOSS.phase === 'fight') {
+    window.fzBOSS.phase = 'over';
+    document.getElementById('bossBar').style.display = 'none';
+    fzDialog('«ХА-ХА-ХА... Иди расти, смертишко.»', 2400);
+    setTimeout(() => {
+      localPlayer.health = Math.floor(localPlayer.maxHealth * 0.5);
+      updateHealthBar();
+      fzLeaveArena();
+      showNotification('💀 Ты пал в бою... Хранитель остался жив. Попробуй снова!', 'error');
+    }, 1500);
+  }
+}
+
+function fzBossVictory() {
+  const B = window.fzBOSS;
+  B.phase = 'dying';
+  document.getElementById('bossBar').style.display = 'none';
+  const g = B.group;
+  let sh = 0;
+  const shakeIv = setInterval(() => {
+    sh++;
+    g.position.x = B.spawnPos.x + (Math.random() - 0.5) * 0.7;
+    g.position.z = B.spawnPos.z + (Math.random() - 0.5) * 0.7;
+    g.scale.multiplyScalar(0.93);
+    if (sh % 4 === 0) fzSfx(120 + Math.random() * 300, 0.08, 'square', 0.15);
+    if (sh > 18) {
+      clearInterval(shakeIv);
+      scene.remove(g);
+      const flash = document.getElementById('fzFlash');
+      flash.style.opacity = 0.95;
+      setTimeout(() => flash.style.opacity = 0, 180);
+      fzSfxChord([262, 330, 392, 523], 0.9);
+      window.FZ_QUEST.bossDead = true;
+      window.FZ_QUEST.orbe = true;
+      fzQuestSave();
+      fzDialog('☣️ <b>ХРАНИТЕЛЬ ПОВЕРЖЕН!</b><br>Он растворился с криком. На полу осталось что-то светящееся...', 4200);
+      setTimeout(() => showNotification('🔮 ПОЛУЧЕНА: СФЕРА ФАНТАЗИИ! (инвентарь → Использовать)', 'success'), 1500);
+      try { localPlayer.money += 500; if (window.updateMoneyDisplay) updateMoneyDisplay(); } catch (e) {}
+      setTimeout(() => { fzLeaveArena(); showNotification('🏆 Парк Фантазии свободен! +500$ за победу', 'success'); }, 4200);
+    }
+  }, 70);
+}
+
+function fzLeaveArena() {
+  document.getElementById('bossBar').style.display = 'none';
+  document.getElementById('fzDialog').style.display = 'none';
+  window.fzBOSS = null;
+  window._fzArenaLamps = null;
+  exitBuilding();
+  fzQuestChipUpdate();
+}
+
+// ═══ СФЕРА ФАНТАЗИИ ═══
+window._fzOrbeUntil = 0;
+window._fzOrbeCd = 0;
+function fzUseOrbe() {
+  const now = performance.now();
+  if (now < window._fzOrbeCd) {
+    showNotification('🔮 Сфера перезаряжается: ' + Math.ceil((window._fzOrbeCd - now) / 1000) + 'с', 'info');
+    return;
+  }
+  window._fzOrbeUntil = now + 25000;
+  window._fzOrbeCd = now + 60000;
+  if (!window._fzOrbeLight && scene) {
+    const l = new THREE.PointLight(0xffffff, 1.6, 16);
+    scene.add(l);
+    window._fzOrbeLight = l;
+  }
+  fzSfxChord([392, 494, 587, 784], 0.8);
+  showNotification('🔮 РЕЖИМ ФАНТАЗИИ: 25с — радужная аура, реген HP, свет!', 'success');
+}
+
+function fzOrbeAnim(t) {
+  if (!window.FZ_QUEST.orbe) return;
+  const now = performance.now();
+  const active = now < window._fzOrbeUntil;
+  const l = window._fzOrbeLight;
+  if (l) {
+    l.visible = !!(active && localPlayer && localPlayer.mesh);
+    if (l.visible) {
+      l.position.copy(localPlayer.mesh.position);
+      l.position.y += 1.6;
+      l.color.setHSL((t * 0.35) % 1, 0.85, 0.6);
+      l.intensity = 1.4 + Math.sin(t * 6) * 0.3;
+    }
+  }
+  if (active && localPlayer && localPlayer.mesh) {
+    localPlayer.health = Math.min(localPlayer.maxHealth, localPlayer.health + 0.06);
+    if (!window._fzOrbeSparks && scene) {
+      window._fzOrbeSparks = [];
+      for (let k = 0; k < 10; k++) {
+        const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+          map: (function () { const c = document.createElement('canvas'); c.width = c.height = 32;
+            const gg = c.getContext('2d'); const gr = gg.createRadialGradient(16, 16, 1, 16, 16, 16);
+            gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+            gg.fillStyle = gr; gg.fillRect(0, 0, 32, 32); return new THREE.CanvasTexture(c); })(),
+          transparent: true, depthWrite: false
+        }));
+        sp.scale.set(0.35, 0.35, 1);
+        scene.add(sp);
+        window._fzOrbeSparks.push(sp);
+      }
+    }
+    (window._fzOrbeSparks || []).forEach((sp, k) => {
+      const a = t * 2.2 + k / 10 * Math.PI * 2;
+      const rr = 1.1 + Math.sin(t * 3 + k) * 0.25;
+      sp.position.set(
+        localPlayer.mesh.position.x + Math.cos(a) * rr,
+        localPlayer.mesh.position.y + 1 + Math.sin(t * 4 + k * 1.7) * 0.5,
+        localPlayer.mesh.position.z + Math.sin(a) * rr
+      );
+      sp.material.color.setHSL((k / 10 + t * 0.3) % 1, 0.9, 0.65);
+    });
+  } else if (window._fzOrbeSparks) {
+    window._fzOrbeSparks.forEach(sp => scene.remove(sp));
+    window._fzOrbeSparks = null;
+  }
+}
+
 function updateMinimap() {
   // ═══ V3.0: живая миникарта — локальный зум, реальные дороги, POI, GPS ═══
   const canvas = document.getElementById('minimapCanvas');
@@ -12922,6 +13556,11 @@ function handleInteraction() {
     showNotification(`${inter.name}: «Добро пожаловать в GRAND MALL!»`, 'info');
     return;
   }
+  if (inter.type === 'quest_note') { fzPickNote(inter); return; }
+  if (inter.type === 'quest_axe') { fzPickAxe(); return; }
+  if (inter.type === 'quest_boards') { fzTryBreakBoards(); return; }
+  if (inter.type === 'quest_bossdoor') { fzEnterBossArena(); return; }
+  if (window.fzBOSS && window.fzBOSS.phase === 'fight') { fzBossHit(); return; }
 
   // Обычные здания — вход
   const buildingEnterable = ['apartment','house','office','cinema','club','restaurant','gym','bank','hospital','mall','karaoke'];
@@ -13485,6 +14124,8 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
     spawnInteriorNPC(bx + 18, F, bz + 12, 'guard', add);
     spawnInteriorNPC(bx - 8, F, bz + 6, 'shopper', add);
     spawnInteriorNPC(bx + 3, F, bz - 1, 'shopper', add);
+    // ═══ КВЕСТ: заколоченный проход (восточная стена) ═══
+    fzMallBoards(bx, bz, F, FH, add, mat);
   }
 
   if (floor === 1) {
@@ -13574,6 +14215,8 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
       star.rotation.x = -Math.PI / 2; star.rotation.z = k * 0.4;
       star.position.set(bx + 2.5, F + 0.04, bz - 14 + k * 2); add(star);
     }
+    // ═══ КВЕСТ: ТОПОР СМОТРИТЕЛЯ (пень у южной стены) ═══
+    fzMallAxe(bx, bz, F, add, mat);
   }
 
   // ═══ скамейки + растения ═══
@@ -15467,6 +16110,9 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
   fzStreetAnim(animationTime);
   fzTrafficAnim(delta, animationTime);
   fzPedAnim(animationTime);
+  fzQuestNotesAnim(animationTime);
+  fzBossAnim(delta, animationTime);
+  fzOrbeAnim(animationTime);
   fzChipsTick();
   updateNPCs(delta);
   // Jason Day eggs
@@ -17549,6 +18195,7 @@ const FZ_BOX_RARITY_COLORS = {
   rare:      { bg:'rgba(60,120,255,.2)',  border:'rgba(80,160,255,.5)',   label:'Редкий',     color:'#4da6ff' },
   epic:      { bg:'rgba(160,50,240,.25)', border:'rgba(180,80,255,.6)',   label:'Эпический',  color:'#c050ff' },
   legendary: { bg:'rgba(255,180,0,.25)',  border:'rgba(255,210,0,.7)',    label:'Легенд.',    color:'#ffd000' },
+  mythic:    { bg:'rgba(255,60,180,.3)',  border:'rgba(255,120,220,.8)',  label:'МИФИЧЕСКИЙ', color:'#ff7ad9' },
 };
 
 function getFPData() {
@@ -18359,7 +19006,7 @@ function claimFPReward(r, isPlus, claimKey) {
   .fpp-row-label { font-size: 9px !important; }
 }
 </style>
-<script src="update_script.js?v=303"></script>
+<script src="update_script.js?v=304"></script>
 </body>
 
 <script>
@@ -18419,10 +19066,35 @@ window.addEventListener('DOMContentLoaded', function() {
 </html>
 
 <!-- ========== CHANGELOG MODAL ========== -->
-<div id="changelogModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.65);display:none;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(6px);">
+<div id="fzQuestChip" style="display:none">📜 Записки: 0/6</div>
+<div id="noteModal" onclick="closeNoteModal(event)">
+  <div class="nm-paper">
+    <div class="nm-num" id="nmNum">стр. 1/6</div>
+    <div id="nmText"></div>
+    <button class="nm-close" onclick="closeNoteModal()">Положить в карман</button>
+  </div>
+</div>
+<div id="bossBar"><div class="bb-name">♟ ХРАНИТЕЛЬ ПАРКА ФАНТАЗИИ</div><div class="bb-track"><div class="bb-fill" id="bossFill"></div></div></div>
+<div id="fzDialog"></div>
+<div id="fzFlash"></div>
+<div id="fzHurt"></div>
+
+<div id="changelogModal style="position:fixed;inset:0;background:rgba(0,0,0,0.65);display:none;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(6px);">
   <div class="changelog-box">
     <h2>📋 Что нового</h2>
-    <div class="cl-version">FANTAZIA RP 3D — ⚡ СУПЕР АПДЕЙТ v3.3 «ДОРОГИ 2.0»</div>
+    <div class="cl-version">FANTAZIA RP 3D — ⚡ СУПЕР АПДЕЙТ v3.4 «ТЕНЬ ПАРКА ФАНТАЗИИ»</div>
+    <div class="cl-section">
+      <div class="cl-section-title">☣️ СЮЖЕТНЫЙ КВЕСТ v3.4</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span><b>📜 6 записок смотрителя парка</b> разбросаны по городу (площадь, парк, АЗС, парковка, окружная ×2). Первая открывает квест. Светятся и парят — их видно издалека. Читай дневник на бумаге-модалке!</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span><b>🪓 Топор смотрителя</b> — на 3 этаже GRAND MALL, на пне за кинозалом</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span><b>🪵 Заколоченный проход</b> на 1 этаже ТЦ: без 6 записок и топора не откроется; с топором доски РАЗЛЕТАЮТСЯ в щепки</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span><b>🎬 КУТ-СЦЕНА:</b> тёмный подвал, лампы включаются одна за другой со щелчками, из круга материализуется ХРАНИТЕЛЬ ПАРКА ФАНТАЗИИ (цилиндр, белые глаза, когти) и произносит речь</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span><b>♟ БОСС-ФАЙТ:</b> 120 HP, погоня, ударные волны-кольца, 2 фазы (на 35% HP злее и быстрее). Бей топором [E]! Полоса HP босса сверху. Смерть → реванш, победа → 🏆 +500$</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span><b>🔮 СФЕРА ФАНТАЗИИ (мифическая):</b> секретная награда в инвентарь. Активация — 25с «Режим Фантазии»: радужная аура + искры вокруг тебя, реген HP, перезарядка 60с</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span>Прогресс квеста сохраняется (localStorage), чип 📜 у миникарты подсказывает что делать дальше</div>
+    </div>
+    <div class="cl-section">
+      <div class="cl-section-title">✨ v3.3 «ДОРОГИ 2.0»</div>
     <div class="cl-section">
       <div class="cl-section-title">🚀 ОБНОВЛЕНИЕ v3.3</div>
       <div class="cl-item"><span class="cl-badge new">NEW</span><b>🛣 Все дороги переделаны:</b> асфальт с текстурой и колеями, жёлтые прерывистые осевые (с разрывами на перекрёстках), белые кромки, бордюры и тротуары ВДОЛЬ ВСЕХ улиц — оси, ±60, окружная ±175, дальние ±260</div>
