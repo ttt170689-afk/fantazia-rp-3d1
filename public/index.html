@@ -54,7 +54,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Fantazia RP 3D · v3.2</title>
+<title>Fantazia RP 3D · v3.3</title>
 <!-- ===== PWA MANIFEST (встроенный) ===== -->
 <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22Fantazia+RP+3D%22%2C%22short_name%22%3A%22Fantazia%22%2C%22description%22%3A%22Fantazia+RP+3D+%E2%80%94+%D0%BC%D0%BE%D0%B1%D0%B8%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+3D+%D0%B8%D0%B3%D1%80%D0%B0%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22fullscreen%22%2C%22orientation%22%3A%22landscape%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%236c5ce7%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABJQTFRFAAAAbEjiqqr%2F6%2BXz1s77////aoCa9AAAAARdFJlcAMEBQYHCJ%2BZAAAAsklEQVR42u3BMQEAAADCoPVP7WsIoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAMBuAABHwAAAABJRU5ErkJggg%3D%3D%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
 <meta name="theme-color" content="#6c5ce7">
@@ -2742,7 +2742,7 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
   </div>
 </div>
 
-<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v3.2</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v3.2 — ДИСЦИПЛИНА НА ДОРОГАХ: БЕЗ ТАРАНОВ 🚦</div>
+<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v3.3</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v3.3 — ДОРОГИ 2.0 + ТРАФИК СО СВЕТОФОРАМИ 🛣🚦</div>
 <script>setTimeout(function(){var t=document.getElementById('fzVerToast');if(t){t.style.transition='opacity 1s';t.style.opacity='0';setTimeout(function(){t.remove()},1100)}},6000)</script>
 
 <!-- ========== HUD ========== -->
@@ -3469,11 +3469,11 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
 </div>
 
 <!-- ========== СКРИПТЫ ========== -->
-<script src="/socket.io/socket.io.js?v=302"></script>
-<script src="assets/three.min.js?v=302"></script>
+<script src="/socket.io/socket.io.js?v=303"></script>
+<script src="assets/three.min.js?v=303"></script>
 <script>if (!window.THREE) document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\\/script>');</script>
 <!-- ===== НОВАЯ 3D-МОДЕЛЬ ИГРОКА (после Three.js!) ===== -->
-<script src="assets/fantazia-player.js?v=302"></script>
+<script src="assets/fantazia-player.js?v=303"></script>
 <script>
 /*!
  * ============================================================
@@ -6226,54 +6226,90 @@ function buildNewCityDistricts() {
   }
 }
 
-function buildRoads() {
-  const roadMat = new THREE.MeshLambertMaterial({ color: 0x333333 });
-  // Главная горизонтальная
-  const road1 = new THREE.Mesh(new THREE.PlaneGeometry(CONFIG.WORLD_SIZE, 12), roadMat);
-  road1.rotation.x = -Math.PI/2; road1.position.y = 0.01; scene.add(road1);
-  // Главная вертикальная
-  const road2 = new THREE.Mesh(new THREE.PlaneGeometry(12, CONFIG.WORLD_SIZE), roadMat);
-  road2.rotation.x = -Math.PI/2; road2.position.y = 0.01; scene.add(road2);
-
-  // Дополнительные дороги
-  [-60, 60].forEach(offset => {
-    const r = new THREE.Mesh(new THREE.PlaneGeometry(CONFIG.WORLD_SIZE, 8), roadMat);
-    r.rotation.x = -Math.PI/2; r.position.set(0, 0.01, offset); scene.add(r);
-    const r2 = new THREE.Mesh(new THREE.PlaneGeometry(8, CONFIG.WORLD_SIZE), roadMat);
-    r2.rotation.x = -Math.PI/2; r2.position.set(offset, 0.01, 0); scene.add(r2);
-  });
-
-  // Разметка
-  const lineMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
-  for (let i = -CONFIG.WORLD_SIZE/2; i < CONFIG.WORLD_SIZE/2; i += 8) {
-    const line = new THREE.Mesh(new THREE.PlaneGeometry(4, 0.3), lineMat);
-    line.rotation.x = -Math.PI/2; line.position.set(i, 0.02, 0); scene.add(line);
-    const line2 = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 4), lineMat);
-    line2.rotation.x = -Math.PI/2; line2.position.set(0, 0.02, i); scene.add(line2);
+// ═══ V3.3: ДОРОГИ 2.0 — асфальт с текстурой, осевые, кромки, бордюры, тротуары ═══
+window._fzRoadTex = null;
+function fzAsphaltMat(len, width) {
+  if (!window._fzRoadTex) {
+    const cv = document.createElement('canvas'); cv.width = cv.height = 128;
+    const g = cv.getContext('2d');
+    g.fillStyle = '#2e3238'; g.fillRect(0, 0, 128, 128);
+    for (let i = 0; i < 420; i++) {
+      const v = (20 + Math.random() * 50) | 0;
+      g.fillStyle = 'rgba(' + v + ',' + v + ',' + (v + 4) + ',0.5)';
+      g.fillRect(Math.random() * 128, Math.random() * 128, 1.6, 1.6);
+    }
+    g.fillStyle = 'rgba(0,0,0,0.10)'; g.fillRect(30, 0, 14, 128); g.fillRect(84, 0, 14, 128);
+    window._fzRoadTex = new THREE.CanvasTexture(cv);
+    window._fzRoadTex.wrapS = window._fzRoadTex.wrapT = THREE.RepeatWrapping;
   }
-
-  // Тротуары
-  const sidewalkMat = new THREE.MeshLambertMaterial({ color: 0x999999 });
-  [-8, 8].forEach(offset => {
-    const sw = new THREE.Mesh(new THREE.PlaneGeometry(CONFIG.WORLD_SIZE, 3), sidewalkMat);
-    sw.rotation.x = -Math.PI/2; sw.position.set(0, 0.02, offset); scene.add(sw);
-  });
-
-  // 🦓 ЗЕБРЫ на всех перекрёстках реальных дорог (0 и ±60)
-  const zebraMat = new THREE.MeshBasicMaterial({ color: 0xE8E8E8 });
-  [0, 60, -60].forEach(cx => {
-    [0, 60, -60].forEach(cz => {
-      if (cx === 0 && cz === 0) return; // спавн-площадь без зебры
-      for (let k = -3; k <= 3; k++) {
-        const zv = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 2.6), zebraMat);
-        zv.rotation.x = -Math.PI/2; zv.position.set(cx + k*1.05, 0.025, cz + (cx === 0 ? 7.4 : 5.4)); scene.add(zv);
-        const zh = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.7), zebraMat);
-        zh.rotation.x = -Math.PI/2; zh.position.set(cx + (cz === 0 ? 7.4 : 5.4), 0.025, cz + k*1.05); scene.add(zh);
-      }
-    });
-  });
+  const t = window._fzRoadTex.clone(); t.needsUpdate = true;
+  t.repeat.set(Math.max(1, len / 26), Math.max(1, width / 26));
+  return new THREE.MeshLambertMaterial({ map: t });
 }
-
+window._fzDashTex = null;
+function fzDashMat(len) {
+  if (!window._fzDashTex) {
+    const cv = document.createElement('canvas'); cv.width = 64; cv.height = 16;
+    const g = cv.getContext('2d');
+    g.clearRect(0, 0, 64, 16);
+    g.fillStyle = '#f1c40f'; g.fillRect(4, 2, 30, 12);
+    window._fzDashTex = new THREE.CanvasTexture(cv);
+    window._fzDashTex.wrapS = window._fzDashTex.wrapT = THREE.RepeatWrapping;
+  }
+  const t = window._fzDashTex.clone(); t.needsUpdate = true;
+  t.repeat.set(len / 6.5, 1);
+  return new THREE.MeshBasicMaterial({ map: t, transparent: true });
+}
+function fzMkRoad(cx, cz, len, width, axis, crosses) {
+  const grp = new THREE.Group();
+  grp.position.set(cx, 0, cz);
+  if (axis !== 'x') grp.rotation.y = Math.PI / 2;
+  const as = new THREE.Mesh(new THREE.PlaneGeometry(len, width), fzAsphaltMat(len, width));
+  as.rotation.x = -Math.PI / 2; as.position.y = 0.011; grp.add(as);
+  const edgeM = new THREE.MeshBasicMaterial({ color: 0xe9e9df });
+  const curbM = new THREE.MeshLambertMaterial({ color: 0xb8bec4 });
+  const walkM = new THREE.MeshLambertMaterial({ color: 0x9aa0a6 });
+  const patchM = new THREE.MeshLambertMaterial({ color: 0x2e3238 });
+  [-1, 1].forEach(sd => {
+    const edge = new THREE.Mesh(new THREE.PlaneGeometry(len, 0.16), edgeM);
+    edge.rotation.x = -Math.PI / 2; edge.position.set(0, 0.02, sd * (width / 2 - 0.45)); grp.add(edge);
+    const curb = new THREE.Mesh(new THREE.PlaneGeometry(len, 0.3), curbM);
+    curb.rotation.x = -Math.PI / 2; curb.position.set(0, 0.017, sd * (width / 2 + 0.2)); grp.add(curb);
+    const walk = new THREE.Mesh(new THREE.PlaneGeometry(len, 2.6), walkM);
+    walk.rotation.x = -Math.PI / 2; walk.position.set(0, 0.016, sd * (width / 2 + 1.7)); grp.add(walk);
+  });
+  const dash = new THREE.Mesh(new THREE.PlaneGeometry(len, 0.24), fzDashMat(len));
+  dash.rotation.x = -Math.PI / 2; dash.position.y = 0.021; grp.add(dash);
+  (crosses || []).forEach(c2 => {
+    if (Math.abs(c2 - (axis === 'x' ? cx : cz)) > len / 2 - 14) return;
+    const patch = new THREE.Mesh(new THREE.PlaneGeometry(18, width - 0.5), patchM);
+    patch.rotation.x = -Math.PI / 2;
+    patch.position.set((axis === 'x' ? c2 - cx : c2 - cz), 0.022, 0);
+    grp.add(patch);
+  });
+  scene.add(grp);
+  return grp;
+}
+function buildRoads() {
+  const CR = [-260, -175, -60, 0, 60, 175, 260];
+  fzMkRoad(0, 0, 1200, 12, 'x', CR);
+  fzMkRoad(0, 0, 1200, 12, 'z', CR);
+  [-60, 60].forEach(o => {
+    fzMkRoad(0, o, 1200, 8, 'x', CR);
+    fzMkRoad(o, 0, 1200, 8, 'z', CR);
+  });
+  // 🦓 зебры на сетке 0/±60 (спавн-площадь свободна)
+  const zebraMat = new THREE.MeshBasicMaterial({ color: 0xf2f2f2 });
+  [0, 60, -60].forEach(cx => [0, 60, -60].forEach(cz => {
+    if (cx === 0 && cz === 0) return;
+    for (let k = -3; k <= 3; k++) {
+      const zv = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 2.6), zebraMat);
+      zv.rotation.x = -Math.PI/2; zv.position.set(cx + k*1.05, 0.026, cz + (cx === 0 ? 7.4 : 5.4)); scene.add(zv);
+      const zh = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.7), zebraMat);
+      zh.rotation.x = -Math.PI/2; zh.position.set(cx + (cz === 0 ? 7.4 : 5.4), 0.026, cz + k*1.05); scene.add(zh);
+    }
+  }));
+}
 function buildCentralPlaza() {
   // Круг-мощение УБРАН с дороги по просьбе игрока (проспекты x=0/z=0 свободны)
 
@@ -6776,19 +6812,9 @@ function buildPark() {
 // ═══ РАСШИРЕНИЕ ГОРОДА (v2.15): новый пояс улиц ±175 с кварталами ═══
 function buildCityExpansion() {
   // улицы нового пояса
-  const roadE = new THREE.MeshLambertMaterial({ color: 0x35353c });
-  const walkE = new THREE.MeshLambertMaterial({ color: 0x9aa0a6 });
   [-175, 175].forEach(off => {
-    const rv = new THREE.Mesh(new THREE.PlaneGeometry(10, 320), roadE);
-    rv.rotation.x = -Math.PI/2; rv.position.set(off, 0.012, 0); scene.add(rv);
-    const rh = new THREE.Mesh(new THREE.PlaneGeometry(320, 10), roadE);
-    rh.rotation.x = -Math.PI/2; rh.position.set(0, 0.012, off); scene.add(rh);
-    [-1, 1].forEach(sd => {
-      const wv = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 320), walkE);
-      wv.rotation.x = -Math.PI/2; wv.position.set(off + sd*6.2, 0.014, 0); scene.add(wv);
-      const wh = new THREE.Mesh(new THREE.PlaneGeometry(320, 2.4), walkE);
-      wh.rotation.x = -Math.PI/2; wh.position.set(0, 0.014, off + sd*6.2); scene.add(wh);
-    });
+    fzMkRoad(0, off, 320, 10, 'x', [-60, 0, 60]);
+    fzMkRoad(off, 0, 320, 10, 'z', [-60, 0, 60]);
   });
   // зебры на пересечениях с главной (собственный материал — NZ может быть null!)
   const zebraMatE = new THREE.MeshBasicMaterial({ color: 0xdadce0 });
@@ -7292,9 +7318,7 @@ function buildFarNorthCity() {
     // НПС убраны для оптимизации
   }
   // Дорога через северный город
-  const northRoad = new THREE.Mesh(new THREE.PlaneGeometry(400, 10),
-    new THREE.MeshLambertMaterial({color:0x222222}));
-  northRoad.rotation.x = -Math.PI/2; northRoad.position.set(0, 0.03, 260); scene.add(northRoad);
+  fzMkRoad(0, 260, 400, 10, 'x', [0]);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -7309,9 +7333,7 @@ function buildFarEastCity() {
     createBuilding(x, z, 12, h, 12, colors[i%4], '🏢 ВОСТОК-' + i, 'office');
     // НПС убраны для оптимизации
   }
-  const eastRoad = new THREE.Mesh(new THREE.PlaneGeometry(10, 400),
-    new THREE.MeshLambertMaterial({color:0x222222}));
-  eastRoad.rotation.x = -Math.PI/2; eastRoad.position.set(260, 0.03, 0); scene.add(eastRoad);
+  fzMkRoad(260, 0, 400, 10, 'z', [0]);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -7326,9 +7348,7 @@ function buildFarWestCity() {
     createBuilding(x, z, 12, h, 12, colors[i%4], '🏢 ЗАПАД-' + i, 'office');
     // НПС убраны для оптимизации
   }
-  const westRoad = new THREE.Mesh(new THREE.PlaneGeometry(10, 400),
-    new THREE.MeshLambertMaterial({color:0x222222}));
-  westRoad.rotation.x = -Math.PI/2; westRoad.position.set(-260, 0.03, 0); scene.add(westRoad);
+  fzMkRoad(-260, 0, 400, 10, 'z', [0]);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -7343,9 +7363,7 @@ function buildFarSouthCity() {
     createBuilding(x, z, 12, h, 12, colors[i%4], '🏢 ЮГ-' + i, 'office');
     // НПС убраны для оптимизации
   }
-  const southRoad = new THREE.Mesh(new THREE.PlaneGeometry(400, 10),
-    new THREE.MeshLambertMaterial({color:0x222222}));
-  southRoad.rotation.x = -Math.PI/2; southRoad.position.set(0, 0.03, -260); scene.add(southRoad);
+  fzMkRoad(0, -260, 400, 10, 'x', [0]);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -7526,6 +7544,7 @@ function spawnNPC(x, y, z, role) {
   const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(nc),transparent:true}));
   sprite.scale.set(2.2,0.44,1); sprite.position.y=3; g.add(sprite);
 
+  g.scale.setScalar(0.75); // V3.3: рост 1.8 — как игрок (были великаны 2.4)
   g.position.set(x, 0, z);
   scene.add(g);
   npcs.push({ mesh:g, x, z, role, walkAngle:Math.random()*Math.PI*2, walkTimer:Math.random()*3, waitTime:2+Math.random()*4 });
@@ -12270,13 +12289,10 @@ function buildStreetFurniture() {
 function fzStreetAnim(t) {
   // светофоры: цикл 10с — зелёный 4.5с / жёлтый 1с / красный 4.5с, оси в противофазе
   (window._trafficLights || []).forEach(tl => {
-    const cyc = (t + tl.phase) % 10;
-    let green, yellow, red;
-    if (tl.axis === 'z') { green = cyc < 4.5; yellow = cyc >= 4.5 && cyc < 5.5; red = cyc >= 5.5; }
-    else { red = cyc < 5.5; yellow = cyc >= 5.5 && cyc < 6.5; green = cyc >= 6.5; }
-    tl.lamps[0].material.emissiveIntensity = red ? 1 : 0.12;
-    tl.lamps[1].material.emissiveIntensity = yellow ? 1 : 0.12;
-    tl.lamps[2].material.emissiveIntensity = green ? 1 : 0.12;
+    const st = fzLightState(tl.phase, tl.axis, t);
+    tl.lamps[0].material.emissiveIntensity = st === 'red' ? 1 : 0.12;
+    tl.lamps[1].material.emissiveIntensity = st === 'yellow' ? 1 : 0.12;
+    tl.lamps[2].material.emissiveIntensity = st === 'green' ? 1 : 0.12;
   });
   // GPS-маяк пульсирует
   if (window.fzGPS && window.fzGPS.beacon) {
@@ -12326,44 +12342,82 @@ function fzChipsTick() {
 window._fzCars = [];
 window._fzPeds = [];
 
+// ═══ V3.3: ТРАФИК 2.0 — 4 типа кузова, светофоры, плавные повороты, колонны ═══
+window._fzCars = [];
+const FZ_INTERSECTIONS = [[60, 0], [-60, 0], [0, 60], [0, -60]];
+function fzLightState(phase, axis, t) {
+  const cyc = (t + phase) % 10;
+  if (axis === 'z') return cyc < 4.5 ? 'green' : (cyc < 5.5 ? 'yellow' : 'red');
+  return cyc < 5.5 ? 'red' : (cyc < 6.5 ? 'yellow' : 'green');
+}
+
 function buildTraffic() {
   const carColors = [0xe74c3c, 0x3498db, 0xf1c40f, 0x2ecc71, 0xecf0f1, 0x9b59b6, 0xe67e22, 0x1abc9c, 0x34495e];
-  const mkCar = (ci) => {
-    const g = new THREE.Group();
-    const color = carColors[ci % carColors.length];
-    const body = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.65, 4.3), new THREE.MeshLambertMaterial({ color }));
-    body.position.y = 0.75; g.add(body);
-    const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.55, 2.0), new THREE.MeshLambertMaterial({ color: 0x25313e }));
-    cabin.position.set(0, 1.3, -0.35); g.add(cabin);
-    const wheels = [];
-    [[-0.95, 1.35], [0.95, 1.35], [-0.95, -1.35], [0.95, -1.35]].forEach(([wx, wz]) => {
-      const w = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.26, 10), new THREE.MeshLambertMaterial({ color: 0x14171c }));
-      w.rotation.z = Math.PI / 2; w.position.set(wx, 0.36, wz); g.add(w); wheels.push(w);
-    });
+  const mkLights = (g, zFront, zBack) => {
     const lampMats = [];
     [-0.62, 0.62].forEach(hx => {
       const head = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.18, 0.08),
         new THREE.MeshLambertMaterial({ color: 0xfff6d0, emissive: 0xffeeaa, emissiveIntensity: 0.15 }));
-      head.position.set(hx, 0.82, 2.16); g.add(head); lampMats.push(head.material);
+      head.position.set(hx, 0.82, zFront); g.add(head); lampMats.push(head.material);
       const tail = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.15, 0.08),
         new THREE.MeshLambertMaterial({ color: 0xd93040, emissive: 0xff2d40, emissiveIntensity: 0.15 }));
-      tail.position.set(hx, 0.82, -2.16); g.add(tail); lampMats.push(tail.material);
+      tail.position.set(hx, 0.82, zBack); g.add(tail); lampMats.push(tail.material);
     });
+    return lampMats;
+  };
+  const mkWheels = (g, zs, r) => {
+    const wheels = [];
+    zs.forEach(wz => [-0.95, 0.95].forEach(wx => {
+      const w = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.26, 10), new THREE.MeshLambertMaterial({ color: 0x14171c }));
+      w.rotation.z = Math.PI / 2; w.position.set(wx, r, wz); g.add(w); wheels.push(w);
+    }));
+    return wheels;
+  };
+  const mkCar = (ci) => {
+    const g = new THREE.Group();
+    const color = carColors[ci % carColors.length];
+    const variant = ci % 4;
+    let wheels, lampMats;
+    if (variant === 0) {            // седан
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.65, 4.3), new THREE.MeshLambertMaterial({ color }));
+      body.position.y = 0.75; g.add(body);
+      const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.55, 2.0), new THREE.MeshLambertMaterial({ color: 0x25313e }));
+      cabin.position.set(0, 1.3, -0.35); g.add(cabin);
+      wheels = mkWheels(g, [1.35, -1.35], 0.36); lampMats = mkLights(g, 2.16, -2.16);
+    } else if (variant === 1) {     // фургон
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.95, 1.35, 4.6), new THREE.MeshLambertMaterial({ color }));
+      body.position.y = 1.05; g.add(body);
+      const ws = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.5, 0.1), new THREE.MeshLambertMaterial({ color: 0x25313e }));
+      ws.position.set(0, 1.35, 2.28); g.add(ws);
+      wheels = mkWheels(g, [1.5, -1.5], 0.38); lampMats = mkLights(g, 2.31, -2.31);
+    } else if (variant === 2) {     // грузовик
+      const cab = new THREE.Mesh(new THREE.BoxGeometry(1.95, 1.25, 1.8), new THREE.MeshLambertMaterial({ color }));
+      cab.position.set(0, 1.05, 1.5); g.add(cab);
+      const cargo = new THREE.Mesh(new THREE.BoxGeometry(2.05, 1.6, 2.9), new THREE.MeshLambertMaterial({ color: 0xc8ccd4 }));
+      cargo.position.set(0, 1.15, -0.85); g.add(cargo);
+      wheels = mkWheels(g, [1.6, -0.4, -1.7], 0.42); lampMats = mkLights(g, 2.41, -2.31);
+    } else {                        // автобус
+      const body = new THREE.Mesh(new THREE.BoxGeometry(2.1, 1.45, 6.2), new THREE.MeshLambertMaterial({ color }));
+      body.position.y = 1.15; g.add(body);
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(2.14, 0.5, 5.6), new THREE.MeshLambertMaterial({ color: 0x25313e }));
+      strip.position.y = 1.6; g.add(strip);
+      const ws = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.6, 0.1), new THREE.MeshLambertMaterial({ color: 0x25313e }));
+      ws.position.set(0, 1.35, 3.11); g.add(ws);
+      wheels = mkWheels(g, [2.1, -2.1], 0.42); lampMats = mkLights(g, 3.11, -3.11);
+    }
     g.userData = { wheels, lampMats };
     scene.add(g);
     return g;
   };
-  // V3.2: трассы ТОЛЬКО по реальному асфальту: углы пояса — через patch-квадраты (см. buildStreetFurniture),
-  // восточная вертикаль обрезана до z=10 — НЕ пересекает парковку (ряды z 21..44, x 59..105)
   const routes = [
-    { pts: [[-160,-177],[160,-177],[170,-177],[177,-170],[177,160],[170,177],[160,177],[-160,177],[-170,177],[-177,170],[-177,-160],[-177,-170]], loop: true,  n: 3 },
-    { pts: [[-220, 3], [220, 3]],    loop: false, n: 1 },
-    { pts: [[220, -3], [-220, -3]],  loop: false, n: 1 },
+    { pts: [[-160,-177],[160,-177],[170,-177],[177,-170],[177,160],[170,177],[160,177],[-160,177],[-170,177],[-177,170],[-177,-160],[-177,-170]], loop: true,  n: 5 },
+    { pts: [[-220, 3], [220, 3]],    loop: false, n: 2 },
+    { pts: [[220, -3], [-220, -3]],  loop: false, n: 2 },
+    { pts: [[3, -220], [3, 220]],    loop: false, n: 2 },
     { pts: [[-160, 57], [160, 57]],  loop: false, n: 1 },
     { pts: [[160, -57], [-160, -57]],loop: false, n: 1 },
-    { pts: [[57, -150], [57, 10]],   loop: false, n: 1 },  // юг: до парковки не доходит
+    { pts: [[57, -150], [57, 10]],   loop: false, n: 1 },
     { pts: [[-57, 160], [-57, -160]],loop: false, n: 1 },
-    { pts: [[3, -220], [3, 220]],    loop: false, n: 1 },
   ];
   let ci = 0;
   routes.forEach(r => {
@@ -12372,12 +12426,12 @@ function buildTraffic() {
       const t0 = (k + 0.35) / r.n;
       const a = r.pts[0], b = r.pts[1];
       grp.position.set(a[0] + (b[0] - a[0]) * t0, 0, a[1] + (b[1] - a[1]) * t0);
-      window._fzCars.push({ group: grp, route: r, idx: 1, dir: 1, speed: 9 + Math.random() * 6 });
+      window._fzCars.push({ group: grp, route: r, idx: 1, dir: 1, speed: 8 + Math.random() * 6 });
     }
   });
 }
 
-function fzTrafficAnim(dt) {
+function fzTrafficAnim(dt, tNow) {
   if (!window._fzCars.length) return;
   const tt = (Math.sin(dayTime) + 1) / 2;
   const night = tt < 0.45;
@@ -12386,51 +12440,70 @@ function fzTrafficAnim(dt) {
     const tgt = c.route.pts[c.idx];
     const dx = tgt[0] - c.group.position.x, dz = tgt[1] - c.group.position.z;
     const dist = Math.hypot(dx, dz);
-    // ── V3.2 АНТИ-ТАРАН: не едем, если впереди машина или ИГРОК ──
+    let stopped = false;
     if (dist > 0.5) {
       const fx = dx / dist, fz2 = dz / dist;
       let blocked = false;
+      // ── колонна: не таранить впереди идущих ──
       const checkAhead = (ex, ez, far) => {
         if (blocked) return;
         const rx = ex - c.group.position.x, rz = ez - c.group.position.z;
         const d2 = rx * rx + rz * rz;
         if (d2 > far * far || d2 < 0.001) return;
         const dd = Math.sqrt(d2);
-        const ahead = (rx * fx + rz * fz2) / dd;      // 1 = ровно впереди
-        const side = Math.abs(rx * fz2 - rz * fx);     // поперечное смещение
-        if (ahead > 0.6 && side < 2.7) blocked = true;
+        if ((rx * fx + rz * fz2) / dd > 0.6 && Math.abs(rx * fz2 - rz * fx) < 2.7) blocked = true;
       };
       for (let oi = 0; oi < window._fzCars.length; oi++) {
         if (window._fzCars[oi] === c) continue;
         checkAhead(window._fzCars[oi].group.position.x, window._fzCars[oi].group.position.z, 8.5);
       }
-      if (localPlayer && localPlayer.mesh && !isInsideBuilding) {
+      // ── пропустить ИГРОКА ──
+      if (!blocked && localPlayer && localPlayer.mesh && !isInsideBuilding) {
         checkAhead(localPlayer.mesh.position.x, localPlayer.mesh.position.z, 9.5);
       }
+      // ── СВЕТОФОРЫ: красный/жёлтый = стоим перед перекрёстком ──
+      if (!blocked) {
+        const fwdAxis = Math.abs(dx) > Math.abs(dz) ? 'x' : 'z';
+        for (let ii = 0; ii < FZ_INTERSECTIONS.length; ii++) {
+          const I = FZ_INTERSECTIONS[ii];
+          const rx = I[0] - c.group.position.x, rz = I[1] - c.group.position.z;
+          const dI = Math.hypot(rx, rz);
+          if (dI > 13 || dI < 1.5) continue;
+          if ((rx * fx + rz * fz2) / dI < 0.7) continue;
+          if (fzLightState(I[0] * 0.7 + I[1] * 1.3, fwdAxis, tNow) !== 'green') { blocked = true; break; }
+        }
+      }
       if (blocked) {
-        const ud0 = c.group.userData;   // стоим — только стоп-сигналы ярче
+        const ud0 = c.group.userData;
         ud0.lampMats[2].emissiveIntensity = 1.4; ud0.lampMats[3].emissiveIntensity = 1.4;
-        return;
+        stopped = true;
       }
     }
-    const step = Math.min(c.speed * dt, dist);
-    if (dist < 0.5) {
-      c.group.position.set(tgt[0], 0, tgt[1]);
-      if (c.route.loop) c.idx = (c.idx + 1) % c.route.pts.length;
-      else {
-        const next = c.idx + c.dir;
-        if (next >= c.route.pts.length || next < 0) c.dir *= -1;
-        c.idx += c.dir;
+    if (!stopped) {
+      const step = Math.min(c.speed * (dist < 15 ? 0.55 : 1) * dt, dist);
+      if (dist < 0.5) {
+        c.group.position.set(tgt[0], 0, tgt[1]);
+        if (c.route.loop) c.idx = (c.idx + 1) % c.route.pts.length;
+        else {
+          const next = c.idx + c.dir;
+          if (next >= c.route.pts.length || next < 0) c.dir *= -1;
+          c.idx += c.dir;
+        }
+      } else {
+        c.group.position.x += dx / dist * step;
+        c.group.position.z += dz / dist * step;
+        // плавный доворот
+        const targetYaw = Math.atan2(dx, dz);
+        let dy2 = targetYaw - c.group.rotation.y;
+        while (dy2 > Math.PI) dy2 -= Math.PI * 2;
+        while (dy2 < -Math.PI) dy2 += Math.PI * 2;
+        c.group.rotation.y += dy2 * Math.min(1, dt * 5);
+        const ud = c.group.userData;
+        for (let wi = 0; wi < ud.wheels.length; wi++) ud.wheels[wi].rotation.x += step / 0.38;
+        ud.lampMats[0].emissiveIntensity = ud.lampMats[1].emissiveIntensity = emH;
+        ud.lampMats[2].emissiveIntensity = ud.lampMats[3].emissiveIntensity = emT;
       }
-    } else {
-      c.group.position.x += dx / dist * step;
-      c.group.position.z += dz / dist * step;
-      c.group.rotation.y = Math.atan2(dx, dz);
     }
-    const ud = c.group.userData;
-    for (let wi = 0; wi < ud.wheels.length; wi++) ud.wheels[wi].rotation.x += step / 0.36;
-    ud.lampMats[0].emissiveIntensity = ud.lampMats[1].emissiveIntensity = emH;
-    ud.lampMats[2].emissiveIntensity = ud.lampMats[3].emissiveIntensity = emT;
   });
 }
 
@@ -12484,6 +12557,18 @@ function buildPedestrians() {
 
 function fzPedAnim(t) {
   if (!window._fzPeds.length) return;
+  // V3.3: подогнать рост пешеходов под РЕАЛЬНЫЙ рост игрока (меряем модель один раз)
+  if (!window._fzPedH && localPlayer && localPlayer.mesh) {
+    try {
+      const bb = new THREE.Box3().setFromObject(localPlayer.mesh);
+      const h = bb.max.y - bb.min.y;
+      if (h > 0.6) {
+        window._fzPedH = h;
+        const k2 = h / 1.8;
+        window._fzPeds.forEach(pp => pp.group.scale.multiplyScalar(k2));
+      }
+    } catch (e) {}
+  }
   const dt = Math.min(t - (window._fzPedLast || t), 0.1); window._fzPedLast = t;
   window._fzPeds.forEach(p => {
     const a = p.path[0], b = p.path[1];
@@ -13557,6 +13642,7 @@ function spawnInteriorNPC(x, floorY, z, role, add) {
   const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(nc),transparent:true}));
   sprite.scale.set(1.8,0.36,1); sprite.position.y = floorY+2.8; g.add(sprite);
 
+  g.scale.setScalar(0.78); // V3.3: рост ~1.8 — как игрок
   g.position.set(x, 0, z);
   add(g);
   npcs.push({ mesh:g, x, z, role, walkAngle:Math.random()*Math.PI*2, walkTimer:2+Math.random()*3, waitTime:2+Math.random()*4, isInterior:true });
@@ -15379,7 +15465,7 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
   updateDayNight(delta);
   updateFountain(animationTime);
   fzStreetAnim(animationTime);
-  fzTrafficAnim(delta);
+  fzTrafficAnim(delta, animationTime);
   fzPedAnim(animationTime);
   fzChipsTick();
   updateNPCs(delta);
@@ -18273,7 +18359,7 @@ function claimFPReward(r, isPlus, claimKey) {
   .fpp-row-label { font-size: 9px !important; }
 }
 </style>
-<script src="update_script.js?v=302"></script>
+<script src="update_script.js?v=303"></script>
 </body>
 
 <script>
@@ -18336,7 +18422,16 @@ window.addEventListener('DOMContentLoaded', function() {
 <div id="changelogModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.65);display:none;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(6px);">
   <div class="changelog-box">
     <h2>📋 Что нового</h2>
-    <div class="cl-version">FANTAZIA RP 3D — ⚡ СУПЕР АПДЕЙТ v3.2 «ДИСЦИПЛИНА НА ДОРОГАХ»</div>
+    <div class="cl-version">FANTAZIA RP 3D — ⚡ СУПЕР АПДЕЙТ v3.3 «ДОРОГИ 2.0»</div>
+    <div class="cl-section">
+      <div class="cl-section-title">🚀 ОБНОВЛЕНИЕ v3.3</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span><b>🛣 Все дороги переделаны:</b> асфальт с текстурой и колеями, жёлтые прерывистые осевые (с разрывами на перекрёстках), белые кромки, бордюры и тротуары ВДОЛЬ ВСЕХ улиц — оси, ±60, окружная ±175, дальние ±260</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span><b>🚦 Трафик подчиняется светофорам:</b> машины СТОЯТ на красный и жёлтый на 4 перекрёстках, едут колонной, плавно поворачивают, тормозят перед тобой</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span><b>🚐 4 типа транспорта:</b> седаны, фургоны, грузовики с прицепом-кузовом и автобусы — 16 машин в потоке</div>
+      <div class="cl-item"><span class="cl-badge fix">FIX</span><b>🚶 ВСЕ люди теперь 1.8м:</b> уличные NPC были великанами 2.4м, интерьерные 2.3м — приведены к росту игрока; пешеходы автоподгоняются под реальный рост твоего персонажа</div>
+    </div>
+    <div class="cl-section">
+      <div class="cl-section-title">✨ v3.2 «ДИСЦИПЛИНА НА ДОРОГАХ»</div>
     <div class="cl-section">
       <div class="cl-section-title">🚀 ОБНОВЛЕНИЕ v3.2</div>
       <div class="cl-item"><span class="cl-badge fix">FIX</span><b>🚗 Машины больше не таранят:</b> трафик тормозит перед другими машинами (едут колонной, не проходят сквозь друг друга) и <b>тормозят перед тобой</b> — загораются стоп-сигналы</div>
