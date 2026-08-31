@@ -54,7 +54,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Fantazia RP 3D · v3.0</title>
+<title>Fantazia RP 3D · v3.1</title>
 <!-- ===== PWA MANIFEST (встроенный) ===== -->
 <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22Fantazia+RP+3D%22%2C%22short_name%22%3A%22Fantazia%22%2C%22description%22%3A%22Fantazia+RP+3D+%E2%80%94+%D0%BC%D0%BE%D0%B1%D0%B8%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+3D+%D0%B8%D0%B3%D1%80%D0%B0%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22fullscreen%22%2C%22orientation%22%3A%22landscape%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%236c5ce7%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABJQTFRFAAAAbEjiqqr%2F6%2BXz1s77////aoCa9AAAAARdFJlcAMEBQYHCJ%2BZAAAAsklEQVR42u3BMQEAAADCoPVP7WsIoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAMBuAABHwAAAABJRU5ErkJggg%3D%3D%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
 <meta name="theme-color" content="#6c5ce7">
@@ -2155,6 +2155,23 @@ button:active { transform: scale(.95); }
 .gp-item .gp-ico { font-size: 20px; filter: drop-shadow(0 0 6px rgba(77,210,255,.4)); }
 .gp-item .gp-name { font: 700 12.5px/1.25 'Segoe UI',sans-serif; color: var(--fz-text); }
 .gp-item .gp-sub { font: 11px/1.2 monospace; color: #7f93ad; margin-top: 2px; }
+
+/* ── Большая карта ── */
+#bigMap .bm-box {
+  background: var(--fz-glass2); border: 1px solid rgba(77,210,255,.3); border-radius: 20px;
+  box-shadow: 0 24px 80px rgba(0,0,0,.7), 0 0 40px rgba(77,210,255,.12);
+  overflow: hidden; display: flex; flex-direction: column;
+}
+#bigMap .bm-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; color: var(--fz-text); font: 800 16px/1 'Segoe UI',sans-serif;
+  background: linear-gradient(180deg, rgba(77,210,255,.1), transparent);
+  border-bottom: 1px solid var(--fz-border);
+}
+#bigMap .bm-close { background: rgba(255,95,109,.12); border: 1px solid rgba(255,95,109,.35); color: #ff9aa5; border-radius: 9px; width: 30px; height: 30px; cursor: pointer; font-size: 14px; }
+#bigMap .bm-close:hover { background: rgba(255,95,109,.25); }
+#bigMapCanvas { width: min(78vmin, 640px); height: min(78vmin, 640px); display: block; cursor: crosshair; }
+#bigMap .bm-foot { padding: 9px 16px; color: #7f93ad; font: 11px/1.4 monospace; border-top: 1px solid var(--fz-border); background: rgba(0,0,0,.25); }
 #guidePanel .gp-foot { padding: 10px 16px; border-top: 1px solid var(--fz-border); font: 11px/1.4 monospace; color: #7f93ad; background: rgba(0,0,0,.25); }
 @media (max-width: 600px) { #guideList { grid-template-columns: 1fr; } }
 </style>
@@ -2725,7 +2742,7 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
   </div>
 </div>
 
-<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v3.0</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v3.0 — СУПЕР АПДЕЙТ «NEON»: UI · GPS · ЖИВОЙ ГОРОД 🚀</div>
+<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v3.1</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v3.1 — ЖИВОЙ ГОРОД: ТРАФИК · ПЕШЕХОДЫ · КАРТА [M] 🚗🗺</div>
 <script>setTimeout(function(){var t=document.getElementById('fzVerToast');if(t){t.style.transition='opacity 1s';t.style.opacity='0';setTimeout(function(){t.remove()},1100)}},6000)</script>
 
 <!-- ========== HUD ========== -->
@@ -2878,6 +2895,14 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
 </div>
 
 <!-- ========== JASON DAY QUESTS PANEL ========== -->
+<div id="bigMap" style="display:none;position:fixed;inset:0;background:rgba(5,8,14,0.82);z-index:900;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);">
+  <div class="bm-box">
+    <div class="bm-head"><span>🗺 Карта Fantazia</span><button class="bm-close" onclick="toggleBigMap(false)">✕</button></div>
+    <canvas id="bigMapCanvas" width="640" height="640"></canvas>
+    <div class="bm-foot">Клик по карте — проложить GPS 🧭 · [M] закрыть · 🟢 ты · 🔵 игроки</div>
+  </div>
+</div>
+
 <div id="guidePanel">
   <div class="gp-head">
     <div class="gp-title">🧭 Путеводитель Fantazia</div>
@@ -3444,11 +3469,11 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
 </div>
 
 <!-- ========== СКРИПТЫ ========== -->
-<script src="/socket.io/socket.io.js?v=300"></script>
-<script src="assets/three.min.js?v=300"></script>
+<script src="/socket.io/socket.io.js?v=301"></script>
+<script src="assets/three.min.js?v=301"></script>
 <script>if (!window.THREE) document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\\/script>');</script>
 <!-- ===== НОВАЯ 3D-МОДЕЛЬ ИГРОКА (после Three.js!) ===== -->
-<script src="assets/fantazia-player.js?v=300"></script>
+<script src="assets/fantazia-player.js?v=301"></script>
 <script>
 /*!
  * ============================================================
@@ -4856,6 +4881,8 @@ document.addEventListener('keydown', (e) => {
         mallMusic.wanted = true; startMallMusic();
         showNotification('🎼 Музыка включена', 'info');
       }
+    } else if (e.code === 'KeyM') {
+      toggleBigMap();
     }
   } catch (err) {}
 });
@@ -5278,6 +5305,10 @@ function initThreeJS() {
 
   buildCity();
   buildStreetFurniture();
+  buildTraffic();
+  buildPedestrians();
+  buildParkPlayground();
+  buildGasStation();
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
@@ -12280,6 +12311,315 @@ function fzChipsTick() {
   fzUpdateGps();
 }
 
+// ═══════════════════ V3.1: ТРАФИК + ПЕШЕХОДЫ + БОЛЬШАЯ КАРТА + ПЛОЩАДКА + АЗС ═══════════════════
+window._fzCars = [];
+window._fzPeds = [];
+
+function buildTraffic() {
+  const carColors = [0xe74c3c, 0x3498db, 0xf1c40f, 0x2ecc71, 0xecf0f1, 0x9b59b6, 0xe67e22, 0x1abc9c, 0x34495e];
+  const mkCar = (ci) => {
+    const g = new THREE.Group();
+    const color = carColors[ci % carColors.length];
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.65, 4.3), new THREE.MeshLambertMaterial({ color }));
+    body.position.y = 0.75; g.add(body);
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.55, 2.0), new THREE.MeshLambertMaterial({ color: 0x25313e }));
+    cabin.position.set(0, 1.3, -0.35); g.add(cabin);
+    const wheels = [];
+    [[-0.95, 1.35], [0.95, 1.35], [-0.95, -1.35], [0.95, -1.35]].forEach(([wx, wz]) => {
+      const w = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.26, 10), new THREE.MeshLambertMaterial({ color: 0x14171c }));
+      w.rotation.z = Math.PI / 2; w.position.set(wx, 0.36, wz); g.add(w); wheels.push(w);
+    });
+    const lampMats = [];
+    [-0.62, 0.62].forEach(hx => {
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.18, 0.08),
+        new THREE.MeshLambertMaterial({ color: 0xfff6d0, emissive: 0xffeeaa, emissiveIntensity: 0.15 }));
+      head.position.set(hx, 0.82, 2.16); g.add(head); lampMats.push(head.material);
+      const tail = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.15, 0.08),
+        new THREE.MeshLambertMaterial({ color: 0xd93040, emissive: 0xff2d40, emissiveIntensity: 0.15 }));
+      tail.position.set(hx, 0.82, -2.16); g.add(tail); lampMats.push(tail.material);
+    });
+    g.userData = { wheels, lampMats };
+    scene.add(g);
+    return g;
+  };
+  const routes = [
+    { pts: [[-160,-177],[160,-177],[177,-160],[177,160],[160,177],[-160,177],[-177,160],[-177,-160]], loop: true,  n: 3 },
+    { pts: [[-220, 3], [220, 3]],    loop: false, n: 1 },
+    { pts: [[220, -3], [-220, -3]],  loop: false, n: 1 },
+    { pts: [[-160, 57], [160, 57]],  loop: false, n: 1 },
+    { pts: [[160, -57], [-160, -57]],loop: false, n: 1 },
+    { pts: [[61, -160], [61, 160]],  loop: false, n: 1 },
+    { pts: [[-61, 160], [-61, -160]],loop: false, n: 1 },
+    { pts: [[3, -220], [3, 220]],    loop: false, n: 1 },
+  ];
+  let ci = 0;
+  routes.forEach(r => {
+    for (let k = 0; k < r.n; k++) {
+      const grp = mkCar(ci++);
+      const t0 = (k + 0.35) / r.n;
+      const a = r.pts[0], b = r.pts[1];
+      grp.position.set(a[0] + (b[0] - a[0]) * t0, 0, a[1] + (b[1] - a[1]) * t0);
+      window._fzCars.push({ group: grp, route: r, idx: 1, dir: 1, speed: 9 + Math.random() * 6 });
+    }
+  });
+}
+
+function fzTrafficAnim(dt) {
+  if (!window._fzCars.length) return;
+  const tt = (Math.sin(dayTime) + 1) / 2;
+  const night = tt < 0.45;
+  const emH = night ? 1.3 : 0.12, emT = night ? 0.9 : 0.12;
+  window._fzCars.forEach(c => {
+    const tgt = c.route.pts[c.idx];
+    const dx = tgt[0] - c.group.position.x, dz = tgt[1] - c.group.position.z;
+    const dist = Math.hypot(dx, dz);
+    const step = Math.min(c.speed * dt, dist);
+    if (dist < 0.5) {
+      c.group.position.set(tgt[0], 0, tgt[1]);
+      if (c.route.loop) c.idx = (c.idx + 1) % c.route.pts.length;
+      else {
+        const next = c.idx + c.dir;
+        if (next >= c.route.pts.length || next < 0) c.dir *= -1;
+        c.idx += c.dir;
+      }
+    } else {
+      c.group.position.x += dx / dist * step;
+      c.group.position.z += dz / dist * step;
+      c.group.rotation.y = Math.atan2(dx, dz);
+    }
+    const ud = c.group.userData;
+    for (let wi = 0; wi < ud.wheels.length; wi++) ud.wheels[wi].rotation.x += step / 0.36;
+    ud.lampMats[0].emissiveIntensity = ud.lampMats[1].emissiveIntensity = emH;
+    ud.lampMats[2].emissiveIntensity = ud.lampMats[3].emissiveIntensity = emT;
+  });
+}
+
+function buildPedestrians() {
+  const shirtC = [0xe74c3c, 0x3498db, 0x2ecc71, 0xf39c12, 0x9b59b6, 0x1abc9c, 0xecf0f1, 0xe67e22];
+  const pantsC = [0x2c3e50, 0x34495e, 0x3d3d3d, 0x5d4037];
+  const mkPed = () => {
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.62, 0.28),
+      new THREE.MeshLambertMaterial({ color: shirtC[(Math.random() * shirtC.length) | 0] }));
+    body.position.y = 1.06; g.add(body);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 8, 7),
+      new THREE.MeshLambertMaterial({ color: 0xd4a574 }));
+    head.position.y = 1.55; g.add(head);
+    const mkLimb = (lx, ly, w2, h2, col) => {
+      const j = new THREE.Group(); j.position.set(lx, ly, 0);
+      const limb = new THREE.Mesh(new THREE.BoxGeometry(w2, h2, w2 + 0.04),
+        new THREE.MeshLambertMaterial({ color: col }));
+      limb.position.y = -h2 / 2; j.add(limb); g.add(j); return j;
+    };
+    g.userData = {
+      legL: mkLimb(-0.13, 0.75, 0.16, 0.72, pantsC[(Math.random() * pantsC.length) | 0]),
+      legR: mkLimb(0.13, 0.75, 0.16, 0.72, pantsC[(Math.random() * pantsC.length) | 0]),
+      armL: mkLimb(-0.33, 1.32, 0.12, 0.58, body.material.color),
+      armR: mkLimb(0.33, 1.32, 0.12, 0.58, body.material.color),
+      phase: Math.random() * 6.28
+    };
+    scene.add(g);
+    return g;
+  };
+  const paths = [
+    [[9, -130], [9, 130]], [[-9, 130], [-9, -130]],
+    [[-130, 9], [130, 9]], [[130, -9], [-130, -9]],
+    [[-140, 68], [140, 68]], [[140, -68], [-140, -68]],
+    [[68, -140], [68, 140]], [[-68, 140], [-68, -140]],
+    [[-150, 168], [150, 168]], [[150, -168], [-150, -168]],
+  ];
+  for (let k = 0; k < 14; k++) {
+    const path = paths[k % paths.length];
+    const grp = mkPed();
+    const t0 = Math.random();
+    grp.position.set(path[0][0] + (path[1][0] - path[0][0]) * t0, 0, path[0][1] + (path[1][1] - path[0][1]) * t0);
+    window._fzPeds.push({ group: grp, path, dir: Math.random() > 0.5 ? 1 : -1, speed: 1.3 + Math.random() * 1.1 });
+  }
+}
+
+function fzPedAnim(t) {
+  if (!window._fzPeds.length) return;
+  const dt = Math.min(t - (window._fzPedLast || t), 0.1); window._fzPedLast = t;
+  window._fzPeds.forEach(p => {
+    const a = p.path[0], b = p.path[1];
+    const dx = b[0] - a[0], dz = b[1] - a[1];
+    const len = Math.hypot(dx, dz);
+    const pos = p.group.position;
+    let along = ((pos.x - a[0]) * dx + (pos.z - a[1]) * dz) / (len * len) + p.dir * p.speed * dt / len;
+    if (along > 1) { along = 1; p.dir = -1; }
+    if (along < 0) { along = 0; p.dir = 1; }
+    pos.x = a[0] + dx * along; pos.z = a[1] + dz * along;
+    p.group.rotation.y = Math.atan2(dx * p.dir, dz * p.dir);
+    const ud = p.group.userData;
+    const sw = Math.sin(t * 7 + ud.phase) * 0.55;
+    ud.legL.rotation.x = sw; ud.legR.rotation.x = -sw;
+    ud.armL.rotation.x = -sw * 0.7; ud.armR.rotation.x = sw * 0.7;
+    pos.y = Math.abs(Math.sin(t * 7 + ud.phase)) * 0.035;
+  });
+}
+
+let _bmTimer = null;
+function toggleBigMap(force) {
+  const el = document.getElementById('bigMap');
+  if (!el) return;
+  const show = force !== undefined ? force : el.style.display !== 'flex';
+  el.style.display = show ? 'flex' : 'none';
+  if (show) {
+    document.exitPointerLock && document.exitPointerLock();
+    drawBigMap();
+    if (_bmTimer) clearInterval(_bmTimer);
+    _bmTimer = setInterval(drawBigMap, 600);
+  } else if (_bmTimer) { clearInterval(_bmTimer); _bmTimer = null; }
+}
+
+(function fzBigMapInit() {
+  document.addEventListener('click', (e) => {
+    const cv = document.getElementById('bigMapCanvas');
+    if (!cv || document.getElementById('bigMap').style.display !== 'flex') return;
+    if (e.target !== cv) return;
+    const r = cv.getBoundingClientRect();
+    const mx = (e.clientX - r.left) / r.width * 640;
+    const mz = (e.clientY - r.top) / r.height * 640;
+    setGPS(mx - 320, mz - 320, 'Точка на карте');
+    toggleBigMap(false);
+  });
+})();
+
+function drawBigMap() {
+  const canvas = document.getElementById('bigMapCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const size = 640, half = size / 2, k = size / 640;
+  const W2 = (x) => half + x * k, W2Z = (z) => half + z * k;
+  ctx.clearRect(0, 0, size, size);
+  ctx.fillStyle = '#0d1219'; ctx.fillRect(0, 0, size, size);
+  ctx.fillStyle = '#14201a';
+  ctx.beginPath(); ctx.arc(half, half, 300 * k, 0, Math.PI * 2); ctx.fill();
+  const road = (x1, z1, x2, z2, w, c) => {
+    ctx.strokeStyle = c; ctx.lineWidth = w;
+    ctx.beginPath(); ctx.moveTo(W2(x1), W2Z(z1)); ctx.lineTo(W2(x2), W2Z(z2)); ctx.stroke();
+  };
+  const RC = '#3d4450';
+  road(-320, 0, 320, 0, 12, RC); road(0, -320, 0, 320, 12, RC);
+  [-60, 60].forEach(o => { road(-320, o, 320, o, 8, RC); road(o, -320, o, 320, 8, RC); });
+  [-175, 175].forEach(o => { road(-160, o, 160, o, 10, RC); road(o, -160, o, 160, 10, RC); });
+  [-260, 260].forEach(o => { road(-320, o, 320, o, 5, '#2e333c'); road(o, -320, o, 320, 5, '#2e333c'); });
+  ctx.strokeStyle = 'rgba(255,220,120,0.3)'; ctx.lineWidth = 1; ctx.setLineDash([4, 5]);
+  road(-320, 0, 320, 0, 1); road(0, -320, 0, 320, 1); ctx.setLineDash([]);
+  const bColor = { mall: '#b06cff', cinema: '#ff6b9d', club: '#9b59b6', karaoke: '#c06cff', restaurant: '#ff8c42', gym: '#2ecc71',
+    bank: '#4dd2ff', hospital: '#ff6b6b', office: '#7fa6c9', apartment: '#5d7a99', house: '#c9a87c',
+    shop_clothing: '#ffd166', shop_electronics: '#66c6ff', shop_food: '#ff9d6b', shop_furniture: '#d9b08c', shop_petfood: '#9fe8a0' };
+  (buildings || []).forEach(b => {
+    const bw = Math.max((b.w || 8) * k, 3), bd = Math.max((b.d || 8) * k, 3);
+    ctx.fillStyle = (b.type && bColor[b.type]) || 'rgba(130,140,155,0.8)';
+    ctx.fillRect(W2(b.x) - bw / 2, W2Z(b.z) - bd / 2, bw, bd);
+  });
+  ctx.font = 'bold 11px Segoe UI'; ctx.textAlign = 'center';
+  ctx.strokeStyle = 'rgba(0,0,0,0.85)'; ctx.lineWidth = 3;
+  (buildings || []).forEach(b => {
+    if (!b.type || !bColor[b.type] || !b.name) return;
+    if (!['mall', 'cinema', 'club', 'bank', 'hospital', 'gym', 'restaurant', 'karaoke'].includes(b.type)) return;
+    const tx = W2(b.x), tz = W2Z(b.z) - 8;
+    ctx.strokeText(b.name, tx, tz);
+    ctx.fillStyle = '#eaf2ff'; ctx.fillText(b.name, tx, tz);
+  });
+  ctx.fillStyle = '#4da6ff';
+  Object.values(remotePlayers || {}).forEach(pl => {
+    if (!pl.targetPos) return;
+    ctx.beginPath(); ctx.arc(W2(pl.targetPos.x), W2Z(pl.targetPos.z), 3, 0, Math.PI * 2); ctx.fill();
+  });
+  if (window.fzGPS) {
+    const pulse = 6 + Math.sin(performance.now() / 250) * 3;
+    ctx.strokeStyle = '#ff9d4d'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(W2(window.fzGPS.x), W2Z(window.fzGPS.z), pulse, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = '#ff9d4d';
+    ctx.beginPath(); ctx.arc(W2(window.fzGPS.x), W2Z(window.fzGPS.z), 4, 0, Math.PI * 2); ctx.fill();
+  }
+  if (localPlayer && localPlayer.mesh) {
+    const cx = W2(localPlayer.mesh.position.x), cz = W2Z(localPlayer.mesh.position.z);
+    ctx.save(); ctx.translate(cx, cz); ctx.rotate(-localPlayer.mesh.rotation.y);
+    ctx.fillStyle = '#00e676'; ctx.strokeStyle = '#00330f'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(6.5, 8); ctx.lineTo(0, 4); ctx.lineTo(-6.5, 8); ctx.closePath();
+    ctx.fill(); ctx.stroke(); ctx.restore();
+  }
+  ctx.font = 'bold 15px Segoe UI'; ctx.fillStyle = '#4dd2ff';
+  ctx.strokeStyle = 'rgba(0,0,0,0.8)'; ctx.lineWidth = 3;
+  ctx.strokeText('N', half, 20); ctx.fillText('N', half, 20);
+}
+
+function buildParkPlayground() {
+  const Bx = (w, h, d, color, x, y, z, ry) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ color }));
+    m.position.set(x, y, z); if (ry) m.rotation.y = ry;
+    scene.add(m); return m;
+  };
+  const pad = new THREE.Mesh(new THREE.CircleGeometry(11, 24), new THREE.MeshLambertMaterial({ color: 0xc96a8a }));
+  pad.rotation.x = -Math.PI / 2; pad.position.set(-26, 0.025, 77); scene.add(pad);
+  // горка
+  Bx(1.7, 0.16, 1.7, 0xf1c40f, -32, 1.9, 74, 0);
+  [[-0.7, -0.7], [0.7, -0.7], [-0.7, 0.7], [0.7, 0.7]].forEach(([ox, oz]) => Bx(0.14, 1.9, 0.14, 0xe74c3c, -32 + ox, 0.95, 74 + oz, 0));
+  const slide = Bx(4.8, 0.1, 1.2, 0xecf0f1, -29.7, 0.95, 74, 0);
+  slide.rotation.z = -0.42;
+  for (let st = 0; st < 4; st++) Bx(1.2, 0.08, 0.4, 0xe74c3c, -32, 0.45 + st * 0.45, 73.15, 0);
+  // качели
+  const fm = 0x3498db;
+  Bx(0.14, 2.6, 0.14, fm, -24.5, 1.3, 73.5, 0); Bx(0.14, 2.6, 0.14, fm, -20.5, 1.3, 73.5, 0);
+  Bx(0.14, 2.6, 0.14, fm, -24.5, 1.3, 76.5, 0); Bx(0.14, 2.6, 0.14, fm, -20.5, 1.3, 76.5, 0);
+  Bx(4.6, 0.14, 0.14, fm, -22.5, 2.6, 73.5, 0); Bx(4.6, 0.14, 0.14, fm, -22.5, 2.6, 76.5, 0);
+  Bx(4.4, 0.12, 0.12, fm, -22.5, 2.6, 75, 0);
+  [-23.4, -21.6].forEach(sx => {
+    Bx(0.05, 1.7, 0.05, 0x95a5a6, sx, 1.75, 74.2, 0); Bx(0.05, 1.7, 0.05, 0x95a5a6, sx, 1.75, 75.8, 0);
+    Bx(0.55, 0.08, 0.4, 0x2c3e50, sx, 0.9, 75, 0);
+  });
+  // песочница
+  Bx(4.4, 0.35, 0.3, 0xb98a5a, -18, 0.18, 81.5, 0); Bx(4.4, 0.35, 0.3, 0xb98a5a, -18, 0.18, 84.5, 0);
+  Bx(0.3, 0.35, 3.4, 0xb98a5a, -20.1, 0.18, 83, 0); Bx(0.3, 0.35, 3.4, 0xb98a5a, -15.9, 0.18, 83, 0);
+  const sand = new THREE.Mesh(new THREE.PlaneGeometry(4, 3), new THREE.MeshLambertMaterial({ color: 0xe8cf8a }));
+  sand.rotation.x = -Math.PI / 2; sand.position.set(-18, 0.1, 83); scene.add(sand);
+  // ручная карусель
+  const spin = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 0.12, 14), new THREE.MeshLambertMaterial({ color: 0x9b59b6 }));
+  spin.position.set(-31, 0.35, 83); scene.add(spin);
+  Bx(0.12, 1.0, 0.12, 0x2c3e50, -31, 0.85, 83, 0);
+  for (let hd = 0; hd < 4; hd++) {
+    const a = hd / 4 * Math.PI * 2;
+    Bx(1.5, 0.07, 0.07, 0xf1c40f, -31 + Math.cos(a) * 0.75, 1.15, 83 + Math.sin(a) * 0.75, a);
+    Bx(0.07, 0.5, 0.07, 0xe74c3c, -31 + Math.cos(a) * 1.4, 0.95, 83 + Math.sin(a) * 1.4, 0);
+  }
+}
+
+function buildGasStation() {
+  const Bx = (w, h, d, color, x, y, z, ry) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ color }));
+    m.position.set(x, y, z); if (ry) m.rotation.y = ry;
+    scene.add(m); return m;
+  };
+  Bx(20, 0.08, 14, 0x8f96a0, 60, 0.04, 191, 0);
+  [[-7.5, -4.5], [7.5, -4.5], [-7.5, 4.5], [7.5, 4.5]].forEach(([ox, oz]) => {
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 5, 10), new THREE.MeshLambertMaterial({ color: 0xd8dde2 }));
+    pole.position.set(60 + ox, 2.5, 191 + oz); scene.add(pole);
+  });
+  Bx(18, 0.7, 11.5, 0xf4f6f8, 60, 5.3, 191, 0);
+  Bx(18, 0.35, 11.5, 0xe74c3c, 60, 4.85, 191, 0);
+  const signCv = document.createElement('canvas'); signCv.width = 512; signCv.height = 96;
+  const sg = signCv.getContext('2d');
+  sg.fillStyle = '#101418'; sg.fillRect(0, 0, 512, 96);
+  sg.fillStyle = '#2ecc71'; sg.font = 'bold 52px Arial'; sg.textAlign = 'center';
+  sg.fillText('⛽ АЗС FANTAZIA', 256, 64);
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(12, 2.2),
+    new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(signCv) }));
+  sign.position.set(60, 5.3, 185.1); sign.rotation.y = Math.PI; scene.add(sign);
+  [56, 64].forEach(px => {
+    Bx(4.5, 0.25, 2, 0xc8ccd4, px, 0.13, 191, 0);
+    Bx(0.85, 1.5, 0.6, 0xe74c3c, px, 1.0, 191, 0);
+    Bx(0.6, 0.3, 0.1, 0x101418, px, 1.35, 191.32, 0);
+    Bx(0.5, 0.35, 0.45, 0x2c313a, px, 0.6, 191.35, 0);
+  });
+  Bx(6.5, 3.2, 4.5, 0xecf0f1, 60, 1.6, 197.5, 0);
+  Bx(5, 1.4, 0.15, 0x25313e, 60, 1.7, 195.2, 0);
+  Bx(1.2, 2.2, 0.15, 0x402a10, 58.2, 1.1, 195.2, 0);
+  Bx(7, 0.4, 5, 0xb03040, 60, 3.35, 197.5, 0);
+}
+
 function updateMinimap() {
   // ═══ V3.0: живая миникарта — локальный зум, реальные дороги, POI, GPS ═══
   const canvas = document.getElementById('minimapCanvas');
@@ -14994,6 +15334,8 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
   updateDayNight(delta);
   updateFountain(animationTime);
   fzStreetAnim(animationTime);
+  fzTrafficAnim(delta);
+  fzPedAnim(animationTime);
   fzChipsTick();
   updateNPCs(delta);
   // Jason Day eggs
@@ -17886,7 +18228,7 @@ function claimFPReward(r, isPlus, claimKey) {
   .fpp-row-label { font-size: 9px !important; }
 }
 </style>
-<script src="update_script.js?v=300"></script>
+<script src="update_script.js?v=301"></script>
 </body>
 
 <script>
@@ -17949,7 +18291,17 @@ window.addEventListener('DOMContentLoaded', function() {
 <div id="changelogModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.65);display:none;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(6px);">
   <div class="changelog-box">
     <h2>📋 Что нового</h2>
-    <div class="cl-version">FANTAZIA RP 3D — ⚡ СУПЕР АПДЕЙТ v3.0 «NEON»</div>
+    <div class="cl-version">FANTAZIA RP 3D — ⚡ СУПЕР АПДЕЙТ v3.1 «ЖИВОЙ ГОРОД»</div>
+    <div class="cl-section">
+      <div class="cl-section-title">🚀 ОБНОВЛЕНИЕ v3.1</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span><b>🚗 Живой трафик:</b> 10 машин ездят по РЕАЛЬНЫм дорогам (петля по поясу + оси + ±60), крутят колёса, ночью включают фары и стоп-сигналы</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span><b>🚶 Пешеходы:</b> 14 горожан гуляют по тротуарам с анимацией шага и покачиванием рук</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span><b>🗺 Большая карта [M]:</b> весь город на экране — дороги, цветные здания, подписи мест, игроки; клик по карте прокладывает GPS</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span><b>🛝 Детская площадка в парке:</b> горка, качели, песочница, ручная карусель</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span><b>⛽ АЗС FANTAZIA</b> у южной окружной: навес, 2 колонки, магазин</div>
+    </div>
+    <div class="cl-section">
+      <div class="cl-section-title">✨ v3.0 «NEON»</div>
     <div class="cl-section">
       <div class="cl-section-title">🚀 ОБНОВЛЕНИЕ v3.0</div>
       <div class="cl-item"><span class="cl-badge new">NEW</span><b>Новый интерфейс «Fantazia Neon»:</b> стеклянные панели, светящиеся кнопки, плавные анимации — HUD, чат, уведомления, боковое меню</div>
