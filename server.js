@@ -127,11 +127,7 @@ app.get('/api/admin/accounts', (req, res) => {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public'), {
-  etag: false,
-  lastModified: false,
-  setHeaders: (res) => { res.setHeader('Cache-Control', 'no-store'); }
-}));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Главная страница
 app.get('/', (req, res) => {
