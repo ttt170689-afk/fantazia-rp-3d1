@@ -54,7 +54,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Fantazia RP 3D · v3.1</title>
+<title>Fantazia RP 3D · v3.2</title>
 <!-- ===== PWA MANIFEST (встроенный) ===== -->
 <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22Fantazia+RP+3D%22%2C%22short_name%22%3A%22Fantazia%22%2C%22description%22%3A%22Fantazia+RP+3D+%E2%80%94+%D0%BC%D0%BE%D0%B1%D0%B8%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+3D+%D0%B8%D0%B3%D1%80%D0%B0%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22fullscreen%22%2C%22orientation%22%3A%22landscape%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%236c5ce7%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABJQTFRFAAAAbEjiqqr%2F6%2BXz1s77////aoCa9AAAAARdFJlcAMEBQYHCJ%2BZAAAAsklEQVR42u3BMQEAAADCoPVP7WsIoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAMBuAABHwAAAABJRU5ErkJggg%3D%3D%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
 <meta name="theme-color" content="#6c5ce7">
@@ -2742,7 +2742,7 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
   </div>
 </div>
 
-<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v3.1</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v3.1 — ЖИВОЙ ГОРОД: ТРАФИК · ПЕШЕХОДЫ · КАРТА [M] 🚗🗺</div>
+<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v3.2</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v3.2 — ДИСЦИПЛИНА НА ДОРОГАХ: БЕЗ ТАРАНОВ 🚦</div>
 <script>setTimeout(function(){var t=document.getElementById('fzVerToast');if(t){t.style.transition='opacity 1s';t.style.opacity='0';setTimeout(function(){t.remove()},1100)}},6000)</script>
 
 <!-- ========== HUD ========== -->
@@ -3469,11 +3469,11 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
 </div>
 
 <!-- ========== СКРИПТЫ ========== -->
-<script src="/socket.io/socket.io.js?v=301"></script>
-<script src="assets/three.min.js?v=301"></script>
+<script src="/socket.io/socket.io.js?v=302"></script>
+<script src="assets/three.min.js?v=302"></script>
 <script>if (!window.THREE) document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\\/script>');</script>
 <!-- ===== НОВАЯ 3D-МОДЕЛЬ ИГРОКА (после Three.js!) ===== -->
-<script src="assets/fantazia-player.js?v=301"></script>
+<script src="assets/fantazia-player.js?v=302"></script>
 <script>
 /*!
  * ============================================================
@@ -12221,6 +12221,17 @@ function buildStreetFurniture() {
   };
   [[60, 0], [-60, 0], [0, 60], [0, -60]].forEach(([x, z]) => mkTraffic(x, z));
 
+    // ── V3.2: угловые patch-квадраты — замыкают кольцо пояса ±175 (иначе машины резали газон) ──
+  [[-170, -170], [170, -170], [-170, 170], [170, 170]].forEach(([cx2, cz2]) => {
+    const patch = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshLambertMaterial({ color: 0x33383f }));
+    patch.rotation.x = -Math.PI / 2; patch.position.set(cx2, 0.018, cz2); scene.add(patch);
+    const diag = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.06, 14.6),
+      new THREE.MeshLambertMaterial({ color: 0xd8dde2 }));
+    diag.position.set(cx2 - Math.sign(cx2) * 5, 0.03, cz2 - Math.sign(cz2) * 5);
+    diag.rotation.y = Math.PI / 4;
+    scene.add(diag);
+  });
+
   // ── Автобусные остановки ──
   const mkStop = (x, z, ry) => {
     if (!fzClearOfBuildings(x, z, 2)) return;
@@ -12342,14 +12353,16 @@ function buildTraffic() {
     scene.add(g);
     return g;
   };
+  // V3.2: трассы ТОЛЬКО по реальному асфальту: углы пояса — через patch-квадраты (см. buildStreetFurniture),
+  // восточная вертикаль обрезана до z=10 — НЕ пересекает парковку (ряды z 21..44, x 59..105)
   const routes = [
-    { pts: [[-160,-177],[160,-177],[177,-160],[177,160],[160,177],[-160,177],[-177,160],[-177,-160]], loop: true,  n: 3 },
+    { pts: [[-160,-177],[160,-177],[170,-177],[177,-170],[177,160],[170,177],[160,177],[-160,177],[-170,177],[-177,170],[-177,-160],[-177,-170]], loop: true,  n: 3 },
     { pts: [[-220, 3], [220, 3]],    loop: false, n: 1 },
     { pts: [[220, -3], [-220, -3]],  loop: false, n: 1 },
     { pts: [[-160, 57], [160, 57]],  loop: false, n: 1 },
     { pts: [[160, -57], [-160, -57]],loop: false, n: 1 },
-    { pts: [[61, -160], [61, 160]],  loop: false, n: 1 },
-    { pts: [[-61, 160], [-61, -160]],loop: false, n: 1 },
+    { pts: [[57, -150], [57, 10]],   loop: false, n: 1 },  // юг: до парковки не доходит
+    { pts: [[-57, 160], [-57, -160]],loop: false, n: 1 },
     { pts: [[3, -220], [3, 220]],    loop: false, n: 1 },
   ];
   let ci = 0;
@@ -12373,6 +12386,33 @@ function fzTrafficAnim(dt) {
     const tgt = c.route.pts[c.idx];
     const dx = tgt[0] - c.group.position.x, dz = tgt[1] - c.group.position.z;
     const dist = Math.hypot(dx, dz);
+    // ── V3.2 АНТИ-ТАРАН: не едем, если впереди машина или ИГРОК ──
+    if (dist > 0.5) {
+      const fx = dx / dist, fz2 = dz / dist;
+      let blocked = false;
+      const checkAhead = (ex, ez, far) => {
+        if (blocked) return;
+        const rx = ex - c.group.position.x, rz = ez - c.group.position.z;
+        const d2 = rx * rx + rz * rz;
+        if (d2 > far * far || d2 < 0.001) return;
+        const dd = Math.sqrt(d2);
+        const ahead = (rx * fx + rz * fz2) / dd;      // 1 = ровно впереди
+        const side = Math.abs(rx * fz2 - rz * fx);     // поперечное смещение
+        if (ahead > 0.6 && side < 2.7) blocked = true;
+      };
+      for (let oi = 0; oi < window._fzCars.length; oi++) {
+        if (window._fzCars[oi] === c) continue;
+        checkAhead(window._fzCars[oi].group.position.x, window._fzCars[oi].group.position.z, 8.5);
+      }
+      if (localPlayer && localPlayer.mesh && !isInsideBuilding) {
+        checkAhead(localPlayer.mesh.position.x, localPlayer.mesh.position.z, 9.5);
+      }
+      if (blocked) {
+        const ud0 = c.group.userData;   // стоим — только стоп-сигналы ярче
+        ud0.lampMats[2].emissiveIntensity = 1.4; ud0.lampMats[3].emissiveIntensity = 1.4;
+        return;
+      }
+    }
     const step = Math.min(c.speed * dt, dist);
     if (dist < 0.5) {
       c.group.position.set(tgt[0], 0, tgt[1]);
@@ -12398,26 +12438,31 @@ function buildPedestrians() {
   const shirtC = [0xe74c3c, 0x3498db, 0x2ecc71, 0xf39c12, 0x9b59b6, 0x1abc9c, 0xecf0f1, 0xe67e22];
   const pantsC = [0x2c3e50, 0x34495e, 0x3d3d3d, 0x5d4037];
   const mkPed = () => {
+    // V3.2: рост ровно 1.8 (как игрок), стройные пропорции: ноги 0.87, торс 0.62, голова 0.14
     const g = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.62, 0.28),
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.6, 0.24),
       new THREE.MeshLambertMaterial({ color: shirtC[(Math.random() * shirtC.length) | 0] }));
-    body.position.y = 1.06; g.add(body);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 8, 7),
+    body.position.y = 1.17; g.add(body);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.145, 10, 8),
       new THREE.MeshLambertMaterial({ color: 0xd4a574 }));
-    head.position.y = 1.55; g.add(head);
+    head.position.y = 1.635; g.add(head);
+    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.55),
+      new THREE.MeshLambertMaterial({ color: [0x2c2018, 0x5a3a1a, 0x888, 0x1a1a1a, 0x6b4a2a][(Math.random() * 5) | 0] }));
+    hair.position.y = 1.64; g.add(hair);
     const mkLimb = (lx, ly, w2, h2, col) => {
       const j = new THREE.Group(); j.position.set(lx, ly, 0);
-      const limb = new THREE.Mesh(new THREE.BoxGeometry(w2, h2, w2 + 0.04),
+      const limb = new THREE.Mesh(new THREE.BoxGeometry(w2, h2, w2 * 0.85),
         new THREE.MeshLambertMaterial({ color: col }));
       limb.position.y = -h2 / 2; j.add(limb); g.add(j); return j;
     };
     g.userData = {
-      legL: mkLimb(-0.13, 0.75, 0.16, 0.72, pantsC[(Math.random() * pantsC.length) | 0]),
-      legR: mkLimb(0.13, 0.75, 0.16, 0.72, pantsC[(Math.random() * pantsC.length) | 0]),
-      armL: mkLimb(-0.33, 1.32, 0.12, 0.58, body.material.color),
-      armR: mkLimb(0.33, 1.32, 0.12, 0.58, body.material.color),
+      legL: mkLimb(-0.11, 0.87, 0.15, 0.85, pantsC[(Math.random() * pantsC.length) | 0]),
+      legR: mkLimb(0.11, 0.87, 0.15, 0.85, pantsC[(Math.random() * pantsC.length) | 0]),
+      armL: mkLimb(-0.3, 1.43, 0.11, 0.6, body.material.color),
+      armR: mkLimb(0.3, 1.43, 0.11, 0.6, body.material.color),
       phase: Math.random() * 6.28
     };
+    g.scale.setScalar(1.8 / 1.78); // ровно как игрок
     scene.add(g);
     return g;
   };
@@ -18228,7 +18273,7 @@ function claimFPReward(r, isPlus, claimKey) {
   .fpp-row-label { font-size: 9px !important; }
 }
 </style>
-<script src="update_script.js?v=301"></script>
+<script src="update_script.js?v=302"></script>
 </body>
 
 <script>
@@ -18291,7 +18336,16 @@ window.addEventListener('DOMContentLoaded', function() {
 <div id="changelogModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.65);display:none;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(6px);">
   <div class="changelog-box">
     <h2>📋 Что нового</h2>
-    <div class="cl-version">FANTAZIA RP 3D — ⚡ СУПЕР АПДЕЙТ v3.1 «ЖИВОЙ ГОРОД»</div>
+    <div class="cl-version">FANTAZIA RP 3D — ⚡ СУПЕР АПДЕЙТ v3.2 «ДИСЦИПЛИНА НА ДОРОГАХ»</div>
+    <div class="cl-section">
+      <div class="cl-section-title">🚀 ОБНОВЛЕНИЕ v3.2</div>
+      <div class="cl-item"><span class="cl-badge fix">FIX</span><b>🚗 Машины больше не таранят:</b> трафик тормозит перед другими машинами (едут колонной, не проходят сквозь друг друга) и <b>тормозят перед тобой</b> — загораются стоп-сигналы</div>
+      <div class="cl-item"><span class="cl-badge fix">FIX</span><b>🅿️ Трафик не заезжает на парковку:</b> восточный маршрут обрезан до парковки — машины больше не режут через припаркованные авто</div>
+      <div class="cl-item"><span class="cl-badge fix">FIX</span><b>Углы окружной замкнуты асфальтом:</b> 4 patch-квадрата с бордюром — машины не срезают газон на поворотах</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span><b>🚶 Пешеходы теперь ростом с тебя (1.8м):</b> стройные пропорции — длинные ноги, торс, причёски</div>
+    </div>
+    <div class="cl-section">
+      <div class="cl-section-title">✨ v3.1 «ЖИВОЙ ГОРОД»</div>
     <div class="cl-section">
       <div class="cl-section-title">🚀 ОБНОВЛЕНИЕ v3.1</div>
       <div class="cl-item"><span class="cl-badge new">NEW</span><b>🚗 Живой трафик:</b> 10 машин ездят по РЕАЛЬНЫм дорогам (петля по поясу + оси + ±60), крутят колёса, ночью включают фары и стоп-сигналы</div>
