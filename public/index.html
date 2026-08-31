@@ -54,7 +54,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Fantazia RP 3D · v3.5</title>
+<title>Fantazia RP 3D · v3.6</title>
 <!-- ===== PWA MANIFEST (встроенный) ===== -->
 <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22Fantazia+RP+3D%22%2C%22short_name%22%3A%22Fantazia%22%2C%22description%22%3A%22Fantazia+RP+3D+%E2%80%94+%D0%BC%D0%BE%D0%B1%D0%B8%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+3D+%D0%B8%D0%B3%D1%80%D0%B0%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22fullscreen%22%2C%22orientation%22%3A%22landscape%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%236c5ce7%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABJQTFRFAAAAbEjiqqr%2F6%2BXz1s77////aoCa9AAAAARdFJlcAMEBQYHCJ%2BZAAAAsklEQVR42u3BMQEAAADCoPVP7WsIoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAMBuAABHwAAAABJRU5ErkJggg%3D%3D%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
 <meta name="theme-color" content="#6c5ce7">
@@ -2781,7 +2781,7 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
   </div>
 </div>
 
-<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v3.5</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v3.5 — ИДЕАЛЬНЫЙ ГОРОД: АУДИТ + ЧИСТКА 🧹✨</div>
+<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v3.6</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v3.6 — ФИКС: ДОРОГИ НЕ ЗАЕЗЖАЮТ В ТЦ 🏬🛣</div>
 <script>setTimeout(function(){var t=document.getElementById('fzVerToast');if(t){t.style.transition='opacity 1s';t.style.opacity='0';setTimeout(function(){t.remove()},1100)}},6000)</script>
 
 <!-- ========== HUD ========== -->
@@ -3508,11 +3508,11 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
 </div>
 
 <!-- ========== СКРИПТЫ ========== -->
-<script src="/socket.io/socket.io.js?v=305"></script>
-<script src="assets/three.min.js?v=305"></script>
+<script src="/socket.io/socket.io.js?v=306"></script>
+<script src="assets/three.min.js?v=306"></script>
 <script>if (!window.THREE) document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\\/script>');</script>
 <!-- ===== НОВАЯ 3D-МОДЕЛЬ ИГРОКА (после Three.js!) ===== -->
-<script src="assets/fantazia-player.js?v=305"></script>
+<script src="assets/fantazia-player.js?v=306"></script>
 <script>
 /*!
  * ============================================================
@@ -5898,10 +5898,9 @@ function buildFantaziaCityV3() {
   // ── 11. ДВА ТЦ + дороги к ним ──
   createMallBuilding(235, 228, 85, 32, 55, '☀️ SUN MALL', 0xFFB300, -1);
   createMallBuilding(-235, -228, 95, 38, 58, '💎 MEGA PLAZA', 0x00E5FF, +1);
-  // V3.5: подъезды к ТЦ в едином стиле + СВЯЗКА с окружной (раньше висели в воздухе).
-  // Стыки без наложений (Z-fight) и с патчами на пересечениях
-  fzMkRoad(235, 195, 70, 10, 'z', [190]);     // SUN MALL: от окружной к ТЦ
-  fzMkRoad(-235, -195, 70, 10, 'z', [-190]);  // MEGA PLAZA
+  // V3.6: подъезды к ТЦ — ДО ВХОДА (SUN MALL: здание z 200.5..255.5 — дорога кончается на z=199!)
+  fzMkRoad(235, 180, 38, 10, 'z', [190]);     // SUN MALL: от окружной до входа
+  fzMkRoad(-235, -180, 38, 10, 'z', [-190]);  // MEGA PLAZA: до входа
   fzMkRoad(214.5, 190, 73, 10, 'x', [235]);   // связка юга: стык x=175 ↔ дорога x=235
   fzMkRoad(-214.5, -190, 73, 10, 'x', [-235]);
   fzMkRoad(175, 178, 34, 10, 'z', [190]);     // стык: окружная x=175 (до z=160) ↔ связка z=190
@@ -7353,6 +7352,8 @@ function buildFarNorthCity() {
   for (let i = 0; i < 20; i++) {
     const x = -175 + i*20;
     const z = 277 + (Math.random()-0.5)*10;
+    // V3.6: не строить в зоне ТЦ и их подъездов (SUN MALL x 192..278 / MEGA x -283..-187)
+    if (x > 185 || x < -185) continue;
     const h = 8 + Math.floor(Math.random()*40);
     const colors = [0x1b2631,0x154360,0x1a5276,0x1f618d];
     createBuilding(x, z, 12, h, 12, colors[i%4], '🏢 СЕВЕР-' + i, 'office');
@@ -19007,7 +19008,7 @@ function claimFPReward(r, isPlus, claimKey) {
   .fpp-row-label { font-size: 9px !important; }
 }
 </style>
-<script src="update_script.js?v=305"></script>
+<script src="update_script.js?v=306"></script>
 </body>
 
 <script>
@@ -19083,7 +19084,14 @@ window.addEventListener('DOMContentLoaded', function() {
 <div id="changelogModal style="position:fixed;inset:0;background:rgba(0,0,0,0.65);display:none;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(6px);">
   <div class="changelog-box">
     <h2>📋 Что нового</h2>
-    <div class="cl-version">FANTAZIA RP 3D — ⚡ v3.5 «ИДЕАЛЬНЫЙ ГОРОД»</div>
+    <div class="cl-version">FANTAZIA RP 3D — ⚡ v3.6</div>
+    <div class="cl-section">
+      <div class="cl-section-title">🚀 ОБНОВЛЕНИЕ v3.6</div>
+      <div class="cl-item"><span class="cl-badge fix">FIX</span><b>🏬 Дорога больше не заезжает В ТЦ:</b> подъезд к SUN MALL шёл на 29м ВНУТРЬ здания (до z=230 при здании от z=200) — теперь дорога заканчивается ровно у входа</div>
+      <div class="cl-item"><span class="cl-badge fix">FIX</span><b>🏠 Случайные дома у моллов убраны:</b> высотки «СЕВЕР» торчали впритык к SUN MALL и MEGA PLAZA — теперь не строятся в зонах ТЦ</div>
+    </div>
+    <div class="cl-section">
+      <div class="cl-section-title">✨ v3.5 «ИДЕАЛЬНЫЙ ГОРОД»</div>
     <div class="cl-section">
       <div class="cl-section-title">🧹 АУДИТ ГОРОДА v3.5</div>
       <div class="cl-item"><span class="cl-badge fix">FIX</span><b>🅿️ Парковка сдвинута с дороги:</b> асфальт и 2 машины стояли ПРЯМО на проезжей части x=60 — теперь парковка целиком восточнее, с новой разметкой</div>
