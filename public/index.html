@@ -21708,7 +21708,7 @@ document.addEventListener('selectstart', function(e) {
 
 <script id="fznext">
 // ═══════════════════════════════════════════════════════════════
-//  FZ-NEXT PACK — УПРАВЛЕНИЕ · NPC-ЛЮДИ · HP v2 · ОПТИМИЗАЦИЯ
+//  FZ-NEXT PACK — УПРАВЛЕНИЕ · NPC-ЛЮДИ v2 · HP v2 · ОПТИМИЗАЦИЯ
 //  [F3] тюнинг · [F7] клавиши · [F8] диагностика · ?fzdiag=1
 // ═══════════════════════════════════════════════════════════════
 
@@ -22482,15 +22482,18 @@ document.addEventListener('selectstart', function(e) {
 
   // ── создание одного NPC (тело игрока + перекраска) ──
   function npcBuild() {
-    const app = {
-      skinColor: SKINS[(Math.random() * SKINS.length) | 0],
-      hairColor: HAIRS[(Math.random() * HAIRS.length) | 0],
-      shirtColor: SHIRTS[(Math.random() * SHIRTS.length) | 0],
-      pantsColor: PANTS[(Math.random() * PANTS.length) | 0]
-    };
+    // V2: новый аватар-стиль (лицо, причёски, одежда, девушки) — h19.
+    // Фолбэк: старое тело игрока с перекраской.
     let g = null;
     try {
-      g = createCharacter(app, false); // ТА ЖЕ функция, что строит игрока
+      g = FZI.npcAvatar
+        ? FZI.npcAvatar({})
+        : createCharacter({
+            skinColor: SKINS[(Math.random() * SKINS.length) | 0],
+            hairColor: HAIRS[(Math.random() * HAIRS.length) | 0],
+            shirtColor: SHIRTS[(Math.random() * SHIRTS.length) | 0],
+            pantsColor: PANTS[(Math.random() * PANTS.length) | 0]
+          }, false);
     } catch (e) { return null; }
     if (!g) return null;
 
@@ -23759,7 +23762,7 @@ document.addEventListener('selectstart', function(e) {
     );
     neck.position.y = 0.35;
     g.add(neck);
-    g.position.set(0.25, 1.5, 0.3);
+    g.position.set(0.25, 1.5, 0.46);
     g.rotation.x = 0.4;
     npc.g.add(g);
     npc.guitar = g;
@@ -24780,6 +24783,10 @@ document.addEventListener('selectstart', function(e) {
       mesh.position.y = 0.36;
       npc.ud.head.add(mesh);
       ACC.stats.hats++;
+      // шапка заменяет причёску
+      if (npc.ud.hairMeshes) {
+        npc.ud.hairMeshes.forEach(function (hm) { hm.visible = false; });
+      }
     }
   }
 
@@ -24985,6 +24992,328 @@ document.addEventListener('selectstart', function(e) {
   }, 6000);
 })();
 
+// ═══════════ FZ-NEXT ЧАСТЬ 19 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  NPC-АВАТАР v2: новое тело жителей — лицо с глазами и улыбкой,
+//  причёски (6 стилей), двухцветная одежда, рукава, обувь,
+//  девушки с юбками и длинными волосами. Скелет совместим со
+//  старой моделью (плечи/локти/бёдра/колени) — вся анимация жива.
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  if (!FZI) return;
+
+  // ── лицо: канвас-текстура (прозрачный фон, черты поверх кожи) ──
+  const faceCache = {};
+  function faceTexture(skinHex, mood) {
+    const key = skinHex + '|' + mood;
+    if (faceCache[key]) return faceCache[key];
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = 128;
+    const q = cv.getContext('2d');
+    // глаза
+    q.fillStyle = '#1c1c24';
+    const eye = function (x, w, h) {
+      q.beginPath();
+      q.ellipse(x, 56, w, h, 0, 0, Math.PI * 2);
+      q.fill();
+      // блик
+      q.fillStyle = '#ffffff';
+      q.beginPath();
+      q.ellipse(x + w * 0.3, 56 - h * 0.3, w * 0.28, h * 0.28, 0, 0, Math.PI * 2);
+      q.fill();
+      q.fillStyle = '#1c1c24';
+    };
+    eye(42, 8, 11);
+    eye(86, 8, 11);
+    // брови
+    q.strokeStyle = 'rgba(30,24,20,.75)';
+    q.lineWidth = 5;
+    q.lineCap = 'round';
+    q.beginPath(); q.moveTo(30, 36); q.lineTo(52, mood === 'angry' ? 42 : 34); q.stroke();
+    q.beginPath(); q.moveTo(98, 36); q.lineTo(76, mood === 'angry' ? 42 : 34); q.stroke();
+    // рот
+    q.strokeStyle = 'rgba(120,40,40,.85)';
+    q.lineWidth = 6;
+    q.beginPath();
+    if (mood === 'sad') {
+      q.arc(64, 96, 14, Math.PI * 1.15, Math.PI * 1.85);
+    } else if (mood === 'serious') {
+      q.moveTo(50, 90); q.lineTo(78, 90);
+    } else if (mood === 'wow') {
+      q.arc(64, 92, 9, 0, Math.PI * 2);
+      q.fillStyle = 'rgba(120,40,40,.85)'; q.fill();
+    } else { // smile / default
+      q.arc(64, 78, 16, Math.PI * 0.15, Math.PI * 0.85);
+    }
+    q.stroke();
+    // румянец у «smile»
+    if (mood === 'smile') {
+      q.fillStyle = 'rgba(230,120,110,.18)';
+      q.beginPath(); q.arc(28, 74, 9, 0, Math.PI * 2); q.fill();
+      q.beginPath(); q.arc(100, 74, 9, 0, Math.PI * 2); q.fill();
+    }
+    const tex = new THREE.CanvasTexture(cv);
+    tex.needsUpdate = true;
+    faceCache[key] = tex;
+    return tex;
+  }
+
+  // ── палитры нового стиля (естественные города, не неон) ──
+  const P = {
+    skins: ['#FFD1A4', '#F2C79B', '#E3B084', '#C98E5F', '#A96E3F', '#7C4A26', '#5A351C'],
+    hairs: ['#231a12', '#3c2a18', '#5a3c22', '#7a5a34', '#9d7b4a', '#c9a96a',
+            '#1a1a22', '#4a4a52', '#7b3a44', '#3a4a5a', '#6a3a5a'],
+    shirts: ['#3a6ea5', '#a5443a', '#3f8f5f', '#c9a227', '#7a5fa8', '#2f8f8f',
+             '#b56a2f', '#a83a6a', '#4a7fa8', '#6f8f3f', '#c95a2f', '#5f6a72',
+             '#8f5f9d', '#a8b02f', '#d97f2f', '#6a4a3a', '#3f518f', '#84a86a'],
+    jackets: ['#2c3e50', '#4a3b2a', '#37474f', '#5d4037', '#263238',
+              '#4e342e', '#1b2631', '#3e2723'],
+    skirts: ['#8f3a4a', '#3a4a6a', '#5a3a6a', '#2f5f4f', '#6a5a2f', '#4a4a4a'],
+    shoes: ['#26221e', '#3a2e24', '#1e242c', '#4a423a'],
+    pants: ['#2C3E50', '#34495E', '#4A4A4A', '#1B2631', '#5D4037',
+            '#263238', '#37474F', '#3E2723', '#212121', '#455A64']
+  };
+  FZI.npcPalettes = P;
+
+  const MOODS = ['smile', 'smile', 'smile', 'default', 'serious', 'wow'];
+
+  // ═══ СБОРКА АВАТАРА ═══
+  // app: {skinColor, hairColor, shirtColor, pantsColor} — как раньше,
+  // плюс опционально gender/hairStyle/mood
+  FZI.npcAvatar = function (app) {
+    app = app || {};
+    const rnd = function (arr) { return arr[(Math.random() * arr.length) | 0]; };
+    const gender = app.gender || (Math.random() < 0.5 ? 'm' : 'f');
+    const skin = app.skinColor || rnd(P.skins);
+    const hairC = app.hairColor || rnd(P.hairs);
+    const shirt = app.shirtColor || rnd(P.shirts);
+    const pants = app.pantsColor || rnd(P.pants);
+    const jacket = rnd(P.jackets);
+    const skirtC = rnd(P.skirts);
+    const shoeC = rnd(P.shoes);
+    const mood = app.mood || rnd(MOODS);
+    const hairStyle = app.hairStyle != null
+      ? app.hairStyle : (gender === 'f'
+        ? (Math.random() < 0.5 ? 3 : 4)
+        : (Math.random() * 3) | 0);
+
+    const skinMat = new THREE.MeshLambertMaterial({ color: new THREE.Color(skin) });
+    const shirtMat = new THREE.MeshLambertMaterial({ color: new THREE.Color(shirt) });
+    const pantsMat = new THREE.MeshLambertMaterial({ color: new THREE.Color(pants) });
+    const hairMat = new THREE.MeshLambertMaterial({ color: new THREE.Color(hairC) });
+    const jacketMat = new THREE.MeshLambertMaterial({ color: new THREE.Color(jacket) });
+    const shoeMat = new THREE.MeshLambertMaterial({ color: new THREE.Color(shoeC) });
+
+    const group = new THREE.Group();
+    const ud = group.userData;
+
+    // ── торс (та же геометрия, что у игрока — совместимость) ──
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1, 1.2, 0.6), shirtMat);
+    body.position.y = 1.4;
+    body.castShadow = true;
+    group.add(body);
+    ud.body = body;
+
+    if (gender === 'f') {
+      body.scale.x = 0.92;
+    }
+
+    // нагрудная панель-«куртка» (двухцветность)
+    const hasJacket = Math.random() < 0.45;
+    if (hasJacket) {
+      const panel = new THREE.Mesh(
+        new THREE.BoxGeometry(gender === 'f' ? 0.56 : 0.66, 1.06, 0.03), jacketMat);
+      panel.position.set(0, 0.03, 0.305);
+      body.add(panel);
+      // воротник
+      const collar = new THREE.Mesh(
+        new THREE.BoxGeometry(gender === 'f' ? 0.5 : 0.6, 0.14, 0.05), jacketMat);
+      collar.position.set(0, 0.56, 0.12);
+      body.add(collar);
+    }
+    // ремень
+    const belt = new THREE.Mesh(
+      new THREE.BoxGeometry(gender === 'f' ? 0.98 : 1.04, 0.12, 0.64),
+      new THREE.MeshLambertMaterial({ color: 0x2a2018 }));
+    belt.position.y = -0.52;
+    body.add(belt);
+    // пряжка
+    const buckle = new THREE.Mesh(
+      new THREE.BoxGeometry(0.12, 0.08, 0.02),
+      new THREE.MeshLambertMaterial({ color: 0xc9b24a }));
+    buckle.position.set(0, -0.52, 0.33);
+    body.add(buckle);
+
+    // ── юбка (девушки) ──
+    if (gender === 'f') {
+      const skirtMatL = new THREE.MeshLambertMaterial({ color: new THREE.Color(skirtC) });
+      const skirt = new THREE.Mesh(
+        new THREE.BoxGeometry(0.86, 0.42, 0.58), skirtMatL);
+      skirt.position.y = 0.66;
+      group.add(skirt);
+      const hem = new THREE.Mesh(
+        new THREE.BoxGeometry(0.98, 0.12, 0.68), skirtMatL);
+      hem.position.y = 0.44;
+      group.add(hem);
+    }
+
+    // ── голова + ЛИЦО-текстура ──
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.7), skinMat);
+    head.position.y = 2.35;
+    head.castShadow = true;
+    group.add(head);
+    ud.head = head;
+
+    const face = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.66, 0.66),
+      new THREE.MeshBasicMaterial({
+        map: faceTexture(skin, mood), transparent: true, depthWrite: false
+      }));
+    face.position.z = 0.352;
+    head.add(face);
+    ud.face = face;
+
+    // ── ПРИЧЁСКИ (6 стилей; hairMeshes прячутся под шапкой) ──
+    const hairMeshes = [];
+    function addHair(mesh) {
+      mesh.castShadow = true;
+      group.add(mesh);
+      hairMeshes.push(mesh);
+    }
+    if (hairStyle === 0) {
+      // короткая: шапка волос + чёлка
+      const top = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.22, 0.76), hairMat);
+      top.position.y = 2.72;
+      addHair(top);
+      const fringe = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.16, 0.08), hairMat);
+      fringe.position.set(0, 2.58, 0.34);
+      addHair(fringe);
+    } else if (hairStyle === 1) {
+      // ёжик: шапка + 3 торчка
+      const top = new THREE.Mesh(new THREE.BoxGeometry(0.74, 0.16, 0.74), hairMat);
+      top.position.y = 2.7;
+      addHair(top);
+      for (let i = 0; i < 3; i++) {
+        const sp = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.26, 0.12), hairMat);
+        sp.position.set(-0.2 + i * 0.2, 2.86, (i % 2 ? 0.12 : -0.08));
+        sp.rotation.z = (i - 1) * 0.3;
+        addHair(sp);
+      }
+    } else if (hairStyle === 2) {
+      // платформа-флэттоп
+      const top = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.34, 0.72), hairMat);
+      top.position.y = 2.78;
+      addHair(top);
+    } else if (hairStyle === 3) {
+      // длинные: шапка + заднее полотно + пряди
+      const top = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.2, 0.76), hairMat);
+      top.position.y = 2.72;
+      addHair(top);
+      const back = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.95, 0.14), hairMat);
+      back.position.set(0, 2.2, -0.32);
+      addHair(back);
+      [-0.34, 0.34].forEach(function (x) {
+        const strand = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.8, 0.14), hairMat);
+        strand.position.set(x, 2.25, 0.28);
+        addHair(strand);
+      });
+      const fringe = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.18, 0.08), hairMat);
+      fringe.position.set(0, 2.56, 0.34);
+      addHair(fringe);
+    } else if (hairStyle === 4) {
+      // хвост: шапка + цилиндр-хвост сзади
+      const top = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.2, 0.76), hairMat);
+      top.position.y = 2.72;
+      addHair(top);
+      const tail = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.09, 0.13, 0.75, 6), hairMat);
+      tail.position.set(0, 2.28, -0.4);
+      tail.rotation.x = 0.35;
+      addHair(tail);
+      const fringe = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.16, 0.08), hairMat);
+      fringe.position.set(0, 2.57, 0.34);
+      addHair(fringe);
+    } else {
+      // лысо/бритая (стиль 5): тонкая кепка волос
+      const buzz = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.08, 0.72), hairMat);
+      buzz.position.y = 2.68;
+      addHair(buzz);
+    }
+    ud.hairMeshes = hairMeshes;
+    ud.hair = hairMeshes[0] || null; // совместимость со старым полем
+
+    // ── руки: плечо (рукав) + предплечье (кожа) ──
+    const sleeveGeo = new THREE.BoxGeometry(0.32, 0.55, 0.32);
+    sleeveGeo.translate(0, -0.275, 0);
+    const foreGeo = new THREE.BoxGeometry(0.27, 0.5, 0.27);
+    foreGeo.translate(0, -0.25, 0);
+
+    function buildArm(side) {
+      const upper = new THREE.Mesh(sleeveGeo, hasJacket ? jacketMat : shirtMat);
+      upper.position.set(side * 0.65, 1.95, 0);
+      upper.castShadow = true;
+      group.add(upper);
+      const fore = new THREE.Mesh(foreGeo, skinMat);
+      fore.position.y = -0.55;
+      fore.castShadow = true;
+      upper.add(fore);
+      // кисть чуть шире предплечья
+      const hand = new THREE.Mesh(
+        new THREE.BoxGeometry(0.29, 0.16, 0.29), skinMat);
+      hand.position.y = -0.44;
+      fore.add(hand);
+      return upper;
+    }
+    ud.leftArm = buildArm(-1);
+    ud.rightArm = buildArm(1);
+
+    // ── ноги: бедро (штаны) + голень + ОБУВЬ ──
+    const thighGeo = new THREE.BoxGeometry(gender === 'f' ? 0.3 : 0.35, 0.55, gender === 'f' ? 0.3 : 0.35);
+    thighGeo.translate(0, -0.275, 0);
+    const shinGeo = new THREE.BoxGeometry(gender === 'f' ? 0.29 : 0.34, 0.5, gender === 'f' ? 0.29 : 0.34);
+    shinGeo.translate(0, -0.25, 0);
+
+    function buildLeg(side) {
+      const thigh = new THREE.Mesh(thighGeo, gender === 'f' ? skinMat : pantsMat);
+      thigh.position.set(side * 0.22, 1.05, 0);
+      thigh.castShadow = true;
+      group.add(thigh);
+      const shin = new THREE.Mesh(shinGeo, gender === 'f' ? skinMat : pantsMat);
+      shin.position.y = -0.55;
+      shin.castShadow = true;
+      thigh.add(shin);
+      // обувь
+      const shoe = new THREE.Mesh(
+        new THREE.BoxGeometry(gender === 'f' ? 0.31 : 0.36, 0.16, 0.44), shoeMat);
+      shoe.position.set(0, -0.46, 0.05);
+      shin.add(shoe);
+      // девушки: носочки
+      if (gender === 'f') {
+        const sock = new THREE.Mesh(
+          new THREE.BoxGeometry(0.3, 0.14, 0.3),
+          new THREE.MeshLambertMaterial({ color: 0xe8e4da }));
+        sock.position.y = -0.32;
+        shin.add(sock);
+      }
+      return thigh;
+    }
+    ud.leftLeg = buildLeg(-1);
+    ud.rightLeg = buildLeg(1);
+
+    // совместимость: «колени/локти» для буд. анимаций
+    ud.leftForearm = ud.leftArm.children[0];
+    ud.rightForearm = ud.rightArm.children[0];
+    ud.leftShin = ud.leftLeg.children[0];
+    ud.rightShin = ud.rightLeg.children[0];
+
+    ud.gender = gender;
+    ud.mood = mood;
+    ud.hairStyle = hairStyle;
+    return group;
+  };
+})();
 
 // ═══════════════════════════════════════════════════════════════════
 //  ФИНАЛИЗАТОР: подтверждение сборки (маркер для диагностики)
@@ -24993,8 +25322,9 @@ document.addEventListener('selectstart', function(e) {
   'use strict';
   window.FZ_PACKS = {
     gfx: 'v1.0 — погода/небо/пост/анимации',
-    next: 'v1.0 — геймпад/мобилка/NPC/HP-v2/оптимизация',
+    next: 'v1.1 — геймпад/мобилка/NPC-аватар v2/HP-v2/оптимизация',
     at: new Date().toISOString()
   };
 })();
+
 </script>
