@@ -54,7 +54,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Fantazia RP 3D · v3.6</title>
+<title>Fantazia RP 3D · v3.7</title>
 <!-- ===== PWA MANIFEST (встроенный) ===== -->
 <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22Fantazia+RP+3D%22%2C%22short_name%22%3A%22Fantazia%22%2C%22description%22%3A%22Fantazia+RP+3D+%E2%80%94+%D0%BC%D0%BE%D0%B1%D0%B8%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+3D+%D0%B8%D0%B3%D1%80%D0%B0%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22fullscreen%22%2C%22orientation%22%3A%22landscape%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%236c5ce7%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABJQTFRFAAAAbEjiqqr%2F6%2BXz1s77////aoCa9AAAAARdFJlcAMEBQYHCJ%2BZAAAAsklEQVR42u3BMQEAAADCoPVP7WsIoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAMBuAABHwAAAABJRU5ErkJggg%3D%3D%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
 <meta name="theme-color" content="#6c5ce7">
@@ -2162,8 +2162,21 @@ button:active { transform: scale(.95); }
   background: var(--fz-glass); border: 1px solid rgba(255,215,120,.5); border-radius: 10px;
   color: #ffe9b8; font: bold 12px/1 monospace; padding: 6px 10px;
   backdrop-filter: blur(10px); box-shadow: 0 4px 14px rgba(0,0,0,.4);
-  text-shadow: 0 0 8px rgba(255,200,100,.4); pointer-events: none;
+  text-shadow: 0 0 8px rgba(255,200,100,.4);
+  pointer-events: auto; cursor: pointer;
 }
+#fzQuestChip:hover { border-color: #ffd700; box-shadow: 0 0 18px rgba(255,200,80,.35); }
+.fzCineBar { position: fixed; left: 0; right: 0; height: 11vh; background: #000; z-index: 940; transition: transform .6s ease; pointer-events: none; }
+#fzCineTop { top: 0; transform: translateY(-100%); }
+#fzCineBot { bottom: 0; transform: translateY(100%); }
+#fzCineTop.on, #fzCineBot.on { transform: none; }
+#fzCineCaption {
+  position: fixed; bottom: 14vh; left: 50%; transform: translateX(-50%);
+  z-index: 941; color: #ffd9d9; font: 800 20px/1.3 'Segoe UI',sans-serif; letter-spacing: 2px;
+  text-shadow: 0 0 18px rgba(255,60,60,.8), 0 2px 6px #000; text-align: center;
+  opacity: 0; transition: opacity .5s; pointer-events: none; white-space: nowrap;
+}
+#fzCineCaption.on { opacity: 1; }
 #noteModal {
   position: fixed; inset: 0; z-index: 950; display: none;
   align-items: center; justify-content: center; background: rgba(5,6,10,.7);
@@ -2781,7 +2794,7 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
   </div>
 </div>
 
-<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v3.6</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v3.6 — ФИКС: ДОРОГИ НЕ ЗАЕЗЖАЮТ В ТЦ 🏬🛣</div>
+<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v3.7</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v3.7 — ТИЗЕР «ТЕНЬ ПАРКА» 🎬👁</div>
 <script>setTimeout(function(){var t=document.getElementById('fzVerToast');if(t){t.style.transition='opacity 1s';t.style.opacity='0';setTimeout(function(){t.remove()},1100)}},6000)</script>
 
 <!-- ========== HUD ========== -->
@@ -3508,11 +3521,11 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
 </div>
 
 <!-- ========== СКРИПТЫ ========== -->
-<script src="/socket.io/socket.io.js?v=306"></script>
-<script src="assets/three.min.js?v=306"></script>
+<script src="/socket.io/socket.io.js?v=307"></script>
+<script src="assets/three.min.js?v=307"></script>
 <script>if (!window.THREE) document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\\/script>');</script>
 <!-- ===== НОВАЯ 3D-МОДЕЛЬ ИГРОКА (после Three.js!) ===== -->
-<script src="assets/fantazia-player.js?v=306"></script>
+<script src="assets/fantazia-player.js?v=307"></script>
 <script>
 /*!
  * ============================================================
@@ -12895,6 +12908,7 @@ function fzPickNote(inter) {
     setTimeout(() => showNotification('🪓 Ищи ТОПОР на 3 этаже GRAND MALL', 'success'), 1400);
   } else if (n === 1) {
     setTimeout(() => showNotification('🎯 КВЕСТ: собери все 6 записок', 'info'), 1400);
+    setTimeout(() => showNotification('🎬 Кликни по чипу 📜 — посмотри ТИЗЕР', 'info'), 3200);
   }
   fzQuestChipUpdate();
 }
@@ -13382,6 +13396,178 @@ function fzOrbeAnim(t) {
   } else if (window._fzOrbeSparks) {
     window._fzOrbeSparks.forEach(sp => scene.remove(sp));
     window._fzOrbeSparks = null;
+  }
+}
+
+// ═══ V3.7: ТИЗЕР-СИНЕМАТИК «ТЕНЬ ПАРКА ФАНТАЗИИ» ═══
+window.fzTEASER = null;
+const FZ_TEASER_POS = { x: 0, z: -600 }; // скрытая комната далеко в море
+
+function fzPlayTeaser() {
+  if (window.fzTEASER && window.fzTEASER.active) return;
+  if (window.FZ_QUEST.bossDead) { showNotification('🎬 Зло уже побеждено — тизер не актуален', 'info'); return; }
+  if (isInsideBuilding) { showNotification('🎬 Выйди на улицу, чтобы посмотреть тизер', 'error'); return; }
+  document.exitPointerLock && document.exitPointerLock();
+  // построить комнату (один раз, переиспользуем)
+  if (!window._fzTeaserRoom) fzBuildTeaserRoom();
+  window._fzTeaserRoom.visible = true;
+  window._fzTeaserState.boss.rotation.y = Math.PI; // спиной к камере
+  window._fzTeaserState.eyes.forEach(e => { e.material.emissiveIntensity = 0; });
+  window._fzTeaserState.eyeLight.intensity = 0;
+  window.fzTEASER = {
+    active: true, t: 0, shake: 0,
+    camPos: new THREE.Vector3(), look: new THREE.Vector3(),
+    savedFog: scene.fog, savedBg: scene.background
+  };
+  scene.fog = new THREE.Fog(0x050508, 2, 34);
+  scene.background = new THREE.Color(0x050508);
+  document.getElementById('fzCineTop').classList.add('on');
+  document.getElementById('fzCineBot').classList.add('on');
+  fzSfx(42, 2.4, 'sine', 0.22); // низкий гул
+}
+
+function fzBuildTeaserRoom() {
+  const { x: TX, z: TZ } = FZ_TEASER_POS;
+  const g = new THREE.Group();
+  const mat = (c2, em, ei) => new THREE.MeshLambertMaterial({ color: c2, emissive: em || 0, emissiveIntensity: ei || 0 });
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(34, 34), mat(0x14121a));
+  fl.rotation.x = -Math.PI / 2; fl.position.set(TX, 0.02, TZ); g.add(fl);
+  const circle = new THREE.Mesh(new THREE.RingGeometry(3.4, 3.7, 40), mat(0x6b1010, 0xff2d2d, 0.4));
+  circle.rotation.x = -Math.PI / 2; circle.position.set(TX, 0.035, TZ); g.add(circle);
+  [[0,-17,0],[0,17,Math.PI],[-17,0,Math.PI/2],[17,0,-Math.PI/2]].forEach(([wx,wz,ry]) => {
+    const w2 = new THREE.Mesh(new THREE.PlaneGeometry(34, 6), mat(0x191622));
+    w2.position.set(TX+wx, 3, TZ+wz); w2.rotation.y = ry; g.add(w2);
+  });
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(34, 34), mat(0x0c0a12));
+  ceil.rotation.x = Math.PI/2; ceil.position.set(TX, 6, TZ); g.add(ceil);
+  const st = { eyes: [], boss: null, eyeLight: null };
+  for (let k = 0; k < 8; k++) {
+    const a = k / 8 * Math.PI * 2 + Math.PI / 8;
+    const cx2 = Math.cos(a) * 11, cz2 = Math.sin(a) * 11;
+    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 6, 10), mat(0x231e30));
+    col.position.set(TX + cx2, 3, TZ + cz2); g.add(col);
+    const sh = new THREE.Mesh(new THREE.ConeGeometry(0.5, 0.45, 10, 1, true),
+      new THREE.MeshLambertMaterial({ color: 0x2a2438, emissive: 0x8a7a50, emissiveIntensity: 0.18, side: THREE.DoubleSide }));
+    sh.position.set(TX + cx2, 4.6, TZ + cz2); g.add(sh);
+    const pl = new THREE.PointLight(0x9a8a60, 0.35, 12);
+    pl.position.set(TX + cx2, 4.2, TZ + cz2); g.add(pl);
+  }
+  // босс (спиной)
+  const b = new THREE.Group();
+  const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 1.25, 2.4, 12), mat(0x0d0a14, 0x300818, 0.25));
+  robe.position.y = 1.2; b.add(robe);
+  const shoulders = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.35, 0.7), mat(0x120e1c));
+  shoulders.position.y = 2.35; b.add(shoulders);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.33, 12, 10), mat(0x8a8f98));
+  head.position.y = 2.72; b.add(head);
+  const hatBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.05, 12), mat(0x0a0a10));
+  hatBrim.position.y = 2.95; b.add(hatBrim);
+  const hatTop = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.34, 0.55, 12), mat(0x0a0a10));
+  hatTop.position.y = 3.25; b.add(hatTop);
+  [-0.13, 0.13].forEach(ex => {
+    const e = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 8),
+      new THREE.MeshLambertMaterial({ color: 0x1a1a1a, emissive: 0xffffff, emissiveIntensity: 0 }));
+    e.position.set(ex, 2.76, 0.28); b.add(e); st.eyes.push(e);
+  });
+  [-1, 1].forEach(sx => {
+    const claw = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.8, 6), mat(0x1c1626, 0x501020, 0.4));
+    claw.position.set(sx * 1.05, 1.7, 0.35); claw.rotation.x = 1.2; b.add(claw);
+  });
+  const eyeLight = new THREE.PointLight(0xff5050, 0, 12);
+  eyeLight.position.set(0, 2.76, 0.5); b.add(eyeLight);
+  st.eyeLight = eyeLight;
+  const aura = new THREE.PointLight(0xff2040, 0.55, 10);
+  aura.position.y = 2; b.add(aura);
+  b.position.set(TX, 0, TZ);
+  b.rotation.y = Math.PI;
+  g.add(b);
+  st.boss = b;
+  scene.add(g);
+  g.visible = false;
+  window._fzTeaserRoom = g;
+  window._fzTeaserState = st;
+}
+
+function fzCineCaption(text) {
+  const el = document.getElementById('fzCineCaption');
+  if (!text) { el.classList.remove('on'); return; }
+  el.innerHTML = text;
+  el.classList.add('on');
+}
+
+function fzTeaserEnd() {
+  const T = window.fzTEASER;
+  if (!T) return;
+  if (window._fzTeaserRoom) window._fzTeaserRoom.visible = false;
+  scene.fog = T.savedFog;
+  scene.background = T.savedBg;
+  document.getElementById('fzCineTop').classList.remove('on');
+  document.getElementById('fzCineBot').classList.remove('on');
+  fzCineCaption(null);
+  window.fzTEASER = null;
+}
+
+function fzTeaserAnim(dt) {
+  const T = window.fzTEASER;
+  if (!T || !T.active) return;
+  T.t += dt;
+  const t = T.t;
+  const { x: TX, z: TZ } = FZ_TEASER_POS;
+  const st = window._fzTeaserState;
+  const ease = (a, b, t0, t1) => { const k = Math.max(0, Math.min(1, (t - t0) / (t1 - t0))); return a + (b - a) * (k * k * (3 - 2 * k)); };
+
+  // ── камера: пролёт через комнату ──
+  const cx = ease(9, 0.6, 0, 6.2);
+  const cy = ease(5.2, 1.9, 0, 6.2);
+  const cz = ease(15.5, 6.8, 0, 6.2);
+  T.camPos.set(TX + cx, cy, TZ + cz);
+  T.look.set(TX, 2.5, TZ);
+
+  // лёгкое дыхание камеры
+  T.camPos.y += Math.sin(t * 1.7) * 0.07;
+  T.camPos.x += Math.sin(t * 1.1) * 0.05;
+
+  // босс медленно «дышит»
+  st.boss.position.y = Math.sin(t * 2.2) * 0.06;
+
+  // ── 3.2с: босс начинает поворачиваться ──
+  if (t > 3.2) {
+    const k = Math.max(0, Math.min(1, (t - 3.2) / 1.15));
+    const e = k * k; // резко в конце
+    st.boss.rotation.y = Math.PI - e * Math.PI;
+  }
+  // ── 4.35с: ВСПЫШКА ГЛАЗ ──
+  if (t >= 4.35 && !T.flashed) {
+    T.flashed = true;
+    st.eyes.forEach(e2 => { e2.material.emissiveIntensity = 2.6; });
+    st.eyeLight.intensity = 3.2;
+    T.shake = 0.55;
+    fzSfxChord([92, 138, 184], 1.1);
+    setTimeout(() => fzSfx(1800, 0.2, 'sine', 0.12), 90);
+    const flash = document.getElementById('fzFlash');
+    flash.style.opacity = 0.8;
+    setTimeout(() => flash.style.opacity = 0, 150);
+    fzCineCaption('⋮ ОНО ЖДЁТ ТЕБЯ ПОД GRAND MALL');
+  }
+  if (T.flashed) {
+    st.eyes.forEach(e2 => { e2.material.emissiveIntensity = 2.2 + Math.sin(t * 14) * 0.4; });
+    st.eyeLight.intensity = 2.6 + Math.sin(t * 14) * 0.6;
+  }
+  // тряска камеры
+  if (T.shake > 0) {
+    T.shake = Math.max(0, T.shake - dt);
+    T.camPos.x += (Math.random() - 0.5) * T.shake * 0.5;
+    T.camPos.y += (Math.random() - 0.5) * T.shake * 0.4;
+  }
+
+  // титр в начале
+  if (t > 0.4 && t < 3.1 && !T.cap1) { T.cap1 = true; fzCineCaption('🎬 ТЕНЬ ПАРКА ФАНТАЗИИ'); }
+  if (t >= 3.1 && !T.capOff) { T.capOff = true; fzCineCaption(null); }
+
+  // ── 8.2с: конец ──
+  if (t > 8.2) {
+    fzTeaserEnd();
+    showNotification('🎬 Тизер: собери 6 записок и спустись под GRAND MALL...', 'info');
   }
 }
 
@@ -15911,7 +16097,7 @@ function animate(timestamp) {
   if (sittingOn && (keys['KeyW'] || keys['KeyA'] || keys['KeyS'] || keys['KeyD'] || keys['Space'])) {
     standUpFromSeat();
   }
-  if ((isPointerLocked || window.mobileReady || window.fzControlsReady || (localPlayer && localPlayer.isOffline)) && !currentDance && !sittingOn && !escalatorRide.active && !elevatorAnim.active) {
+  if ((isPointerLocked || window.mobileReady || window.fzControlsReady || (localPlayer && localPlayer.isOffline)) && !currentDance && !sittingOn && !escalatorRide.active && !elevatorAnim.active && !(window.fzTEASER && window.fzTEASER.active)) {
     const isSprint = keys['ShiftLeft'] || keys['ShiftRight'] || mobileSprintOn;
     const speed = isSprint ? CONFIG.SPRINT_SPEED : CONFIG.MOVE_SPEED;
 
@@ -16032,6 +16218,12 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
     camera.lookAt(mesh.position.x, mesh.position.y + (mesh.userData.model ? 1.75 : 1.5), mesh.position.z);
   }
 
+  // --- V3.7: перехват камеры на время тизера ---
+  if (window.fzTEASER && window.fzTEASER.active) {
+    camera.position.copy(window.fzTEASER.camPos);
+    camera.lookAt(window.fzTEASER.look);
+  }
+
   // --- Удалённые игроки: интерполяция ---
   Object.values(remotePlayers).forEach(rp => {
     if (!rp.mesh || !rp.targetPos) return;
@@ -16114,6 +16306,7 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
   fzQuestNotesAnim(animationTime);
   fzBossAnim(delta, animationTime);
   fzOrbeAnim(animationTime);
+  fzTeaserAnim(delta);
   fzChipsTick();
   updateNPCs(delta);
   // Jason Day eggs
@@ -19007,7 +19200,7 @@ function claimFPReward(r, isPlus, claimKey) {
   .fpp-row-label { font-size: 9px !important; }
 }
 </style>
-<script src="update_script.js?v=306"></script>
+<script src="update_script.js?v=307"></script>
 </body>
 
 <script>
@@ -19067,7 +19260,7 @@ window.addEventListener('DOMContentLoaded', function() {
 </html>
 
 <!-- ========== CHANGELOG MODAL ========== -->
-<div id="fzQuestChip" style="display:none">📜 Записки: 0/6</div>
+<div id="fzQuestChip" style="display:none" onclick="fzPlayTeaser()" title="Клик — тизер 🎬">📜 Записки: 0/6</div>
 <div id="noteModal" onclick="closeNoteModal(event)">
   <div class="nm-paper">
     <div class="nm-num" id="nmNum">стр. 1/6</div>
@@ -19075,6 +19268,10 @@ window.addEventListener('DOMContentLoaded', function() {
     <button class="nm-close" onclick="closeNoteModal()">Положить в карман</button>
   </div>
 </div>
+<div id="fzCineTop" class="fzCineBar"></div>
+<div id="fzCineBot" class="fzCineBar"></div>
+<div id="fzCineCaption"></div>
+
 <div id="bossBar"><div class="bb-name">♟ ХРАНИТЕЛЬ ПАРКА ФАНТАЗИИ</div><div class="bb-track"><div class="bb-fill" id="bossFill"></div></div></div>
 <div id="fzDialog"></div>
 <div id="fzFlash"></div>
@@ -19083,7 +19280,13 @@ window.addEventListener('DOMContentLoaded', function() {
 <div id="changelogModal style="position:fixed;inset:0;background:rgba(0,0,0,0.65);display:none;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(6px);">
   <div class="changelog-box">
     <h2>📋 Что нового</h2>
-    <div class="cl-version">FANTAZIA RP 3D — ⚡ v3.6</div>
+    <div class="cl-version">FANTAZIA RP 3D — ⚡ v3.7</div>
+    <div class="cl-section">
+      <div class="cl-section-title">🎬 ОБНОВЛЕНИЕ v3.7</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span><b>🎬 ТИЗЕР-СИНЕМАТИК:</b> кликни по чипу 📜 — кино-полосы, камера медленно летит через тёмный подвал к Хранителю... он резко ПОВОРАЧИВАЕТСЯ, его ГЛАЗА ВСПЫХИВАЮТ белым, тряска камеры и надпись «ОНО ЖДЁТ ТЕБЯ ПОД GRAND MALL»</div>
+    </div>
+    <div class="cl-section">
+      <div class="cl-section-title">✨ v3.6</div>
     <div class="cl-section">
       <div class="cl-section-title">🚀 ОБНОВЛЕНИЕ v3.6</div>
       <div class="cl-item"><span class="cl-badge fix">FIX</span><b>🏬 Дорога больше не заезжает В ТЦ:</b> подъезд к SUN MALL шёл на 29м ВНУТРЬ здания (до z=230 при здании от z=200) — теперь дорога заканчивается ровно у входа</div>
