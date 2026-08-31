@@ -54,7 +54,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Fantazia RP 3D · v3.7</title>
+<title>Fantazia RP 3D · v3.8</title>
 <!-- ===== PWA MANIFEST (встроенный) ===== -->
 <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22Fantazia+RP+3D%22%2C%22short_name%22%3A%22Fantazia%22%2C%22description%22%3A%22Fantazia+RP+3D+%E2%80%94+%D0%BC%D0%BE%D0%B1%D0%B8%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+3D+%D0%B8%D0%B3%D1%80%D0%B0%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22fullscreen%22%2C%22orientation%22%3A%22landscape%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%236c5ce7%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABJQTFRFAAAAbEjiqqr%2F6%2BXz1s77////aoCa9AAAAARdFJlcAMEBQYHCJ%2BZAAAAsklEQVR42u3BMQEAAADCoPVP7WsIoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAMBuAABHwAAAABJRU5ErkJggg%3D%3D%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
 <meta name="theme-color" content="#6c5ce7">
@@ -2794,7 +2794,7 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
   </div>
 </div>
 
-<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v3.7</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v3.7 — ТИЗЕР «ТЕНЬ ПАРКА» 🎬👁</div>
+<div style="position:fixed;left:8px;bottom:5px;z-index:99998;color:rgba(255,255,255,0.38);font:11px/1 monospace;pointer-events:none;text-shadow:0 1px 2px #000">FANTAZIA RP · v3.8</div><div id="fzVerToast" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(0,0,0,0.75);border:1px solid #4dff88;color:#4dff88;font:bold 15px/1.4 monospace;padding:10px 22px;border-radius:10px;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6)">СБОРКА v3.8 — ТЕНЬ И ГЛАЗА ☠👁🗺</div>
 <script>setTimeout(function(){var t=document.getElementById('fzVerToast');if(t){t.style.transition='opacity 1s';t.style.opacity='0';setTimeout(function(){t.remove()},1100)}},6000)</script>
 
 <!-- ========== HUD ========== -->
@@ -2951,7 +2951,7 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
   <div class="bm-box">
     <div class="bm-head"><span>🗺 Карта Fantazia</span><button class="bm-close" onclick="toggleBigMap(false)">✕</button></div>
     <canvas id="bigMapCanvas" width="640" height="640"></canvas>
-    <div class="bm-foot">Клик по карте — проложить GPS 🧭 · [M] закрыть · 🟢 ты · 🔵 игроки</div>
+    <div class="bm-foot">☠ босс под GRAND MALL (юго-восток) · 📜 записки · Клик — GPS 🧭 · [M] закрыть · 🟢 ты · 🔵 игроки</div>
   </div>
 </div>
 
@@ -3521,11 +3521,11 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
 </div>
 
 <!-- ========== СКРИПТЫ ========== -->
-<script src="/socket.io/socket.io.js?v=307"></script>
-<script src="assets/three.min.js?v=307"></script>
+<script src="/socket.io/socket.io.js?v=308"></script>
+<script src="assets/three.min.js?v=308"></script>
 <script>if (!window.THREE) document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\\/script>');</script>
 <!-- ===== НОВАЯ 3D-МОДЕЛЬ ИГРОКА (после Three.js!) ===== -->
-<script src="assets/fantazia-player.js?v=307"></script>
+<script src="assets/fantazia-player.js?v=308"></script>
 <script>
 /*!
  * ============================================================
@@ -12694,6 +12694,11 @@ function drawBigMap() {
   [-60, 60].forEach(o => { road(-320, o, 320, o, 8, RC); road(o, -320, o, 320, 8, RC); });
   [-175, 175].forEach(o => { road(-160, o, 160, o, 10, RC); road(o, -160, o, 160, 10, RC); });
   [-260, 260].forEach(o => { road(-320, o, 320, o, 5, '#2e333c'); road(o, -320, o, 320, 5, '#2e333c'); });
+  // V3.5+: подъезды к ТЦ, связки, парковка
+  road(178, 190, 251, 190, 8, RC); road(-251, -190, -178, -190, 8, RC);
+  road(235, 160, 235, 199, 8, RC); road(-235, -199, -235, -160, 8, RC);
+  road(175, 161, 175, 195, 8, RC); road(-175, -195, -175, -161, 8, RC);
+  ctx.fillStyle = '#2a2f38'; ctx.fillRect(W2(73), W2Z(22), 30 * k, 20 * k);
   ctx.strokeStyle = 'rgba(255,220,120,0.3)'; ctx.lineWidth = 1; ctx.setLineDash([4, 5]);
   road(-320, 0, 320, 0, 1); road(0, -320, 0, 320, 1); ctx.setLineDash([]);
   const bColor = { mall: '#b06cff', cinema: '#ff6b9d', club: '#9b59b6', karaoke: '#c06cff', restaurant: '#ff8c42', gym: '#2ecc71',
@@ -12718,6 +12723,9 @@ function drawBigMap() {
     if (!pl.targetPos) return;
     ctx.beginPath(); ctx.arc(W2(pl.targetPos.x), W2Z(pl.targetPos.z), 3, 0, Math.PI * 2); ctx.fill();
   });
+  // V3.8: квест-маркеры (☠ ГДЕ БОСС, 📜 записки, цель)
+  fzQuestMapMarkers(ctx, W2, W2Z, true);
+
   if (window.fzGPS) {
     const pulse = 6 + Math.sin(performance.now() / 250) * 3;
     ctx.strokeStyle = '#ff9d4d'; ctx.lineWidth = 2.5;
@@ -13151,46 +13159,82 @@ function fzCutsceneStart(bx, bz) {
 }
 
 function fzBuildBoss(bx, bz) {
+  // ═══ V3.8: ТЕНЬ-НЕВИДИМКА — тела почти не видно, ТОЛЬКО ГОРЯЩИЕ ГЛАЗА ═══
   const g = new THREE.Group();
-  const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 1.25, 2.4, 12),
-    new THREE.MeshLambertMaterial({ color: 0x0d0a14, emissive: 0x300818, emissiveIntensity: 0.25 }));
-  robe.position.y = 1.2; g.add(robe);
-  const shoulders = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.35, 0.7),
-    new THREE.MeshLambertMaterial({ color: 0x120e1c }));
-  shoulders.position.y = 2.35; g.add(shoulders);
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.33, 10, 8),
-    new THREE.MeshLambertMaterial({ color: 0x8a8f98 }));
-  head.position.y = 2.72; g.add(head);
-  const hatBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.05, 12),
-    new THREE.MeshLambertMaterial({ color: 0x0a0a10 }));
-  hatBrim.position.y = 2.95; g.add(hatBrim);
-  const hatTop = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.34, 0.55, 12),
-    new THREE.MeshLambertMaterial({ color: 0x0a0a10 }));
-  hatTop.position.y = 3.25; g.add(hatTop);
-  const eyeM = new THREE.MeshBasicMaterial({ color: 0xffffff });
-  [-0.13, 0.13].forEach(ex => {
-    const e = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), eyeM);
-    e.position.set(ex, 2.76, 0.28); g.add(e);
-  });
+  const bodyMat = new THREE.MeshLambertMaterial({ color: 0x05030a, emissive: 0x1a0512,
+    emissiveIntensity: 0.5, transparent: true, opacity: 0.09 });
+  const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 1.4, 2.6, 12, 1, true), bodyMat);
+  robe.position.y = 1.25; g.add(robe);                       // мантия без дна — парит
+  const shoulders = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.3, 0.7), bodyMat);
+  shoulders.position.y = 2.4; g.add(shoulders);
+  const hood = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.8, 10), bodyMat);
+  hood.position.y = 2.85; g.add(hood);
+  // когти-тени: почти невидимы, проступают во 2-й фазе
+  const clawMat = new THREE.MeshLambertMaterial({ color: 0x0a0612, emissive: 0x400818,
+    emissiveIntensity: 0.7, transparent: true, opacity: 0.12 });
   [-1, 1].forEach(sx => {
-    const claw = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.8, 6),
-      new THREE.MeshLambertMaterial({ color: 0x1c1626, emissive: 0x501020, emissiveIntensity: 0.4 }));
-    claw.position.set(sx * 1.05, 1.7, 0.35); claw.rotation.x = 1.2; g.add(claw);
+    const c = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.9, 6), clawMat);
+    c.position.set(sx * 1.05, 1.75, 0.3); c.rotation.x = 1.25; g.add(c);
   });
-  const aura = new THREE.PointLight(0xff2040, 0.8, 10);
-  aura.position.y = 2; g.add(aura);
+  // ГЛАЗА — единственное яркое: раскалённо-красные, с ореолом
+  const glowTex = (function () {
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const q = c.getContext('2d');
+    const gr = q.createRadialGradient(32, 32, 2, 32, 32, 32);
+    gr.addColorStop(0, 'rgba(255,130,100,1)'); gr.addColorStop(0.4, 'rgba(255,40,25,0.55)'); gr.addColorStop(1, 'rgba(255,40,25,0)');
+    q.fillStyle = gr; q.fillRect(0, 0, 64, 64);
+    return new THREE.CanvasTexture(c);
+  })();
+  const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff2818 });
+  const eyes = [], halos = [];
+  [-0.125, 0.125].forEach(ex => {
+    const e = new THREE.Mesh(new THREE.SphereGeometry(0.085, 10, 8), eyeMat);
+    e.position.set(ex, 2.72, 0.3); e.scale.set(1, 1.4, 0.7); g.add(e); eyes.push(e);
+    const h = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, transparent: true,
+      opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending }));
+    h.scale.setScalar(0.95); h.position.set(ex, 2.72, 0.36); g.add(h); halos.push(h);
+  });
+  const eyeLight = new THREE.PointLight(0xff2018, 1.6, 10);
+  eyeLight.position.set(0, 2.7, 0.5); g.add(eyeLight);
+  const aura = new THREE.PointLight(0x500810, 0.7, 9);
+  aura.position.y = 1.8; g.add(aura);
+  // тёмный дым стелется под тенью
+  const smoke = [];
+  for (let k = 0; k < 10; k++) {
+    const sm = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0x14060e,
+      transparent: true, opacity: 0.2, depthWrite: false }));
+    sm.scale.set(0.8 + Math.random() * 0.8, 0.5, 1);
+    sm.position.set((Math.random() - 0.5) * 1.8, 0.2 + Math.random() * 1.6, (Math.random() - 0.5) * 1.8);
+    sm.userData = { v: 0.25 + Math.random() * 0.3 };
+    g.add(sm); smoke.push(sm);
+  }
   g.position.set(bx, 1.6, bz);
   g.scale.setScalar(0.01);
   scene.add(g);
   interiorObjects.push(g);
   window.fzBOSS.group = g;
   window.fzBOSS.spawnPos = { x: bx, z: bz };
+  window.fzBOSS.bodyMat = bodyMat;
+  window.fzBOSS.clawMat = clawMat;
+  window.fzBOSS.eyes = eyes;
+  window.fzBOSS.halos = halos;
+  window.fzBOSS.eyeLight = eyeLight;
+  window.fzBOSS.smoke = smoke;
+  window.fzBOSS.hitFlash = 0;
 }
 
 function fzBossAnim(dt, t) {
   fzBoardsAnim(dt);
   const B = window.fzBOSS;
   if (!B || !B.group) return;
+  // V3.8: тень живёт — тело мерцает на грани видимости, глаза горят
+  if (B.hitFlash > 0) B.hitFlash -= dt;
+  if (B.bodyMat) B.bodyMat.opacity = 0.05 + Math.abs(Math.sin(t * 3.1)) * 0.06 + (B.hitFlash > 0 ? 0.5 : 0);
+  if (B.eyeLight) B.eyeLight.intensity = 1.4 + Math.sin(t * 9) * 0.5 + (B.phase2 ? 0.9 : 0);
+  if (B.clawMat) B.clawMat.opacity = B.phase2 ? 0.4 + Math.abs(Math.sin(t * 5)) * 0.25 : 0.12;
+  (B.eyes || []).forEach(e => { const sc = 1 + Math.sin(t * 9 + e.position.x * 20) * 0.15; e.scale.set(sc, 1.4 * sc, 0.7 * sc); });
+  (B.halos || []).forEach((h, i) => { h.material.opacity = 0.55 + Math.sin(t * 9 + i * 2) * 0.3; });
+  (B.smoke || []).forEach(sm => { sm.position.y += sm.userData.v * dt; if (sm.position.y > 2.3) sm.position.y = 0.15; });
   if (B.materScale < 1) {
     B.materScale = Math.min(1, B.materScale + dt * 1.4);
     B.group.scale.setScalar(B.materScale);
@@ -13252,6 +13296,7 @@ function fzBossHit() {
   const d = Math.hypot(P.x - g.position.x, P.z - g.position.z);
   if (d > 3) return;
   B.hitCd = 0.45;
+  B.hitFlash = 0.2; // тень вспыхивает контуром
   B.hp -= 12;
   if (!B.phase2 && B.hp <= B.maxHp * 0.35) {
     B.phase2 = true;
@@ -13571,6 +13616,50 @@ function fzTeaserAnim(dt) {
   }
 }
 
+// ═══ V3.8: квест-маркеры на картах — ☠ ГДЕ БОСС, 📜 записки, цель квеста ═══
+function fzQuestMapMarkers(ctx, W2, W2Z, big) {
+  const Q = window.FZ_QUEST;
+  if (!Q || typeof FZ_NOTE_SPOTS === 'undefined') return;
+  const pulse = Math.sin(performance.now() / 240);
+  const S = big ? 1 : 0.55;
+  ctx.textAlign = 'center';
+  // ненайденные записки
+  FZ_NOTE_SPOTS.forEach((sp, i) => {
+    if (Q.notes[i]) return;
+    const x = W2(sp.x), z = W2Z(sp.z);
+    ctx.fillStyle = 'rgba(255,209,102,0.22)';
+    ctx.beginPath(); ctx.arc(x, z, (7 + pulse * 2.5) * S, 0, 6.3); ctx.fill();
+    ctx.fillStyle = '#ffd166';
+    ctx.beginPath(); ctx.arc(x, z, 3 * S + 0.8, 0, 6.3); ctx.fill();
+    if (big) { ctx.font = 'bold 11px Segoe UI'; ctx.fillStyle = '#2b1d05'; ctx.fillText('📜', x, z + 3.5); }
+  });
+  // ☠ ХРАНИТЕЛЬ — на GRAND MALL (85,-85)
+  const mx = W2(85), mz = W2Z(-85);
+  if (!Q.bossDead) {
+    const stage = !Q.notes.every(n => n) ? 'locked' : (!Q.axe ? 'axe' : (!Q.boardsBroken ? 'boards' : 'boss'));
+    ctx.fillStyle = 'rgba(255,45,60,0.18)';
+    ctx.beginPath(); ctx.arc(mx, mz, (11 + pulse * 3.5) * S, 0, 6.3); ctx.fill();
+    ctx.strokeStyle = '#ff3040'; ctx.lineWidth = big ? 2 : 1.2;
+    ctx.beginPath(); ctx.arc(mx, mz, (8 + pulse * 2) * S, 0, 6.3); ctx.stroke();
+    ctx.font = (big ? 'bold 17px' : 'bold 12px') + ' Segoe UI';
+    ctx.fillStyle = '#ff5060';
+    ctx.fillText('☠', mx, mz + (big ? 6 : 4));
+    if (big) {
+      ctx.font = 'bold 10px Segoe UI';
+      ctx.strokeStyle = 'rgba(0,0,0,0.85)'; ctx.lineWidth = 3;
+      const lbl = { axe: '🪓 ТОПОР — В МОЛЛЕ', boards: '🪵 ДОСКИ — ЗАПАДНАЯ СТЕНА', boss: '☠ ХРАНИТЕЛЬ ЖДЁТ ВНИЗУ', locked: '☠ ПОД МОЛЛОМ ЧТО-ТО ЕСТЬ' }[stage];
+      ctx.strokeText(lbl, mx, mz - 14); ctx.fillText(lbl, mx, mz - 14);
+    } else if (stage === 'boss') {
+      ctx.fillStyle = '#ffd0d0'; ctx.font = 'bold 8px Segoe UI';
+      ctx.fillText('БОСС', mx, mz - 9);
+    }
+  } else {
+    ctx.font = (big ? 'bold 16px' : 'bold 12px') + ' Segoe UI';
+    ctx.fillStyle = '#00e676';
+    ctx.fillText('✓', mx, mz + (big ? 5 : 4));
+  }
+}
+
 function updateMinimap() {
   // ═══ V3.0: живая миникарта — локальный зум, реальные дороги, POI, GPS ═══
   const canvas = document.getElementById('minimapCanvas');
@@ -13611,6 +13700,10 @@ function updateMinimap() {
   [-260, 260].forEach(o => {
     road(px - 400, o, px + 400, o, 5 * scale, '#2e333c'); road(o, pz - 400, o, pz + 400, 5 * scale, '#2e333c');
   });
+  // V3.5+: подъезды к ТЦ и связки
+  road(178, 190, 251, 190, 8 * scale, RC); road(-251, -190, -178, -190, 8 * scale, RC);
+  road(235, 160, 235, 199, 8 * scale, RC); road(-235, -199, -235, -160, 8 * scale, RC);
+  road(175, 161, 175, 195, 8 * scale, RC); road(-175, -195, -175, -161, 8 * scale, RC);
   // осевые пунктиры
   ctx.strokeStyle = 'rgba(255,220,120,0.35)'; ctx.lineWidth = 1; ctx.setLineDash([3, 4]);
   road(px - 400, 0, px + 400, 0, 1, 'rgba(255,220,120,0.3)'); road(0, pz - 400, 0, pz + 400, 1, 'rgba(255,220,120,0.3)');
@@ -13637,6 +13730,9 @@ function updateMinimap() {
       ctx.beginPath(); ctx.arc(ix, iz, 1.6, 0, Math.PI * 2); ctx.fill();
     }
   });
+
+  // ── V3.8: квест-маркеры (☠ босс, 📜 записки) ──
+  fzQuestMapMarkers(ctx, W2, W2Z, false);
 
   // ── GPS-маркер ──
   if (window.fzGPS) {
@@ -19200,7 +19296,7 @@ function claimFPReward(r, isPlus, claimKey) {
   .fpp-row-label { font-size: 9px !important; }
 }
 </style>
-<script src="update_script.js?v=307"></script>
+<script src="update_script.js?v=308"></script>
 </body>
 
 <script>
@@ -19280,7 +19376,16 @@ window.addEventListener('DOMContentLoaded', function() {
 <div id="changelogModal style="position:fixed;inset:0;background:rgba(0,0,0,0.65);display:none;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(6px);">
   <div class="changelog-box">
     <h2>📋 Что нового</h2>
-    <div class="cl-version">FANTAZIA RP 3D — ⚡ v3.7</div>
+    <div class="cl-version">FANTAZIA RP 3D — ⚡ v3.8 «ТЕНЬ И ГЛАЗА»</div>
+    <div class="cl-section">
+      <div class="cl-section-title">👁 ОБНОВЛЕНИЕ v3.8</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span><b>☠ БОСС-НЕВИДИМКА:</b> Хранитель — ТЕНЬ: тела почти не видно (мерцающий тёмный контур, дым стелется под ним) — видны только ДВЕ ПАРЯЩИЕ ГЛАЗА, раскалённо-красные с ореолом и красным светом. Во 2-й фазе проступают когти-тени. От твоих ударов тень ВСПЫХИВАЕТ контуром!</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span><b>🗺 КАРТА: ГДЕ БОСС:</b> пульсирующий ☠ на GRAND MALL (юго-восток) — на миникарте И большой карте; подсказка текущей цели (🪓 топор → 🪵 доски → ☠ ХРАНИТЕЛЬ ЖДЁТ ВНИЗУ); ✓ после победы</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span><b>📜 Записки на карте:</b> ненайденные записки светятся янтарными точками — больше не блуждай!</div>
+      <div class="cl-item"><span class="cl-badge new">NEW</span><b>Карта доведена до идеала:</b> подъезды к ТЦ, связки и парковка теперь нарисованы; легенда внизу</div>
+    </div>
+    <div class="cl-section">
+      <div class="cl-section-title">🎬 v3.7</div>
     <div class="cl-section">
       <div class="cl-section-title">🎬 ОБНОВЛЕНИЕ v3.7</div>
       <div class="cl-item"><span class="cl-badge new">NEW</span><b>🎬 ТИЗЕР-СИНЕМАТИК:</b> кликни по чипу 📜 — кино-полосы, камера медленно летит через тёмный подвал к Хранителю... он резко ПОВОРАЧИВАЕТСЯ, его ГЛАЗА ВСПЫХИВАЮТ белым, тряска камеры и надпись «ОНО ЖДЁТ ТЕБЯ ПОД GRAND MALL»</div>
