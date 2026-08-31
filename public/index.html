@@ -19864,3 +19864,1844 @@ document.addEventListener('selectstart', function(e) {
 })();
 
 </script>
+
+<script id="fzgfx">
+// ═══════════════════════════════════════════════════════════════
+//  FZ-GFX PACK — СУПЕР-ГРАФИКА (погода/небо/пост/анимации)
+//  [F2] панель · [F4] погода · [F6] день/ночь · /anim брейк
+// ═══════════════════════════════════════════════════════════════
+
+// ═══════════ FZ-GFX ЧАСТЬ 1 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  FZ-GFX PACK v1.0 — СУПЕР-ГРАФИКА ДЛЯ FANTAZIA RP 3D
+//  Погода · Небо v2 · Пост-эффекты · Ветер · Птицы · Молнии · Звук
+//  [F2] панель графики · [F4] смена погоды · [F6] день/ночь
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  if (window.FZG && window.FZG.booted) return; // защита от двойного запуска
+
+  // ── общее состояние пака ──
+  const FZG = {
+    booted: false,
+    ready: false,          // сцена найдена
+    quality: 'high',       // low | med | high
+    t: 0,                  // своё время пака
+    night: 0,              // 0=день .. 1=ночь (из dayTime игры)
+    wind: new (window.THREE ? THREE.Vector3 : Object)(),
+    windDir: 0.7,          // угол ветра (рад)
+    windStr: 0.35,         // сила ветра 0..1
+    // подсистемы (заполняются модулями ниже)
+    sky: null, weather: null, rain: null, snow: null, fogBanks: null,
+    lightning: null, flora: null, fauna: null, post: null, camfx: null,
+    dust: null, audio: null, ui: null,
+    // счётчики для динамической плотности
+    plPos: null,           // позиция игрока (Vector3 или null)
+    moving: false,
+    isMob: false
+  };
+  window.FZG = FZG;
+  FZG.isMob = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+              ('ontouchstart' in window && window.innerWidth < 1024);
+
+  // ── утилиты пака ──
+  FZG.rnd = function (a, b) { return a + Math.random() * (b - a); };
+  FZG.clamp = function (v, a, b) { return v < a ? a : v > b ? b : v; };
+  FZG.lerp = function (a, b, t) { return a + (b - a) * t; };
+  FZG.damp = function (cur, target, lambda, dt) {
+    return FZG.lerp(cur, target, 1 - Math.exp(-lambda * dt));
+  };
+
+  // мягкая круглая текстура (свечение/частицы)
+  FZG.softTex = function (r, g, b) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 64;
+    const q = c.getContext('2d');
+    const gr = q.createRadialGradient(32, 32, 1, 32, 32, 32);
+    gr.addColorStop(0, 'rgba(' + r + ',' + g + ',' + b + ',1)');
+    gr.addColorStop(0.35, 'rgba(' + r + ',' + g + ',' + b + ',.55)');
+    gr.addColorStop(1, 'rgba(' + r + ',' + g + ',' + b + ',0)');
+    q.fillStyle = gr;
+    q.fillRect(0, 0, 64, 64);
+    const t = new THREE.CanvasTexture(c);
+    t.needsUpdate = true;
+    return t;
+  };
+
+  // текстура с рваным шумом (облака/дым)
+  FZG.puffTex = function () {
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    const q = c.getContext('2d');
+    for (let i = 0; i < 30; i++) {
+      const x = 64 + Math.sin(i * 2.1) * 26 + FZG.rnd(-8, 8);
+      const y = 64 + Math.cos(i * 1.7) * 20 + FZG.rnd(-8, 8);
+      const r = FZG.rnd(14, 34);
+      const gr = q.createRadialGradient(x, y, 1, x, y, r);
+      gr.addColorStop(0, 'rgba(255,255,255,.22)');
+      gr.addColorStop(1, 'rgba(255,255,255,0)');
+      q.fillStyle = gr;
+      q.beginPath();
+      q.arc(x, y, r, 0, Math.PI * 2);
+      q.fill();
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.needsUpdate = true;
+    return t;
+  };
+
+  // пресеты качества: [дождь, снег, облака, листья, звёзды]
+  FZG.QUALITY = {
+    low:  { rain: 900,  snow: 450,  clouds: 10, leaves: 0,   stars: 350, pr: 0.75, grain: false },
+    med:  { rain: 1700, snow: 1000, clouds: 18, leaves: 110, stars: 600, pr: 1.0,  grain: true  },
+    high: { rain: 2600, snow: 1600, clouds: 26, leaves: 220, stars: 900, pr: Math.min(window.devicePixelRatio || 1, 2), grain: true }
+  };
+  if (FZG.isMob) { FZG.quality = 'low'; }
+
+  // ── ожидание готовности сцены игры ──
+  let _polls = 0;
+  const _bootIv = setInterval(function () {
+    _polls++;
+    try {
+      if (typeof scene !== 'undefined' && scene && scene.children &&
+          typeof camera !== 'undefined' && camera &&
+          typeof renderer !== 'undefined' && renderer &&
+          scene.children.length > 10) {
+        clearInterval(_bootIv);
+        FZG.scene = scene;
+        FZG.cam = camera;
+        FZG.renderer = renderer;
+        FZG.booted = true;
+        if (window.FZG_onReady) window.FZG_onReady();
+        return;
+      }
+    } catch (e) { /* сцена ещё не существует */ }
+    if (_polls > 240) { // 60 сек — сдались
+      clearInterval(_bootIv);
+    }
+  }, 250);
+})();
+
+// ═══════════ FZ-GFX ЧАСТЬ 2 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  НЕБО v2: солнце с ореолом · луна с кратерами · 900 звёзд ·
+//  дрейфующие облака · дымка у горизонта
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZG = window.FZG;
+  if (!FZG) return;
+
+  FZG.skyInit = function () {
+    const S = { sun: null, sunHalo: null, moon: null, stars: null,
+                clouds: [], haze: null, cloudTex: FZG.puffTex() };
+    const scene = FZG.scene;
+
+    // ── солнце: яркий спрайт + большой мягкий ореол ──
+    const sunTex = FZG.softTex(255, 244, 214);
+    S.sun = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: sunTex, color: 0xfff4d6, transparent: true,
+      opacity: 0.95, depthWrite: false, fog: false
+    }));
+    S.sun.scale.set(46, 46, 1);
+    scene.add(S.sun);
+    S.sunHalo = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: sunTex, color: 0xffd9a0, transparent: true,
+      opacity: 0.32, depthWrite: false, fog: false,
+      blending: THREE.AdditiveBlending
+    }));
+    S.sunHalo.scale.set(190, 190, 1);
+    scene.add(S.sunHalo);
+
+    // ── луна: диск с «кратерами» (канвас) ──
+    const mc = document.createElement('canvas');
+    mc.width = mc.height = 128;
+    const mq = mc.getContext('2d');
+    const mg = mq.createRadialGradient(64, 64, 20, 64, 64, 62);
+    mg.addColorStop(0, '#f4f0e4');
+    mg.addColorStop(0.82, '#d8d4c4');
+    mg.addColorStop(1, '#b8b4a4');
+    mq.fillStyle = mg;
+    mq.beginPath();
+    mq.arc(64, 64, 62, 0, Math.PI * 2);
+    mq.fill();
+    mq.fillStyle = 'rgba(120,116,104,.5)';
+    [[42, 40, 11], [78, 52, 8], [58, 82, 13], [86, 84, 7], [38, 70, 6]]
+      .forEach(function (k) {
+        mq.beginPath();
+        mq.arc(k[0], k[1], k[2], 0, Math.PI * 2);
+        mq.fill();
+      });
+    const moonTex = new THREE.CanvasTexture(mc);
+    S.moon = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: moonTex, transparent: true, opacity: 0,
+      depthWrite: false, fog: false
+    }));
+    S.moon.scale.set(38, 38, 1);
+    scene.add(S.moon);
+
+    // ── звёзды: точки на куполе ──
+    const Q = FZG.QUALITY[FZG.quality];
+    const sg = new THREE.BufferGeometry();
+    const sp = new Float32Array(Q.stars * 3);
+    const ss = new Float32Array(Q.stars);
+    for (let i = 0; i < Q.stars; i++) {
+      // равномерно по верхней полусфере радиуса 620
+      const th = FZG.rnd(0, Math.PI * 2);
+      const ph = Math.acos(FZG.rnd(0.06, 0.98));
+      const r = 620;
+      sp[i * 3] = Math.sin(ph) * Math.cos(th) * r;
+      sp[i * 3 + 1] = Math.cos(ph) * r;
+      sp[i * 3 + 2] = Math.sin(ph) * Math.sin(th) * r;
+      ss[i] = FZG.rnd(0.6, 2.4);
+    }
+    sg.setAttribute('position', new THREE.BufferAttribute(sp, 3));
+    S.stars = new THREE.Points(sg, new THREE.PointsMaterial({
+      color: 0xdfe8ff, size: 2.2, sizeAttenuation: false,
+      transparent: true, opacity: 0, depthWrite: false, fog: false
+    }));
+    scene.add(S.stars);
+
+    // ── облака: плоскости-спрайты, дрейфуют по ветру ──
+    for (let i = 0; i < Q.clouds; i++) {
+      const big = i % 3 === 0;
+      const sp2 = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: S.cloudTex, transparent: true, depthWrite: false,
+        fog: false, opacity: FZG.rnd(0.28, 0.5)
+      }));
+      const sc = big ? FZG.rnd(120, 210) : FZG.rnd(60, 120);
+      sp2.scale.set(sc, sc * 0.42, 1);
+      sp2.position.set(
+        FZG.rnd(-560, 560),
+        FZG.rnd(130, 200),
+        FZG.rnd(-560, 560)
+      );
+      scene.add(sp2);
+      S.clouds.push({
+        s: sp2,
+        v: FZG.rnd(1.2, 3.4),          // личная скорость дрейфа
+        ph: FZG.rnd(0, 6.28),
+        baseO: sp2.material.opacity
+      });
+    }
+
+    // ── дымка горизонта: огромный цилиндр-градиент ──
+    const hc = document.createElement('canvas');
+    hc.width = 4; hc.height = 128;
+    const hq = hc.getContext('2d');
+    const hgr = hq.createLinearGradient(0, 0, 0, 128);
+    hgr.addColorStop(0, 'rgba(200,214,228,0)');
+    hgr.addColorStop(0.55, 'rgba(200,214,228,.14)');
+    hgr.addColorStop(1, 'rgba(200,214,228,.30)');
+    hq.fillStyle = hgr;
+    hq.fillRect(0, 0, 4, 128);
+    const hazeTex = new THREE.CanvasTexture(hc);
+    S.haze = new THREE.Mesh(
+      new THREE.CylinderGeometry(640, 640, 160, 40, 1, true),
+      new THREE.MeshBasicMaterial({
+        map: hazeTex, transparent: true, side: THREE.BackSide,
+        depthWrite: false, fog: false
+      })
+    );
+    S.haze.position.y = 62;
+    scene.add(S.haze);
+
+    FZG.sky = S;
+  };
+
+  // обновление неба: позиции солнца/луны, звёзды, облака
+  FZG.skyUpdate = function (dt) {
+    const S = FZG.sky;
+    if (!S) return;
+    const n = FZG.night;
+
+    // орбита: день — солнце над горизонтом, ночь — луна
+    // dayTime игры: t=(sin+1)/2; выводим фазу
+    let dT = 0;
+    try { dT = dayTime || 0; } catch (e) {}
+    const cyc = (Math.sin(dT) + 1) / 2;         // 1=полдень
+    const sunX = Math.cos(dT) * 480;
+    const sunY = Math.sin(dT) * 420;
+    const px = (FZG.plPos ? FZG.plPos.x : 0);
+    const pz = (FZG.plPos ? FZG.plPos.z : 0);
+    S.sun.position.set(px + sunX, Math.max(-30, sunY), pz - 160);
+    S.sunHalo.position.copy(S.sun.position);
+    S.moon.position.set(px - sunX * 0.9, Math.max(-30, -sunY), pz + 160);
+
+    // видимость
+    S.sun.material.opacity = FZG.clamp(1.2 - n * 1.6, 0, 0.95);
+    S.sunHalo.material.opacity = FZG.clamp(0.4 - n * 0.55, 0, 0.4);
+    S.moon.material.opacity = FZG.clamp((n - 0.35) * 1.6, 0, 0.92);
+    S.stars.material.opacity = FZG.clamp((n - 0.4) * 1.7, 0, 0.9);
+
+    // облака: дрейф + окраска по времени суток
+    const wx = Math.cos(FZG.windDir);
+    const wz = Math.sin(FZG.windDir);
+    const dim = FZG.weather ? FZG.weather.dim : 0;
+    for (let i = 0; i < S.clouds.length; i++) {
+      const c = S.clouds[i];
+      c.s.position.x += wx * c.v * (0.4 + FZG.windStr) * dt;
+      c.s.position.z += wz * c.v * (0.4 + FZG.windStr) * dt;
+      // заворот вокруг мира
+      if (c.s.position.x > 600) c.s.position.x = -600;
+      if (c.s.position.x < -600) c.s.position.x = 600;
+      if (c.s.position.z > 600) c.s.position.z = -600;
+      if (c.s.position.z < -600) c.s.position.z = 600;
+      // цвет: день белый, закат тёплый, ночь тёмно-синий, гроза серый
+      const m = c.s.material;
+      const sunset = FZG.clamp(1 - Math.abs(cyc - 0.5) * 3.4, 0, 1);
+      const r = FZG.lerp(FZG.lerp(255, 120, n), 90, dim * 0.7) - sunset * 30;
+      const g = FZG.lerp(FZG.lerp(255, 130, n), 92, dim * 0.7) - sunset * 60;
+      const b = FZG.lerp(FZG.lerp(255, 170, n), 100, dim * 0.6) - sunset * 70;
+      m.color.setRGB(r / 255, g / 255, b / 255);
+      m.opacity = c.baseO * (0.75 + dim * 0.5);
+    }
+  };
+})();
+
+// ═══════════ FZ-GFX ЧАСТЬ 3 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  ПОГОДА: движок состояний с плавными переходами
+//  sunny → rain → storm → snow → fog · ветер усиливается в грозу
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZG = window.FZG;
+  if (!FZG) return;
+
+  // целевые параметры каждого состояния
+  const STATES = {
+    sunny: { rain: 0,    snow: 0,    fog: 0.12, dim: 0,    wind: 0.3,  wet: 0    },
+    rain:  { rain: 0.75, snow: 0,    fog: 0.3,  dim: 0.45, wind: 0.6,  wet: 0.85 },
+    storm: { rain: 1,    snow: 0,    fog: 0.42, dim: 0.72, wind: 1,    wet: 1    },
+    snow:  { rain: 0,    snow: 0.85, fog: 0.5,  dim: 0.5,  wind: 0.45, wet: 0.3  },
+    fog:   { rain: 0,    snow: 0,    fog: 1,    dim: 0.55, wind: 0.15, wet: 0.35 }
+  };
+
+  FZG.weatherInit = function () {
+    FZG.weather = {
+      cur: 'sunny',
+      next: null,
+      // текущие (плавные) значения
+      rain: 0, snow: 0, fog: 0.12, dim: 0, wind: 0.3, wet: 0,
+      // цели
+      _tRain: 0, _tSnow: 0, _tFog: 0.12, _tDim: 0, _tWind: 0.3, _tWet: 0,
+      // сохранённые настройки тумана игры
+      savedFogNear: null, savedFogFar: null,
+      savedSky: null
+    };
+    try {
+      if (FZG.scene.fog) {
+        FZG.weather.savedFogNear = FZG.scene.fog.near;
+        FZG.weather.savedFogFar = FZG.scene.fog.far;
+      }
+    } catch (e) {}
+  };
+
+  // публичное API: смена погоды
+  FZG.setWeather = function (name, instant) {
+    const W = FZG.weather;
+    if (!W || !STATES[name]) return false;
+    W.cur = name;
+    const st = STATES[name];
+    W._tRain = st.rain; W._tSnow = st.snow; W._tFog = st.fog;
+    W._tDim = st.dim; W._tWind = st.wind; W._tWet = st.wet;
+    // направление ветра немного поворачиваем при смене
+    FZG.windDir += FZG.rnd(-0.8, 0.8);
+    if (instant) {
+      W.rain = W._tRain; W.snow = W._tSnow; W.fog = W._tFog;
+      W.dim = W._tDim; W.wind = W._tWind; W.wet = W._tWet;
+    }
+    // уведомление игрока
+    const names = {
+      sunny: '☀️ Ясно', rain: '🌧 Дождь', storm: '⛈ Гроза',
+      snow: '❄️ Снег', fog: '🌫 Туман'
+    };
+    try {
+      if (typeof showNotification === 'function') {
+        showNotification('Погода: ' + names[name], 'info');
+      }
+    } catch (e) {}
+    return true;
+  };
+
+  // цикл погоды (вызывается из главного тика пака)
+  FZG.weatherUpdate = function (dt) {
+    const W = FZG.weather;
+    if (!W) return;
+    const k = 1 - Math.exp(-0.5 * dt); // переход ~2-4 сек
+    W.rain = FZG.lerp(W.rain, W._tRain, k);
+    W.snow = FZG.lerp(W.snow, W._tSnow, k);
+    W.fog  = FZG.lerp(W.fog,  W._tFog,  k);
+    W.dim  = FZG.lerp(W.dim,  W._tDim,  k);
+    W.wind = FZG.lerp(W.wind, W._tWind, k);
+    W.wet  = FZG.lerp(W.wet,  W._tWet,  k);
+    FZG.windStr = W.wind;
+    FZG.wind.x = Math.cos(FZG.windDir) * W.wind;
+    FZG.wind.z = Math.sin(FZG.windDir) * W.wind;
+
+    // цвет неба запоминаем для fogApply (см. обёртку в g10)
+    try {
+      if (FZG.scene.background && FZG.scene.background.isColor) {
+        if (!FZG.weather._skyDay) FZG.weather._skyDay = new THREE.Color();
+        FZG.weather._skyDay.copy(FZG.scene.background);
+      }
+    } catch (e) {}
+
+    // ── мокрый асфальт/трава: затемняем материалы NZ ──
+    try {
+      if (typeof NZ !== 'undefined' && NZ) {
+        if (FZG.weather._grassBase == null && NZ.grass) {
+          FZG.weather._grassBase = NZ.grass.color.getHex();
+          FZG.weather._roadBase = NZ.road && NZ.road.color ? NZ.road.color.getHex() : null;
+          FZG.weather._walkBase = NZ.walk && NZ.walk.color ? NZ.walk.color.getHex() : null;
+        }
+        const wet = W.wet;
+        if (FZG.weather._grassBase != null && NZ.grass.color) {
+          NZ.grass.color.setHex(FZG.weather._grassBase);
+          NZ.grass.color.multiplyScalar(1 - wet * 0.38);
+        }
+        if (FZG.weather._roadBase != null && NZ.road && NZ.road.color) {
+          NZ.road.color.setHex(FZG.weather._roadBase);
+          NZ.road.color.multiplyScalar(1 - wet * 0.5);
+        }
+        if (FZG.weather._walkBase != null && NZ.walk && NZ.walk.color) {
+          NZ.walk.color.setHex(FZG.weather._walkBase);
+          NZ.walk.color.multiplyScalar(1 - wet * 0.42);
+        }
+      }
+    } catch (e) {}
+
+    // запоминаем текущий цвет неба игры (для тумана)
+    try {
+      if (FZG.scene.background && FZG.scene.background.isColor) {
+        if (!FZG.weather._skyDay) FZG.weather._skyDay = new THREE.Color();
+        FZG.weather._skyDay.copy(FZG.scene.background);
+      }
+    } catch (e) {}
+  };
+
+
+  // применение погоды к туману ИГРЫ.
+  // Вызывается из обёртки updateDayNight ПОСЛЕ оригинала —
+  // поэтому наши значения не затираются циклом игры.
+  FZG.fogApply = function () {
+    const W = FZG.weather;
+    if (!W) return;
+    try {
+      const inside = (typeof isInsideBuilding !== 'undefined') && isInsideBuilding;
+      if (inside || !FZG.scene.fog) return;
+      const F = FZG.scene.fog;
+      // базы: захватываем и самолечим в солнечную погоду
+      const squeezeN = 1 - W.fog * 0.5;
+      const squeezeF = 1 - W.fog * 0.55 - W.rain * 0.22;
+      if (W.savedFogNear == null || W.cur === 'sunny') {
+        // в sunny смещение мало (fog=0.12) — делим назад, чистим дрейф
+        if (W.savedFogNear != null) {
+          W.savedFogNear = F.near / squeezeN;
+          W.savedFogFar = F.far / squeezeF;
+        } else {
+          W.savedFogNear = F.near;
+          W.savedFogFar = F.far;
+        }
+      }
+      F.near = W.savedFogNear * squeezeN;
+      F.far = W.savedFogFar * squeezeF;
+      if (W._skyDay) {
+        F.color.copy(W._skyDay).lerp(new THREE.Color(0x3a4148), W.dim * 0.55);
+      }
+    } catch (e) {}
+  };
+
+  // авто-планщик погоды: раз в 3-6 минут лёгкая смена (иммерсия)
+  FZG.weatherAutoNext = function () {
+    const pool = ['sunny', 'sunny', 'rain', 'fog', 'snow', 'storm'];
+    // снег только редко
+    const pick = pool[(Math.random() * pool.length) | 0];
+    if (pick !== FZG.weather.cur) FZG.setWeather(pick);
+    FZG.weather._autoAt = FZG.t + FZG.rnd(180, 360);
+  };
+})();
+
+// ═══════════ FZ-GFX ЧАСТЬ 4 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  ДОЖДЬ: 2600 капель · брызги-кольца на земле · лужи блестят
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZG = window.FZG;
+  if (!FZG) return;
+
+  const R = { pts: null, vel: null, count: 0, box: 44, h: 34,
+              splashes: [], puddles: [] };
+
+  FZG.rainInit = function () {
+    const scene = FZG.scene;
+    const Q = FZG.QUALITY[FZG.quality];
+    R.count = Q.rain;
+
+    // капли — вертикальные «штрихи» из точек
+    const g = new THREE.BufferGeometry();
+    const pos = new Float32Array(R.count * 3);
+    R.vel = new Float32Array(R.count);
+    for (let i = 0; i < R.count; i++) {
+      pos[i * 3] = FZG.rnd(-R.box, R.box);
+      pos[i * 3 + 1] = FZG.rnd(0, R.h);
+      pos[i * 3 + 2] = FZG.rnd(-R.box, R.box);
+      R.vel[i] = FZG.rnd(24, 38);
+    }
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    R.pts = new THREE.Points(g, new THREE.PointsMaterial({
+      color: 0x9fc4dd, size: 0.14, transparent: true, opacity: 0,
+      depthWrite: false, fog: true
+    }));
+    R.pts.frustumCulled = false;
+    scene.add(R.pts);
+
+    // брызги: пул из 36 колец на земле
+    const ringGeo = new THREE.RingGeometry(0.12, 0.2, 12, 1);
+    for (let i = 0; i < 36; i++) {
+      const m = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({
+        color: 0xbcd8ea, transparent: true, opacity: 0,
+        depthWrite: false, side: THREE.DoubleSide
+      }));
+      m.rotation.x = -Math.PI / 2;
+      m.position.y = 0.03;
+      m.visible = false;
+      scene.add(m);
+      R.splashes.push({ m: m, t: -1 });
+    }
+
+    // лужи: блестящие круги (Phong отражает солнце/фонари)
+    const pg = new THREE.CircleGeometry(1, 14);
+    for (let i = 0; i < 34; i++) {
+      const m = new THREE.Mesh(pg, new THREE.MeshPhongMaterial({
+        color: 0x141a20, shininess: 130, specular: 0x99bbcc,
+        transparent: true, opacity: 0
+      }));
+      m.rotation.x = -Math.PI / 2;
+      const a = FZG.rnd(0, Math.PI * 2);
+      const d = FZG.rnd(6, 150);
+      m.position.set(Math.cos(a) * d, 0.025, Math.sin(a) * d);
+      m.scale.set(FZG.rnd(0.8, 3.2), FZG.rnd(0.5, 1.6), 1);
+      m.visible = false;
+      scene.add(m);
+      R.puddles.push(m);
+    }
+    FZG.rain = R;
+  };
+
+  FZG.rainDispose = function () {
+    try {
+      if (R.pts) { FZG.scene.remove(R.pts); R.pts.geometry.dispose(); }
+      R.splashes.forEach(function (s) { FZG.scene.remove(s.m); });
+      R.puddles.forEach(function (p) { FZG.scene.remove(p); });
+      R.pts = null; R.splashes = []; R.puddles = [];
+    } catch (e) {}
+  };
+
+  FZG.rainUpdate = function (dt) {
+    const W = FZG.weather;
+    if (!W || !R.pts) return;
+    const inten = W.rain;
+    R.pts.material.opacity = FZG.clamp(inten * 0.62, 0, 0.62);
+
+    if (inten > 0.02) {
+      const pos = R.pts.geometry.attributes.position.array;
+      const px = FZG.plPos ? FZG.plPos.x : 0;
+      const pz = FZG.plPos ? FZG.plPos.z : 0;
+      const wx = FZG.wind.x * 9;
+      const wz = FZG.wind.z * 9;
+      const n = Math.floor(R.count * inten);
+      for (let i = 0; i < n; i++) {
+        const j = i * 3;
+        const fall = R.vel[i] * (0.55 + inten * 0.6);
+        pos[j] += wx * dt;
+        pos[j + 1] -= fall * dt;
+        pos[j + 2] += wz * dt;
+        if (pos[j + 1] < 0) {
+          // респавн сверху вокруг игрока
+          pos[j] = px + FZG.rnd(-R.box, R.box);
+          pos[j + 1] = R.h + FZG.rnd(0, 6);
+          pos[j + 2] = pz + FZG.rnd(-R.box, R.box);
+          // случайный брызг на земле
+          if (Math.random() < 0.012 * inten) FZG.rainSplash(px, pz, pos[j], pos[j + 2]);
+        }
+      }
+      R.pts.geometry.attributes.position.needsUpdate = true;
+    }
+
+    // брызги: анимация кольца
+    for (let i = 0; i < R.splashes.length; i++) {
+      const s = R.splashes[i];
+      if (s.t >= 0) {
+        s.t += dt;
+        const k = s.t / 0.5;
+        if (k >= 1) { s.t = -1; s.m.visible = false; continue; }
+        s.m.scale.setScalar(0.4 + k * 2.6);
+        s.m.material.opacity = (1 - k) * 0.5 * inten;
+      }
+    }
+
+    // лужи: проявляются по «мокрости», блестят
+    const wet = W.wet;
+    for (let i = 0; i < R.puddles.length; i++) {
+      const p = R.puddles[i];
+      const vis = wet > 0.25;
+      p.visible = vis;
+      if (vis) p.material.opacity = FZG.clamp((wet - 0.25) * 0.55, 0, 0.45);
+    }
+  };
+
+  FZG.rainSplash = function (cx, cz, x, z) {
+    const R2 = FZG.rain;
+    if (!R2) return;
+    for (let i = 0; i < R2.splashes.length; i++) {
+      const s = R2.splashes[i];
+      if (s.t < 0) {
+        s.t = 0;
+        s.m.visible = true;
+        s.m.position.set(x, 0.03, z);
+        return;
+      }
+    }
+  };
+})();
+
+// ═══════════ FZ-GFX ЧАСТЬ 5 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  СНЕГ: 1600 хлопьев с порханием · туман-банки · молнии с громом
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZG = window.FZG;
+  if (!FZG) return;
+
+  const S = { pts: null, count: 0, box: 42, h: 30, ph: null };
+
+  FZG.snowInit = function () {
+    const scene = FZG.scene;
+    const Q = FZG.QUALITY[FZG.quality];
+    S.count = Q.snow;
+    const g = new THREE.BufferGeometry();
+    const pos = new Float32Array(S.count * 3);
+    S.ph = new Float32Array(S.count * 2);
+    for (let i = 0; i < S.count; i++) {
+      pos[i * 3] = FZG.rnd(-S.box, S.box);
+      pos[i * 3 + 1] = FZG.rnd(0, S.h);
+      pos[i * 3 + 2] = FZG.rnd(-S.box, S.box);
+      S.ph[i * 2] = FZG.rnd(0, 6.28);
+      S.ph[i * 2 + 1] = FZG.rnd(0.5, 1.6);
+    }
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    S.pts = new THREE.Points(g, new THREE.PointsMaterial({
+      color: 0xffffff, size: 0.22, transparent: true, opacity: 0,
+      depthWrite: false, fog: true
+    }));
+    S.pts.frustumCulled = false;
+    scene.add(S.pts);
+    FZG.snow = S;
+  };
+
+  FZG.snowDispose = function () {
+    try {
+      if (S.pts) { FZG.scene.remove(S.pts); S.pts.geometry.dispose(); }
+      S.pts = null;
+    } catch (e) {}
+  };
+
+  FZG.snowUpdate = function (dt) {
+    const W = FZG.weather;
+    if (!W || !S.pts) return;
+    const inten = W.snow;
+    S.pts.material.opacity = FZG.clamp(inten * 0.85, 0, 0.85);
+    if (inten <= 0.02) return;
+    const pos = S.pts.geometry.attributes.position.array;
+    const px = FZG.plPos ? FZG.plPos.x : 0;
+    const pz = FZG.plPos ? FZG.plPos.z : 0;
+    const n = Math.floor(S.count * inten);
+    for (let i = 0; i < n; i++) {
+      const j = i * 3;
+      S.ph[i * 2] += dt * S.ph[i * 2 + 1];
+      const sway = Math.sin(S.ph[i * 2]);
+      pos[j] += (sway * 0.7 + FZG.wind.x * 1.6) * dt;
+      pos[j + 1] -= (1.6 + S.ph[i * 2 + 1] * 0.8) * dt;
+      pos[j + 2] += (Math.cos(S.ph[i * 2] * 0.8) * 0.7 + FZG.wind.z * 1.6) * dt;
+      if (pos[j + 1] < 0.05) {
+        pos[j] = px + FZG.rnd(-S.box, S.box);
+        pos[j + 1] = S.h + FZG.rnd(0, 5);
+        pos[j + 2] = pz + FZG.rnd(-S.box, S.box);
+      }
+    }
+    S.pts.geometry.attributes.position.needsUpdate = true;
+  };
+
+  // ═══ ТУМАН-БАНКИ: широкие плоскости у земли, медленно плывут ═══
+  const FB = { list: [] };
+
+  FZG.fogInit = function () {
+    const scene = FZG.scene;
+    const tex = FZG.puffTex();
+    for (let i = 0; i < 12; i++) {
+      const m = new THREE.Mesh(
+        new THREE.PlaneGeometry(60, 16),
+        new THREE.MeshBasicMaterial({
+          map: tex, transparent: true, opacity: 0,
+          depthWrite: false, fog: false
+        })
+      );
+      m.position.set(FZG.rnd(-200, 200), FZG.rnd(2, 7), FZG.rnd(-200, 200));
+      m.rotation.y = FZG.rnd(0, Math.PI);
+      scene.add(m);
+      FB.list.push({ m: m, v: FZG.rnd(0.6, 1.6), ph: FZG.rnd(0, 6.28) });
+    }
+    FZG.fogBanks = FB;
+  };
+
+  FZG.fogUpdate = function (dt) {
+    const W = FZG.weather;
+    if (!W) return;
+    const inten = W.fog;
+    for (let i = 0; i < FB.list.length; i++) {
+      const f = FB.list[i];
+      const vis = inten > 0.25;
+      f.m.visible = vis;
+      if (!vis) continue;
+      f.ph += dt * 0.4;
+      f.m.position.x += Math.cos(FZG.windDir) * f.v * dt;
+      f.m.position.z += Math.sin(FZG.windDir) * f.v * dt;
+      if (f.m.position.x > 240) f.m.position.x = -240;
+      if (f.m.position.x < -240) f.m.position.x = 240;
+      if (f.m.position.z > 240) f.m.position.z = -240;
+      if (f.m.position.z < -240) f.m.position.z = 240;
+      f.m.material.opacity = (inten - 0.25) * 0.32 *
+        (0.8 + Math.sin(f.ph) * 0.2);
+      // банка всегда лицом к камере по Y
+      if (FZG.cam) f.m.rotation.y = Math.atan2(
+        FZG.cam.position.x - f.m.position.x,
+        FZG.cam.position.z - f.m.position.z
+      );
+    }
+  };
+
+  // ═══ МОЛНИИ: вспышка + свет + синтезированный гром ═══
+  const LT = { flashEl: null, light: null, nextAt: 8, flashT: 0 };
+
+  FZG.lightningInit = function () {
+    // DOM-слой вспышки
+    const el = document.createElement('div');
+    el.id = 'fzg-flash';
+    el.style.cssText =
+      'position:fixed;inset:0;background:#dfe8ff;opacity:0;' +
+      'pointer-events:none;z-index:9997;transition:none;';
+    document.body.appendChild(el);
+    LT.flashEl = el;
+
+    // directional свет вспышки
+    LT.light = new THREE.DirectionalLight(0xdfe8ff, 0);
+    LT.light.position.set(120, 300, -80);
+    FZG.scene.add(LT.light);
+    FZG.lightning = LT;
+  };
+
+  FZG.lightningUpdate = function (dt) {
+    const W = FZG.weather;
+    if (!W || !LT.flashEl) return;
+    const storm = W.cur === 'storm' ? W.rain : 0;
+
+    // затухание текущей вспышки
+    if (LT.flashT > 0) {
+      LT.flashT -= dt;
+      const k = Math.max(0, LT.flashT / 0.4);
+      // двойная пульсация (настоящая молния мигает 2-3 раза)
+      const puls = k > 0.75 ? 1 : k > 0.55 ? 0.25 : k > 0.35 ? 0.8 : k * 1.2;
+      LT.flashEl.style.opacity = (puls * 0.5 * storm).toFixed(3);
+      LT.light.intensity = puls * 2.4 * storm;
+      if (LT.flashT <= 0) {
+        LT.flashEl.style.opacity = '0';
+        LT.light.intensity = 0;
+      }
+    }
+
+    // расписание следующего удара
+    if (storm > 0.4 && FZG.t > LT.nextAt) {
+      LT.flashT = 0.4;
+      LT.nextAt = FZG.t + FZG.rnd(3.5, 11);
+      // гром через расстояние «до молнии»
+      const dist = FZG.rnd(0.4, 2.6);
+      setTimeout(function () { FZG.thunder(dist); }, dist * 1000);
+    }
+  };
+})();
+
+// ═══════════ FZ-GFX ЧАСТЬ 6 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  ФЛОРА v2: кроны деревьев качаются на ветру · падающие листья ·
+//  бабочки в парке · птицы над городом
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZG = window.FZG;
+  if (!FZG) return;
+
+  const FL = { crowns: [], leaves: null, leafCount: 0, collected: false };
+
+  FZG.floraInit = function () {
+    // кроны собираем лениво — мир строится позже пака
+    FZG.floraCollect();
+    // листья
+    const Q = FZG.QUALITY[FZG.quality];
+    FL.leafCount = Q.leaves;
+    if (Q.leaves > 0) {
+      const g = new THREE.BufferGeometry();
+      const pos = new Float32Array(Q.leaves * 3);
+      FL.ph = new Float32Array(Q.leaves);
+      for (let i = 0; i < Q.leaves; i++) {
+        pos[i * 3] = FZG.rnd(-30, 30);
+        pos[i * 3 + 1] = FZG.rnd(0, 14);
+        pos[i * 3 + 2] = FZG.rnd(-30, 30);
+        FL.ph[i] = FZG.rnd(0, 6.28);
+      }
+      g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      FL.leaves = new THREE.Points(g, new THREE.PointsMaterial({
+        color: 0xc8a24a, size: 0.28, transparent: true, opacity: 0,
+        depthWrite: false
+      }));
+      FL.leaves.frustumCulled = false;
+      FZG.scene.add(FL.leaves);
+    }
+    FZG.flora = FL;
+  };
+
+  // найти кроны деревьев по материалам NZ (однократно, с повторами)
+  FZG.floraCollect = function () {
+    if (FL.collected) return;
+    try {
+      if (typeof NZ === 'undefined' || !NZ.crown1) return;
+      const mats = [NZ.crown1, NZ.crown2, NZ.crown3];
+      const found = [];
+      FZG.scene.traverse(function (o) {
+        if (o.isMesh && o.material && mats.indexOf(o.material) >= 0) {
+          found.push(o);
+        }
+      });
+      if (found.length > 4) {
+        FL.crowns = found.map(function (m, i) {
+          return { m: m, bx: m.rotation.x, bz: m.rotation.z,
+                   ph: (i * 0.37) % 6.28, amp: FZG.rnd(0.5, 1) };
+        });
+        FL.collected = true;
+      }
+    } catch (e) {}
+  };
+
+  FZG.floraUpdate = function (dt) {
+    if (!FL.collected) { FZG.floraCollect(); }
+    const wind = FZG.windStr;
+    // качание крон
+    for (let i = 0; i < FL.crowns.length; i++) {
+      const c = FL.crowns[i];
+      c.ph += dt * (1.1 + wind * 1.6);
+      c.m.rotation.x = c.bx + Math.sin(c.ph) * 0.05 * (0.3 + wind) * c.amp;
+      c.m.rotation.z = c.bz + Math.cos(c.ph * 0.8 + 1.3) * 0.06 * (0.3 + wind) * c.amp;
+    }
+    // листья
+    if (FL.leaves && FL.leafCount > 0) {
+      const W = FZG.weather;
+      const vis = wind > 0.22 && (!W || W.cur !== 'snow');
+      FL.leaves.material.opacity = vis ? 0.75 : Math.max(0, FL.leaves.material.opacity - dt);
+      if (vis) {
+        const pos = FL.leaves.geometry.attributes.position.array;
+        const px = FZG.plPos ? FZG.plPos.x : 0;
+        const pz = FZG.plPos ? FZG.plPos.z : 0;
+        for (let i = 0; i < FL.leafCount; i++) {
+          const j = i * 3;
+          FL.ph[i] += dt * 2.2;
+          pos[j] += (Math.sin(FL.ph[i]) * 1.1 + FZG.wind.x * 3.4) * dt;
+          pos[j + 1] -= (1.1 + Math.sin(FL.ph[i] * 0.5) * 0.5) * dt;
+          pos[j + 2] += (Math.cos(FL.ph[i] * 0.7) * 1.1 + FZG.wind.z * 3.4) * dt;
+          if (pos[j + 1] < 0.1) {
+            pos[j] = px + FZG.rnd(-30, 30);
+            pos[j + 1] = FZG.rnd(9, 15);
+            pos[j + 2] = pz + FZG.rnd(-30, 30);
+          }
+        }
+        FL.leaves.geometry.attributes.position.needsUpdate = true;
+      }
+    }
+  };
+
+  // ═══ ПТИЦЫ: 12 силуэтов, кружат над парком и даунтауном ═══
+  const FA = { birds: [], butterflies: [] };
+
+  FZG.faunaInit = function () {
+    const scene = FZG.scene;
+    const wingGeo = new THREE.PlaneGeometry(1.1, 0.34);
+    const wingMat = new THREE.MeshBasicMaterial({
+      color: 0x2a2a34, side: THREE.DoubleSide, transparent: true, opacity: 0.85
+    });
+    const n = FZG.quality === 'low' ? 6 : 12;
+    for (let i = 0; i < n; i++) {
+      const g = new THREE.Group();
+      const wl = new THREE.Mesh(wingGeo, wingMat);
+      wl.position.x = -0.5;
+      const wr = new THREE.Mesh(wingGeo, wingMat);
+      wr.position.x = 0.5;
+      g.add(wl); g.add(wr);
+      g.userData = {
+        wl: wl, wr: wr,
+        cx: FZG.rnd(-120, 120), cz: FZG.rnd(-120, 120),
+        r: FZG.rnd(24, 70), y: FZG.rnd(32, 58),
+        v: FZG.rnd(0.14, 0.3) * (Math.random() < 0.5 ? 1 : -1),
+        a: FZG.rnd(0, 6.28), flap: FZG.rnd(4, 7)
+      };
+      scene.add(g);
+      FA.birds.push(g);
+    }
+
+    // бабочки: цветные «двойные крылья» в парке (-26, 77)
+    const bcols = [0xff8a3d, 0xffd23d, 0x6bcbff, 0xff6bb5, 0x9dff6b];
+    const bGeo = new THREE.PlaneGeometry(0.22, 0.16);
+    const nb = FZG.quality === 'low' ? 8 : 16;
+    for (let i = 0; i < nb; i++) {
+      const mat = new THREE.MeshBasicMaterial({
+        color: bcols[i % bcols.length], side: THREE.DoubleSide,
+        transparent: true, opacity: 0.92
+      });
+      const g = new THREE.Group();
+      const l = new THREE.Mesh(bGeo, mat);
+      const r = new THREE.Mesh(bGeo, mat);
+      g.add(l); g.add(r);
+      g.position.set(-26 + FZG.rnd(-20, 20), FZG.rnd(0.8, 2.4), 77 + FZG.rnd(-20, 20));
+      g.userData = {
+        l: l, r: r, hx: g.position.x, hz: g.position.z,
+        hy: g.position.y, ph: FZG.rnd(0, 6.28),
+        sp: FZG.rnd(0.5, 1.1), rad: FZG.rnd(1.5, 5)
+      };
+      scene.add(g);
+      FA.butterflies.push(g);
+    }
+    FZG.fauna = FA;
+  };
+
+  FZG.faunaUpdate = function (dt) {
+    const day = 1 - FZG.night;
+    // птицы: кружат, машут, исчезают ночью и в грозу
+    const vis = day > 0.45 && (!FZG.weather || FZG.weather.cur !== 'storm');
+    for (let i = 0; i < FA.birds.length; i++) {
+      const b = FA.birds[i];
+      const u = b.userData;
+      u.a += u.v * dt;
+      const x = u.cx + Math.cos(u.a) * u.r;
+      const z = u.cz + Math.sin(u.a) * u.r;
+      const y = u.y + Math.sin(u.a * 2.2) * 2.4;
+      b.position.set(x, y, z);
+      b.rotation.y = -u.a + (u.v > 0 ? 0 : Math.PI);
+      const f = Math.sin(FZG.t * u.flap) * 0.7;
+      u.wl.rotation.z = f;
+      u.wr.rotation.z = -f;
+      b.visible = vis;
+      if (vis) {
+        const op = FZG.clamp((day - 0.45) * 3, 0, 0.85);
+        u.wl.material.opacity = op;
+      }
+    }
+    // бабочки: порхают вокруг кустов парка, спят ночью
+    const bvis = day > 0.55 && (!FZG.weather || FZG.weather.rain < 0.5);
+    for (let i = 0; i < FA.butterflies.length; i++) {
+      const bf = FA.butterflies[i];
+      const u = bf.userData;
+      u.ph += dt * u.sp;
+      bf.position.x = u.hx + Math.cos(u.ph) * u.rad;
+      bf.position.z = u.hz + Math.sin(u.ph * 1.3) * u.rad;
+      bf.position.y = u.hy + Math.sin(u.ph * 2.1) * 0.5;
+      const f = Math.sin(FZG.t * 14 + u.ph) * 1.1;
+      u.l.rotation.y = 0.5 + f * 0.5;
+      u.r.rotation.y = -0.5 - f * 0.5;
+      bf.visible = bvis;
+    }
+  };
+})();
+
+// ═══════════ FZ-GFX ЧАСТЬ 7 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  ПОСТ-ЭФФЕКТЫ: киношная виньетка · живое плёночное зерно ·
+//  хроматическая кайма · пульс неоновых маяков моллов
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZG = window.FZG;
+  if (!FZG) return;
+
+  const P = { vign: null, grain: null, gctx: null, chroma: null,
+              beacons: [], gFrame: 0, grainOn: true };
+
+  FZG.postInit = function () {
+    // ── виньетка ──
+    const v = document.createElement('div');
+    v.id = 'fzg-vignette';
+    v.style.cssText =
+      'position:fixed;inset:0;pointer-events:none;z-index:9990;' +
+      'background:radial-gradient(ellipse at 50% 46%,transparent 55%,' +
+      'rgba(6,8,14,.18) 78%,rgba(4,5,10,.42) 100%);';
+    document.body.appendChild(v);
+    P.vign = v;
+
+    // ── плёночное зерно (маленький канвас, overlay-блендинг) ──
+    const gc = document.createElement('canvas');
+    gc.width = 140; gc.height = 80;
+    gc.id = 'fzg-grain';
+    gc.style.cssText =
+      'position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;' +
+      'z-index:9991;opacity:.05;mix-blend-mode:overlay;image-rendering:pixelated;';
+    document.body.appendChild(gc);
+    P.grain = gc;
+    P.gctx = gc.getContext('2d');
+
+    // ── хроматическая кайма: лёгкий сдвиг цветов по краям ──
+    const ch = document.createElement('div');
+    ch.id = 'fzg-chroma';
+    ch.style.cssText =
+      'position:fixed;inset:0;pointer-events:none;z-index:9989;opacity:.5;' +
+      'box-shadow:inset 0 0 90px rgba(70,20,60,.20),' +
+      'inset 0 0 180px rgba(20,40,90,.16);';
+    document.body.appendChild(ch);
+    P.chroma = ch;
+
+    // ── неоновые маяки моллов: пульсируют ночью ──
+    const malls = [
+      { x: 85, z: -85, c: 0x35e0ff, name: 'GRAND' },
+      { x: 235, z: 228, c: 0xff5ad2, name: 'SUN' },
+      { x: -235, z: -228, c: 0x7dff5a, name: 'MEGA' }
+    ];
+    malls.forEach(function (mm) {
+      const tex = FZG.softTex(255, 255, 255);
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: tex, color: mm.c, transparent: true, opacity: 0,
+        depthWrite: false, blending: THREE.AdditiveBlending, fog: false
+      }));
+      s.scale.set(26, 26, 1);
+      s.position.set(mm.x, 24, mm.z);
+      FZG.scene.add(s);
+      // вертикальный луч в небо
+      const beam = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.7, 2.6, 90, 8, 1, true),
+        new THREE.MeshBasicMaterial({
+          color: mm.c, transparent: true, opacity: 0,
+          depthWrite: false, blending: THREE.AdditiveBlending,
+          side: THREE.DoubleSide, fog: false
+        })
+      );
+      beam.position.set(mm.x, 60, mm.z);
+      FZG.scene.add(beam);
+      P.beacons.push({ s: s, beam: beam, ph: FZG.rnd(0, 6.28), c: mm.c });
+    });
+
+    FZG.post = P;
+    FZG.applyQualityPost();
+  };
+
+  FZG.applyQualityPost = function () {
+    const Q = FZG.QUALITY[FZG.quality];
+    P.grainOn = Q.grain;
+    if (P.grain) P.grain.style.display = Q.grain ? 'block' : 'none';
+    if (P.chroma) P.chroma.style.display = FZG.quality === 'high' ? 'block' : 'none';
+  };
+
+  FZG.postUpdate = function (dt) {
+    // зерно: обновляем через кадр
+    if (P.grainOn && P.grain) {
+      P.gFrame++;
+      if (P.gFrame % 2 === 0) {
+        const q = P.gctx;
+        if (q) {
+          const img = q.createImageData(140, 80);
+          const d = img.data;
+          for (let i = 0; i < d.length; i += 4) {
+            const vv = (Math.random() * 255) | 0;
+            d[i] = vv; d[i + 1] = vv; d[i + 2] = vv; d[i + 3] = 28;
+          }
+          q.putImageData(img, 0, 0);
+        }
+      }
+    }
+    // виньетка глубже ночью и в грозу
+    const W = FZG.weather;
+    const storm = W && W.cur === 'storm' ? 0.16 : 0;
+    P.vign.style.opacity = (0.75 + FZG.night * 0.25 + storm).toFixed(2);
+
+    // маяки моллов: пульс + наклон луча
+    const n = FZG.night;
+    P.beacons.forEach(function (b) {
+      b.ph += dt * 1.7;
+      const pulse = 0.55 + Math.sin(b.ph) * 0.3 + Math.sin(b.ph * 3.7) * 0.1;
+      const op = FZG.clamp((n - 0.3) * 1.5, 0, 1) * pulse;
+      b.s.material.opacity = op * 0.8;
+      b.beam.material.opacity = op * 0.1;
+      b.s.scale.setScalar(22 + Math.sin(b.ph) * 5);
+    });
+  };
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+//  КАМЕРА-ФХ: FOV-кик на спринте · «присед» камеры при приземлении ·
+//  лёгкое дыхание в покое · пыль из-под ног
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZG = window.FZG;
+  if (!FZG) return;
+
+  const C = { fovBase: 60, fovKick: 0, fovKickT: 0, landT: 0,
+              prevVy: 0, stepT: 0, dust: [], dustTex: null };
+
+  FZG.camfxInit = function () {
+    C.dustTex = FZG.softTex(190, 170, 140);
+    const dg = new THREE.PlaneGeometry(0.5, 0.5);
+    for (let i = 0; i < 20; i++) {
+      const m = new THREE.Mesh(dg, new THREE.MeshBasicMaterial({
+        map: C.dustTex, transparent: true, opacity: 0,
+        depthWrite: false, color: 0xb9a68a
+      }));
+      m.rotation.x = -Math.PI / 2;
+      m.visible = false;
+      FZG.scene.add(m);
+      C.dust.push({ m: m, t: -1 });
+    }
+    FZG.camfx = C;
+  };
+
+  FZG.spawnDust = function (x, z, strong) {
+    for (let i = 0; i < C.dust.length; i++) {
+      const d = C.dust[i];
+      if (d.t < 0) {
+        d.t = 0;
+        d.m.visible = true;
+        d.m.position.set(x + FZG.rnd(-0.2, 0.2), 0.06, z + FZG.rnd(-0.2, 0.2));
+        d.strong = strong ? 1 : 0;
+        return;
+      }
+    }
+  };
+
+  FZG.camfxUpdate = function (dt) {
+    let sprinting = false;
+    let grounded = true;
+    let vy = 0;
+    try {
+      if (typeof keys !== 'undefined') {
+        sprinting = !!(keys['ShiftLeft'] || keys['ShiftRight']);
+      }
+      if (typeof isGrounded !== 'undefined') grounded = isGrounded;
+      if (typeof velocity !== 'undefined') vy = velocity.y;
+    } catch (e) {}
+
+    // ── приземление: vy резко стал ~0 из отрицательного ──
+    if (C.prevVy < -6 && grounded && vy >= C.prevVy + 4) {
+      C.landT = 0.5;
+    }
+    C.prevVy = vy;
+    if (C.landT > 0) C.landT -= dt;
+
+    // ── FOV: базис + спринт + приземление + дыхание ──
+    let fov = C.fovBase;
+    if (sprinting && FZG.moving) fov += 5.5;
+    if (C.landT > 0) fov += Math.sin((0.5 - C.landT) / 0.5 * Math.PI) * 3.2;
+    if (!FZG.moving) fov += Math.sin(FZG.t * 1.4) * 0.35; // дыхание в покое
+    try {
+      FZG.cam.fov = FZG.damp(FZG.cam.fov, fov, 7, dt);
+      FZG.cam.updateProjectionMatrix();
+    } catch (e) {}
+
+    // ── пыль из-под ног ──
+    const W = FZG.weather;
+    if (FZG.moving && grounded && FZG.plPos) {
+      C.stepT -= dt;
+      if (C.stepT <= 0) {
+        C.stepT = sprinting ? 0.16 : 0.3;
+        // в дождь — брызги вместо пыли
+        if (W && W.wet > 0.5) {
+          FZG.rainSplash(FZG.plPos.x, FZG.plPos.z,
+            FZG.plPos.x + FZG.rnd(-0.25, 0.25),
+            FZG.plPos.z + FZG.rnd(-0.25, 0.25));
+        } else if (!W || W.snow < 0.5) {
+          FZG.spawnDust(FZG.plPos.x, FZG.plPos.z, sprinting);
+        }
+      }
+    }
+    for (let i = 0; i < C.dust.length; i++) {
+      const d = C.dust[i];
+      if (d.t >= 0) {
+        d.t += dt;
+        const k = d.t / 0.55;
+        if (k >= 1) { d.t = -1; d.m.visible = false; continue; }
+        const sc = 0.6 + k * (d.strong ? 2.6 : 1.6);
+        d.m.scale.setScalar(sc);
+        d.m.material.opacity = (1 - k) * 0.4;
+        d.m.position.y = 0.06 + k * 0.1;
+      }
+    }
+  };
+})();
+
+// ═══════════ FZ-GFX ЧАСТЬ 8 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  ЗВУК ПОГОДЫ: шум дождя (5 слоёв) · ветер · гром — весь синтез,
+//  ни одного аудиофайла. Использует audioCtx игры.
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZG = window.FZG;
+  if (!FZG) return;
+
+  const A = { ctx: null, rainGain: null, windGain: null,
+              master: null, started: false };
+
+  // буфер белого шума (2 секунды)
+  A.noiseBuf = function (ctx) {
+    const len = ctx.sampleRate * 2;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < len; i++) {
+      // слегка розовый шум (better for rain)
+      const w = Math.random() * 2 - 1;
+      last = (last + 0.02 * w) / 1.02;
+      d[i] = last * 3.5;
+    }
+    return buf;
+  };
+
+  A.start = function () {
+    if (A.started) return;
+    let ctx = null;
+    try { ctx = getAudioCtx(); } catch (e) {}
+    if (!ctx) return;
+    A.ctx = ctx;
+    A.started = true;
+
+    A.master = ctx.createGain();
+    A.master.gain.value = 0.55;
+    A.master.connect(ctx.destination);
+
+    const buf = A.noiseBuf(ctx);
+
+    // ── дождь: шум → bandpass(2600) + highpass(400) ──
+    const rn = ctx.createBufferSource();
+    rn.buffer = buf; rn.loop = true;
+    const rbp = ctx.createBiquadFilter();
+    rbp.type = 'bandpass'; rbp.frequency.value = 2600; rbp.Q.value = 0.4;
+    const rhp = ctx.createBiquadFilter();
+    rhp.type = 'highpass'; rhp.frequency.value = 420;
+    A.rainGain = ctx.createGain();
+    A.rainGain.gain.value = 0;
+    rn.connect(rbp); rbp.connect(rhp); rhp.connect(A.rainGain);
+    A.rainGain.connect(A.master);
+    rn.start();
+
+    // второй слой дождя ниже частотой (гул капель по крышам)
+    const rn2 = ctx.createBufferSource();
+    rn2.buffer = buf; rn2.loop = true; rn2.playbackRate.value = 0.5;
+    const rlp = ctx.createBiquadFilter();
+    rlp.type = 'lowpass'; rlp.frequency.value = 900;
+    const rg2 = ctx.createGain();
+    rg2.gain.value = 0;
+    rn2.connect(rlp); rlp.connect(rg2); rg2.connect(A.master);
+    rn2.start();
+    A.rainGain2 = rg2;
+
+    // ── ветер: шум → lowpass(340) c медленным LFO ──
+    const wn = ctx.createBufferSource();
+    wn.buffer = buf; wn.loop = true; wn.playbackRate.value = 0.22;
+    const wlp = ctx.createBiquadFilter();
+    wlp.type = 'lowpass'; wlp.frequency.value = 340; wlp.Q.value = 0.8;
+    A.windGain = ctx.createGain();
+    A.windGain.gain.value = 0;
+    wn.connect(wlp); wlp.connect(A.windGain); A.windGain.connect(A.master);
+    wn.start();
+    // LFO громкости ветра
+    const lfo = ctx.createOscillator();
+    lfo.frequency.value = 0.13;
+    const lfoG = ctx.createGain();
+    lfoG.gain.value = 0.35;
+    lfo.connect(lfoG); lfoG.connect(A.windGain.gain);
+    lfo.start();
+
+    FZG.audio = A;
+  };
+
+  // гром: треск + раскат (дистанция 0..3 — чем больше, тем глуше)
+  FZG.thunder = function (dist) {
+    if (!A.started) A.start();
+    if (!A.ctx) return;
+    const ctx = A.ctx;
+    const t0 = ctx.currentTime + 0.02;
+    const d = FZG.clamp(dist, 0.2, 3);
+
+    // треск (только близкие)
+    if (d < 1.2) {
+      const o = ctx.createBufferSource();
+      o.buffer = A.noiseBuf(ctx);
+      const hp = ctx.createBiquadFilter();
+      hp.type = 'highpass'; hp.frequency.value = 900;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.4 / d, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.25);
+      o.connect(hp); hp.connect(g); g.connect(A.master);
+      o.start(t0); o.stop(t0 + 0.3);
+    }
+    // раскат
+    const r = ctx.createBufferSource();
+    r.buffer = A.noiseBuf(ctx);
+    r.playbackRate.value = 0.3;
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(320 / d, t0);
+    lp.frequency.exponentialRampToValueAtTime(50, t0 + 2.4);
+    const g2 = ctx.createGain();
+    g2.gain.setValueAtTime(0.0001, t0);
+    g2.gain.exponentialRampToValueAtTime(0.5 / d, t0 + 0.08);
+    g2.gain.exponentialRampToValueAtTime(0.0001, t0 + 2.6);
+    r.connect(lp); lp.connect(g2); g2.connect(A.master);
+    r.start(t0); r.stop(t0 + 2.7);
+  };
+
+  FZG.audioUpdate = function (dt) {
+    if (!A.started) return;
+    const W = FZG.weather;
+    if (!W) return;
+    const t = A.ctx.currentTime;
+    try {
+      A.rainGain.gain.setTargetAtTime(W.rain * 0.16, t, 0.4);
+      A.rainGain2.gain.setTargetAtTime(W.rain * 0.1, t, 0.6);
+      A.windGain.gain.setTargetAtTime(0.02 + W.wind * 0.08 + W.snow * 0.02, t, 0.8);
+    } catch (e) {}
+  };
+
+  // звук стартует по первому клику/тапу (политика автоплея)
+  const _kick = function () {
+    A.start();
+    document.removeEventListener('pointerdown', _kick);
+    document.removeEventListener('keydown', _kick);
+  };
+  document.addEventListener('pointerdown', _kick);
+  document.addEventListener('keydown', _kick);
+})();
+
+// ═══════════ FZ-GFX ЧАСТЬ 9 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  ПАНЕЛЬ ГРАФИКИ [F2]: погода · качество · скорость времени ·
+//  тумблеры эффектов · [F4] цикл погоды · [F6] день/ночь
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZG = window.FZG;
+  if (!FZG) return;
+
+  const U = { panel: null, timeScale: 1 };
+
+  FZG.uiInit = function () {
+    const p = document.createElement('div');
+    p.id = 'fzg-panel';
+    p.style.cssText =
+      'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);' +
+      'z-index:9999;background:rgba(10,12,20,.94);border:1px solid #2f3a55;' +
+      'border-radius:14px;padding:22px 26px;color:#dbe4f4;display:none;' +
+      'font:12px/1.7 monospace;min-width:340px;backdrop-filter:blur(8px);' +
+      'box-shadow:0 24px 70px rgba(0,0,0,.6);';
+    p.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;' +
+      'margin-bottom:14px;border-bottom:1px solid #2f3a55;padding-bottom:10px">' +
+      '<b style="letter-spacing:.2em;color:#7ec8ff">🌤 ГРАФИКА И ПОГОДА</b>' +
+      '<span style="opacity:.5;cursor:pointer" id="fzg-close">[ESC]</span></div>' +
+
+      '<div style="color:#8fa3c8;margin:8px 0 4px">ПОГОДА</div>' +
+      '<div id="fzg-wbtns" style="display:flex;gap:6px;flex-wrap:wrap">' +
+      ['sunny:☀️ Ясно', 'rain:🌧 Дождь', 'storm:⛈ Гроза',
+       'snow:❄️ Снег', 'fog:🌫 Туман'].map(function (w) {
+        const k = w.split(':')[0], n = w.split(':')[1];
+        return '<button data-fzg-w="' + k + '" style="flex:1;min-width:60px;' +
+          'background:#1a2135;border:1px solid #33415f;color:#cfe0ff;' +
+          'border-radius:8px;padding:8px 6px;cursor:pointer;font:11px monospace">' + n + '</button>';
+      }).join('') + '</div>' +
+
+      '<div style="color:#8fa3c8;margin:12px 0 4px">КАЧЕСТВО</div>' +
+      '<div id="fzg-qbtns" style="display:flex;gap:6px">' +
+      ['low:Низкое', 'med:Среднее', 'high:Высокое 🏆'].map(function (q) {
+        const k = q.split(':')[0], n = q.split(':')[1];
+        return '<button data-fzg-q="' + k + '" style="flex:1;background:#1a2135;' +
+          'border:1px solid #33415f;color:#cfe0ff;border-radius:8px;' +
+          'padding:8px 6px;cursor:pointer;font:11px monospace">' + n + '</button>';
+      }).join('') + '</div>' +
+
+      '<div style="color:#8fa3c8;margin:12px 0 4px">ВРЕМЯ СУТОК — СКОРОСТЬ ×' +
+      '<span id="fzg-ts">1.0</span></div>' +
+      '<input id="fzg-time" type="range" min="0" max="8" step="0.5" value="1" ' +
+      'style="width:100%;accent-color:#7ec8ff">' +
+
+      '<div style="display:flex;gap:6px;margin-top:12px">' +
+      '<button id="fzg-night" style="flex:1;background:#1a2135;border:1px solid #33415f;' +
+      'color:#cfe0ff;border-radius:8px;padding:8px;cursor:pointer;font:11px monospace">' +
+      '🌙 Сразу ночь</button>' +
+      '<button id="fzg-day" style="flex:1;background:#1a2135;border:1px solid #33415f;' +
+      'color:#cfe0ff;border-radius:8px;padding:8px;cursor:pointer;font:11px monospace">' +
+      '☀️ Сразу день</button></div>' +
+
+      '<div style="color:#8fa3c8;margin:12px 0 4px">ЭФФЕКТЫ</div>' +
+      '<div id="fzg-toggles" style="display:grid;grid-template-columns:1fr 1fr;gap:4px">' +
+      ['grain:Плёночное зерно', 'vign:Виньетка', 'leaves:Листья',
+       'birds:Птицы и бабочки', 'clouds:Облака', 'auto:Авто-погода'].map(function (t) {
+        const k = t.split(':')[0], n = t.split(':')[1];
+        return '<label style="display:flex;gap:6px;align-items:center;' +
+          'color:#aebcd8;cursor:pointer;font-size:11px">' +
+          '<input type="checkbox" data-fzg-t="' + k + '" checked> ' + n + '</label>';
+      }).join('') + '</div>' +
+
+      '<div style="margin-top:14px;color:#5d6b8a;font-size:10px;text-align:center">' +
+      'FZ-GFX PACK · [F2] закрыть · [F4] погода · [F6] день/ночь</div>';
+    document.body.appendChild(p);
+    U.panel = p;
+
+    // ── обработчики ──
+    document.getElementById('fzg-close').onclick = function () {
+      p.style.display = 'none';
+    };
+    p.querySelectorAll('[data-fzg-w]').forEach(function (b) {
+      b.onclick = function () { FZG.setWeather(b.getAttribute('data-fzg-w')); };
+    });
+    p.querySelectorAll('[data-fzg-q]').forEach(function (b) {
+      b.onclick = function () { FZG.setQuality(b.getAttribute('data-fzg-q')); };
+    });
+    const ts = document.getElementById('fzg-time');
+    ts.oninput = function () {
+      U.timeScale = parseFloat(ts.value);
+      document.getElementById('fzg-ts').textContent =
+        U.timeScale.toFixed(1);
+    };
+    document.getElementById('fzg-night').onclick = function () {
+      FZG.forceTime('night');
+    };
+    document.getElementById('fzg-day').onclick = function () {
+      FZG.forceTime('day');
+    };
+    p.querySelectorAll('[data-fzg-t]').forEach(function (cb) {
+      cb.onchange = function () { FZG.toggle(cb.getAttribute('data-fzg-t'), cb.checked); };
+    });
+
+    // ── горячие клавиши ──
+    window.addEventListener('keydown', function (ev) {
+      if (ev.key === 'F2') {
+        ev.preventDefault();
+        p.style.display = p.style.display === 'block' ? 'none' : 'block';
+      } else if (ev.key === 'F4') {
+        ev.preventDefault();
+        FZG.cycleWeather();
+      } else if (ev.key === 'F6') {
+        ev.preventDefault();
+        FZG.forceTime(FZG.night > 0.5 ? 'day' : 'night');
+      }
+    });
+
+    FZG.ui = U;
+  };
+
+  // переключатели эффектов
+  FZG.toggle = function (what, on) {
+    const P = FZG.post, FL = FZG.flora, FA = FZG.fauna;
+    switch (what) {
+      case 'grain':
+        if (P && P.grain) P.grain.style.display = on ? 'block' : 'none';
+        if (P) P.grainOn = on;
+        break;
+      case 'vign':
+        if (P && P.vign) P.vign.style.display = on ? 'block' : 'none';
+        break;
+      case 'leaves':
+        if (FL && FL.leaves) FL.leaves.visible = on;
+        break;
+      case 'birds':
+        if (FA) FA.birds.concat(FA.butterflies).forEach(function (g) {
+          g.userData.fzOff = !on;
+          if (!on) g.visible = false;
+        });
+        break;
+      case 'clouds':
+        if (FZG.sky) FZG.sky.clouds.forEach(function (c) {
+          c.s.visible = on;
+        });
+        break;
+      case 'auto':
+        if (FZG.weather) FZG.weather.autoOn = on;
+        break;
+    }
+  };
+
+  // цикл погоды по F4
+  FZG.cycleWeather = function () {
+    const order = ['sunny', 'rain', 'storm', 'snow', 'fog'];
+    const W = FZG.weather;
+    if (!W) return;
+    const i = order.indexOf(W.cur);
+    FZG.setWeather(order[(i + 1) % order.length]);
+  };
+
+  // мгновенная смена времени суток
+  FZG.forceTime = function (what) {
+    try {
+      // dayTime: t=(sin+1)/2 → день при sin=1 (dayTime=π/2), ночь при sin=-1
+      dayTime = what === 'night'
+        ? -Math.PI / 2 + 0.02
+        : Math.PI / 2 - 0.02;
+      try {
+        if (typeof showNotification === 'function') {
+          showNotification(what === 'night' ? '🌙 Наступила ночь' : '☀️ Наступил день', 'info');
+        }
+      } catch (e) {}
+    } catch (e) {}
+  };
+
+  // смена качества (пересоздаёт частицы)
+  FZG.setQuality = function (q) {
+    if (!FZG.QUALITY[q]) return;
+    FZG.quality = q;
+    try {
+      FZG.renderer.setPixelRatio(FZG.QUALITY[q].pr);
+    } catch (e) {}
+    // пересоздание систем частиц
+    FZG.rainDispose();
+    FZG.snowDispose();
+    FZG.rainInit();
+    FZG.snowInit();
+    if (FZG.post) FZG.applyQualityPost();
+    try {
+      if (typeof showNotification === 'function') {
+        showNotification('🎚 Качество графики: ' + q, 'info');
+      }
+    } catch (e) {}
+  };
+})();
+
+// ═══════════ FZ-GFX ЧАСТЬ 10 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  НОВЫЕ АНИМАЦИИ ПЕРСОНАЖА: эмоции сверх существующих
+//  [/emote6..9]: брейк-данс · макарена · лунная походка · салют
+//  Подключаются к существующей системе циклов анимаций
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZG = window.FZG;
+  if (!FZG) return;
+
+  // ── расширенный набор циклов: 4 новых ──
+  // Работают и с НОВОЙ моделью (каналы позы), и со старой (кости)
+  function fzgExtraAnims() {
+    const t = (Date.now() % 60000) / 1000;
+    let targets = [];
+    try {
+      if (typeof getAnimTargets === 'function') targets = getAnimTargets();
+    } catch (e) { return; }
+    if (!targets.length) return;
+
+    targets.forEach(function (mesh) {
+      if (!mesh || !mesh.userData) return;
+      const model = mesh.userData.model;
+      const type = window._fzgAnimType;
+      if (!type) return;
+
+      if (model && model.setCustomPose) {
+        switch (type) {
+          case 'breakdance': // вращение на спине + ноги вверх
+            mesh.rotation.y = t * 3.4;
+            model.setCustomPose({
+              hipsPosY: -0.55 + Math.sin(t * 6) * 0.06,
+              torsoRotX: -1.15,
+              legLRotX: 0.9 + Math.sin(t * 6) * 0.5,
+              legRRotX: 0.9 - Math.sin(t * 6) * 0.5,
+              armLRotZ: 1.4, armRRotZ: -1.4
+            });
+            break;
+          case 'macarena': // руки поперёк по очереди
+            const m = Math.sin(t * 4.6) > 0;
+            model.setCustomPose({
+              armLRotZ: m ? 1.5 : 0.3, armRRotZ: m ? 0.3 : -1.5,
+              armLRotX: m ? -1.2 : 0, armRRotX: m ? 0 : -1.2,
+              torsoRotY: Math.sin(t * 2.3) * 0.25,
+              hipsPosY: Math.abs(Math.sin(t * 4.6)) * 0.05
+            });
+            break;
+          case 'moonwalk': // скольжение назад с приподнятым носком
+            mesh.rotation.y += 0;
+            model.setCustomPose({
+              legLRotX: -0.5 + Math.sin(t * 5) * 0.35,
+              legRRotX: 0.25,
+              hipsPosY: 0.02 + Math.abs(Math.sin(t * 5)) * 0.04,
+              torsoRotX: 0.12,
+              armLRotX: Math.sin(t * 5) * 0.4,
+              armRRotX: -Math.sin(t * 5) * 0.4
+            });
+            break;
+          case 'salute': // честь отдаёт + помахал
+            const w = Math.sin(t * 2) > 0.6;
+            model.setCustomPose(w ? {
+              armRRotX: -1.9, armRRotZ: 0.55, elbowRRotX: -1.5,
+              headRotX: -0.08, torsoRotX: 0.05
+            } : {
+              armRRotX: -0.3, armRRotZ: 0.1 + Math.sin(t * 5) * 0.4,
+              headRotY: Math.sin(t * 2) * 0.2
+            });
+            break;
+        }
+        return;
+      }
+
+      // старая модель: кости
+      const ud = mesh.userData;
+      if (!ud.leftArm) return;
+      switch (type) {
+        case 'breakdance':
+          mesh.rotation.y = t * 3.4;
+          if (ud.body) { ud.body.position.y = 0.9; ud.body.rotation.x = -1.1; }
+          ud.leftLeg.rotation.x = 0.9 + Math.sin(t * 6) * 0.5;
+          ud.rightLeg.rotation.x = 0.9 - Math.sin(t * 6) * 0.5;
+          ud.leftArm.rotation.z = 1.4; ud.rightArm.rotation.z = -1.4;
+          break;
+        case 'macarena':
+          if (Math.sin(t * 4.6) > 0) {
+            ud.leftArm.rotation.z = 1.5; ud.leftArm.rotation.x = -1.2;
+            ud.rightArm.rotation.z = 0.3; ud.rightArm.rotation.x = 0;
+          } else {
+            ud.rightArm.rotation.z = -1.5; ud.rightArm.rotation.x = -1.2;
+            ud.leftArm.rotation.z = 0.3; ud.leftArm.rotation.x = 0;
+          }
+          break;
+        case 'moonwalk':
+          ud.leftLeg.rotation.x = -0.5 + Math.sin(t * 5) * 0.35;
+          ud.rightLeg.rotation.x = 0.25;
+          ud.leftArm.rotation.x = Math.sin(t * 5) * 0.4;
+          ud.rightArm.rotation.x = -Math.sin(t * 5) * 0.4;
+          break;
+        case 'salute':
+          if (Math.sin(t * 2) > 0.6) {
+            ud.rightArm.rotation.x = -2.6; ud.rightArm.rotation.z = 0.5;
+          } else {
+            ud.rightArm.rotation.x = -Math.PI / 2;
+            ud.rightArm.rotation.z = 0.2 + Math.sin(t * 5) * 0.45;
+          }
+          break;
+      }
+    });
+  }
+
+  // ── врезаемся в существующую систему startAnimLoop ──
+  // если игра запустила свой цикл — добавляем свои типы
+  let _hooked = false;
+  function hookAnimSystem() {
+    if (_hooked) return;
+    try {
+      if (typeof startAnimLoop !== 'function') return;
+      const orig = startAnimLoop;
+      // расширенная обёртка: наши типы крутит свой rAF
+      window._fzgAnimType = null;
+      let rafId = null;
+      window.startAnimLoop = function (type) {
+        const extra = ['breakdance', 'macarena', 'moonwalk', 'salute'];
+        if (extra.indexOf(type) >= 0) {
+          // остановить стандартный цикл и запустить наш
+          try { if (typeof stopAnimLoop === 'function') stopAnimLoop(); } catch (e) {}
+          window._fzgAnimType = type;
+          if (rafId) cancelAnimationFrame(rafId);
+          (function me() {
+            if (!window._fzgAnimType) return;
+            fzgExtraAnims();
+            rafId = requestAnimationFrame(me);
+          })();
+          try {
+            if (typeof showNotification === 'function') {
+              const nm = { breakdance: '🕺 Брейк-данс!', macarena: '💃 Макарена!',
+                moonwalk: '🌙 Лунная походка', salute: '🫡 Салют!' };
+              showNotification(nm[type], 'info');
+            }
+          } catch (e) {}
+          return;
+        }
+        window._fzgAnimType = null;
+        if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+        return orig.apply(this, arguments);
+      };
+      _hooked = true;
+    } catch (e) {}
+  }
+
+  // ── чат-команды: /anim <имя> ──
+  function hookChat() {
+    try {
+      const inp = document.getElementById('chatInput') ||
+                  document.querySelector('input[type="text"][maxlength]');
+      if (!inp || inp.dataset.fzgHooked) return;
+      inp.dataset.fzgHooked = '1';
+      inp.addEventListener('keydown', function (ev) {
+        if (ev.key !== 'Enter') return;
+        const v = (inp.value || '').trim();
+        const m = v.match(/^\/(?:anim|эмоция)\s+(\w+)$/);
+        if (!m) return;
+        const map = {
+          break: 'breakdance', брейк: 'breakdance',
+          macarena: 'macarena', макарена: 'macarena',
+          moonwalk: 'moonwalk', лунная: 'moonwalk',
+          salute: 'salute', салют: 'salute'
+        };
+        const type = map[m[1].toLowerCase()];
+        if (type) {
+          ev.stopImmediatePropagation();
+          ev.preventDefault();
+          inp.value = '';
+          try { inp.blur(); } catch (e) {}
+          window.startAnimLoop(type);
+        }
+      }, true); // capture — раньше игровых обработчиков
+    } catch (e) {}
+  }
+
+  // повторные попытки хука (инпут появляется после загрузки)
+  let tries = 0;
+  const iv = setInterval(function () {
+    tries++;
+    hookAnimSystem();
+    hookChat();
+    if (_hooked && tries > 40) clearInterval(iv);
+    if (tries > 200) clearInterval(iv);
+  }, 500);
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+//  ГЛАВНЫЙ ТИК ПАКА: свой rAF, аккуратно читает состояние игры
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZG = window.FZG;
+  if (!FZG) return;
+
+  let last = performance.now();
+  let fpsAcc = 0, fpsN = 0, fps = 60;
+
+  function tick(now) {
+    requestAnimationFrame(tick);
+    let dt = (now - last) / 1000;
+    last = now;
+    if (dt > 0.1) dt = 0.1;
+    if (!FZG.booted || !FZG.ready) return;
+
+    FZG.t += dt;
+
+    // fps (для авто-деградации на слабых машинах)
+    fpsAcc += dt; fpsN++;
+    if (fpsAcc >= 1) {
+      fps = fpsN / fpsAcc;
+      fpsAcc = 0; fpsN = 0;
+      FZG.autoQuality(fps);
+    }
+
+    // ── читаем состояние игры ──
+    try {
+      let lp = null;
+      if (typeof localPlayer !== 'undefined' && localPlayer &&
+          localPlayer.mesh) lp = localPlayer.mesh;
+      if (lp) {
+        if (!FZG.plPos) FZG.plPos = new THREE.Vector3();
+        FZG.plPos.copy(lp.position);
+        const anim = localPlayer.currentAnimation;
+        FZG.moving = anim === 'walk' || anim === 'run';
+      } else {
+        FZG.plPos = null;
+        FZG.moving = false;
+      }
+    } catch (e) {}
+
+    // ночь из dayTime игры (та же формула, что в updateDayNight)
+    try {
+      const t = (Math.sin(dayTime) + 1) / 2;
+      FZG.night = FZG.clamp(1 - (t - 0) / 0.55, 0, 1);
+      if (t < 0.25) FZG.night = 1;
+      else if (t > 0.55) FZG.night = 0;
+    } catch (e) { FZG.night = 0; }
+
+    // ── обновление подсистем ──
+    try { FZG.weatherUpdate(dt); } catch (e) {}
+    try { FZG.skyUpdate(dt); } catch (e) {}
+    try { FZG.rainUpdate(dt); } catch (e) {}
+    try { FZG.snowUpdate(dt); } catch (e) {}
+    try { FZG.fogUpdate(dt); } catch (e) {}
+    try { FZG.lightningUpdate(dt); } catch (e) {}
+    try { FZG.floraUpdate(dt); } catch (e) {}
+    try { FZG.faunaUpdate(dt); } catch (e) {}
+    try { FZG.postUpdate(dt); } catch (e) {}
+    try { FZG.camfxUpdate(dt); } catch (e) {}
+    try { FZG.audioUpdate(dt); } catch (e) {}
+
+    // авто-погода
+    try {
+      const W = FZG.weather;
+      if (W && W.autoOn !== false) {
+        if (W._autoAt == null) W._autoAt = FZG.t + FZG.rnd(180, 360);
+        if (FZG.t > W._autoAt) FZG.weatherAutoNext();
+      }
+    } catch (e) {}
+  }
+
+  // ── авто-качество: если FPS < 25 несколько секунд — понижаем ──
+  FZG.autoQuality = function (fpsNow) {
+    if (FZG._autoQLock && FZG.t - FZG._autoQLock < 30) return;
+    if (fpsNow < 24 && FZG.quality !== 'low') {
+      FZG._autoQLock = FZG.t;
+      FZG.setQuality(FZG.quality === 'high' ? 'med' : 'low');
+    }
+  };
+
+  // ── запуск после готовности сцены ──
+  window.FZG_onReady = function () {
+    try {
+      FZG.weatherInit();
+      FZG.skyInit();
+      FZG.rainInit();
+      FZG.snowInit();
+      FZG.fogInit();
+      FZG.lightningInit();
+      FZG.floraInit();
+      FZG.faunaInit();
+      FZG.postInit();
+      FZG.camfxInit();
+      FZG.uiInit();
+      FZG.ready = true;
+      // стартовое состояние
+      FZG.setWeather('sunny', true);
+      // ── обёртка updateDayNight: наш туман ПОСЛЕ игрового ──
+      try {
+        if (typeof updateDayNight === 'function' && !window._fzgUDN) {
+          window._fzgUDN = updateDayNight;
+          updateDayNight = function (d) {
+            window._fzgUDN(d);
+            try { FZG.fogApply(); } catch (e) {}
+          };
+        }
+      } catch (e) {}
+      requestAnimationFrame(tick);
+      try {
+        if (typeof showNotification === 'function') {
+          setTimeout(function () {
+            showNotification('✨ FZ-GFX: супер-графика активна · [F2] панель · [F4] погода', 'success');
+          }, 4000);
+        }
+      } catch (e) {}
+      console.log('%cFZ-GFX PACK v1.0: погода/небо/пост-эффекты/анимации активны', 'color:#7ec8ff');
+    } catch (e) {
+      console.warn('FZ-GFX init error:', e);
+    }
+  };
+
+  // если boot уже успел отработать до определения этого обработчика
+  if (FZG.booted && !FZG.ready && window.FZG_onReady) {
+    window.FZG_onReady();
+  }
+})();
+
+</script>
