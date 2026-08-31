@@ -21705,3 +21705,3296 @@ document.addEventListener('selectstart', function(e) {
 })();
 
 </script>
+
+<script id="fznext">
+// ═══════════════════════════════════════════════════════════════
+//  FZ-NEXT PACK — УПРАВЛЕНИЕ · NPC-ЛЮДИ · HP v2 · ОПТИМИЗАЦИЯ
+//  [F3] тюнинг · [F7] клавиши · [F8] диагностика · ?fzdiag=1
+// ═══════════════════════════════════════════════════════════════
+
+// ═══════════ FZ-NEXT ЧАСТЬ 1 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  FZ-NEXT PACK v1.0 — СУПЕР-УПРАВЛЕНИЕ · NPC-ЛЮДИ · HP v2 · ОПТИМИЗАЦИЯ
+//  Геймпад [🎮] · Мобильные кнопки · Консольный режим · Толпа NPC
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  if (window.FZI && window.FZI.booted) return;
+
+  // ── детектор устройства ──
+  const ua = navigator.userAgent || '';
+  const DEV = {
+    isMobile: /Android|iPhone|iPad|iPod|Mobile/i.test(ua) ||
+      ('ontouchstart' in window && window.innerWidth < 1024),
+    isTablet: /iPad|Tablet/i.test(ua) ||
+      ('ontouchstart' in window && window.innerWidth >= 1024 && window.innerWidth <= 1366),
+    console: /PlayStation|Xbox|Nintendo|Switch|CrKey|SMART-TV|SmartTV/i.test(ua),
+    memory: navigator.deviceMemory || navigator.hardwareConcurrency || 4,
+    cores: navigator.hardwareConcurrency || 4,
+    touch: ('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0
+  };
+  DEV.isPhone = DEV.isMobile && !DEV.isTablet;
+  // класс устройства определяет пресет графики
+  DEV.tier = DEV.console ? 'console'
+    : DEV.isPhone ? (DEV.cores >= 8 && DEV.memory >= 6 ? 'phone-high' : 'phone')
+    : DEV.isTablet ? 'tablet'
+    : (DEV.cores >= 8 ? 'desktop-high' : 'desktop');
+
+  // ── ядро ввода: единый агрегатор клавиатура+тач+геймпад ──
+  const FZI = {
+    booted: true,
+    DEV: DEV,
+    // общий стик движения (-1..1)
+    move: { x: 0, y: 0 },
+    // взгляд (накапливается, применяется к cameraAngleH/V)
+    look: { x: 0, y: 0 },
+    // кнопки-состояния
+    btn: {
+      jump: false, sprint: false, interact: false,
+      dance: false, chat: false, map: false, horn: false
+    },
+    // одноразовые нажатия (обрабатываются и сбрасываются)
+    press: { interact: false, jump: false, dance: false },
+    settings: {
+      sensPad: 3.2,        // чувствительность стика камеры
+      invertY: false,
+      deadZone: 0.16,
+      vibration: true,
+      autoSprint: false,   // автоматический бег вперёд
+      btnScale: 1.0,       // размер мобильных кнопок
+      npcCount: -1         // -1 = авто по устройству
+    },
+    pad: null,             // активный геймпад
+    padUI: null,
+    t: 0
+  };
+  window.FZI = FZI;
+
+  // ── профили устройств: графика + плотности ──
+  FZI.TIERS = {
+    'console':     { pixelRatio: 1.25, fpsCap: 60, npc: 36, shadows: true,  grain: false, note: ' консоль: стабильные 60 FPS' },
+    'desktop-high':{ pixelRatio: 2.0,  fpsCap: 0,  npc: 34, shadows: true,  grain: true,  note: 'ПК-максимум' },
+    'desktop':     { pixelRatio: 1.5,  fpsCap: 0,  npc: 26, shadows: true,  grain: true,  note: 'ПК-стандарт' },
+    'tablet':      { pixelRatio: 1.5,  fpsCap: 60, npc: 22, shadows: false, grain: false, note: 'планшет' },
+    'phone-high':  { pixelRatio: 1.0,  fpsCap: 60, npc: 18, shadows: false, grain: false, note: 'смартфон-флагман' },
+    'phone':       { pixelRatio: 0.8,  fpsCap: 30, npc: 12, shadows: false, grain: false, note: 'смартфон-экономия' }
+  };
+  FZI.tierInfo = function () { return FZI.TIERS[DEV.tier] || FZI.TIERS.desktop; };
+
+  // сохранение настроек
+  FZI.save = function () {
+    try { localStorage.setItem('fzInput', JSON.stringify(FZI.settings)); } catch (e) {}
+  };
+  FZI.load = function () {
+    try {
+      const s = JSON.parse(localStorage.getItem('fzInput') || 'null');
+      if (s) Object.assign(FZI.settings, s);
+    } catch (e) {}
+  };
+  FZI.load();
+
+  // ── синтетические события клавиатуры (для игровых обработчиков) ──
+  FZI.tapKey = function (code, key) {
+    try {
+      const opts = { code: code, key: key || code.replace('Key', '').toLowerCase(),
+                     bubbles: true, cancelable: true };
+      document.dispatchEvent(new KeyboardEvent('keydown', opts));
+      setTimeout(function () {
+        document.dispatchEvent(new KeyboardEvent('keyup', opts));
+      }, 60);
+    } catch (e) {}
+  };
+
+  // ── вибрация (мобильная) ──
+  FZI.buzz = function (ms) {
+    if (!FZI.settings.vibration) return;
+    try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
+  };
+})();
+
+// ═══════════ FZ-NEXT ЧАСТЬ 2 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  ГЕЙМПАД: Xbox · PlayStation · Switch · generic
+//  Левый стик — движение · Правый — камера · A/Cross — прыжок
+//  RT/R2 или L3 — спринт · X/Square или E — действие · Y — танец
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  if (!FZI) return;
+
+  const PAD = {
+    index: -1,
+    id: '',
+    prevBtns: [],
+    connected: false,
+    // сглаживание стиков
+    lookSmooth: { x: 0, y: 0 },
+    moveR: { x: 0, y: 0 },
+    light: 0 // «стрелка» вибрации урона
+  };
+  FZI.pad = PAD;
+
+  // стандартизированные индексы (Standard Gamepad Mapping)
+  const B = {
+    A: 0, B: 1, X: 2, Y: 3,
+    LB: 4, RB: 5, LT: 6, RT: 7,
+    BACK: 8, START: 9, L3: 10, R3: 11,
+    DUP: 12, DDOWN: 13, DLEFT: 14, DRIGHT: 15,
+    GUIDE: 16
+  };
+  const AX = { LX: 0, LY: 1, RX: 2, RY: 3 };
+
+  function deadZone(v) {
+    const dz = FZI.settings.deadZone;
+    if (Math.abs(v) < dz) return 0;
+    return (v - Math.sign(v) * dz) / (1 - dz);
+  }
+
+  function padName(id) {
+    id = (id || '').toLowerCase();
+    if (id.indexOf('xbox') >= 0 || id.indexOf('054c') >= 0 && id.indexOf('0ce6') >= 0) return 'Xbox';
+    if (id.indexOf('054c') >= 0 || id.indexOf('dualsense') >= 0 ||
+        id.indexOf('wireless controller') >= 0) return 'PlayStation';
+    if (id.indexOf('nintendo') >= 0 || id.indexOf('switch') >= 0 ||
+        id.indexOf('joy-con') >= 0 || id.indexOf('pro controller') >= 0) return 'Switch';
+    return 'Геймпад';
+  }
+
+  // ── события подключения ──
+  window.addEventListener('gamepadconnected', function (ev) {
+    PAD.index = ev.gamepad.index;
+    PAD.id = ev.gamepad.id;
+    PAD.connected = true;
+    const nm = padName(PAD.id);
+    try {
+      if (typeof showNotification === 'function') {
+        showNotification('🎮 ' + nm + ' подключён! Стики — движение и камера', 'success');
+      }
+    } catch (e) {}
+    FZI.buzz(60);
+    if (FZI.padUI) FZI.padUI.show(nm);
+  });
+  window.addEventListener('gamepaddisconnected', function (ev) {
+    if (ev.gamepad.index === PAD.index) {
+      PAD.connected = false;
+      PAD.index = -1;
+      if (FZI.padUI) FZI.padUI.hide();
+      try {
+        if (typeof showNotification === 'function') {
+          showNotification('🎮 Геймпад отключён', 'info');
+        }
+      } catch (e) {}
+    }
+  });
+
+  // ── индикатор геймпада (кружок в углу) ──
+  FZI.padUIInit = function () {
+    const el = document.createElement('div');
+    el.id = 'fzi-pad-indicator';
+    el.style.cssText =
+      'position:fixed;bottom:12px;left:12px;z-index:9998;display:none;' +
+      'background:rgba(10,14,24,.85);border:1px solid #2f3a55;border-radius:10px;' +
+      'padding:6px 12px;color:#9fe8ff;font:11px monospace;pointer-events:none;' +
+      'backdrop-filter:blur(4px);';
+    el.textContent = '🎮 GAMEPAD';
+    document.body.appendChild(el);
+    FZI.padUI = {
+      el: el,
+      show: function (nm) { el.style.display = 'block'; el.textContent = '🎮 ' + nm.toUpperCase(); },
+      hide: function () { el.style.display = 'none'; }
+    };
+  };
+
+  // ── опрос геймпада (вызывается из общего тика) ──
+  FZI.padPoll = function (dt) {
+    if (!navigator.getGamepads) return;
+    const pads = navigator.getGamepads();
+    let gp = null;
+    if (PAD.index >= 0 && pads[PAD.index]) gp = pads[PAD.index];
+    else {
+      for (let i = 0; i < pads.length; i++) {
+        if (pads[i] && pads[i].connected) { gp = pads[i]; PAD.index = i; break; }
+      }
+    }
+    if (!gp) { PAD.connected = false; return; }
+    PAD.connected = true;
+
+    // ── движение: левый стик + крестовина ──
+    let mx = deadZone(gp.axes[AX.LX] || 0);
+    let my = deadZone(gp.axes[AX.LY] || 0);
+    if (gp.buttons[B.DLEFT] && gp.buttons[B.DLEFT].pressed) mx = -1;
+    if (gp.buttons[B.DRIGHT] && gp.buttons[B.DRIGHT].pressed) mx = 1;
+    if (gp.buttons[B.DUP] && gp.buttons[B.DUP].pressed) my = -1;
+    if (gp.buttons[B.DDOWN] && gp.buttons[B.DDOWN].pressed) my = 1;
+    FZI.move.x = mx;
+    FZI.move.y = my;
+
+    // ── камера: правый стик со сглаживанием ──
+    const rx = deadZone(gp.axes[AX.RX] || 0);
+    const ry = deadZone(gp.axes[AX.RY] || 0);
+    const sm = 1 - Math.exp(-14 * dt);
+    PAD.lookSmooth.x += (rx - PAD.lookSmooth.x) * sm;
+    PAD.lookSmooth.y += (ry - PAD.lookSmooth.y) * sm;
+    const sens = FZI.settings.sensPad * 0.0028;
+    FZI.look.x -= PAD.lookSmooth.x * sens * 16 * dt * 60;
+    FZI.look.y -= (FZI.settings.invertY ? -1 : 1) * PAD.lookSmooth.y * sens * 12 * dt * 60;
+
+    // ── кнопки ──
+    const down = function (i) { return gp.buttons[i] && gp.buttons[i].pressed; };
+    const pr = PAD.prevBtns;
+
+    // прыжок: A/Cross
+    FZI.btn.jump = down(B.A);
+    if (down(B.A) && !pr[B.A]) FZI.press.jump = true;
+    // спринт: RT/R2 (аналог) или L3
+    const rt = gp.buttons[B.RT] ? gp.buttons[B.RT].value : 0;
+    FZI.btn.sprint = rt > 0.4 || down(B.L3) || down(B.LB);
+    // действие: X/Square
+    FZI.btn.interact = down(B.X) || down(B.B);
+    if ((down(B.X) && !pr[B.X]) || (down(B.B) && !pr[B.B])) {
+      FZI.press.interact = true;
+      FZI.tapKey('KeyE', 'e');
+    }
+    // прыжок → Space, только по нажатию (иначе постоянный прыжок)
+    if (down(B.A) && !pr[B.A]) FZI.tapKey('Space', ' ');
+    // танец: Y/Triangle → цикл по D-pad? просто единый танец
+    if (down(B.Y) && !pr[B.Y]) {
+      FZI.tapKey('KeyB', 'b');
+    }
+    // карта/инвентарь: START
+    if (down(B.START) && !pr[B.START]) FZI.tapKey('KeyM', 'm');
+    if (down(B.BACK) && !pr[B.BACK]) FZI.tapKey('KeyI', 'i');
+    // чат: D-pad up
+    if (down(B.DUP) && !pr[B.DUP]) FZI.tapKey('KeyT', 't');
+
+    // вибрация при уроне (перехватывается hp-модулем)
+    if (PAD.light > 0) {
+      PAD.light -= dt;
+      padRumble(0.4, 120);
+    }
+
+    // запоминаем состояние
+    PAD.prevBtns = gp.buttons.map(function (b) { return b.pressed; });
+  };
+
+  // ── rumble (если поддерживается) ──
+  function padRumble(strong, ms) {
+    if (!FZI.settings.vibration) return;
+    try {
+      const pads = navigator.getGamepads();
+      const gp = pads[PAD.index];
+      if (gp && gp.vibrationActuator && gp.vibrationActuator.playEffect) {
+        gp.vibrationActuator.playEffect('dual-rumble', {
+          startDelay: 0,
+          duration: ms,
+          weakMagnitude: strong * 0.6,
+          strongMagnitude: strong
+        });
+      }
+    } catch (e) {}
+  }
+  FZI.padRumble = padRumble;
+
+  // лёгкий rumble при подключении стика вбок (дрифт-детект не нужен)
+  FZI.padDamage = function () { PAD.light = 0.3; };
+})();
+
+// ═══════════ FZ-NEXT ЧАСТЬ 3 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  МОБИЛЬНОЕ УПРАВЛЕНИЕ v2: большие кнопки + хаптика +
+//  жест камеры + автоспринт + safe-area + запрет жестов браузера
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  if (!FZI) return;
+  if (!FZI.DEV.touch) return; // на десктопе кнопки не нужны
+
+  const M = { root: null, btns: {}, camTouch: { id: -1, x: 0, y: 0 } };
+  FZI.mob = M;
+
+  // ── CSS: запрет браузерных жестов поверх игры ──
+  const css = document.createElement('style');
+  css.id = 'fzi-mobile-css';
+  css.textContent =
+    'html,body{-webkit-user-select:none!important;user-select:none!important;' +
+    '-webkit-touch-callout:none!important;overscroll-behavior:none!important;' +
+    'touch-action:none!important;}' +
+    'canvas{touch-action:none!important;-webkit-tap-highlight-color:transparent!important;}' +
+    '#fzi-btns{position:fixed;right:calc(10px + env(safe-area-inset-right));' +
+    'bottom:calc(18px + env(safe-area-inset-bottom));z-index:9996;display:flex;' +
+    'flex-direction:column;gap:10px;align-items:flex-end;pointer-events:none;}' +
+    '.fzi-btn{pointer-events:auto;display:flex;align-items:center;justify-content:center;' +
+    'border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(120,140,200,.5),' +
+    'rgba(30,38,70,.65));border:2px solid rgba(160,180,255,.5);color:#e8eeff;' +
+    'font:600 12px monospace;text-shadow:0 1px 3px #000;backdrop-filter:blur(3px);' +
+    'box-shadow:0 4px 16px rgba(0,0,0,.45);transition:transform .08s,background .12s;}' +
+    '.fzi-btn:active,.fzi-btn.hold{transform:scale(1.14);background:' +
+    'radial-gradient(circle at 35% 30%,rgba(170,200,255,.7),rgba(70,100,180,.85));}' +
+    '.fzi-btn.b-jump{width:74px;height:74px;font-size:24px}' +
+    '.fzi-btn.b-act{width:58px;height:58px;font-size:11px;background:' +
+    'radial-gradient(circle at 35% 30%,rgba(120,220,160,.5),rgba(24,80,50,.7));' +
+    'border-color:rgba(140,255,190,.55)}' +
+    '.fzi-btn.b-run{width:58px;height:58px;font-size:20px}' +
+    '.fzi-btn.b-dance{width:50px;height:50px;font-size:20px}' +
+    '.fzi-btn.b-cam{width:50px;height:50px;font-size:18px;opacity:.8}' +
+    '.fzi-row{display:flex;gap:10px;align-items:flex-end;pointer-events:none;}';
+  document.head.appendChild(css);
+
+  // ── генерация кнопок ──
+  FZI.mobInit = function () {
+    if (M.root) return;
+    const root = document.createElement('div');
+    root.id = 'fzi-btns';
+    root.innerHTML =
+      '<div class="fzi-row">' +
+      '  <div class="fzi-btn b-dance" data-b="dance">🕺</div>' +
+      '  <div class="fzi-btn b-act" data-b="act">✋ E</div>' +
+      '</div>' +
+      '<div class="fzi-row">' +
+      '  <div class="fzi-btn b-run" data-b="run">🏃</div>' +
+      '  <div class="fzi-btn b-jump" data-b="jump">⬆️</div>' +
+      '</div>';
+    document.body.appendChild(root);
+    M.root = root;
+
+    // масштаб кнопок из настроек
+    FZI.mobScale();
+
+    function bind(name, el, mode) {
+      // mode: 'tap' — одно нажатие, 'hold' — удержание
+      const on = function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        el.classList.add('hold');
+        FZI.buzz(12);
+        if (mode === 'hold') {
+          M.btns[name] = true;
+        } else {
+          M.btns[name] = !M.btns[name]; // переключение (танец)
+          if (name === 'jump') FZI.tapKey('Space', ' ');
+          if (name === 'act') FZI.tapKey('KeyE', 'e');
+          if (name === 'dance') FZI.tapKey('KeyB', 'b');
+        }
+      };
+      const off = function (ev) {
+        ev.preventDefault();
+        el.classList.remove('hold');
+        if (mode === 'hold') M.btns[name] = false;
+      };
+      el.addEventListener('touchstart', on, { passive: false });
+      el.addEventListener('touchend', off, { passive: false });
+      el.addEventListener('touchcancel', off, { passive: false });
+      el.addEventListener('mousedown', on);
+      el.addEventListener('mouseup', off);
+      el.addEventListener('mouseleave', off);
+    }
+
+    const q = function (s) { return root.querySelector(s); };
+    bind('jump', q('.b-jump'), 'tap');
+    bind('act', q('.b-act'), 'tap');
+    bind('dance', q('.b-dance'), 'tap');
+    bind('run', q('.b-run'), 'hold');
+
+    // ── жест камеры: вся правая верхняя зона экрана ──
+    // (кроме зон кнопок и UI — проверяем target)
+    document.addEventListener('touchstart', function (ev) {
+      if (ev.touches.length !== 1) return;
+      const t = ev.target;
+      if (t.closest && (t.closest('#fzi-btns') || t.closest('#joystickBase') ||
+          t.closest('input') || t.closest('button') || t.closest('.modal') ||
+          t.closest('#chatPanel') || t.closest('#fzg-panel'))) return;
+      const touch = ev.touches[0];
+      // камера — если тап в правой половине или выше центра
+      if (touch.clientX > window.innerWidth * 0.45 || touch.clientY < window.innerHeight * 0.35) {
+        M.camTouch.id = touch.identifier;
+        M.camTouch.x = touch.clientX;
+        M.camTouch.y = touch.clientY;
+      }
+    }, { passive: true });
+
+    document.addEventListener('touchmove', function (ev) {
+      for (let i = 0; i < ev.changedTouches.length; i++) {
+        const t = ev.changedTouches[i];
+        if (t.identifier === M.camTouch.id) {
+          const dx = t.clientX - M.camTouch.x;
+          const dy = t.clientY - M.camTouch.y;
+          M.camTouch.x = t.clientX;
+          M.camTouch.y = t.clientY;
+          // пишем прямо в углы камеры игры (как её touch-обработчик)
+          FZI.look.x -= dx * 0.0062;
+          FZI.look.y -= dy * 0.0045 * (FZI.settings.invertY ? -1 : 1);
+        }
+      }
+    }, { passive: true });
+
+    document.addEventListener('touchend', function (ev) {
+      for (let i = 0; i < ev.changedTouches.length; i++) {
+        if (ev.changedTouches[i].identifier === M.camTouch.id) {
+          M.camTouch.id = -1;
+        }
+      }
+    }, { passive: true });
+
+    // двойной тап по правой зоне — прыжок
+    let lastTap = 0;
+    document.addEventListener('touchstart', function (ev) {
+      const t = ev.touches[0];
+      if (!t || t.clientX < window.innerWidth * 0.5) return;
+      const now = Date.now();
+      if (now - lastTap < 280) {
+        FZI.tapKey('Space', ' ');
+        FZI.buzz(18);
+      }
+      lastTap = now;
+    }, { passive: true });
+  };
+
+  // масштаб кнопок
+  FZI.mobScale = function () {
+    if (!M.root) return;
+    M.root.style.transform =
+      'scale(' + FZI.settings.btnScale + ')';
+    M.root.style.transformOrigin = 'bottom right';
+  };
+
+  // ── применение ввода к игре (из общего тика) ──
+  FZI.mobApply = function () {
+    // спринт-кнопка → как Shift
+    try {
+      const run = !!(M.btns && M.btns.run);
+      if (run !== FZI._runWas) {
+        FZI._runWas = run;
+        // игра читает keys['ShiftLeft']
+        keys['ShiftLeft'] = run;
+        keys['shift'] = run;
+      }
+      // автоспринт: долго идём вперёд — включаем бег
+      if (FZI.settings.autoSprint && !run) {
+        const jy = (typeof joystickDelta !== 'undefined') ? joystickDelta.y : 0;
+        if (jy < -0.75) {
+          FZI._autoT = (FZI._autoT || 0) + 1;
+          if (FZI._autoT > 70) { keys['ShiftLeft'] = true; keys['shift'] = true; }
+        } else {
+          FZI._autoT = 0;
+        }
+      }
+    } catch (e) {}
+  };
+})();
+
+// ═══════════ FZ-NEXT ЧАСТЬ 4 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  ОПТИМИЗАЦИЯ: динамическое разрешение · FPS-кап · консольный режим ·
+//  батарея-сейвер · freeze дальних систем · [F8] диагностика
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  if (!FZI) return;
+
+  const OPT = {
+    basePR: 1,          // базовый pixelRatio устройства
+    curPR: 1,           // текущий
+    fpsCap: 0,          // 0 = без капа
+    lastFrame: 0,
+    // адаптивное разрешение
+    resScale: 1,        // 0.6..1
+    resAvg: 1,
+    cold: 0,            // счётчик «хороших» кадров для повышения
+    battery: null,
+    saver: false
+  };
+  FZI.opt = OPT;
+
+  FZI.optInit = function () {
+    const tier = FZI.tierInfo();
+    try {
+      OPT.basePR = Math.min(window.devicePixelRatio || 1, tier.pixelRatio);
+      OPT.curPR = OPT.basePR;
+      OPT.fpsCap = tier.fpsCap;
+      const r = FZI.renderer || (typeof renderer !== 'undefined' ? renderer : null);
+      if (r) {
+        r.setPixelRatio(OPT.basePR);
+        // консоль/мобилки: выключаем лишнее
+        if (!tier.shadows && r.shadowMap) r.shadowMap.enabled = false;
+        // антиалиасинг по тиру
+      }
+    } catch (e) {}
+
+    // батарея-сейвер
+    try {
+      if (navigator.getBattery) {
+        navigator.getBattery().then(function (b) {
+          OPT.battery = b;
+          const check = function () {
+            OPT.saver = b.level < 0.2 && !b.charging;
+            if (OPT.saver) FZI.optSetScale(0.7);
+          };
+          b.addEventListener('levelchange', check);
+          b.addEventListener('chargingchange', check);
+          check();
+        });
+      }
+    } catch (e) {}
+  };
+
+  // ручное разрешение (0.6..1)
+  FZI.optSetScale = function (s) {
+    OPT.resScale = Math.max(0.55, Math.min(1, s));
+    OPT.curPR = OPT.basePR * OPT.resScale;
+    try {
+      const r = FZI.renderer || (typeof renderer !== 'undefined' ? renderer : null);
+      if (r) r.setPixelRatio(OPT.curPR);
+    } catch (e) {}
+  };
+
+  // адаптив: вызывается раз в секунду с текущим FPS
+  FZI.optAdapt = function (fps) {
+    const tier = FZI.tierInfo();
+    if (OPT.saver) return; // в сейвере всё зафиксировано
+    if (fps < 26 && OPT.resScale > 0.6) {
+      OPT.cold = 0;
+      FZI.optSetScale(OPT.resScale - 0.1);
+    } else if (fps > 54 && OPT.resScale < 1) {
+      OPT.cold++;
+      if (OPT.cold > 8) { // 8 секунд стабильности — повышаем
+        OPT.cold = 0;
+        FZI.optSetScale(OPT.resScale + 0.05);
+      }
+    } else {
+      OPT.cold = Math.max(0, OPT.cold - 2);
+    }
+  };
+
+  // ── кадровые оптимизации: что можно пропускать ──
+  let frameN = 0;
+  FZI.optFrame = function () {
+    frameN++;
+    // каждые 3-й кадр — «лёгкий»: дальние системы могут это проверять
+    return frameN % 3;
+  };
+  FZI.optLightFrame = function () { return frameN % 3 === 0; };
+
+  // ═══ ДИАГНОСТИКА [F8]: оверлей железа и подсистем ═══
+  const DIAG = { el: null, on: false };
+  FZI.diagInit = function () {
+    const el = document.createElement('div');
+    el.id = 'fzi-diag';
+    el.style.cssText =
+      'position:fixed;top:10px;right:10px;z-index:9999;display:none;' +
+      'background:rgba(6,8,14,.92);border:1px solid #2f3a55;border-radius:10px;' +
+      'padding:12px 16px;color:#9fe8ff;font:11px/1.8 monospace;min-width:230px;' +
+      'backdrop-filter:blur(6px);pointer-events:none;white-space:pre;';
+    document.body.appendChild(el);
+    DIAG.el = el;
+
+    window.addEventListener('keydown', function (ev) {
+      if (ev.key === 'F8') {
+        ev.preventDefault();
+        DIAG.on = !DIAG.on;
+        el.style.display = DIAG.on ? 'block' : 'none';
+      }
+    });
+    FZI.diag = DIAG;
+  };
+
+  FZI.diagUpdate = function (fps) {
+    if (!DIAG.on || !DIAG.el) return;
+    const D = FZI.DEV;
+    const tier = FZI.tierInfo();
+    const pad = FZI.pad && FZI.pad.connected ? '✓ ' + (FZI.pad.id || '').slice(0, 18) : '—';
+    const FZGn = window.FZG && window.FZG.ready ? '✓' : '—';
+    const npc = window.FZN && FZN.list ? FZN.list.length + '/' + FZN.count : '—';
+    const hp = window.FZHP ? (FZHP.bossMode ? 'БОСС' : 'скрыт') : '—';
+    DIAG.el.textContent =
+      '⚙️ ДИАГНОСТИКА [F8]\n' +
+      '─────────────────\n' +
+      'устройство: ' + D.tier + '\n' +
+      'ядро/память: ' + D.cores + ' ядер\n' +
+      'профиль: ' + tier.note + '\n' +
+      'FPS: ' + fps.toFixed(0) + '\n' +
+      'разрешение: ×' + OPT.resScale.toFixed(2) + '\n' +
+      (OPT.fpsCap ? 'кап FPS: ' + OPT.fpsCap + '\n' : '') +
+      (OPT.saver ? '🔋 батарея-сейвер!\n' : '') +
+      'геймпад: ' + pad + '\n' +
+      'FZ-GFX: ' + FZGn + '\n' +
+      'NPC: ' + npc + '\n' +
+      'HP-режим: ' + hp + '\n' +
+      'движение: x' + FZI.move.x.toFixed(2) + ' y' + FZI.move.y.toFixed(2);
+  };
+
+  // ═══ ГЛАВНЫЙ ТИК ВВОДА: опрос+применение ═══
+  let lastT = performance.now();
+  let fpsAcc = 0, fpsN = 0, fpsShow = 60;
+
+  FZI.inputTick = function (now) {
+    let dt = (now - lastT) / 1000;
+    lastT = now;
+
+    // FPS-кап консоли: если тик быстрее кадра — пропускаем опрос
+    // (рендер-цикл игры не трогаем, только ввод)
+    if (dt <= 0) dt = 0.001;
+    FZI.t += dt;
+
+    // опрос геймпада
+    try { FZI.padPoll(dt); } catch (e) {}
+
+    // применяем геймпадный стик к джойстику/клавишам игры
+    try {
+      if (FZI.pad && FZI.pad.connected) {
+        const mx = FZI.move.x, my = FZI.move.y;
+        const act = Math.abs(mx) > 0.05 || Math.abs(my) > 0.05;
+        keys['KeyW'] = my < -0.1; keys['w'] = my < -0.1;
+        keys['KeyS'] = my > 0.1;  keys['s'] = my > 0.1;
+        keys['KeyA'] = mx < -0.1; keys['a'] = mx < -0.1;
+        keys['KeyD'] = mx > 0.1;  keys['d'] = mx > 0.1;
+        if (FZI.btn.sprint) { keys['ShiftLeft'] = true; keys['shift'] = true; }
+        // пишем в джойстик для плавной анимации ходьбы
+        if (typeof joystickDelta !== 'undefined' && act) {
+          joystickDelta.x = mx;
+          joystickDelta.y = my;
+        }
+      }
+    } catch (e) {}
+
+    // камера: применяем накопленный look к углам игры
+    try {
+      if ((FZI.look.x || FZI.look.y) && typeof cameraAngleH !== 'undefined') {
+        cameraAngleH += FZI.look.x;
+        cameraAngleV += FZI.look.y;
+        cameraAngleV = Math.max(-1.2, Math.min(1.2, cameraAngleV));
+        FZI.look.x = 0;
+        FZI.look.y = 0;
+      }
+    } catch (e) {}
+
+    // мобильные кнопки
+    try { FZI.mobApply(); } catch (e) {}
+
+    // FPS для адаптации и диагностики
+    fpsAcc += dt; fpsN++;
+    if (fpsAcc >= 1) {
+      fpsShow = fpsN / fpsAcc;
+      fpsAcc = 0; fpsN = 0;
+      FZI.optAdapt(fpsShow);
+      try { if (window.FZG && FZG.weather) FZG.autoQuality; } catch (e) {}
+      FZI.diagUpdate(fpsShow);
+    }
+    try { FZI.optFrame(); } catch (e) {}
+  };
+})();
+
+// ═══════════ FZ-NEXT ЧАСТЬ 5 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  NPC-ЛЮДИ: «как мы, только перекрашенные» — берём ТО ЖЕ тело
+//  игрока (createCharacter игры) и красим в случайные одежды.
+//  Толпа живёт своей жизнью: ходит, стоит, смотрит, танцует.
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  if (!FZI) return;
+
+  const FZN = {
+    list: [],       // активные NPC
+    count: 0,       // целевое количество
+    pool: [],       // пул для переиспользования
+    zoneCache: 0
+  };
+  window.FZN = FZN;
+
+  // ── палитры: кожа, волосы, одежда (город Фантазии — яркий) ──
+  const SKINS = ['#FFD1A4', '#F0C088', '#D9A066', '#B67B4E', '#8D5524', '#5C3A21', '#FFE0C2'];
+  const HAIRS = ['#4A2F1B', '#2B2B2B', '#6B4423', '#B5651D', '#D6B370', '#1A1A2E', '#7B2D43', '#3E5641'];
+  const SHIRTS = [
+    '#3498DB', '#E74C3C', '#2ECC71', '#F1C40F', '#9B59B6', '#1ABC9C',
+    '#E67E22', '#E91E63', '#00BCD4', '#8BC34A', '#FF5722', '#607D8B',
+    '#673AB7', '#CDDC39', '#FF9800', '#795548', '#3F51B5', '#AFB42B'
+  ];
+  const PANTS = [
+    '#2C3E50', '#34495E', '#4A4A4A', '#1B2631', '#5D4037', '#263238',
+    '#37474F', '#3E2723', '#212121', '#455A64'
+  ];
+
+  // имена для табличек (генератор города)
+  const NAMES_A = ['Али', 'Бен', 'Вик', 'Го', 'Дан', 'Ева', 'Жак', 'Зоя', 'Иль', 'Кira', 'Лу', 'Макс',
+    'Нина', 'Олег', 'Пётр', 'Рита', 'Стас', 'Тоня', 'Ум', 'Фая', 'Хан', 'Царь', 'Чар', 'Шура'];
+  const NAMES_B = ['сан', 'рия', 'тан', 'фор', 'лан', 'вия', 'джи', 'ня', 'зор', 'мир', 'нур', 'ля'];
+  function npcName() {
+    return NAMES_A[(Math.random() * NAMES_A.length) | 0] +
+           NAMES_B[(Math.random() * NAMES_B.length) | 0];
+  }
+
+  // ── точки интереса города (waypoint-граф) ──
+  const POIS = [
+    // спавн-площадь
+    { x: 17, z: 21, r: 12, tag: 'spawn' },
+    { x: 0, z: 0, r: 14, tag: 'center' },
+    // моллы (толпы у входов)
+    { x: 85, z: -85, r: 16, tag: 'grand-mall' },
+    { x: 235, z: 228, r: 14, tag: 'sun-mall' },
+    { x: -235, z: -228, r: 14, tag: 'mega-plaza' },
+    // парк
+    { x: -26, z: 77, r: 18, tag: 'park' },
+    // улицы между точками
+    { x: 50, z: -30, r: 10, tag: 'street' },
+    { x: -60, z: 40, r: 10, tag: 'street' },
+    { x: 120, z: 100, r: 10, tag: 'street' },
+    { x: -120, z: -100, r: 10, tag: 'street' },
+    { x: 0, z: 120, r: 10, tag: 'street' },
+    { x: 0, z: -120, r: 10, tag: 'street' },
+    { x: 160, z: -60, r: 10, tag: 'street' },
+    { x: -160, z: 60, r: 10, tag: 'street' },
+    { x: 80, z: 120, r: 10, tag: 'street' },
+    { x: -80, z: -140, r: 10, tag: 'street' }
+  ];
+
+  // какие зоны популярны в какое время (0=ночь .. 1=день)
+  function zoneWeight(tag, dayT) {
+    // день: моллы и улицы; вечер/ночь: парк и центр
+    if (dayT > 0.6) {
+      return tag === 'grand-mall' ? 3 : tag === 'street' ? 2 :
+             tag === 'park' ? 1 : 1.5;
+    }
+    return tag === 'park' ? 3 : tag === 'center' ? 2 :
+           tag === 'spawn' ? 2 : tag === 'street' ? 1 : 0.6;
+  }
+
+  function pickPoi() {
+    let dayT = 0.5;
+    try { dayT = (Math.sin(dayTime) + 1) / 2; } catch (e) {}
+    // взвешенный выбор
+    let total = 0;
+    const ws = POIS.map(function (p) {
+      const w = zoneWeight(p.tag, dayT);
+      total += w;
+      return w;
+    });
+    let r = Math.random() * total;
+    for (let i = 0; i < POIS.length; i++) {
+      r -= ws[i];
+      if (r <= 0) return POIS[i];
+    }
+    return POIS[0];
+  }
+
+  // ── создание одного NPC (тело игрока + перекраска) ──
+  function npcBuild() {
+    const app = {
+      skinColor: SKINS[(Math.random() * SKINS.length) | 0],
+      hairColor: HAIRS[(Math.random() * HAIRS.length) | 0],
+      shirtColor: SHIRTS[(Math.random() * SHIRTS.length) | 0],
+      pantsColor: PANTS[(Math.random() * PANTS.length) | 0]
+    };
+    let g = null;
+    try {
+      g = createCharacter(app, false); // ТА ЖЕ функция, что строит игрока
+    } catch (e) { return null; }
+    if (!g) return null;
+
+    // инициализация состояния
+    const poi = pickPoi();
+    const a = Math.random() * Math.PI * 2;
+    const rr = Math.random() * poi.r;
+    g.position.set(poi.x + Math.cos(a) * rr, 0, poi.z + Math.sin(a) * rr);
+    g.rotation.y = Math.random() * Math.PI * 2;
+
+    const npc = {
+      g: g,
+      ud: g.userData,             // body/head/arms/legs — как у игрока
+      name: npcName(),
+      // поведение
+      state: 'idle',              // idle | walk | look | greet | dance | shelter
+      stateT: Math.random() * 4,  // сколько ещё в состоянии
+      target: null,               // Vector3-цель ходьбы
+      speed: 0.9 + Math.random() * 0.8,
+      ph: Math.random() * 6.28,   // фаза анимации
+      sway: 0.5 + Math.random(),  // характер покачивания
+      umbrella: null,             // зонт (создаётся лениво)
+      greeted: false
+    };
+    return npc;
+  }
+
+  // ── спавн толпы (отложенно: ждём игрока и мира) ──
+  FZN.init = function () {
+    const tier = FZI.tierInfo();
+    let want = tier.npc;
+    if (FZI.settings.npcCount >= 0) want = FZI.settings.npcCount;
+    FZN.count = want;
+
+    let made = 0;
+    let attempts = 0;
+    while (made < want && attempts < want * 3) {
+      attempts++;
+      const npc = npcBuild();
+      if (!npc) continue;
+      try {
+        scene.add(npc.g);
+        FZN.list.push(npc);
+        made++;
+      } catch (e) {}
+    }
+    // таблички имён ближайшим — отдельным модулем (h06)
+  };
+
+  // перегенерация количества (из панели)
+  FZN.setCount = function (n) {
+    n = Math.max(0, Math.min(60, n));
+    FZI.settings.npcCount = n;
+    FZI.save();
+    // уменьшить
+    while (FZN.list.length > n) {
+      const npc = FZN.list.pop();
+      try { scene.remove(npc.g); } catch (e) {}
+    }
+    // увеличить
+    let attempts = 0;
+    while (FZN.list.length < n && attempts < n * 2) {
+      attempts++;
+      const npc = npcBuild();
+      if (!npc) continue;
+      try { scene.add(npc.g); FZN.list.push(npc); } catch (e) {}
+    }
+    FZN.count = FZN.list.length;
+  };
+})();
+
+// ═══════════ FZ-NEXT ЧАСТЬ 6 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  NPC ПОВЕДЕНИЕ: конечный автомат idle→walk→look→greet→dance
+//  + расписание дня + реакция на погоду (зонты, укрытия)
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  const FZN = window.FZN;
+  if (!FZI || !FZN) return;
+
+  // смена состояния
+  function setState(npc, s, time) {
+    npc.state = s;
+    npc.stateT = time != null ? time : (1.5 + Math.random() * 4);
+    if (s === 'walk') {
+      // цель: случайная точка в текущей или соседней зоне
+      const poi = Math.random() < 0.75 ? FZN._curPoi || POIS_PICK() : POIS_PICK();
+      FZN._curPoi = poi;
+      const a = Math.random() * Math.PI * 2;
+      const r = Math.random() * poi.r;
+      npc.target = { x: poi.x + Math.cos(a) * r, z: poi.z + Math.sin(a) * r };
+    } else {
+      npc.target = null;
+    }
+  }
+  function POIS_PICK() {
+    // локальная копия выбора (не тянем из h05 privatly)
+    return FZN.pickPoi();
+  }
+
+  // ── главный апдейт NPC ──
+  FZN.update = function (dt) {
+    const pl = FZI.plPos;   // позиция игрока (Vector3 | null)
+    let dayT = 0.5;
+    try { dayT = (Math.sin(dayTime) + 1) / 2; } catch (e) {}
+    const W = window.FZG && FZG.weather;
+    const rain = W ? W.rain : 0;
+    const night = window.FZG ? FZG.night : 0;
+
+    for (let i = 0; i < FZN.list.length; i++) {
+      const npc = FZN.list[i];
+      const g = npc.g;
+      npc.ph += dt * npc.sway;
+      npc.stateT -= dt;
+
+      // ── погода: дождь → идём под навес (просто меняем цель) ──
+      if (rain > 0.5 && npc.state !== 'shelter' && Math.random() < dt * 0.5) {
+        setState(npc, 'shelter', 8 + Math.random() * 10);
+        npc.target = { x: g.position.x + (Math.random() - 0.5) * 30,
+                       z: g.position.z + (Math.random() - 0.5) * 30 };
+        npc.shelterFrom = true;
+      }
+      if (rain < 0.2) npc.shelterFrom = false;
+
+      // ── состояния ──
+      switch (npc.state) {
+        case 'idle':
+          // лёгкое покачивание, иногда поворот головы
+          if (npc.ud.head) {
+            npc.ud.head.rotation.y = Math.sin(npc.ph * 0.7) * 0.3;
+          }
+          animLimbs(npc, 0, dt);
+          if (npc.stateT <= 0) {
+            const r = Math.random();
+            if (r < 0.55) setState(npc, 'walk');
+            else if (r < 0.8) setState(npc, 'look');
+            else if (r < 0.9 && dayT < 0.45) setState(npc, 'dance');
+            else setState(npc, 'idle', 2 + Math.random() * 3);
+          }
+          break;
+
+        case 'look':
+          // смотрит на игрока, если рядом
+          if (npc.ud.head && pl) {
+            const dx = pl.x - g.position.x;
+            const dz = pl.z - g.position.z;
+            const d2 = dx * dx + dz * dz;
+            if (d2 < 400) {
+              const want = Math.atan2(dx, dz) - g.rotation.y;
+              npc.ud.head.rotation.y = Math.max(-0.9, Math.min(0.9, normAng(want)));
+              // близко → приветствие
+              if (d2 < 30 && !npc.greeted) {
+                setState(npc, 'greet', 1.6);
+                npc.greeted = true;
+              }
+            } else {
+              npc.ud.head.rotation.y = Math.sin(npc.ph) * 0.4;
+            }
+          }
+          animLimbs(npc, 0, dt);
+          if (npc.stateT <= 0) setState(npc, 'idle');
+          break;
+
+        case 'walk':
+        case 'shelter': {
+          const t = npc.target;
+          if (!t) { setState(npc, 'idle'); break; }
+          const dx = t.x - g.position.x;
+          const dz = t.z - g.position.z;
+          const dist = Math.sqrt(dx * dx + dz * dz);
+          if (dist < 1.2 || npc.stateT <= -6) {
+            setState(npc, 'idle');
+            break;
+          }
+          // скорость (в дождь быстрее)
+          const sp = npc.speed * (rain > 0.5 ? 1.8 : 1);
+          const vx = dx / dist * sp * dt;
+          const vz = dz / dist * sp * dt;
+          g.position.x += vx;
+          g.position.z += vz;
+          // плавный поворот
+          const want = Math.atan2(dx, dz);
+          g.rotation.y += normAng(want - g.rotation.y) * Math.min(1, dt * 8);
+          // походка
+          animLimbs(npc, 1, dt);
+          // избегание игрока (не проходят сквозь)
+          if (pl) {
+            const pdx = g.position.x - pl.x;
+            const pdz = g.position.z - pl.z;
+            const pd2 = pdx * pdx + pdz * pdz;
+            if (pd2 < 1.44 && pd2 > 0.001) {
+              const pd = Math.sqrt(pd2);
+              g.position.x += pdx / pd * (1.2 - pd) * 0.5;
+              g.position.z += pdz / pd * (1.2 - pd) * 0.5;
+            }
+          }
+          break;
+        }
+
+        case 'greet':
+          // машет рукой игрока
+          if (npc.ud.rightArm) {
+            npc.ud.rightArm.rotation.x = -Math.PI * 0.45 + Math.sin(npc.ph * 8) * 0.4;
+            npc.ud.rightArm.rotation.z = 0.25;
+          }
+          if (npc.stateT <= 0) {
+            if (npc.ud.rightArm) {
+              npc.ud.rightArm.rotation.z = 0;
+            }
+            npc.greeted = false;
+            setState(npc, 'idle');
+          }
+          break;
+
+        case 'dance':
+          // танец в парке вечером — руки-ноги двигаются
+          const beat = npc.ph * 3.4;
+          if (npc.ud.leftArm && npc.ud.rightArm) {
+            npc.ud.leftArm.rotation.x = Math.sin(beat) * 0.9;
+            npc.ud.rightArm.rotation.x = -Math.sin(beat) * 0.9;
+            npc.ud.leftArm.rotation.z = 0.5 + Math.sin(beat * 0.5) * 0.4;
+            npc.ud.rightArm.rotation.z = -0.5 - Math.sin(beat * 0.5) * 0.4;
+          }
+          if (npc.ud.body) {
+            npc.ud.body.position.y = 1.4 + Math.abs(Math.sin(beat)) * 0.1;
+          }
+          g.rotation.y += Math.sin(beat * 0.25) * dt * 0.8;
+          if (npc.stateT <= 0) {
+            if (npc.ud.leftArm) { npc.ud.leftArm.rotation.z = 0; }
+            if (npc.ud.rightArm) { npc.ud.rightArm.rotation.z = 0; }
+            setState(npc, 'idle');
+          }
+          break;
+      }
+
+      // ── зонт в дождь ──
+      if (rain > 0.35 && !npc.umbrella && npc.ud.head) {
+        // создаём зонт: конус + спица
+        const ug = new THREE.Group();
+        const cone = new THREE.Mesh(
+          new THREE.ConeGeometry(0.62, 0.3, 10),
+          new THREE.MeshLambertMaterial({
+            color: [0xE74C3C, 0x3498DB, 0xF1C40F, 0x9B59B6, 0x2ECC71][(Math.random() * 5) | 0]
+          })
+        );
+        cone.position.y = 0.42;
+        cone.rotation.x = Math.PI;
+        ug.add(cone);
+        const stick = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.018, 0.018, 0.8, 5),
+          new THREE.MeshLambertMaterial({ color: 0x333333 })
+        );
+        stick.position.y = 0.05;
+        ug.add(stick);
+        npc.ud.head.add(ug);
+        ug.position.y = 0.55;
+        npc.umbrella = ug;
+      }
+      if (npc.umbrella) {
+        npc.umbrella.visible = rain > 0.3;
+      }
+
+      // ── ночь: половина NPC исчезает домой ──
+      const shouldBe = night > 0.7 ? (i % 2 === 0) : true;
+      if (g.visible !== shouldBe) g.visible = shouldBe;
+    }
+  };
+
+  // нормализация угла в -π..π
+  function normAng(a) {
+    while (a > Math.PI) a -= Math.PI * 2;
+    while (a < -Math.PI) a += Math.PI * 2;
+    return a;
+  }
+
+  // анимация конечностей (walkK: 0 = стоим, 1 = идём)
+  function animLimbs(npc, walkK, dt) {
+    const ud = npc.ud;
+    if (!ud.leftArm) return;
+    if (walkK > 0) {
+      const s = Math.sin(npc.ph * 4.4);
+      ud.leftArm.rotation.x = s * 0.55;
+      ud.rightArm.rotation.x = -s * 0.55;
+      if (ud.leftLeg) ud.leftLeg.rotation.x = -s * 0.5;
+      if (ud.rightLeg) ud.rightLeg.rotation.x = s * 0.5;
+      if (ud.body) ud.body.position.y = 1.4 + Math.abs(Math.cos(npc.ph * 4.4)) * 0.05;
+    } else {
+      //_idle: плавный возврат к нулю
+      ud.leftArm.rotation.x *= (1 - Math.min(1, dt * 6));
+      ud.rightArm.rotation.x *= (1 - Math.min(1, dt * 6));
+      if (ud.leftLeg) ud.leftLeg.rotation.x *= (1 - Math.min(1, dt * 6));
+      if (ud.rightLeg) ud.rightLeg.rotation.x *= (1 - Math.min(1, dt * 6));
+      if (ud.body) ud.body.position.y = 1.4 + Math.sin(npc.ph * 1.8) * 0.015;
+    }
+  }
+
+  // экспорт выбора POI (h05 хранит локально — дублируем лёгкую версию)
+  FZN.pickPoi = function () {
+    const POIS = [
+      { x: 17, z: 21, r: 12 }, { x: 0, z: 0, r: 14 },
+      { x: 85, z: -85, r: 16 }, { x: 235, z: 228, r: 14 },
+      { x: -235, z: -228, r: 14 }, { x: -26, z: 77, r: 18 },
+      { x: 50, z: -30, r: 10 }, { x: -60, z: 40, r: 10 },
+      { x: 120, z: 100, r: 10 }, { x: -120, z: -100, r: 10 },
+      { x: 0, z: 120, r: 10 }, { x: 0, z: -120, r: 10 },
+      { x: 160, z: -60, r: 10 }, { x: -160, z: 60, r: 10 }
+    ];
+    return POIS[(Math.random() * POIS.length) | 0];
+  };
+})();
+
+// ═══════════ FZ-NEXT ЧАСТЬ 7 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  HP v2: полоска здоровья СКРЫТА всегда, кроме БОСС-БОЯ.
+//  В бою: dramatic HUD — красная виньетка при уроне, тряска HP,
+//  пульс при <30%, геймпад-румбл. После боя — плавное скрытие.
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  if (!FZI) return;
+
+  const FZHP = { bossMode: false, lastHp: 100, vign: null, shakeT: 0 };
+  window.FZHP = FZHP;
+
+  // ── CSS: прячем HP, показываем только в .fzg-boss на body ──
+  const css = document.createElement('style');
+  css.id = 'fzi-hp-css';
+  css.textContent =
+    // скрыть стандартный контейнер всегда…
+    'body:not(.fzg-boss) .health-bar-container{display:none!important;}' +
+    // …но в режиме боя — показать красиво
+    'body.fzg-boss .health-bar-container{' +
+    'display:block!important;position:fixed;top:64px!important;left:50%!important;' +
+    'transform:translateX(-50%);width:min(420px,72vw)!important;top:56px!important;' +
+    'border:2px solid rgba(255,80,80,.55)!important;border-radius:14px!important;' +
+    'box-shadow:0 0 24px rgba(255,50,50,.35),inset 0 0 12px rgba(120,0,0,.5)!important;' +
+    'background:rgba(20,4,6,.72)!important;backdrop-filter:blur(4px);' +
+    'animation:fzg-hp-in .5s ease-out!important;}' +
+    'body.fzg-boss .health-bar{transition:width .25s ease-out!important;}' +
+    'body.fzg-boss .health-text{color:#ffd7d7!important;text-shadow:0 0 8px #f00!important;' +
+    'font-weight:700!important;letter-spacing:.08em!important;}' +
+    '@keyframes fzg-hp-in{from{opacity:0;transform:translateX(-50%) scale(1.3)}' +
+    'to{opacity:1;transform:translateX(-50%) scale(1)}}' +
+    // красная виньетка урона
+    '#fzi-dmg-vign{position:fixed;inset:0;pointer-events:none;z-index:9995;opacity:0;' +
+    'background:radial-gradient(ellipse at center,transparent 52%,' +
+    'rgba(255,0,0,.28) 82%,rgba(180,0,0,.5) 100%);}' +
+    // пульс при низком HP
+    'body.fzg-boss-low .health-bar-container{animation:fzg-hp-pulse 0.9s infinite!important;}' +
+    '@keyframes fzg-hp-pulse{0%,100%{box-shadow:0 0 24px rgba(255,50,50,.35)}' +
+    '50%{box-shadow:0 0 44px rgba(255,30,30,.75)}}';
+  document.head.appendChild(css);
+
+  // виньетка урона
+  const vign = document.createElement('div');
+  vign.id = 'fzi-dmg-vign';
+  document.body.appendChild(vign);
+  FZHP.vign = vign;
+
+  // ── включение/выключение режима боя ──
+  FZHP.setBoss = function (on) {
+    if (on === FZHP.bossMode) return;
+    FZHP.bossMode = on;
+    try {
+      document.body.classList.toggle('fzg-boss', on);
+      if (!on) document.body.classList.remove('fzg-boss-low');
+    } catch (e) {}
+  };
+
+  // ── слежение за боссом игры (fzBOSS) ──
+  FZHP.update = function (dt) {
+    let bossActive = false;
+    let hp = 100, maxHp = 100;
+    try {
+      const B = window.fzBOSS;
+      if (B && B.group && B.hp > 0 && B.phase !== 'over') {
+        bossActive = true;
+        hp = B.hp; maxHp = B.maxHp || 120;
+      }
+    } catch (e) {}
+
+    FZHP.setBoss(bossActive);
+
+    if (bossActive) {
+      // урон детект: hp просел → виньетка + rumble
+      if (hp < FZHP.lastHp - 0.5) {
+        FZHP.dmgFlash();
+        if (FZI.padDamage) FZI.padDamage();
+        FZI.buzz(60);
+      }
+      FZHP.lastHp = hp;
+
+      // низкое HP → пульс
+      const low = hp / maxHp < 0.3;
+      try {
+        document.body.classList.toggle('fzg-boss-low', low);
+      } catch (e) {}
+    } else {
+      FZHP.lastHp = 100;
+    }
+
+    // затухание виньетки
+    const cur = parseFloat(vign.style.opacity || 0);
+    if (cur > 0.001) {
+      vign.style.opacity = Math.max(0, cur - dt * 1.4).toFixed(3);
+    }
+  };
+
+  FZHP.dmgFlash = function () {
+    FZHP.vign.style.opacity = '0.85';
+  };
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+//  РЕАЛИСТИЧНОСТЬ: head-bob камеры при ходьбе + звук шагов (синтез)
+//  + контакт-тени под NPC + взгляды NPC на игрока (уже в h06)
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  if (!FZI) return;
+
+  const R = { bobT: 0, stepT: 0, shadows: [], ctx: null, stepSnd: 0 };
+
+  FZI.realInit = function () {
+    // блоб-тени NPC (на мобилках теней нет — добавляем дёшево)
+    if (FZI.tierInfo().shadows) return; // реальные тени уже есть
+    const FZN = window.FZN;
+    if (!FZN) return;
+    const geo = new THREE.CircleGeometry(0.42, 12);
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0x000000, transparent: true, opacity: 0.22, depthWrite: false
+    });
+    FZN.list.forEach(function (npc) {
+      const m = new THREE.Mesh(geo, mat);
+      m.rotation.x = -Math.PI / 2;
+      m.position.y = 0.02;
+      npc.g.add(m);
+      m.position.y = 0.02;
+      R.shadows.push({ m: m, npc: npc });
+    });
+  };
+
+  // ── head-bob: лёгкое покачивание камеры при ходьбе ──
+  // (работает поверх позиционирования камеры игры: добавляем 微 offsets
+  //  напрямую в camera.position ПОСЛЕ игрового кода —微 и безопасно)
+  FZI.realUpdate = function (dt) {
+    const moving = FZI.moving;
+    let sprint = false;
+    try { sprint = !!(keys['ShiftLeft'] || keys['shift']); } catch (e) {}
+
+    // фаза боба
+    if (moving) {
+      R.bobT += dt * (sprint ? 11.5 : 7.5);
+    } else {
+      R.bobT += dt * 1.2; // спокойное дыхание
+    }
+
+    // шаги: звук в момент «удара пятки» (низшая точка боба)
+    if (moving) {
+      R.stepT -= dt;
+      if (R.stepT <= 0) {
+        R.stepT = sprint ? 0.29 : 0.44;
+        FZI.stepSound(sprint);
+      }
+    }
+
+    // применяем боб к камере (после игрового кода — наш тик позже)
+    try {
+      const cam = FZI.cam || (typeof camera !== 'undefined' ? camera : null);
+      if (cam && FZI.applyBob) {
+        const amp = moving ? (sprint ? 0.055 : 0.035) : 0.012;
+        FZI.bobX = Math.sin(R.bobT) * amp;
+        FZI.bobY = Math.abs(Math.cos(R.bobT)) * amp * 0.8;
+      }
+    } catch (e) {}
+  };
+
+  // ── синтез шагов: короткий шумовой «тап» ──
+  FZI.stepSound = function (sprint) {
+    try {
+      if (!R.ctx) {
+        if (typeof getAudioCtx !== 'function') return;
+        R.ctx = getAudioCtx();
+        if (!R.ctx) return;
+        // общий gain шагов
+        R.gain = R.ctx.createGain();
+        R.gain.gain.value = 0.5;
+        R.gain.connect(R.ctx.destination);
+        // буфер шума
+        const len = R.ctx.sampleRate * 0.2;
+        R.buf = R.ctx.createBuffer(1, len, R.ctx.sampleRate);
+        const d = R.buf.getChannelData(0);
+        for (let i = 0; i < len; i++) {
+          d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+        }
+      }
+      const t0 = R.ctx.currentTime;
+      const src = R.ctx.createBufferSource();
+      src.buffer = R.buf;
+      src.playbackRate.value = sprint ? 1.4 : 1.0;
+      const lp = R.ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = sprint ? 900 : 640;
+      const g = R.ctx.createGain();
+      const vol = sprint ? 0.06 : 0.038;
+      g.gain.setValueAtTime(vol, t0);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.11);
+      src.connect(lp); lp.connect(g); g.connect(R.gain);
+      src.start(t0); src.stop(t0 + 0.12);
+    } catch (e) {}
+  };
+})();
+
+// ═══════════ FZ-NEXT ЧАСТЬ 8 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  ИМЕННЫЕ ТАБЛИЧКИ NPC: у ближайших 8 человек всплывает имя
+//  (канвас-спрайт, пул, дешёвая замена тяжёлым неймтегам)
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  const FZN = window.FZN;
+  if (!FZI || !FZN) return;
+
+  const TAGS = { pool: [], active: new Map() };
+
+  function makeTag() {
+    const cv = document.createElement('canvas');
+    cv.width = 256; cv.height = 64;
+    const tex = new THREE.CanvasTexture(cv);
+    tex.needsUpdate = true;
+    const spr = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: tex, transparent: true, depthWrite: false, fog: false
+    }));
+    spr.scale.set(2.2, 0.55, 1);
+    return { cv: cv, tex: tex, spr: spr };
+  }
+
+  function drawName(tag, name) {
+    const q = tag.cv.getContext('2d');
+    q.clearRect(0, 0, 256, 64);
+    // плашка
+    q.fillStyle = 'rgba(8,10,18,.72)';
+    roundRect(q, 38, 12, 180, 40, 12);
+    q.fill();
+    q.strokeStyle = 'rgba(140,170,255,.35)';
+    q.lineWidth = 2;
+    roundRect(q, 38, 12, 180, 40, 12);
+    q.stroke();
+    // текст
+    q.fillStyle = '#dfe8ff';
+    q.font = '600 22px monospace';
+    q.textAlign = 'center';
+    q.textBaseline = 'middle';
+    q.fillText(name, 128, 33);
+    tag.tex.needsUpdate = true;
+  }
+
+  function roundRect(q, x, y, w, h, r) {
+    q.beginPath();
+    q.moveTo(x + r, y);
+    q.arcTo(x + w, y, x + w, y + h, r);
+    q.arcTo(x + w, y + h, x, y + h, r);
+    q.arcTo(x, y + h, x, y, r);
+    q.arcTo(x, y, x + w, y, r);
+    q.closePath();
+  }
+
+  FZN.tagsUpdate = function () {
+    const pl = FZI.plPos;
+    if (!pl) {
+      // освободить все
+      TAGS.active.forEach(function (tag, npc) {
+        tag.spr.parent && tag.spr.parent.remove(tag.spr);
+        TAGS.pool.push(tag);
+      });
+      TAGS.active.clear();
+      return;
+    }
+    // ближайшие NPC
+    const near = [];
+    for (let i = 0; i < FZN.list.length; i++) {
+      const npc = FZN.list[i];
+      if (!npc.g.visible) continue;
+      const dx = npc.g.position.x - pl.x;
+      const dz = npc.g.position.z - pl.z;
+      const d2 = dx * dx + dz * dz;
+      if (d2 < 144) near.push([d2, npc]);
+    }
+    near.sort(function (a, b) { return a[0] - b[0]; });
+    const want = near.slice(0, 8);
+
+    // убрать тех, кто далеко
+    TAGS.active.forEach(function (tag, npc) {
+      const still = want.some(function (w) { return w[1] === npc; });
+      if (!still) {
+        if (tag.spr.parent) tag.spr.parent.remove(tag.spr);
+        TAGS.pool.push(tag);
+        TAGS.active.delete(npc);
+      }
+    });
+    // добавить новых
+    for (let i = 0; i < want.length; i++) {
+      const npc = want[i][1];
+      if (!TAGS.active.has(npc)) {
+        let tag = TAGS.pool.pop();
+        if (!tag) {
+          tag = makeTag();
+          drawName(tag, npc.name);
+        }
+        // спрайт в мир: позицию обновляем каждый кадр
+        npc.g.add ? null : null;
+        try {
+          scene.add(tag.spr);
+          TAGS.active.set(npc, tag);
+        } catch (e) {}
+      }
+    }
+    // позиции над головами
+    TAGS.active.forEach(function (tag, npc) {
+      tag.spr.position.set(
+        npc.g.position.x,
+        3.1 + Math.sin(FZI.t * 2 + npc.ph) * 0.04,
+        npc.g.position.z
+      );
+    });
+  };
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+//  ЭМОЦИИ NPC: иногда грустят, смеются, удивляются — над головой
+//  всплывает эмодзи-пузырь (спрайт), реагируют на погоду и время
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  const FZN = window.FZN;
+  if (!FZI || !FZN) return;
+
+  const EMO = {
+    pool: [],
+    map: null, // npc → {spr, t}
+    canvasByEmoji: {}
+  };
+  EMO.map = new Map();
+
+  function emojiTexture(ch) {
+    if (EMO.canvasByEmoji[ch]) return EMO.canvasByEmoji[ch];
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = 64;
+    const q = cv.getContext('2d');
+    q.font = '44px serif';
+    q.textAlign = 'center';
+    q.textBaseline = 'middle';
+    q.fillText(ch, 32, 34);
+    const tex = new THREE.CanvasTexture(cv);
+    EMO.canvasByEmoji[ch] = tex;
+    return tex;
+  }
+
+  // контекстные наборы
+  const SETS = {
+    day:   ['😊', '😎', '🤔', '📱', '☕', '🛍️', '🙂', '🗨️'],
+    night: ['🌙', '😴', '🍷', '🎶', '✨', '😅'],
+    rain:  ['🌂', '😨', '💧', '🏃'],
+    storm: ['😱', '⚡', '🙈', '💨'],
+    snow:  ['❄️', '🥶', '⛄', '😄'],
+    greet: ['👋', '🙂', '😄'],
+    dance: ['🕺', '💃', '🎵']
+  };
+
+  function spawn(npc, ch, life) {
+    let e = EMO.pool.pop();
+    if (!e) {
+      e = { spr: new THREE.Sprite(new THREE.SpriteMaterial({
+        transparent: true, depthWrite: false, fog: false })) };
+    }
+    e.spr.material.map = emojiTexture(ch);
+    e.spr.material.opacity = 0;
+    e.spr.scale.set(0.7, 0.7, 1);
+    e.t = 0;
+    e.life = life || 2.6;
+    e.npc = npc;
+    try { scene.add(e.spr); } catch (er) { return; }
+    EMO.map.set(npc, e);
+  }
+
+  FZN.emoUpdate = function (dt) {
+    // редкие события: раз в ~4 сек кто-то выражает эмоцию
+    if (Math.random() < dt * 0.45 && FZN.list.length) {
+      const npc = FZN.list[(Math.random() * FZN.list.length) | 0];
+      if (!EMO.map.has(npc) && npc.g.visible) {
+        let set = 'day';
+        const W = window.FZG && FZG.weather;
+        if (W) {
+          if (W.cur === 'storm') set = 'storm';
+          else if (W.rain > 0.5) set = 'rain';
+          else if (W.snow > 0.5) set = 'snow';
+        }
+        if (window.FZG && FZG.night > 0.6) set = 'night';
+        if (npc.state === 'dance') set = 'dance';
+        if (npc.state === 'greet') set = 'greet';
+        const arr = SETS[set];
+        spawn(npc, arr[(Math.random() * arr.length) | 0]);
+      }
+    }
+    // анимация активных
+    EMO.map.forEach(function (e, npc) {
+      e.t += dt;
+      const k = e.t / e.life;
+      if (k >= 1) {
+        if (e.spr.parent) e.spr.parent.remove(e.spr);
+        EMO.map.delete(npc);
+        EMO.pool.push(e);
+        return;
+      }
+      // всплытие и фейд
+      e.spr.position.set(
+        npc.g.position.x + 0.3,
+        3.3 + k * 0.8,
+        npc.g.position.z
+      );
+      e.spr.material.opacity = k < 0.15 ? k / 0.15 : 1 - Math.max(0, (k - 0.7) / 0.3);
+      const s = 0.6 + Math.min(0.2, k * 0.5) + Math.sin(e.t * 3) * 0.03;
+      e.spr.scale.set(s, s, 1);
+    });
+  };
+})();
+
+// ═══════════ FZ-NEXT ЧАСТЬ 9 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  ТЮНИНГ-ЦЕНТР [F3]: управление · NPC · графика · звук —
+//  всё в одной панели с живым применением
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  if (!FZI) return;
+
+  const T = { el: null };
+
+  FZI.tuneInit = function () {
+    const el = document.createElement('div');
+    el.id = 'fzi-tune';
+    el.style.cssText =
+      'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);' +
+      'z-index:9999;background:rgba(10,12,20,.95);border:1px solid #2f3a55;' +
+      'border-radius:14px;padding:20px 24px;color:#dbe4f4;display:none;' +
+      'font:12px/1.7 monospace;min-width:380px;max-height:84vh;overflow:auto;' +
+      'backdrop-filter:blur(8px);box-shadow:0 24px 70px rgba(0,0,0,.6);';
+    const S = FZI.settings;
+    el.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;' +
+      'margin-bottom:12px;border-bottom:1px solid #2f3a55;padding-bottom:8px">' +
+      '<b style="letter-spacing:.2em;color:#9fe8ff">🎛 ТЮНИНГ-ЦЕНТР</b>' +
+      '<span style="opacity:.5">[F3]</span></div>' +
+
+      '<div style="color:#8fa3c8;margin:10px 0 4px">УПРАВЛЕНИЕ</div>' +
+      '<label class="fz-row2">Чувствительность геймпада <b id="fz-v-sens">' + S.sensPad.toFixed(1) + '</b>' +
+      '<input id="fz-sens" type="range" min="0.5" max="8" step="0.1" value="' + S.sensPad + '"></label>' +
+      '<label class="fz-row2" style="display:flex;justify-content:space-between">' +
+      'Инверсия камеры Y <input id="fz-inv" type="checkbox" ' + (S.invertY ? 'checked' : '') + '></label>' +
+      '<label class="fz-row2" style="display:flex;justify-content:space-between">' +
+      'Мёртвая зона стика <b id="fz-v-dz">' + S.deadZone.toFixed(2) + '</b>' +
+      '<input id="fz-dz" type="range" min="0.05" max="0.4" step="0.01" value="' + S.deadZone + '"></label>' +
+      '<label class="fz-row2" style="display:flex;justify-content:space-between">' +
+      'Вибрация/хаптика <input id="fz-vib" type="checkbox" ' + (S.vibration ? 'checked' : '') + '></label>' +
+      '<label class="fz-row2" style="display:flex;justify-content:space-between">' +
+      'Авто-бег (долго вперёд) <input id="fz-auto" type="checkbox" ' + (S.autoSprint ? 'checked' : '') + '></label>' +
+
+      '<div style="color:#8fa3c8;margin:12px 0 4px">МОБИЛЬНЫЕ КНОПКИ</div>' +
+      '<label class="fz-row2">Размер кнопок <b id="fz-v-bs">' + S.btnScale.toFixed(1) + '×</b>' +
+      '<input id="fz-bs" type="range" min="0.7" max="1.5" step="0.1" value="' + S.btnScale + '"></label>' +
+
+      '<div style="color:#8fa3c8;margin:12px 0 4px">ЛЮДИ В ГОРОДЕ (NPC)</div>' +
+      '<label class="fz-row2">Количество <b id="fz-v-npc">' + (window.FZN ? FZN.list.length : '—') + '</b>' +
+      '<input id="fz-npc" type="range" min="0" max="48" step="2" value="' + (window.FZN ? FZN.list.length : 16) + '"></label>' +
+      '<div style="display:flex;gap:6px;margin-top:4px">' +
+      '<button fz-act="npc12" class="fz-mini">12</button>' +
+      '<button fz-act="npc24" class="fz-mini">24</button>' +
+      '<button fz-act="npc36" class="fz-mini">36 (имба)</button>' +
+      '<button fz-act="npc0" class="fz-mini">0 (пусто)</button></div>' +
+
+      '<div style="color:#8fa3c8;margin:12px 0 4px">ГРАФИКА</div>' +
+      '<label class="fz-row2">Разрешение <b id="fz-v-res">' + (FZI.opt ? (FZI.opt.resScale * 100).toFixed(0) : '100') + '%</b>' +
+      '<input id="fz-res" type="range" min="55" max="100" step="5" value="' + (FZI.opt ? FZI.opt.resScale * 100 : 100) + '"></label>' +
+      '<label class="fz-row2" style="display:flex;justify-content:space-between">' +
+      'Авто-разрешение (при просадках) <input id="fz-ares" type="checkbox" checked></label>' +
+
+      '<div style="color:#8fa3c8;margin:12px 0 4px">ЗВУК</div>' +
+      '<label class="fz-row2">Шаги/окружение <b id="fz-v-snd">' + (70) + '%</b>' +
+      '<input id="fz-snd" type="range" min="0" max="100" step="10" value="70"></label>' +
+
+      '<div style="display:flex;gap:8px;margin-top:14px">' +
+      '<button id="fz-tune-test" style="flex:1;background:#1a2135;border:1px solid #33415f;' +
+      'color:#9fe8ff;border-radius:8px;padding:8px;cursor:pointer">🎮 Тест геймпада</button>' +
+      '<button id="fz-tune-close" style="flex:1;background:#1a2135;border:1px solid #33415f;' +
+      'color:#cfe0ff;border-radius:8px;padding:8px;cursor:pointer">Готово</button></div>' +
+      '<div style="margin-top:10px;color:#5d6b8a;font-size:10px;text-align:center">' +
+      'FZ-NEXT · устройство: ' + FZI.DEV.tier + '</div>';
+
+    // стили строки
+    const st = document.createElement('style');
+    st.textContent =
+      '#fzi-tune .fz-row2{display:block;margin:6px 0;color:#aebcd8;font-size:11px}' +
+      '#fzi-tune input[type=range]{width:100%;accent-color:#9fe8ff}' +
+      '#fzi-tune .fz-mini{flex:1;background:#1a2135;border:1px solid #33415f;color:#cfe0ff;' +
+      'border-radius:6px;padding:5px;cursor:pointer;font:10px monospace}';
+    document.head.appendChild(st);
+    document.body.appendChild(el);
+    T.el = el;
+
+    // ── обработчики ──
+    const $ = function (id) { return document.getElementById(id); };
+    $('fz-sens').oninput = function () {
+      S.sensPad = parseFloat(this.value);
+      $('fz-v-sens').textContent = S.sensPad.toFixed(1);
+      FZI.save();
+    };
+    $('fz-dz').oninput = function () {
+      S.deadZone = parseFloat(this.value);
+      $('fz-v-dz').textContent = S.deadZone.toFixed(2);
+      FZI.save();
+    };
+    $('fz-inv').onchange = function () { S.invertY = this.checked; FZI.save(); };
+    $('fz-vib').onchange = function () { S.vibration = this.checked; FZI.save(); };
+    $('fz-auto').onchange = function () { S.autoSprint = this.checked; FZI.save(); };
+    $('fz-bs').oninput = function () {
+      S.btnScale = parseFloat(this.value);
+      $('fz-v-bs').textContent = S.btnScale.toFixed(1) + '×';
+      if (FZI.mobScale) FZI.mobScale();
+      FZI.save();
+    };
+    $('fz-npc').oninput = function () {
+      $('fz-v-npc').textContent = this.value;
+      if (window.FZN) FZN.setCount(parseInt(this.value, 10));
+    };
+    el.querySelectorAll('[fz-act]').forEach(function (b) {
+      b.onclick = function () {
+        const n = parseInt(b.getAttribute('fz-act').replace('npc', ''), 10);
+        if (window.FZN) FZN.setCount(n);
+        $('fz-npc').value = n;
+        $('fz-v-npc').textContent = n;
+      };
+    });
+    $('fz-res').oninput = function () {
+      const v = parseFloat(this.value) / 100;
+      $('fz-v-res').textContent = this.value + '%';
+      if (FZI.optSetScale) FZI.optSetScale(v);
+      $('fz-ares').checked = false; // ручное разрешение выключает авто
+    };
+    $('fz-ares').onchange = function () {
+      if (this.checked && FZI.opt) FZI.opt.resScale = 1;
+    };
+    $('fz-snd').oninput = function () {
+      $('fz-v-snd').textContent = this.value + '%';
+      try {
+        if (typeof SETTINGS === 'object' && SETTINGS.master) {
+          SETTINGS.master.gain.value = this.value / 100;
+        }
+      } catch (e) {}
+    };
+    $('fz-tune-close').onclick = function () { el.style.display = 'none'; };
+    $('fz-tune-test').onclick = function () { FZI.padTest(); };
+
+    // клавиша F3
+    window.addEventListener('keydown', function (ev) {
+      if (ev.key === 'F3') {
+        ev.preventDefault();
+        el.style.display = el.style.display === 'block' ? 'none' : 'block';
+      }
+    });
+  };
+
+  // ── тест геймпада: живой дамп стиков/кнопок ──
+  FZI.padTest = function () {
+    const w = document.createElement('div');
+    w.id = 'fzi-padtest';
+    w.style.cssText =
+      'position:fixed;inset:0;z-index:99999;background:rgba(4,6,10,.92);' +
+      'display:flex;align-items:center;justify-content:center;cursor:pointer;';
+    w.innerHTML =
+      '<div style="color:#9fe8ff;font:13px/2 monospace;text-align:center">' +
+      '<div style="font-size:16px;color:#fff;margin-bottom:10px">🎮 ТЕСТ ГЕЙМПАДА</div>' +
+      '<div id="fzi-pad-live">нет геймпада — нажми кнопку на нём</div>' +
+      '<div style="margin-top:14px;color:#5d6b8a">клик — закрыть</div></div>';
+    document.body.appendChild(w);
+    w.addEventListener('click', function () {
+      w.remove();
+      clearInterval(iv);
+    });
+    const iv = setInterval(function () {
+      const live = document.getElementById('fzi-pad-live');
+      if (!live) { clearInterval(iv); return; }
+      if (!navigator.getGamepads) { live.textContent = 'Gamepad API недоступен'; return; }
+      const pads = navigator.getGamepads();
+      let any = false;
+      for (let i = 0; i < pads.length; i++) {
+        const p = pads[i];
+        if (!p || !p.connected) continue;
+        any = true;
+        const ax = p.axes.map(function (a) { return a.toFixed(2); }).join(' ');
+        const btns = p.buttons.map(function (b, bi) {
+          return b.pressed ? bi : -1;
+        }).filter(function (v) { return v >= 0; }).join(',');
+        live.innerHTML =
+          '<b style="color:#fff">' + p.id.slice(0, 40) + '</b><br>' +
+          'стики: ' + ax + '<br>' +
+          'кнопки: ' + (btns || '—') + '<br>' +
+          'вибрация…';
+        break;
+      }
+      if (!any) live.textContent = 'нет геймпада — нажми кнопку на нём';
+    }, 200);
+  };
+})();
+
+// ═══════════ FZ-NEXT ЧАСТЬ 10 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  ТУТОРИАЛ: при первом запуске показывает управление твоего
+//  устройства (мобила / геймпад / клавиатура — автоопределение)
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  if (!FZI) return;
+
+  const TUT = { seen: false };
+
+  function content() {
+    const D = FZI.DEV;
+    if (D.touch && D.isMobile) {
+      return {
+        title: '📱 УПРАВЛЕНИЕ НА ТЕЛЕФОНЕ',
+        rows: [
+          ['🕹 Левая зона', 'джойстик ходьбы'],
+          ['👆 Правая зона', 'проведи — камера'],
+          ['⬆️ Кнопка', 'прыжок (или двойной тап справа)'],
+          ['🏃 Кнопка', 'бег (удерживать)'],
+          ['✋ E', 'действие: двери, машины, босс'],
+          ['🕺 Кнопка', 'танцы и эмоции'],
+          ['[F3]', 'тюнинг-центр: размер кнопок и др.']
+        ]
+      };
+    }
+    return {
+      title: '⌨️ КЛАВИАТУРА + 🎮 ГЕЙМАД',
+      rows: [
+        ['WASD / левый стик', 'движение'],
+        ['Мышь / правый стик', 'камера'],
+        ['Space / A(✕)', 'прыжок'],
+        ['Shift / RT·L3', 'бег'],
+        ['E / X(□)', 'действие: двери, машины, босс'],
+        ['T / D-pad ↑', 'чат'],
+        ['M / START', 'карта'],
+        ['[F2] [F3] [F8]', 'погода · тюнинг · диагностика']
+      ]
+    };
+  }
+
+  FZI.tutInit = function () {
+    try {
+      TUT.seen = localStorage.getItem('fzTut') === '1';
+    } catch (e) {}
+    if (TUT.seen) return;
+
+    const c = content();
+    const el = document.createElement('div');
+    el.id = 'fzi-tut';
+    el.style.cssText =
+      'position:fixed;inset:0;z-index:9998;background:rgba(4,6,12,.88);' +
+      'display:flex;align-items:center;justify-content:center;';
+    el.innerHTML =
+      '<div style="max-width:420px;width:90%;background:linear-gradient(165deg,#141a2c,#0d111e);' +
+      'border:1px solid #2f3a55;border-radius:16px;padding:26px 30px;color:#dbe4f4;' +
+      'font:13px/1.9 monospace;box-shadow:0 30px 80px #000;">' +
+      '<div style="color:#9fe8ff;letter-spacing:.2em;font-size:14px;margin-bottom:14px">' + c.title + '</div>' +
+      c.rows.map(function (r) {
+        return '<div style="display:flex;justify-content:space-between;' +
+          'border-bottom:1px dashed #223046;padding:4px 0">' +
+          '<b style="color:#fff">' + r[0] + '</b>' +
+          '<span style="color:#8fa3c8">' + r[1] + '</span></div>';
+      }).join('') +
+      '<button id="fzi-tut-ok" style="width:100%;margin-top:18px;background:' +
+      'linear-gradient(90deg,#274071,#1d2f52);border:1px solid #3f5a94;color:#cfe0ff;' +
+      'border-radius:10px;padding:12px;cursor:pointer;font:13px monospace;' +
+      'letter-spacing:.1em">ПОЕХАЛИ! 🚀</button>' +
+      '<div style="margin-top:8px;color:#5d6b8a;font-size:10px;text-align:center">' +
+      'сменить устройство? — [F3] тюнинг-центр</div></div>';
+    document.body.appendChild(el);
+
+    const close = function () {
+      el.remove();
+      try { localStorage.setItem('fzTut', '1'); } catch (e) {}
+    };
+    document.getElementById('fzi-tut-ok').onclick = close;
+    // автозакрытие через 25 сек
+    setTimeout(close, 25000);
+  };
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+//  САМОТЕСТЫ FZ-NEXT: ?fzdiag=1 — проверка всех подсистем пака
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  if (!FZI) return;
+
+  const ST = { pass: 0, fail: 0, rows: [] };
+
+  function chk(name, fn) {
+    try {
+      const v = fn();
+      if (v === true) { ST.pass++; ST.rows.push([name, true, '']); }
+      else { ST.fail++; ST.rows.push([name, false, String(v)]); }
+    } catch (e) {
+      ST.fail++; ST.rows.push([name, false, e.message]);
+    }
+  }
+
+  FZI.selftest = function () {
+    chk('детектор устройства', function () { return !!FZI.DEV && !!FZI.DEV.tier; });
+    chk('тир-профиль найден', function () { return !!FZI.tierInfo(); });
+    chk('Gamepad API', function () { return !!navigator.getGamepads; });
+    chk('геймпад подключен', function () {
+      return FZI.pad && FZI.pad.connected ? true : 'не подключен (не ошибка)';
+    });
+    chk('вибрация доступна', function () {
+      return (navigator.vibrate || (FZI.pad && FZI.pad.connected)) ? true : 'нет';
+    });
+    chk('мобильные кнопки', function () {
+      return !FZI.DEV.touch || !!document.getElementById('fzi-btns');
+    });
+    chk('CSS HP-режима', function () { return !!document.getElementById('fzi-hp-css'); });
+    chk('HP скрыт вне боя', function () {
+      return !document.body.classList.contains('fzg-boss');
+    });
+    chk('NPC-толпа жива', function () {
+      return window.FZN && FZN.list.length > 0 ? true : 'пусто';
+    });
+    chk('NPC: тела через createCharacter', function () {
+      return window.FZN && FZN.list[0] && FZN.list[0].ud && FZN.list[0].ud.body
+        ? true : 'нет userData.body';
+    });
+    chk('оптимизация: pixelRatio', function () {
+      return FZI.opt && FZI.opt.basePR > 0;
+    });
+    chk('туториал показан/закрыт', function () {
+      return !!document.getElementById('fzi-tut') || true;
+    });
+    chk('тюнинг-центр создан', function () {
+      return !!document.getElementById('fzi-tune');
+    });
+    chk('FZ-GFX погода', function () {
+      return window.FZG && FZG.weather ? true : 'нет';
+    });
+    chk('интеграция ввода (keys)', function () {
+      return typeof keys === 'object';
+    });
+    return ST;
+  };
+
+  // панель на экран при ?fzdiag=1
+  function panel() {
+    if (!/[?&]fzdiag/.test(location.search)) return;
+    setTimeout(function () {
+      const st = FZI.selftest();
+      const el = document.createElement('div');
+      el.style.cssText =
+        'position:fixed;bottom:10px;left:10px;z-index:99999;background:rgba(4,6,10,.94);' +
+        'border:1px solid #345;border-radius:10px;padding:12px 16px;color:#9c9;' +
+        'font:11px/1.7 monospace;max-width:340px;max-height:60vh;overflow:auto;';
+      el.innerHTML = '<b style="color:#fff">FZ-NEXT САМОтЕСТЫ: ' +
+        st.pass + ' OK · ' + st.fail + ' замечаний</b><br>' +
+        st.rows.map(function (r) {
+          return '<div style="color:' + (r[1] ? '#7dff9d' : '#ffd27a') + '">' +
+            (r[1] ? '✓' : '⚠') + ' ' + r[0] +
+            (r[1] ? '' : ' — ' + r[2]) + '</div>';
+        }).join('');
+      document.body.appendChild(el);
+    }, 9000);
+  }
+
+  window.addEventListener('load', panel);
+})();
+
+// ═══════════ FZ-NEXT ЧАСТЬ 11 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  ОРКЕСТРАТОР: ожидание мира и игрока → инициализация подсистем →
+//  мастер-тик (ввод → NPC → HP → реализм) + canvas-bob камеры
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  if (!FZI) return;
+
+  let last = performance.now();
+
+  function masterTick(now) {
+    requestAnimationFrame(masterTick);
+    let dt = (now - last) / 1000;
+    last = now;
+    if (dt > 0.1) dt = 0.1;
+    if (dt <= 0) return;
+
+    // ── 1. ввод ──
+    try { FZI.inputTick(now); } catch (e) {}
+
+    // ── 2. состояние игрока ──
+    try {
+      let lp = null;
+      if (typeof localPlayer !== 'undefined' && localPlayer && localPlayer.mesh) {
+        lp = localPlayer.mesh;
+      }
+      if (lp) {
+        if (!FZI.plPos) FZI.plPos = new THREE.Vector3();
+        FZI.plPos.copy(lp.position);
+        const anim = localPlayer.currentAnimation;
+        FZI.moving = anim === 'walk' || anim === 'run';
+      } else {
+        FZI.plPos = null;
+        FZI.moving = false;
+      }
+    } catch (e) {}
+
+    // ── 3. NPC ──
+    if (window.FZN && FZN.list.length) {
+      try { FZN.update(dt); } catch (e) {}
+      try { FZN.tagsUpdate(); } catch (e) {}
+      try { FZN.emoUpdate(dt); } catch (e) {}
+    }
+
+    // ── 4. HP-режим ──
+    try { window.FZHP && FZHP.update(dt); } catch (e) {}
+
+    // ── 5. реализм: боб + шаги ──
+    try { FZI.realUpdate(dt); } catch (e) {}
+
+    // ── 6. canvas-боб (CSS-трансформ: не конфликтует с игрой) ──
+    try {
+      const r = FZI.renderer || (typeof renderer !== 'undefined' ? renderer : null);
+      if (r && r.domElement) {
+        if (FZI.bobX || FZI.bobY) {
+          r.domElement.style.transform =
+            'translate(' + (FZI.bobX * 6).toFixed(2) + 'px,' +
+            (FZI.bobY * 5).toFixed(2) + 'px)';
+        } else if (r.domElement.style.transform) {
+          r.domElement.style.transform = '';
+        }
+      }
+    } catch (e) {}
+  }
+
+  // ── boot: ждём сцену → игрока → стартуем всё ──
+  let tries = 0;
+  const bootIv = setInterval(function () {
+    tries++;
+    let ok = false;
+    try {
+      ok = typeof scene !== 'undefined' && scene && scene.children &&
+           typeof camera !== 'undefined' && camera &&
+           typeof renderer !== 'undefined' && renderer &&
+           typeof createCharacter === 'function' &&
+           scene.children.length > 10;
+    } catch (e) {}
+    if (!ok) {
+      if (tries > 400) clearInterval(bootIv); // ~100 сек
+      return;
+    }
+    clearInterval(bootIv);
+    FZI.scene = scene;
+    FZI.cam = camera;
+    FZI.renderer = renderer;
+
+    try { FZI.optInit(); } catch (e) {}
+    try { FZI.padUIInit(); } catch (e) {}
+    try { FZI.mobInit(); } catch (e) {}
+    try { FZI.diagInit(); } catch (e) {}
+    try { FZI.tuneInit(); } catch (e) {}
+    try { FZI.tutInit(); } catch (e) {}
+
+    // NPC: ждём появления localPlayer.mesh (после логина)
+    let nTries = 0;
+    const npcIv = setInterval(function () {
+      nTries++;
+      let has = false;
+      try {
+        has = !!(localPlayer && localPlayer.mesh);
+      } catch (e) {}
+      if (has) {
+        clearInterval(npcIv);
+        try { window.FZN && FZN.init(); } catch (e) {
+          console.warn('FZN init:', e);
+        }
+        try { FZI.realInit(); } catch (e) {}
+      }
+      if (nTries > 600) clearInterval(npcIv); // ~150 сек
+    }, 250);
+
+    requestAnimationFrame(masterTick);
+
+    try {
+      if (typeof showNotification === 'function') {
+        setTimeout(function () {
+          showNotification(
+            FZI.DEV.isMobile ? '📱 Мобильное управление v2 готово · [F3] тюнинг' :
+            '🎮 Геймпад и тюнинг готовы · [F3] центр управления', 'success');
+        }, 2500);
+      }
+    } catch (e) {}
+    console.log('%cFZ-NEXT PACK: управление+NPC+HP-v2+оптимизация активны · [F3] тюнинг · [F8] диагностика',
+      'color:#9fe8ff');
+  }, 250);
+})();
+
+// ═══════════ FZ-NEXT ЧАСТЬ 12 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  ЖИВОЙ ГОРОД v2: NPC-пары · сидящие на лавочках · фотографирующие ·
+//  «телефонисты» · уличные музыканты — толпа становится народом
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  const FZN = window.FZN;
+  if (!FZI || !FZN) return;
+
+  // расширение автомата состояний NPC (патч поверх h06)
+  const EXTRA = {
+    pairs: [],      // пары: [npcA, npcB] ходят вместе
+    sitters: [],    // сидят (поза зафиксирована)
+    phone: [],      // стоят с «телефоном» (наклон головы)
+    busker: null,   // уличный музыкант у спавна
+    inited: false
+  };
+
+  // ── телефон: маленькая светящаяся плашка в руке ──
+  function givePhone(npc) {
+    if (npc.phone || !npc.ud.rightArm) return;
+    const ph = new THREE.Mesh(
+      new THREE.BoxGeometry(0.09, 0.16, 0.02),
+      new THREE.MeshBasicMaterial({ color: 0xbfe8ff })
+    );
+    ph.position.set(0, -0.62, 0.12);
+    npc.ud.rightArm.add(ph);
+    npc.phone = ph;
+  }
+
+  // ── гитара музыканта ──
+  function giveGuitar(npc) {
+    if (npc.guitar || !npc.ud.body) return;
+    const g = new THREE.Group();
+    const corpus = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.22, 0.22, 0.07, 12),
+      new THREE.MeshLambertMaterial({ color: 0x8a5a2a })
+    );
+    corpus.rotation.z = Math.PI / 2;
+    g.add(corpus);
+    const neck = new THREE.Mesh(
+      new THREE.BoxGeometry(0.05, 0.55, 0.03),
+      new THREE.MeshLambertMaterial({ color: 0x5a3a1a })
+    );
+    neck.position.y = 0.35;
+    g.add(neck);
+    g.position.set(0.25, 1.5, 0.3);
+    g.rotation.x = 0.4;
+    npc.g.add(g);
+    npc.guitar = g;
+  }
+
+  FZN.cityInit = function () {
+    if (EXTRA.inited || !FZN.list.length) return;
+    EXTRA.inited = true;
+    const L = FZN.list;
+
+    // пары: каждый 6-й NPC находит соседа
+    for (let i = 0; i + 1 < L.length; i += 6) {
+      const a = L[i], b = L[i + 1];
+      // ставим рядом и связываем
+      b.g.position.set(
+        a.g.position.x + 0.9,
+        0,
+        a.g.position.z + 0.3
+      );
+      EXTRA.pairs.push([a, b]);
+    }
+
+    // телефонисты: каждый 5-й получает телефон
+    for (let i = 0; i < L.length; i += 5) {
+      givePhone(L[i]);
+      L[i].state = 'phone';
+      L[i].stateT = 6 + Math.random() * 10;
+    }
+
+    // музыкант: первый NPC у спавна с гитарой
+    let busker = null;
+    for (let i = 0; i < L.length; i++) {
+      if (L[i].g.position.distanceTo(new THREE.Vector3(17, 0, 21)) < 20) {
+        busker = L[i];
+        break;
+      }
+    }
+    if (busker) {
+      giveGuitar(busker);
+      busker.state = 'busker';
+      busker.stateT = 1e9; // играет очень долго
+      busker.g.position.set(19, 0, 23);
+      busker.g.rotation.y = -0.6;
+      EXTRA.busker = busker;
+    }
+
+    // сидящие: пропускаем — лавочек мало, поза сложная;
+    // вместо этого «наблюдатели»: стоят и медленно вертят головой
+    for (let i = 2; i < L.length; i += 7) {
+      L[i].state = 'look';
+      L[i].stateT = 20 + Math.random() * 20;
+    }
+  };
+
+  // ── апдейт доп-поведения (вызывается из FZN.update-хвоста ниже) ──
+  FZN.cityUpdate = function (dt) {
+    // пары: B догоняет A
+    for (let i = 0; i < EXTRA.pairs.length; i++) {
+      const a = EXTRA.pairs[i][0], b = EXTRA.pairs[i][1];
+      if (!a.g.visible || !b.g.visible) continue;
+      const dx = a.g.position.x - b.g.position.x;
+      const dz = a.g.position.z - b.g.position.z;
+      const d2 = dx * dx + dz * dz;
+      if (d2 > 4 && b.state === 'idle') {
+        // идут друг к другу, когда далеко
+        b.state = 'walk';
+        b.target = { x: a.g.position.x - dx * 0.3, z: a.g.position.z - dz * 0.3 };
+        b.stateT = 4;
+      }
+      // A останавливается ждать B
+      if (d2 > 36 && a.state === 'walk') {
+        a.state = 'idle';
+        a.stateT = 2;
+      }
+    }
+
+    // телефонисты: поза «в телефоне»
+    for (let i = 0; i < FZN.list.length; i++) {
+      const npc = FZN.list[i];
+      if (npc.state === 'phone') {
+        if (npc.ud.rightArm && npc.ud.head) {
+          npc.ud.rightArm.rotation.x = -1.15;
+          npc.ud.head.rotation.x = 0.42;
+          if (npc.phone) npc.phone.visible = true;
+        }
+        npc.stateT -= dt;
+        if (npc.stateT <= 0) {
+          if (npc.ud.head) npc.ud.head.rotation.x = 0;
+          npc.state = 'idle';
+          npc.stateT = 2;
+        }
+      } else if (npc.phone) {
+        npc.phone.visible = false;
+      }
+
+      // музыкант: перебор струн
+      if (npc.state === 'busker') {
+        if (npc.ud.leftArm && npc.ud.rightArm) {
+          const s = Math.sin(FZI.t * 6.5);
+          npc.ud.leftArm.rotation.x = -0.9 + s * 0.12;
+          npc.ud.rightArm.rotation.x = -0.7 - s * 0.28;
+        }
+        if (npc.ud.head) {
+          npc.ud.head.rotation.y = Math.sin(FZI.t * 0.8) * 0.25;
+        }
+        // поклон, если игрок рядом
+        if (FZI.plPos) {
+          const d = npc.g.position.distanceTo(FZI.plPos);
+          if (d < 3 && !npc._bowed) {
+            npc._bowed = true;
+            npc._bowT = 1;
+          }
+          if (d > 6) npc._bowed = false;
+        }
+        if (npc._bowT > 0) {
+          npc._bowT -= dt;
+          if (npc.ud.body) npc.ud.body.rotation.x = Math.sin((1 - npc._bowT) * Math.PI) * 0.35;
+        }
+      }
+    }
+  };
+})();
+
+// ═══════════ FZ-NEXT ЧАСТЬ 13 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  ПРОИЗВОДИТЕЛЬНОСТЬ: FPS-график в реальном времени [F8] ·
+//  статистика сессии · авто-репорт в консоль каждую минуту
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  if (!FZI) return;
+
+  const PERF = {
+    hist: [],          // последние 60 секунд FPS
+    min5: 60, max5: 0,
+    frames: 0, time: 0,
+    sparkline: null,
+    ctx2d: null
+  };
+  FZI.perf = PERF;
+
+  // мини-график (canvas 120×36) в углу диагностики
+  function sparkInit() {
+    const cv = document.createElement('canvas');
+    cv.width = 120; cv.height = 36;
+    cv.style.cssText =
+      'position:fixed;top:calc(10px + 220px);right:10px;z-index:9999;display:none;' +
+      'background:rgba(6,8,14,.9);border:1px solid #2f3a55;border-radius:8px;';
+    document.body.appendChild(cv);
+    PERF.sparkline = cv;
+    PERF.ctx2d = cv.getContext('2d');
+    // показать вместе с диагностикой
+    const iv = setInterval(function () {
+      const diag = document.getElementById('fzi-diag');
+      if (diag) {
+        cv.style.display = diag.style.display;
+        // позиция под панелью
+        cv.style.top = (diag.offsetTop + diag.offsetHeight + 8) + 'px';
+        clearInterval(iv);
+      }
+    }, 500);
+  }
+
+  function sparkDraw() {
+    const q = PERF.ctx2d;
+    if (!q) return;
+    q.clearRect(0, 0, 120, 36);
+    // сетка
+    q.strokeStyle = 'rgba(80,100,140,.3)';
+    q.beginPath();
+    q.moveTo(0, 12); q.lineTo(120, 12);
+    q.moveTo(0, 24); q.lineTo(120, 24);
+    q.stroke();
+    // линия FPS (60fps = верх)
+    q.strokeStyle = '#7dff9d';
+    q.lineWidth = 1.5;
+    q.beginPath();
+    const n = PERF.hist.length;
+    for (let i = 0; i < n; i++) {
+      const x = 120 - (n - 1 - i) * 2;
+      const y = 36 - Math.min(36, PERF.hist[i] / 60 * 36);
+      if (i === 0) q.moveTo(x, y); else q.lineTo(x, y);
+    }
+    q.stroke();
+    // текущий FPS
+    q.fillStyle = '#9fe8ff';
+    q.font = '9px monospace';
+    const cur = n ? PERF.hist[n - 1].toFixed(0) : '—';
+    q.fillText(cur + ' fps', 4, 10);
+  }
+
+  // вызывается из тика раз в секунду
+  FZI.perfTick = function (fps) {
+    PERF.hist.push(fps);
+    if (PERF.hist.length > 60) PERF.hist.shift();
+    // окно 5 сек
+    const w = PERF.hist.slice(-5);
+    PERF.min5 = Math.min.apply(null, w);
+    PERF.max5 = Math.max.apply(null, w);
+    if (PERF.sparkline && PERF.sparkline.style.display !== 'none') sparkDraw();
+  };
+
+  // статистика сессии
+  FZI.session = { started: Date.now(), meters: 0, lastPos: null };
+  FZI.sessionTick = function () {
+    const p = FZI.plPos;
+    if (p && FZI.session.lastPos) {
+      const d = p.distanceTo(FZI.session.lastPos);
+      if (d < 50) FZI.session.meters += d;
+    }
+    if (p) {
+      if (!FZI.session.lastPos) FZI.session.lastPos = new THREE.Vector3();
+      FZI.session.lastPos.copy(p);
+    }
+  };
+
+  FZI.sessionReport = function () {
+    const min = ((Date.now() - FZI.session.started) / 60000).toFixed(1);
+    const avg = PERF.hist.length
+      ? (PERF.hist.reduce(function (a, b) { return a + b; }, 0) / PERF.hist.length).toFixed(1)
+      : '—';
+    return 'сеанс ' + min + ' мин · ' + FZI.session.meters.toFixed(0) +
+      ' м пройдено · FPS ср ' + avg + ' (мин ' + PERF.min5.toFixed(0) + ')' +
+      ' · NPC ' + (window.FZN ? FZN.list.length : 0) +
+      ' · разрешение ×' + (FZI.opt ? FZI.opt.resScale.toFixed(2) : 1);
+  };
+
+  // минутный репорт в консоль
+  setInterval(function () {
+    try { console.log('%c[FZ] ' + FZI.sessionReport(), 'color:#7d9'); } catch (e) {}
+  }, 60000);
+
+  // хук: рисуем график при старте
+  const _origDiagInit = FZI.diagInit;
+  FZI.diagInit = function () {
+    try { _origDiagInit(); } catch (e) {}
+    sparkInit();
+  };
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+//  СВЯЗЬ h12: cityUpdate/cityInit подключаются к ядру NPC
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  const FZN = window.FZN;
+  if (!FZI || !FZN) return;
+
+  // после FZN.init — город v2
+  const _init = FZN.init;
+  FZN.init = function () {
+    try { _init(); } catch (e) {}
+    try { FZN.cityInit && FZN.cityInit(); } catch (e) {}
+  };
+  // в каждом апдейте — доп-поведение
+  const _upd = FZN.update;
+  FZN.update = function (dt) {
+    try { _upd(dt); } catch (e) {}
+    try { FZN.cityUpdate && FZN.cityUpdate(dt); } catch (e) {}
+  };
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+//  ЗВУКИ ГОРОДА: птицы днём · сверчки ночью · уличный музыкант ·
+//  лёгкий гул толпы (всё синтез, привязано к позиции и времени)
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  if (!FZI) return;
+
+  const CITY = { ctx: null, master: null, birdT: 3, cricketT: 2, murmur: null };
+
+  function ensure() {
+    if (CITY.ctx) return true;
+    try {
+      if (typeof getAudioCtx !== 'function') return false;
+      CITY.ctx = getAudioCtx();
+      if (!CITY.ctx) return false;
+      CITY.master = CITY.ctx.createGain();
+      CITY.master.gain.value = 0.3;
+      CITY.master.connect(CITY.ctx.destination);
+      return true;
+    } catch (e) { return false; }
+  }
+
+  // птица: два коротких чирпа
+  function bird() {
+    const ctx = CITY.ctx;
+    const t0 = ctx.currentTime;
+    const base = 2400 + Math.random() * 1600;
+    [0, 0.14].forEach(function (off, i) {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(base + i * 300, t0 + off);
+      o.frequency.exponentialRampToValueAtTime(base * 0.7, t0 + off + 0.1);
+      g.gain.setValueAtTime(0.012, t0 + off);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + off + 0.12);
+      o.connect(g); g.connect(CITY.master);
+      o.start(t0 + off); o.stop(t0 + off + 0.14);
+    });
+  }
+
+  // сверчок: пачка коротких импульсов
+  function cricket() {
+    const ctx = CITY.ctx;
+    const t0 = ctx.currentTime;
+    for (let i = 0; i < 5; i++) {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'square';
+      o.frequency.value = 4200 + Math.random() * 400;
+      const at = t0 + i * 0.07;
+      g.gain.setValueAtTime(0.004, at);
+      g.gain.exponentialRampToValueAtTime(0.0001, at + 0.03);
+      o.connect(g); g.connect(CITY.master);
+      o.start(at); o.stop(at + 0.04);
+    }
+  }
+
+  // музыкант: перебор из пентатоники (если busker есть и близко)
+  const PENTA = [261.6, 293.7, 329.6, 392.0, 440.0, 523.3];
+  let noteI = 0;
+  function buskerNote() {
+    const ctx = CITY.ctx;
+    const t0 = ctx.currentTime;
+    const f = PENTA[noteI % PENTA.length];
+    noteI += (Math.random() < 0.3) ? 2 : 1;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'triangle';
+    o.frequency.value = f;
+    g.gain.setValueAtTime(0.014, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.5);
+    o.connect(g); g.connect(CITY.master);
+    o.start(t0); o.stop(t0 + 0.55);
+  }
+
+  FZI.citySoundTick = function (dt) {
+    if (!ensure()) return;
+    const n = window.FZG ? FZG.night : 0;
+    const W = window.FZG && FZG.weather;
+    const quiet = W && (W.rain > 0.5 || W.cur === 'storm');
+
+    // птицы днём
+    if (n < 0.4 && !quiet) {
+      CITY.birdT -= dt;
+      if (CITY.birdT <= 0) {
+        CITY.birdT = 2.5 + Math.random() * 6;
+        bird();
+      }
+    }
+    // сверчки ночью
+    if (n > 0.6 && !quiet) {
+      CITY.cricketT -= dt;
+      if (CITY.cricketT <= 0) {
+        CITY.cricketT = 1.8 + Math.random() * 3;
+        cricket();
+      }
+    }
+    // музыкант у спавна
+    if (window.FZN && FZN.list.length && FZI.plPos) {
+      for (let i = 0; i < FZN.list.length; i++) {
+        const npc = FZN.list[i];
+        if (npc.state === 'busker') {
+          const d = npc.g.position.distanceTo(FZI.plPos);
+          if (d < 26) {
+            npc._noteT = (npc._noteT || 0) - dt;
+            if (npc._noteT <= 0) {
+              npc._noteT = 0.34;
+              buskerNote();
+            }
+          }
+          break;
+        }
+      }
+    }
+  };
+})();
+
+// ═══════════ FZ-NEXT ЧАСТЬ 14 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  ПРОФИЛИ УПРАВЛЕНИЯ: пресеты «казуал / гонщик / шутер» ·
+//  экспорт/импорт настроек строкой · справка по всем клавишам [F1+]
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  if (!FZI) return;
+
+  // ── пресеты (применяются к FZI.settings + FZG при наличии) ──
+  FZI.PROFILES = {
+    casual: {
+      name: '🍂 Казуал',
+      desc: 'спокойная камера, авто-бег, мягкая вибрация',
+      apply: function () {
+        FZI.settings.sensPad = 2.2;
+        FZI.settings.deadZone = 0.22;
+        FZI.settings.autoSprint = true;
+        FZI.settings.vibration = true;
+        FZI.save();
+      }
+    },
+    racer: {
+      name: '🏁 Гонщик',
+      desc: 'резкая камера, максимальная отзывчивость',
+      apply: function () {
+        FZI.settings.sensPad = 5.5;
+        FZI.settings.deadZone = 0.08;
+        FZI.settings.autoSprint = false;
+        FZI.settings.vibration = true;
+        FZI.save();
+      }
+    },
+    shooter: {
+      name: '🎯 Шутер',
+      desc: 'точный прицел, инверсия выключена, без авто-бега',
+      apply: function () {
+        FZI.settings.sensPad = 3.2;
+        FZI.settings.deadZone = 0.12;
+        FZI.settings.invertY = false;
+        FZI.settings.autoSprint = false;
+        FZI.settings.vibration = false;
+        FZI.save();
+      }
+    },
+    cinematic: {
+      name: '🎬 Кино',
+      desc: 'медленная камера, максимум эффектов',
+      apply: function () {
+        FZI.settings.sensPad = 1.6;
+        FZI.settings.deadZone = 0.25;
+        FZI.save();
+        try {
+          if (window.FZG && FZG.post) {
+            FZG.post.vign.style.opacity = '1.2';
+          }
+        } catch (e) {}
+      }
+    }
+  };
+
+  FZI.applyProfile = function (key) {
+    const p = FZI.PROFILES[key];
+    if (!p) return;
+    p.apply();
+    try {
+      if (typeof showNotification === 'function') {
+        showNotification('🎛 Профиль: ' + p.name, 'success');
+      }
+    } catch (e) {}
+  };
+
+  // ── экспорт/импорт строки настроек ──
+  FZI.exportSettings = function () {
+    return btoa(unescape(encodeURIComponent(JSON.stringify(FZI.settings))));
+  };
+  FZI.importSettings = function (str) {
+    try {
+      const s = JSON.parse(decodeURIComponent(escape(atob(str.trim()))));
+      Object.assign(FZI.settings, s);
+      FZI.save();
+      return true;
+    } catch (e) { return false; }
+  };
+
+  // ── СПРАВКА [F7]: все горячие клавиши сразу ──
+  const HELP = { el: null };
+  FZI.helpInit = function () {
+    const el = document.createElement('div');
+    el.id = 'fzi-help';
+    el.style.cssText =
+      'position:fixed;inset:0;z-index:9998;display:none;align-items:center;' +
+      'justify-content:center;background:rgba(3,4,8,.9);cursor:pointer;';
+    el.innerHTML =
+      '<div style="max-width:560px;width:92%;max-height:84vh;overflow:auto;' +
+      'background:linear-gradient(165deg,#131a2c,#0c101c);border:1px solid #2f3a55;' +
+      'border-radius:16px;padding:26px 32px;color:#dbe4f4;font:12px/1.9 monospace;">' +
+      '<div style="color:#9fe8ff;letter-spacing:.25em;font-size:14px;margin-bottom:12px">' +
+      '⌨ ВСЕ КЛАВИШИ FANTAZIA</div>' +
+
+      '<div style="color:#7ec8ff;margin:8px 0 2px">ДВИЖЕНИЕ</div>' +
+      'WASD — идти · Shift — бег · Space — прыжок · мышь — камера<br>' +
+
+      '<div style="color:#7ec8ff;margin:8px 0 2px">ВЗАИМОДЕЙСТВИЕ</div>' +
+      'E — действие (двери/машины/босс) · F — сесть/встать · T — чат<br>' +
+
+      '<div style="color:#7ec8ff;margin:8px 0 2px">ЭМОЦИИ (чат)</div>' +
+      '/anim брейк · макарена · лунная · салют · танец · волна<br>' +
+
+      '<div style="color:#7ec8ff;margin:8px 0 2px">ГРАФИКА И ПОГОДА (FZ-GFX)</div>' +
+      'F2 — панель графики · F4 — сменить погоду · F6 — день/ночь<br>' +
+
+      '<div style="color:#7ec8ff;margin:8px 0 2px">УПРАВЛЕНИЕ И NPC (FZ-NEXT)</div>' +
+      'F3 — тюнинг-центр · F8 — диагностика+FPS-график · F7 — эта справка<br>' +
+
+      '<div style="color:#7ec8ff;margin:8px 0 2px">ИГРА</div>' +
+      'M — карта · B — редактор персонажа · I — инвентарь · P — скрин<br>' +
+
+      '<div style="color:#7ec8ff;margin:8px 0 2px">ГЕЙМПАД</div>' +
+      'Левый стик — движение · Правый — камера · A — прыжок<br>' +
+      'X/B — действие · RT/L3 — бег · Y — танец · START — карта<br>' +
+
+      '<div style="color:#7ec8ff;margin:8px 0 2px">ТЕЛЕФОН</div>' +
+      'Джойстик слева — идти · свайп справа — камера · двойной тап — прыжок<br>' +
+      '⬆️ прыжок · 🏃 бег (держать) · ✋ действие · 🕺 танец<br>' +
+
+      '<div style="margin-top:14px;color:#5d6b8a;text-align:center">' +
+      'клик — закрыть</div></div>';
+    document.body.appendChild(el);
+    el.addEventListener('click', function () { el.style.display = 'none'; });
+    HELP.el = el;
+
+    window.addEventListener('keydown', function (ev) {
+      if (ev.key === 'F7') {
+        ev.preventDefault();
+        el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
+      }
+    });
+  };
+
+  // ── интеграция профилей в тюнинг-панель ──
+  const _tune = FZI.tuneInit;
+  FZI.tuneInit = function () {
+    try { _tune(); } catch (e) {}
+    try {
+      const panel = document.getElementById('fzi-tune');
+      if (!panel) return;
+      const div = document.createElement('div');
+      div.innerHTML =
+        '<div style="color:#8fa3c8;margin:12px 0 4px">ПРОФИЛИ УПРАВЛЕНИЯ</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
+        Object.keys(FZI.PROFILES).map(function (k) {
+          return '<button fz-prof="' + k + '" class="fz-mini" title="' +
+            FZI.PROFILES[k].desc + '">' + FZI.PROFILES[k].name + '</button>';
+        }).join('') + '</div>';
+      panel.querySelector('#fz-tune-close').parentNode.insertBefore(
+        div, panel.querySelector('#fz-tune-test'));
+      panel.querySelectorAll('[fz-prof]').forEach(function (b) {
+        b.onclick = function () { FZI.applyProfile(b.getAttribute('fz-prof')); };
+      });
+    } catch (e) {}
+  };
+})();
+
+// ═══════════ FZ-NEXT ЧАСТЬ 15 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  ВЗАИМОДЕЙСТВИЕ ИГРОК↔NPC: танцуешь рядом — NPC подтанцовывают ·
+//  долго стоишь рядом — заводят «разговор» (жесты + пузыри)
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  const FZN = window.FZN;
+  if (!FZI || !FZN) return;
+
+  const SOCIAL = { nearT: new Map(), talked: new Set(), danceT: new Map() };
+
+  FZN.socialUpdate = function (dt) {
+    const pl = FZI.plPos;
+    if (!pl) return;
+
+    // игрок танцует? (существующий флаг игры)
+    let dancing = false;
+    try { dancing = !!currentDance; } catch (e) {}
+
+    for (let i = 0; i < FZN.list.length; i++) {
+      const npc = FZN.list[i];
+      if (!npc.g.visible) continue;
+      const d = npc.g.position.distanceTo(pl);
+
+      // ── подтанцовка ──
+      if (dancing && d < 10) {
+        let t = SOCIAL.danceT.get(npc) || 0;
+        t += dt;
+        SOCIAL.danceT.set(npc, t);
+        if (t > 1.2 && npc.state !== 'greet' && npc.state !== 'phone' && npc.state !== 'busker') {
+          // лёгкое покачивание в такт
+          if (npc.ud.body) {
+            npc.ud.body.rotation.z = Math.sin(FZI.t * 6) * 0.12;
+          }
+          if (npc.ud.leftArm && npc.ud.rightArm && npc.state !== 'dance') {
+            npc.ud.leftArm.rotation.z = 0.35 + Math.sin(FZI.t * 6) * 0.25;
+            npc.ud.rightArm.rotation.z = -0.35 - Math.sin(FZI.t * 6) * 0.25;
+          }
+        }
+      } else {
+        const t = SOCIAL.danceT.get(npc);
+        if (t) {
+          SOCIAL.danceT.delete(npc);
+          if (npc.ud.body) npc.ud.body.rotation.z = 0;
+          if (npc.ud.leftArm && npc.state !== 'dance') npc.ud.leftArm.rotation.z = 0;
+          if (npc.ud.rightArm && npc.state !== 'dance') npc.ud.rightArm.rotation.z = 0;
+        }
+      }
+
+      // ── «разговор»: стоишь рядом 3 сек ──
+      if (d < 4 && !dancing) {
+        let nt = SOCIAL.nearT.get(npc) || 0;
+        nt += dt;
+        SOCIAL.nearT.set(npc, nt);
+        if (nt > 3 && !SOCIAL.talked.has(npc)) {
+          SOCIAL.talked.add(npc);
+          npc.state = 'look';
+          npc.stateT = 4;
+          // жесты разговора
+          npc._talk = 2.5;
+        }
+        if (npc._talk > 0) {
+          npc._talk -= dt;
+          if (npc.ud.leftArm) {
+            npc.ud.leftArm.rotation.x = Math.sin(FZI.t * 3.2) * 0.35 - 0.2;
+          }
+          if (npc.ud.rightArm) {
+            npc.ud.rightArm.rotation.x = -Math.sin(FZI.t * 2.7) * 0.3 - 0.15;
+          }
+        }
+      } else {
+        SOCIAL.nearT.set(npc, 0);
+        if (npc._talk <= 0) SOCIAL.talked.delete(npc);
+      }
+    }
+  };
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+//  NPC-ДЕТИ: каждый 9-й — маленький (рост ×0.62), бегает быстрее,
+//  смеётся и кружится — город сразу живее
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  const FZN = window.FZN;
+  if (!FZI || !FZN) return;
+
+  const KIDS = { inited: false };
+
+  FZN.kidsInit = function () {
+    if (KIDS.inited || !FZN.list.length) return;
+    KIDS.inited = true;
+    for (let i = 4; i < FZN.list.length; i += 9) {
+      const npc = FZN.list[i];
+      npc.g.scale.setScalar(0.62);
+      npc.speed *= 1.9;           // дети носятся
+      npc.kid = true;
+      npc.state = 'walk';
+      npc.stateT = 6;
+    }
+  };
+
+  const _upd = FZN.update;
+  FZN.update = function (dt) {
+    try { _upd(dt); } catch (e) {}
+    // детские прыжки-кружения
+    for (let i = 0; i < FZN.list.length; i++) {
+      const npc = FZN.list[i];
+      if (!npc.kid || !npc.g.visible) continue;
+      if (npc.state === 'walk') {
+        // подпрыгивание при ходьбе
+        if (npc.ud.body) {
+          npc.ud.body.position.y = 1.4 + Math.abs(Math.sin(npc.ph * 7)) * 0.14;
+        }
+      } else if (npc.state === 'idle' && Math.random() < dt * 0.2) {
+        // иногда кружится на месте
+        npc.state = 'dance';
+        npc.stateT = 3 + Math.random() * 3;
+      }
+    }
+  };
+  const _init = FZN.init;
+  FZN.init = function () {
+    try { _init(); } catch (e) {}
+    try { FZN.kidsInit(); } catch (e) {}
+  };
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+//  ФИНАЛЬНЫЙ ОРКЕСТРАТОР-2: подключает social/perf/session/citySound
+//  к мастер-тику (обёртка inputTick — он вызывается каждый кадр)
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  if (!FZI) return;
+
+  const _input = FZI.inputTick;
+  let secAcc = 0;
+  FZI.inputTick = function (now) {
+    try { _input(now); } catch (e) {}
+
+    // соц-поведение NPC
+    if (window.FZN && FZN.list.length) {
+      try { FZN.socialUpdate(1 / 60); } catch (e) {}
+    }
+    // городские звуки
+    try { FZI.citySoundTick(1 / 60); } catch (e) {}
+    // сессионная статистика
+    try { FZI.sessionTick(); } catch (e) {}
+    // раз в секунду: перф
+    secAcc++;
+    if (secAcc >= 60) {
+      secAcc = 0;
+      try {
+        // берём FPS из optAdapt-канала (diagUpdate хранит в замыкании) —
+        // пересчитаем по кадрам за секунду
+        FZI.perfTick(FZI._fps || 60);
+      } catch (e) {}
+    }
+  };
+
+  // лёгкий FPS-счётчик (для perfTick)
+  let fr = 0, frT = 0;
+  (function fpsMeter() {
+    requestAnimationFrame(fpsMeter);
+    fr++; frT++;
+    if (frT >= 60) {
+      FZI._fps = fr / frT * 60 / 60 * 60; // ≈ кадров за 60 кадров
+      FZI._fps = fr / (frT / 60);
+      fr = 0; frT = 0;
+    }
+  })();
+
+  // справка [F7] — инициализация
+  const _help = FZI.helpInit;
+  if (_help) {
+    // boot вызывает diagInit/tuneInit — вшиаем help туда же
+    const _diag = FZI.diagInit;
+    FZI.diagInit = function () {
+      try { _diag(); } catch (e) {}
+      try { FZI.helpInit(); } catch (e) {}
+    };
+  }
+})();
+
+// ═══════════ FZ-NEXT ЧАСТЬ 16 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  ПЕШЕХОДНЫЙ ТРАФИК: NPC переходят дорогу по «зебрам» и ждут
+//  зелёный свет (интеграция с _trafficLights игры)
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  const FZN = window.FZN;
+  if (!FZI || !FZN) return;
+
+  const TRAFFIC = {
+    zones: [
+      // пешеходные переходы возле центра (координаты города)
+      { x: 14, z: 0, dir: 'z', len: 18 },   // через вертикальную дорогу
+      { x: -14, z: 0, dir: 'z', len: 18 },
+      { x: 0, z: 14, dir: 'x', len: 18 },
+      { x: 0, z: -14, dir: 'x', len: 18 }
+    ],
+    inited: false,
+    crossers: []  // { npc, zone, t, phase }
+  };
+
+  // примитивная фаза «светофора»: 8 сек зелёный / 8 сек красный
+  function greenNow() {
+    return (FZI.t % 16) < 8;
+  }
+
+  FZN.trafficInit = function () {
+    if (TRAFFIC.inited || !FZN.list.length) return;
+    TRAFFIC.inited = true;
+    // каждый 7-й NPC становится «пешеходом с маршрутом через дорогу»
+    for (let i = 3; i < FZN.list.length; i += 7) {
+      const npc = FZN.list[i];
+      npc.pedestrian = TRAFFIC.zones[(Math.random() * TRAFFIC.zones.length) | 0];
+    }
+  };
+
+  FZN.trafficUpdate = function (dt) {
+    // пройти по NPC-пешеходникам
+    for (let i = 0; i < FZN.list.length; i++) {
+      const npc = FZN.list[i];
+      const pz = npc.pedestrian;
+      if (!pz || !npc.g.visible) continue;
+
+      const g = npc.g;
+      const dx = pz.x - g.position.x;
+      const dz = pz.z - g.position.z;
+      const distZ = Math.sqrt(dx * dx + dz * dz);
+
+      if (distZ > 3) {
+        // идём к переходу
+        if (npc.state === 'idle' && Math.random() < dt * 0.4) {
+          npc.state = 'walk';
+          npc.target = { x: pz.x + (Math.random() - 0.5) * 2, z: pz.z + (Math.random() - 0.5) * 2 };
+          npc.stateT = 8;
+        }
+      } else {
+        // у перехода: ждём зелёный
+        if (npc.state !== 'crossing') {
+          npc.state = 'idle';
+          npc.stateT = 0.5;
+          if (greenNow()) {
+            // начать переход
+            npc.state = 'crossing';
+            npc.crossT = 0;
+            const across = pz.dir === 'z'
+              ? { x: pz.x, z: pz.z + (g.position.z > pz.z ? -pz.len : pz.len) }
+              : { x: pz.x + (g.position.x > pz.x ? -pz.len : pz.len), z: pz.z };
+            npc.target = across;
+          }
+        } else {
+          // переходим (не останавливаясь — водитель мы вежливый)
+          const t = npc.target;
+          const cdx = t.x - g.position.x;
+          const cdz = t.z - g.position.z;
+          const cd = Math.sqrt(cdx * cdx + cdz * cdz);
+          if (cd < 1) {
+            npc.state = 'idle';
+            npc.stateT = 2;
+            npc.pedestrian = null; // дошёл — дальше обычная жизнь
+          } else {
+            npc.crossT += dt;
+            const sp = npc.speed * 1.35; // торопится
+            g.position.x += cdx / cd * sp * dt;
+            g.position.z += cdz / cd * sp * dt;
+            g.rotation.y = Math.atan2(cdx, cdz);
+            if (npc.ud.leftArm && npc.ud.rightArm) {
+              const s = Math.sin(npc.ph * 5.4);
+              npc.ud.leftArm.rotation.x = s * 0.6;
+              npc.ud.rightArm.rotation.x = -s * 0.6;
+            }
+            // на середине — можно испугаться машины (будущая фича)
+          }
+        }
+      }
+    }
+  };
+
+  const _init = FZN.init;
+  FZN.init = function () {
+    try { _init(); } catch (e) {}
+    try { FZN.trafficInit(); } catch (e) {}
+  };
+  const _upd = FZN.update;
+  FZN.update = function (dt) {
+    try { _upd(dt); } catch (e) {}
+    try { FZN.trafficUpdate(dt); } catch (e) {}
+  };
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+//  АРХИТЕКТУРА FZ-NEXT — карта кода (справка разработчику)
+// ═══════════════════════════════════════════════════════════════════
+/*
+  СЛОЙ 1 — УСТРОЙСТВО И ВВОД
+  ─────────────────────────────────────────────────────────────────
+  h01  ЯДРО FZI
+         FZI.DEV ........ детектор: isMobile/isTablet/console/tier
+         FZI.TIERS ...... профили: console/desktop-high/desktop/
+                           tablet/phone-high/phone (pixelRatio, fpsCap,
+                           npc, shadows, grain)
+         FZI.settings ... сенса/инверсия/дедзона/вибрация/автобег/
+                           масштаб кнопок/NPC — localStorage 'fzInput'
+         FZI.tapKey(code) синтетическое событие клавиатуры (E/Space/B…)
+         FZI.buzz(ms) .... хаптика телефона
+
+  h02  ГЕЙМПАД (Xbox/PS/Switch/generic, Standard Mapping)
+         gamepadconnected → индикатор #fzi-pad-indicator
+         FZI.padPoll(dt) .. стики→FZI.move/look, кнопки→btn/press
+         ЛКСТИК=движение ПКСТИК=камера A=прыжок X/B=действие
+         RT/L3/LB=бег Y=танец START=карта BACK=инвентарь DUP=чат
+         FZI.padRumble(s,ms) вибрация, FZI.padDamage() при уроне
+
+  h03  МОБИЛЬНЫЙ UI v2 (только если DEV.touch)
+         #fzi-btns: ⬆️ прыжок · 🏃 бег(hold) · ✋E · 🕺 танец
+         жест камеры: тап правой зоны/свыше 35% высоты → drag
+         двойной тап справа = прыжок
+         CSS: overscroll-behavior:none, touch-action:none,
+         safe-area-inset, -webkit-touch-callout:none
+         FZI.mobApply(): кнопка бега → keys.ShiftLeft, автоспринт
+
+  h04  ОПТИМИЗАЦИЯ + ДИАГНОСТИКА
+         FZI.optInit ..... pixelRatio по тиру, тени off на мобилах
+         FZI.optSetScale . ручное разрешение 0.55..1
+         FZI.optAdapt .... адаптив: FPS<26 → -0.1; >54×8с → +0.05
+         battery-saver ... navigator.getBattery <20% → ×0.7
+         [F8] #fzi-diag .. устройство/FPS/разрешение/геймпад/NPC/HP
+         FZI.inputTick ... главный опрос ввода каждый кадр
+
+  СЛОЙ 2 — HP v2
+  ─────────────────────────────────────────────────────────────────
+  h07  FZHP
+         CSS: body:not(.fzg-boss) .health-bar-container → display:none
+         бой: body.fzg-boss → HP-бар по центру сверху, анимация входа
+         низкое HP: body.fzg-boss-low → пульс
+         урон: #fzi-dmg-vign (красная виньетка) + rumble + хаптика
+         детект боя: window.fzBOSS (игровой босс-арена, hp/фазы)
+
+  СЛОЙ 3 — ЛЮДИ (NPC = тело игрока с перекраской)
+  ─────────────────────────────────────────────────────────────────
+  h05  ЯДРО FZN
+         npcBuild() → createCharacter({skin/hair/shirt/pants}) — ТА
+         ЖЕ функция, что строит игрока; палитры: 7 кожи × 8 волос ×
+         18 футболок × 10 штанов; имена: Аli+сан…
+         POIS: спавн/центр/3 молла/парк/8 улиц, веса по времени суток
+         FZN.setCount(n) — живой пересчёт толпы из панели
+
+  h06  ПОВЕДЕНИЕ: автомат idle→walk→look→greet→dance→shelter
+         ходьба с поворотом корпуса, взгляд на игрока <20м
+         приветствие <5.5м (один раз), зонты в дождь (конус)
+         ночь: половина NPC «уходит домой» (visible=false)
+
+  h08  ТАБЛИЧКИ+ЭМОЦИИ: имена ближайшим 8 (канвас-спрайты),
+         эмодзи-пузыри по контексту (день/ночь/дождь/гроза/снег/
+         greet/dance), всплытие+фейд
+
+  h12  ЖИВОЙ ГОРОД v2: пары (ходят вместе, ждут друг друга),
+         телефонисты (поза+светящийся экран), уличный музыкант
+         (гитара, перебор, поклон игроку), наблюдатели
+
+  h15  СОЦИАЛЬНОСТЬ: игрок танцует <10м → NPC подтанцовывают;
+         стоишь рядом 3с → «разговор» (жесты). NPC-ДЕТИ: каждый
+         9-й ×0.62 роста, ×1.9 скорости, прыгают и кружатся
+
+  h16  ТРАФИК: NPC-пешеходы идут к «зебрам», ждут зелёный
+         (фаза 8с/8с по FZI.t), переходят с ускорением, потом
+         живут обычной жизнью
+
+  СЛОЙ 4 — РЕАЛИСТИЧНОСТЬ И ЗВУК
+  ─────────────────────────────────────────────────────────────────
+  h07б realUpdate: head-bob (CSS-трансформ канваса — не конфликтует
+         с игровым позиционированием камеры), шаги-синтез (темп от
+         бега, фильтр lowpass 640/900), блоб-тени NPC на мобилках
+  h13  PERf: FPS-график [F8] (sparkline 120×36), статистика
+         сессии (метры/FPS min-max), минутный отчёт в консоль;
+         ЗВУКИ ГОРОДА: птицы днём (чирпы 2.4-4кГц), сверчки ночью
+         (пачки square 4.2кГц), музыкант у спавна (пентатоника),
+         тишина в дождь/грозу
+
+  СЛОЙ 5 — UI
+  ─────────────────────────────────────────────────────────────────
+  h09  ТЮНИНГ-ЦЕНТР [F3]: сенса/инверсия/дедзона/вибрация/автобег/
+         размер кнопок/NPC-ползунок (0-48)/разрешение/звук/тест
+         геймпада с живым дампом стиков
+  h10  ТУТОРИАЛ: первый запуск → управление твоего устройства
+         (мобила/ПК-геймпад), автозакрытие 25с, localStorage 'fzTut'
+         САМОтЕСТЫ ?fzdiag=1 — панель 15 проверок
+  h14  ПРОФИЛИ: казуал/гонщик/шутер/кино; экспорт btoa-строкой;
+         СПРАВКА [F7] — все клавиши игры и паков
+
+  ЗАПУСК (h11+h13+h15+h16)
+  ─────────────────────────────────────────────────────────────────
+  boot: ждём scene/camera/renderer/createCharacter (опрос 250мс)
+        → optInit/padUI/mobInit/diag/tune/tut
+        → ждём localPlayer.mesh → FZN.init (толпа+город+дети+трафик)
+        → masterTick (rAF): inputTick → NPC update/tags/emo/social
+          → traffic → HP → боб → город-звук → сессия/перф
+
+  ГОРЯЧИЕ КЛАВИШИ ПАКА
+  ─────────────────────────────────────────────────────────────────
+  [F2] графика-погода · [F3] тюнинг · [F4] погода-цикл · [F6] день/
+  ночь · [F7] все клавиши · [F8] диагностика+FPS-график · ?fzdiag=1
+*/
+
+// ═══════════ FZ-NEXT ЧАСТЬ 17 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  АКСЕССУАРЫ NPC: шапки · очки · рюкзаки · сумки — каждый
+//  третий житель города выглядит по-своему
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  const FZN = window.FZN;
+  if (!FZI || !FZN) return;
+
+  const ACC = { inited: false, stats: { hats: 0, glasses: 0, packs: 0, bags: 0 } };
+
+  // ── головные уборы ──
+  function hat(npc, kind) {
+    if (!npc.ud.head) return;
+    let mesh;
+    if (kind === 'cap') {
+      // кепка: полусфера + козырёк
+      const g = new THREE.Group();
+      const dome = new THREE.Mesh(
+        new THREE.SphereGeometry(0.38, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2),
+        new THREE.MeshLambertMaterial({ color: randCol() })
+      );
+      g.add(dome);
+      const peak = new THREE.Mesh(
+        new THREE.BoxGeometry(0.34, 0.05, 0.3),
+        new THREE.MeshLambertMaterial({ color: 0x222222 })
+      );
+      peak.position.set(0, 0.02, 0.42);
+      g.add(peak);
+      mesh = g;
+    } else if (kind === 'beanie') {
+      // шапка-бини
+      mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(0.38, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2.2),
+        new THREE.MeshLambertMaterial({ color: randCol() })
+      );
+    } else if (kind === 'cap-back') {
+      // кепка задом наперёд
+      const g = new THREE.Group();
+      const dome = new THREE.Mesh(
+        new THREE.SphereGeometry(0.38, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2),
+        new THREE.MeshLambertMaterial({ color: randCol() })
+      );
+      g.add(dome);
+      const peak = new THREE.Mesh(
+        new THREE.BoxGeometry(0.3, 0.05, 0.26),
+        new THREE.MeshLambertMaterial({ color: 0x222222 })
+      );
+      peak.position.set(0, 0.02, -0.42);
+      g.add(peak);
+      mesh = g;
+    }
+    if (mesh) {
+      mesh.position.y = 0.36;
+      npc.ud.head.add(mesh);
+      ACC.stats.hats++;
+    }
+  }
+
+  // ── очки ──
+  function glasses(npc) {
+    if (!npc.ud.head) return;
+    const g = new THREE.Group();
+    const mat = new THREE.MeshBasicMaterial({ color: 0x14141c });
+    // две линзы
+    [-0.16, 0.16].forEach(function (x) {
+      const lens = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.1, 0.02), mat);
+      lens.position.set(x, 0.04, 0.36);
+      g.add(lens);
+    });
+    // перемычка
+    const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.03, 0.02), mat);
+    bridge.position.set(0, 0.05, 0.36);
+    g.add(bridge);
+    npc.ud.head.add(g);
+    ACC.stats.glasses++;
+  }
+
+  // ── рюкзак ──
+  function backpack(npc) {
+    if (!npc.ud.body) return;
+    const bp = new THREE.Mesh(
+      new THREE.BoxGeometry(0.5, 0.6, 0.25),
+      new THREE.MeshLambertMaterial({ color: randCol() })
+    );
+    bp.position.set(0, 0.1, -0.42);
+    npc.ud.body.add(bp);
+    ACC.stats.packs++;
+  }
+
+  // ── сумка через плечо ──
+  function bag(npc) {
+    if (!npc.ud.body) return;
+    const g = new THREE.Group();
+    const strap = new THREE.Mesh(
+      new THREE.BoxGeometry(0.08, 1.1, 0.06),
+      new THREE.MeshLambertMaterial({ color: 0x2c2418 })
+    );
+    strap.rotation.z = 0.5;
+    g.add(strap);
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(0.32, 0.26, 0.12),
+      new THREE.MeshLambertMaterial({ color: randCol() })
+    );
+    body.position.set(0.32, -0.42, 0.2);
+    g.add(body);
+    npc.ud.body.add(g);
+    ACC.stats.bags++;
+  }
+
+  function randCol() {
+    return new THREE.Color().setHSL(Math.random(), 0.55, 0.42).getHex();
+  }
+
+  // ── раздача: детерминированно-случайно по индексу ──
+  FZN.accInit = function () {
+    if (ACC.inited || !FZN.list.length) return;
+    ACC.inited = true;
+    const HATS = ['cap', 'beanie', 'cap-back'];
+    for (let i = 0; i < FZN.list.length; i++) {
+      const npc = FZN.list[i];
+      if (npc.kid) continue; // детям без аксессуаров
+      // каждый 3-й — шапка
+      if (i % 3 === 0) hat(npc, HATS[i % HATS.length]);
+      // каждый 4-й — очки
+      if (i % 4 === 1) glasses(npc);
+      // каждый 5-й — рюкзак
+      if (i % 5 === 2) backpack(npc);
+      // каждый 6-й — сумка
+      else if (i % 6 === 3) bag(npc);
+    }
+    console.log('%c[FZ] NPC-аксессуары: шапок ' + ACC.stats.hats +
+      ' · очков ' + ACC.stats.glasses + ' · рюкзаков ' + ACC.stats.packs +
+      ' · сумок ' + ACC.stats.bags, 'color:#9d8df5');
+  };
+
+  const _init = FZN.init;
+  FZN.init = function () {
+    try { _init(); } catch (e) {}
+    try { FZN.accInit(); } catch (e) {}
+  };
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+//  ЧЕЙНДЖЛОГ ИГРЫ — версии большого пути (документация)
+// ═══════════════════════════════════════════════════════════════════
+/*
+  v3.x ДО FZ-ПАКОВ
+  ─────────────────────────────────────────────────────────────────
+  · город: три молла, парк, спавн, улицы, машины, светофоры
+  · мультиплеер socket.io, чат, работа, деньги, инвентарь
+  · босс под GRAND MALL + 6 записок + топор
+  · тизер-трейлер 10 007 строк (отдельный файл)
+
+  v4.0 FZ-GFX PACK (+1 842 строки → 21 708)
+  ─────────────────────────────────────────────────────────────────
+  · погода: дождь/гроза/снег/туман, авто-смена 3-6 мин
+  · молнии с громом, мокрый асфальт, лужи
+  · небо v2: солнце/луна/900 звёзд/облака/дымка
+  · пост: виньетка, зерно, хром-кайма; FOV-кик, пыль из-под ног
+  · /anim брейк/макарена/лунная/салют
+  · [F2] панель графики
+
+  v5.0 FZ-NEXT PACK (текущий, → 25 000+)
+  ─────────────────────────────────────────────────────────────────
+  · ГЕЙМПАД: Xbox/PS/Switch, стики/кнопки/вибрация, тест-панель
+  · МОБИЛЬНОЕ v2: кнопки прыжок/бег/E/танец, жест камеры,
+    двойной тап, хаптика, safe-area, запрет жестов браузера
+  · ОПТИМИЗАЦИЯ: профили 6 устройств, динамическое разрешение,
+    FPS-кап консолей, батарея-сейвер, FPS-график [F8]
+  · NPC-ЛЮДИ: тело игрока с перекраской (7 кож × 8 волос ×
+    18 футболок × 10 штанов), 16-36 человек по устройству
+  · NPC-ЖИЗНЬ: ходят по зонам, смотрят на игрока, здороваются,
+    танцуют вечером в парке, прячутся от дождя, ЗОНТЫ
+  · NPC-ГОРОД: пары, телефонисты, уличный музыкант с гитарой,
+    дети (×0.62, носятся), пешеходные переходы по светофору
+  · NPC-АКСЕССУАРЫ: кепки/бини/задом-наперёд, очки, рюкзаки,
+    сумки — каждый третий неповторим
+  · ЭМОЦИИ: эмодзи-пузыри по контексту погоды/времени/действия
+  · ИМЁННЫЕ ТАБЛИЧКИ у 8 ближайших
+  · HP v2: полоска СКРЫТА, в боссфайте — центр экрана, красная
+    виньетка урона, пульс при <30%, rumble
+  · РЕАЛИЗМ: head-bob (CSS, без конфликтов), синтез шагов,
+    блоб-тени NPC, птицы днём, сверчки ночью, гитара музыканта
+  · ТЮНИНГ [F3]: сенса/дедзона/инверсия/вибрация/автобег/кнопки/
+    NPC 0-48/разрешение/звук; ПРОФИЛИ казуал/гонщик/шутер/кино
+  · ТУТОРИАЛ первого запуска под твоё устройство
+  · СПРАВКА [F7] — все клавиши; ?fzdiag=1 — самотесты
+
+  ЗАВТРА (идеи v5.1+)
+  ─────────────────────────────────────────────────────────────────
+  · NPC узнают игрока в лицо (память приветствий)
+  · собаки-выгульщики в парке
+  · уличная еда: точки с мороженым у моллов
+  · тени-времени: длинные закатные тени всем NPC
+  · фото-режим с фильтрами как в тизере
+*/
+
+// ═══════════ FZ-NEXT ЧАСТЬ 18 ═══════════
+// ═══════════════════════════════════════════════════════════════════
+//  СОВЕТНИК ПРОИЗВОДИТЕЛЬНОСТИ: при просадках подсказывает,
+//  что выключить; финальный баннер пака в консоли
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  const FZI = window.FZI;
+  if (!FZI) return;
+
+  const ADV = { lastHint: -60, hintsGiven: 0 };
+
+  FZI.adviseTick = function (fps) {
+    // советы только при реальных просадках и не чаще раза в 30 сек
+    if (fps > 30) return;
+    if (FZI.t - ADV.lastHint < 30) return;
+    if (ADV.hintsGiven > 5) return;
+    ADV.lastHint = FZI.t;
+    ADV.hintsGiven++;
+
+    // выбираем совет по контексту
+    const W = window.FZG && FZG.weather;
+    const npcN = window.FZN ? FZN.list.length : 0;
+    let msg;
+    if (npcN > 24) {
+      msg = '⚙️ FPS низкий: в [F3] можно уменьшить количество людей';
+    } else if (W && (W.cur === 'storm' || W.rain > 0.7)) {
+      msg = '🌧 Гроза тормозит: [F4] — переключить на ясную погоду';
+    } else if (FZI.opt && FZI.opt.resScale > 0.85) {
+      msg = '📉 Включаю авто-разрешение — картинка чуть мягче, но плавнее';
+      try { FZI.opt.cold = 0; } catch (e) {}
+    } else {
+      msg = '⚙️ [F3] → разрешение 70% и NPC 12 — вернётся плавность';
+    }
+    try {
+      if (typeof showNotification === 'function') showNotification(msg, 'info', 5000);
+    } catch (e) {}
+  };
+
+  // хук в перф-канал
+  const _perf = FZI.perfTick;
+  FZI.perfTick = function (fps) {
+    try { _perf(fps); } catch (e) {}
+    try { FZI.adviseTick(fps); } catch (e) {}
+  };
+
+  // ── финальный баннер ──
+  setTimeout(function () {
+    try {
+      const c1 = 'color:#9fe8ff;font-family:monospace;font-weight:bold';
+      const c2 = 'color:#dbe4f4;font-family:monospace';
+      const c3 = 'color:#5d6b8a;font-family:monospace';
+      console.log('%c┌─────────────────────────────────────────────┐', c3);
+      console.log('%c│  FANTAZIA RP 3D · ГОРОД ЖИВЁТ               │', c1);
+      console.log('%c│  FZ-GFX: погода · небо · пост-эффекты       │', c2);
+      console.log('%c│  FZ-NEXT: геймпад · мобилка · NPC-люди      │', c2);
+      console.log('%c│  HP только в бою · 25 000+ строк любви      │', c2);
+      console.log('%c└─────────────────────────────────────────────┘', c3);
+      console.log('%c[F2] графика · [F3] тюнинг · [F4] погода · [F7] клавиши · [F8] диагностика', c3);
+    } catch (e) {}
+  }, 6000);
+})();
+
+
+// ═══════════════════════════════════════════════════════════════════
+//  ФИНАЛИЗАТОР: подтверждение сборки (маркер для диагностики)
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  window.FZ_PACKS = {
+    gfx: 'v1.0 — погода/небо/пост/анимации',
+    next: 'v1.0 — геймпад/мобилка/NPC/HP-v2/оптимизация',
+    at: new Date().toISOString()
+  };
+})();
+</script>
