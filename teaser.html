@@ -7454,9 +7454,9 @@ function upTimecode() {
   const ms = String(Math.floor((t % 1) * 100)).padStart(2, '0');
   const phase =
     T.phase === 'play'
-      ? t < 16.4 ? 'КИНО' : t < 17.6 ? 'ТЬМА' : t < 20 ? 'ГЛАЗА' : t < 21.6 ? 'HELLO' : 'КОДА'
+      ? t < 6 ? 'ПРОЛЁТ' : t < 6.35 ? 'ТЬМА' : t < 7.4 ? 'ГЛАЗА' : t < 9.6 ? 'HELLO' : 'КОДА'
       : T.phase.toUpperCase();
-  const shotN = t < 3.4 ? 1 : t < 7.2 ? 2 : t < 10.6 ? 3 : t < 13.6 ? 4 : t < 16.4 ? 5 : 0;
+  const shotN = 0;
   TC.el.textContent =
     phase + ' · ' + mm + ':' + ss + '.' + ms +
     (shotN ? ' · ШОТ ' + shotN : '') +
@@ -7475,36 +7475,8 @@ const endEl = DOC.getElementById('end');
 const titleEl = DOC.getElementById('title');
 const OV = { flashW: 0, flashR: 0, fade: 1, fadeT: 1, punch: 0 };
 
-let CUES = [], cueI = 0;
-const ignite = (i) => {
-  const e = BOSS.eyes[i];
-  if (e && !e.userData.on) {
-    e.userData.on = true;
-    e.userData.tOn = T.wall;
-    tone(rnd(700, 950), 500, 0.06, 'square', 0.032, 0);
-  }
-};
-// extinguishV2(i) — фейд-гашение глаза, реализована в p14
-const killTorch = (i, when) => {
-  const tc = DUN.flamesAll[i];
-  if (tc) {
-    tc.dieT = T.t;
-    aSputter(when || 0);
-    // последний дым над гаснущим факелом
-    if (tc.g && DUN2.puffs) {
-      const p = DUN2.puffs.find((pp) => pp.userData.t < 0);
-      if (p) {
-        p.position.set(tc.g.position.x, tc.g.position.y + 2, tc.g.position.z);
-        p.scale.set(1, 1, 1);
-        p.material.opacity = 0.4;
-        p.userData.t = 0;
-      }
-    }
-  }
-};
-
-CUES = [
-  // -- ПРОЛЁТ: всё ближе и ближе --
+let CUES = [
+  // 0-6с: ПРОЛЁТ
   { t: 0.00, fn: () => {
       OV.fadeT = 0;
       barsT.classList.add('on');
@@ -7516,96 +7488,78 @@ CUES = [
       RIG.hand = 1;
   } },
   { t: 0.15, fn: () => { try { riverStart(); } catch (e) {} } },
-  { t: 0.40, fn: () => capIntro('ГЛУБИНА: −42 МЕТРА', 'ЛОГОВО ХРАНИТЕЛЯ') },
-  { t: 2.60, fn: () => { try { cardShow('FANTAZIA RP 3D', 1.6); } catch (e) {} } },
-  { t: 3.40, fn: () => capOff() },
-  { t: 5.20, fn: () => aHeartStart(58) },
-  { t: 7.60, fn: () => { aWhisper(0, 5); grade('cold'); } },
-  { t: 9.80, fn: () => aWhisper(0, 3) },
-  { t: 11.20, fn: () => aHeartStop() },
-  { t: 11.30, fn: () => aHeartStart(76) },
-  // факелы гаснут один за другим
-  { t: 12.00, fn: () => killTorch(0) },
-  { t: 12.45, fn: () => killTorch(1) },
-  { t: 12.90, fn: () => killTorch(2) },
-  { t: 13.30, fn: () => { killTorch(3); grade('colder'); } },
-  { t: 13.70, fn: () => killTorch(4) },
-  { t: 14.05, fn: () => killTorch(5) },
-  { t: 14.40, fn: () => killTorch(6) },
-  { t: 14.70, fn: () => killTorch(7) },
-  { t: 15.00, fn: () => killTorch(8) },
-  { t: 15.30, fn: () => killTorch(9) },
-  { t: 14.60, fn: () => aRiser(1.6, 0.2) },
-  // -- СВЕТ ВЫКЛЮЧИЛСЯ --
-  { t: 16.10, fn: () => {
+  { t: 0.35, fn: () => capIntro('ГЛУБИНА: −42 МЕТРА', 'ЛОГОВО ХРАНИТЕЛЯ') },
+  { t: 0.80, fn: () => aHeartStart(58) },
+  { t: 2.00, fn: () => capOff() },
+  { t: 3.20, fn: () => { aWhisper(0, 4); grade('cold'); } },
+  { t: 4.60, fn: () => aRiser(1.2, 0.25) },
+  { t: 5.40, fn: () => aHeartStop() },
+
+  // 6.0: СВЕТ ВЫКЛ + ПОВОРАЧИВАЕТСЯ
+  { t: 6.00, fn: () => {
       BLACKOUT.t = T.t;
       aSubDrop(0);
-      aHeartStop();
       glitch = 0.25;
       grade('void');
       RIG.hand = 0.15;
+      for (let i = 0; i < DUN.flamesAll.length; i++) {
+        DUN.flamesAll[i].dieT = T.t + i * 0.03;
+      }
+      BOSS.turn = T.t;
   } },
-  // тишина и тьма…
-  // -- ГЛАЗА (загораются по одному) --
-  { t: 17.60, fn: () => ignite(0) },
-  { t: 17.76, fn: () => ignite(1) },
-  { t: 17.92, fn: () => ignite(2) },
-  { t: 18.08, fn: () => ignite(3) },
-  { t: 18.24, fn: () => ignite(4) },
-  { t: 18.40, fn: () => ignite(5) },
-  { t: 18.56, fn: () => ignite(6) },
-  { t: 18.80, fn: () => { aHeartStart(44); musChoir(2.6); } },
-  // -- ПОВОРАЧИВАЕТСЯ (глаза стоят на месте!) --
-  { t: 19.30, fn: () => { BOSS.turn = T.t; aWhisper(0, 2); } },
-  // -- HELLO! --
-  { t: 19.92, fn: () => { try { duckTo(0.12, 0.08); } catch (e) {} } },
-  { t: 20.00, fn: () => {
-      BOSS.lunge = T.t;          // МЕДЛЕННОЕ НАДВИГАНИЕ (не скример)
+
+  // 6.35-6.9: ГЛАЗА загораются подряд
+  { t: 6.35, fn: () => ignite(0) },
+  { t: 6.44, fn: () => ignite(1) },
+  { t: 6.53, fn: () => ignite(2) },
+  { t: 6.62, fn: () => ignite(3) },
+  { t: 6.71, fn: () => ignite(4) },
+  { t: 6.80, fn: () => ignite(5) },
+  { t: 6.89, fn: () => ignite(6) },
+  { t: 6.95, fn: () => { aHeartStart(44); musChoir(1.2); } },
+
+  // 7.4: HELLO
+  { t: 7.40, fn: () => {
+      BOSS.lunge = T.t;
       STATUE_AWAKE.t = T.t;
-      OV.flashR = 0.14;          // еле заметная вспышка
-      OV.punch = 0.22;           // мягкий панч камеры
-      T.shake = 0.2;
-      glitch = 0.1;
+      OV.flashR = 0.12;
+      OV.punch = 0.22;
+      T.shake = 0.18;
+      glitch = 0.08;
       aHelloSting(0);
       DUN.embers.forEach((e) => {
         const a = rnd(0, Math.PI * 2);
         e.userData.burst = { x: Math.cos(a) * rnd(0.8, 2.2), z: Math.sin(a) * rnd(0.8, 2.2), t: 0 };
       });
-      musChoir(3.2);
+      musChoir(2.4);
       speak('Hello!', { lang: 'en', pitch: 0.1, rate: 0.48 });
       cap('HELLO', null, false);
       RIG.hand = 0.4;
-      // финальные системы v4
       try { dollyZoom(true); } catch (e) {}
-      try { bellToll(T.t + 0.35, 0.5); } catch (e) {}
-      try { cardShow('', 0.01); } catch (e) {}
+      try { duckTo(0.12, 0.08); } catch (e) {}
+      try { bellToll(T.t + 0.3, 0.45); } catch (e) {}
   } },
-  { t: 21.40, fn: () => { try { duckTo(1, 2.2); } catch (e) {} } },
-  // глаза медленно гаснут одна за другой (мрачная кода)
-  { t: 21.60, fn: () => extinguishV2(6) },
-  { t: 21.80, fn: () => extinguishV2(5) },
-  { t: 22.00, fn: () => extinguishV2(4) },
-  { t: 22.20, fn: () => extinguishV2(3) },
-  { t: 22.40, fn: () => extinguishV2(2) },
-  { t: 22.60, fn: () => extinguishV2(1) },
-  { t: 22.80, fn: () => { extinguishV2(0); musStop(); } },
-  { t: 23.10, fn: () => { aHeartStop(); capOff(); OV.fadeT = 1; glitch = 0; } },
-  // -- КОНЕЦ (тихий аккорд, никакой вспышки) --
-  { t: 23.90, fn: () => {
+  { t: 9.00, fn: () => { try { duckTo(1, 1.6); } catch (e) {} } },
+
+  // 9.6: тишина и тьма
+  { t: 9.60, fn: () => { aHeartStop(); capOff(); OV.fadeT = 1; glitch = 0; } },
+
+  // 10.2: титр
+  { t: 10.20, fn: () => {
       titleEl.classList.add('on');
       grade('none');
-      [65.4, 98, 130.8].forEach((f) => tone(f, f * 0.99, 3.0, 'triangle', 0.05, 0));
-      tone(36, 34, 3.2, 'sine', 0.16, 0);
       try { finaleChord(); } catch (e) {}
-      try { cardShow('ТЕНЬ ПАРКА ФАНТАЗИИ', 2.8); } catch (e) {}
+      [65.4, 98, 130.8].forEach((f) => tone(f, f * 0.99, 2.4, 'triangle', 0.05, 0));
+      tone(36, 34, 2.6, 'sine', 0.16, 0);
   } },
-  { t: 26.20, fn: () => {
+
+  // 11.8: конец
+  { t: 11.80, fn: () => {
       titleEl.classList.remove('on');
       barsT.classList.remove('on');
       barsB.classList.remove('on');
       endEl.classList.add('on');
       T.phase = 'end';
-      try { cardShow('FANTAZIA RP 3D · «ТЕНЬ ПАРКА ФАНТАЗИИ»', 4.0); } catch (e) {}
   } }
 ];
 
@@ -7619,32 +7573,31 @@ function runCues() {
 // -- камера кут-сцены (старый путь — кино-блок до 16.4 отдаёт ей) --
 function upCamera(dt, wall) {
   const t = T.t;
-  if (t < 16.4) {
-    // ПРОЛЁТ: от входа (z=36) почти вплотную (z=-7)
-    const z = cine(36, -7, 0, 16.4, t);
-    const y = cine(3.7, 3.0, 0, 16.4, t) + Math.sin(wall * 1.15) * 0.09;
-    const x = Math.sin(wall * 0.42) * lerp(1.6, 0.35, t / 16.4) + Math.sin(t * 0.23) * 0.4;
+  if (t < 6) {
+    // 6 секунд от входа почти вплотную
+    const z = cine(36, -6.5, 0, 6, t);
+    const y = cine(3.7, 3.05, 0, 6, t) + Math.sin(wall * 1.15) * 0.09;
+    const x = Math.sin(wall * 0.42) * lerp(1.6, 0.35, t / 6) + Math.sin(t * 0.35) * 0.4;
     cam.position.set(x, y, z);
-    // взгляд постепенно поднимается к лицу
-    const lookY = cine(2.6, 4.3, 3, 16.4, t);
+    const lookY = cine(2.6, 4.2, 1.5, 6, t);
     cam.lookAt(0, lookY, BOSS_POS.z);
-    cam.rotateZ(Math.sin(wall * 0.45) * 0.022); // лёгкий крен, как оператор
-    cam.fov = cine(64, 50, 0, 16.4, t) + Math.sin(wall * 0.85) * 0.5; // дыхание объектива
-  } else if (t < 21.0) {
-    // тьма → глаза → HELLO: камера почти замерла, лёгкий дрейф
-    const z = -7 + Math.sin(wall * 0.5) * 0.22;
-    cam.position.set(Math.sin(wall * 0.34) * 0.3, 3.1 + Math.sin(wall * 0.8) * 0.08, z);
+    cam.rotateZ(Math.sin(wall * 0.45) * 0.022);
+    cam.fov = cine(64, 50, 0, 6, t) + Math.sin(wall * 0.85) * 0.5;
+  } else if (t < 7.4) {
+    // тьма + разворот: камера замерла
+    const z = -6.5 + Math.sin(wall * 0.5) * 0.2;
+    cam.position.set(Math.sin(wall * 0.34) * 0.28, 3.05 + Math.sin(wall * 0.8) * 0.07, z);
     cam.lookAt(0, 4.15, BOSS_POS.z);
     cam.fov = 50;
   } else {
-    // медленный отъезд: глаза гаснут, камера отплывает в темноту
-    const k = clamp((t - 20.0) / 3.2, 0, 1);
-    const z = -7 + EZ.cubicInOut(k) * 4.5;
-    cam.position.set(Math.sin(wall * 0.3) * 0.2, 3.1, z);
+    // HELLO: медленное надвигание
+    const k = clamp((t - 7.4) / 2.4, 0, 1);
+    const ease = 1 - Math.pow(1 - k, 5);
+    const z = -6.5 + ease * 1.9;
+    cam.position.set(Math.sin(wall * 0.3) * 0.2, 3.05, z);
     cam.lookAt(0, 4.15, BOSS_POS.z);
     cam.fov = 50;
   }
-  // панч на HELLO
   if (OV.punch > 0) {
     OV.punch = Math.max(0, OV.punch - dt * 2.0);
     cam.fov -= OV.punch * 13;
@@ -7786,10 +7739,7 @@ function loop() {
     dollyZoomUpdate(dt);
     upBlackout(dt);
     // -- камера: кино-блок v4 имеет приоритет (до 16.4 с) --
-    if (T.phase === 'play') {
-      const cineTook = upCineCam(dt, wall);
-      if (!cineTook) upCamera(dt, wall);
-    }
+    if (T.phase === 'play') upCamera(dt, wall);
     RIG.apply(cam, dt, wall);
     if (T.shake > 0.001) {
       cam.position.x += rnd(-1, 1) * T.shake * 0.42;
