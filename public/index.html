@@ -13981,7 +13981,7 @@ function updateDayNight(dt) {
     new THREE.Color(0x0a0a2a), new THREE.Color(0x87CEEB), t
   );
   scene.background = skyColor;
-  scene.fog.color = skyColor;
+  if (scene.fog) scene.fog.color = skyColor; // fog может быть выключен
 
   if (window.sunLight) {
     window.sunLight.intensity = 0.3 + t * 0.7;
@@ -19322,54 +19322,31 @@ function claimFPReward(r, isPlus, claimKey) {
 }
 </style>
 
-<!-- ========== FZ: интро GRAND MALL SECRET + портал + тизер при старте ========== -->
+<!-- ========== FZ: супер-катсцена + тизер-цепочка + портал ========== -->
 <style>
-#fzIntro{position:fixed;inset:0;background:#000;z-index:2147483000;display:flex;align-items:center;justify-content:center;cursor:pointer}
-#fzIntro .fzi-w{text-align:center;position:relative;padding:0 20px}
-#fziOld{font:900 clamp(34px,9vw,96px)/1.05 Arial,sans-serif;color:#e8e8f2;letter-spacing:.12em;position:relative;display:inline-block}
-#fziLine{position:absolute;left:-3%;top:52%;height:clamp(5px,1.2vw,12px);width:0;background:#ff2b3a;box-shadow:0 0 24px #ff2b3a;transform:rotate(-2.5deg);animation:fziStrike .45s 1.9s forwards}
-#fziQ{font:700 clamp(18px,3.4vw,34px)/1 Arial;color:#5a5a6e;letter-spacing:.6em;margin-top:14px;opacity:0;animation:fziFade .5s 2.5s forwards}
-#fziNew{font:900 clamp(26px,6.6vw,72px)/1.1 Arial,sans-serif;color:#ff2b3a;letter-spacing:.1em;margin-top:10px;opacity:0;transform:scale(1.7);filter:blur(6px);animation:fziSlam .4s 2.85s forwards;text-shadow:0 0 34px rgba(255,43,58,.55)}
-#fziGo{margin-top:44px;font:700 clamp(15px,2.4vw,22px) Arial;letter-spacing:.35em;color:#fff;background:linear-gradient(180deg,rgba(255,43,58,.28),rgba(255,43,58,.12));border:2px solid #ff2b3a;padding:16px 54px;border-radius:14px;cursor:pointer;opacity:0;animation:fziFade .6s 3.6s forwards}
-#fziGo:hover{background:rgba(255,43,58,.4);box-shadow:0 0 30px rgba(255,43,58,.5)}
-#fzIntro.fzi-fast #fziLine{animation-delay:.05s}
-#fzIntro.fzi-fast #fziQ{animation-delay:.15s}
-#fzIntro.fzi-fast #fziNew{animation-delay:.25s}
-#fzIntro.fzi-fast #fziGo{animation-delay:.5s}
-@keyframes fziStrike{to{width:106%}}
-@keyframes fziFade{to{opacity:1}}
-@keyframes fziSlam{to{opacity:1;transform:scale(1);filter:blur(0)}}
-#goGame{display:block;margin:18px auto 0;font:700 20px Arial;letter-spacing:.3em;color:#fff;background:rgba(255,43,58,.25);border:2px solid #ff2b3a;padding:14px 46px;border-radius:12px;cursor:pointer}
+#fzIntro{position:fixed;inset:0;background:#000;z-index:2147483000;display:none;overflow:hidden}
+#fziCv{position:absolute;inset:0;width:100%;height:100%}
+#fzIntro .fzi-w{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+#fziGo{pointer-events:auto;margin-top:34vh;font:700 clamp(15px,2.4vw,22px) Arial;letter-spacing:.35em;color:#fff;
+  background:linear-gradient(180deg,rgba(255,43,58,.3),rgba(255,43,58,.12));border:2px solid #ff2b3a;padding:16px 54px;
+  border-radius:14px;cursor:pointer;opacity:0;transform:translateY(14px);transition:opacity .5s,transform .5s,box-shadow .3s}
+#fzIntro.fzi-go #fziGo{opacity:1;transform:none}
+#fziGo:hover{background:rgba(255,43,58,.45);box-shadow:0 0 34px rgba(255,43,58,.55)}
+#fziSkip{position:absolute;right:14px;bottom:12px;font:12px Arial;color:#666;cursor:pointer;letter-spacing:.2em;padding:8px 12px;border:1px solid #333;border-radius:8px;background:rgba(0,0,0,.5)}
+#fziSkip:hover{color:#fff;border-color:#888}
 </style>
-<div id="fzIntro" style="display:none">
-  <div class="fzi-w">
-    <div id="fziOld">FANTAZIA RP<span id="fziLine"></span></div>
-    <div id="fziQ">? ? ?</div>
-    <div id="fziNew">GRAND MALL SECRET</div>
-    <button id="fziGo">ПРОДОЛЖИТЬ ▶</button>
-  </div>
+<div id="fzIntro">
+  <canvas id="fziCv"></canvas>
+  <div class="fzi-w"><button id="fziGo">ПРОДОЛЖИТЬ ▶</button></div>
+  <div id="fziSkip">ПРОПУСТИТЬ ⏭</div>
 </div>
 <script>
 (function () {
   var qs = location.search || '';
   var fromTeaser = /[?&]fromTeaser=1/.test(qs);
+  var showNews = /[?&]shownews=1/.test(qs);
 
-  // ── катсцена при заходе на сайт ──
-  var intro = document.getElementById('fzIntro');
-  if (!fromTeaser && intro) {
-    intro.style.display = 'flex';
-    intro.addEventListener('click', function (ev) {
-      if (ev.target.id !== 'fziGo') intro.classList.add('fzi-fast'); // клик = ускорить
-    });
-    var go = document.getElementById('fziGo');
-    go.addEventListener('click', function (ev) {
-      ev.stopPropagation();
-      intro.style.display = 'none';
-    });
-  }
-
-  // ── тизер при первом старте игры ──
-  // старт оборачиваем на load: поздние скрипты тоже патчат startGame
+  // ── тизер при первом старте игры (после НАЧАТЬ ИГРУ) ──
   window.addEventListener('load', function () {
     var realStart = window.startGame;
     window.startGame = function () {
@@ -19381,7 +19358,7 @@ function claimFPReward(r, isPlus, claimKey) {
           if (pn && pn.value.trim()) localStorage.setItem('fzLastName', pn.value.trim());
           sessionStorage.setItem('fzTeaserSeen', '1');
         } catch (e) {}
-        location.href = 'teaser.html?auto=1';
+        location.href = 'teaser.html?auto=1&back=game';
         return;
       }
       if (typeof realStart === 'function') realStart.apply(this, arguments);
@@ -19403,6 +19380,187 @@ function claimFPReward(r, isPlus, claimKey) {
         } catch (e) {}
         setTimeout(function () { if (typeof window.startGame === 'function') window.startGame(); }, 900);
       }, 500);
+    });
+  }
+
+  // возврат из интро-тизера — открыть «Что нового»
+  if (showNews && !fromTeaser) {
+    window.addEventListener('load', function () {
+      setTimeout(function () {
+        try {
+          var m = document.getElementById('changelogModal');
+          if (m) { m.style.display = 'flex'; m.classList.add('show'); }
+        } catch (e) {}
+      }, 400);
+    });
+  }
+
+  // ── СУПЕР КАТСЦЕНА ПРИ ЗАХОДЕ НА САЙТ ──
+  var introSeen = false;
+  try { introSeen = sessionStorage.getItem('fzIntroSeen') === '1'; } catch (e) {}
+  var box = document.getElementById('fzIntro');
+  if (!fromTeaser && !showNews && !introSeen && box) runIntro(box);
+  else if (box) box.remove();
+
+  function runIntro(box) {
+    box.style.display = 'block';
+    var cv = document.getElementById('fziCv');
+    var q = cv.getContext('2d');
+    var goBtn = document.getElementById('fziGo');
+    var W, H, stars = [], bld = [], emb = [];
+    function rs() {
+      W = cv.width = innerWidth; H = cv.height = innerHeight;
+      stars = [];
+      for (var i = 0; i < 150; i++) stars.push({ x: Math.random() * W, y: Math.random() * H * 0.72, r: Math.random() * 1.7 + 0.4, p: Math.random() * 6.28 });
+      bld = [];
+      var x = -40;
+      while (x < W + 40) {
+        var w = 44 + Math.random() * 92, h = 50 + Math.random() * 150;
+        bld.push({ x: x, w: w, h: h }); x += w + 6;
+      }
+      emb = [];
+    }
+    rs();
+    addEventListener('resize', rs);
+    var t0 = null, skipped = false, done = false;
+    var T_TITLE = 2.55, T_STRIKE = 3.3, T_Q = 4.55, T_SLAM = 5.35, T_GO = 6.3;
+
+    function fr(ts) {
+      if (t0 === null) t0 = ts;
+      var t = (ts - t0) / 1000;
+      if (skipped && t < T_SLAM + 0.05) t = T_SLAM + 0.05;
+      // тряска при зачёркивании и слэме
+      var shX = 0, shY = 0;
+      if (t > T_STRIKE && t < T_STRIKE + 0.5) { var k1 = 1 - (t - T_STRIKE) / 0.5; shX = (Math.random() - 0.5) * 14 * k1; shY = (Math.random() - 0.5) * 10 * k1; }
+      if (t > T_SLAM && t < T_SLAM + 0.4) { var k2 = 1 - (t - T_SLAM) / 0.4; shX = (Math.random() - 0.5) * 18 * k2; shY = (Math.random() - 0.5) * 12 * k2; }
+      q.save();
+      q.translate(shX, shY);
+      // небо
+      var g = q.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, '#04030a'); g.addColorStop(0.72, '#0a0716'); g.addColorStop(1, '#020209');
+      q.fillStyle = g; q.fillRect(-20, -20, W + 40, H + 40);
+      // фиолетовое свечение портала за городом
+      var pk = Math.min(1, Math.max(0, (t - 1) / 4));
+      var pg = q.createRadialGradient(W / 2, H * 0.74, 10, W / 2, H * 0.74, Math.max(W, H) * 0.55);
+      pg.addColorStop(0, 'rgba(122,60,255,' + (0.26 * pk * (0.7 + 0.3 * Math.sin(t * 2.1))).toFixed(3) + ')');
+      pg.addColorStop(1, 'rgba(122,60,255,0)');
+      q.fillStyle = pg; q.fillRect(-20, -20, W + 40, H + 40);
+      // звёзды
+      for (var i = 0; i < stars.length; i++) {
+        var s = stars[i];
+        q.globalAlpha = 0.3 + 0.7 * Math.abs(Math.sin(t * 1.3 + s.p));
+        q.fillStyle = '#cfd6ff';
+        q.fillRect(s.x, s.y, s.r, s.r);
+      }
+      q.globalAlpha = 1;
+      // молнии
+      var fl = 0;
+      if (t > 1.9 && t < 2.25) fl = Math.sin((t - 1.9) / 0.35 * Math.PI);
+      if (t > 2.9 && t < 3.2) fl = Math.sin((t - 2.9) / 0.3 * Math.PI) * 0.55;
+      if (fl > 0.02) { q.fillStyle = 'rgba(160,150,255,' + (fl * 0.16).toFixed(3) + ')'; q.fillRect(-20, -20, W + 40, H + 40); }
+      // город
+      var hy = H * 0.78;
+      q.fillStyle = fl > 0.05 ? 'rgba(66,74,110,' + (0.4 + fl * 0.5).toFixed(3) + ')' : '#060510';
+      for (i = 0; i < bld.length; i++) { var b = bld[i]; q.fillRect(b.x, hy - b.h, b.w, b.h + 90); }
+      // окна
+      q.fillStyle = fl > 0.3 ? 'rgba(255,240,200,0.5)' : 'rgba(255,186,90,0.22)';
+      for (i = 0; i < bld.length; i++) {
+        b = bld[i];
+        for (var wy = hy - b.h + 10; wy < hy - 6; wy += 15)
+          for (var wx = b.x + 6; wx < b.x + b.w - 8; wx += 13)
+            if ((Math.sin(wx * 12.9 + wy * 7.7) * 0.5 + 0.5) < 0.14) q.fillRect(wx, wy, 4, 6);
+      }
+      // вывеска на молле
+      var mallW = Math.min(W * 0.42, 560), mx = W / 2 - mallW / 2, my = hy - 118;
+      q.fillStyle = fl > 0.2 ? 'rgba(90,60,160,0.75)' : 'rgba(48,30,92,0.8)';
+      q.fillRect(mx, my, mallW, 34);
+      q.fillStyle = 'rgba(200,170,255,' + (0.5 + 0.4 * Math.sin(t * 3)).toFixed(3) + ')';
+      q.font = '700 17px Arial'; q.textAlign = 'center';
+      q.fillText('G R A N D   M A L L', W / 2, my + 23);
+      // заголовок FANTAZIA RP
+      if (t > T_TITLE) {
+        var a1 = Math.min(1, (t - T_TITLE) / 0.5);
+        var fs1 = Math.min(W * 0.085, 96);
+        q.font = '900 ' + fs1 + 'px Arial';
+        q.textAlign = 'center';
+        var gl = t < T_STRIKE ? (Math.random() - 0.5) * 8 * (1 - (t - T_TITLE)) : 0;
+        q.globalAlpha = a1 * 0.35; q.fillStyle = '#ff3a4a'; q.fillText('FANTAZIA RP', W / 2 + gl + 3, H * 0.34);
+        q.fillStyle = '#39d0ff'; q.fillText('FANTAZIA RP', W / 2 + gl - 3, H * 0.34);
+        q.globalAlpha = a1; q.fillStyle = '#eceaf6'; q.fillText('FANTAZIA RP', W / 2 + gl, H * 0.34);
+        q.globalAlpha = 1;
+      }
+      // зачёркивание
+      if (t > T_STRIKE) {
+        var k3 = Math.min(1, (t - T_STRIKE) / 0.42);
+        var lw = Math.min(W * 0.62, 720);
+        q.strokeStyle = '#ff2b3a';
+        q.lineWidth = Math.max(5, H * 0.014);
+        q.shadowColor = '#ff2b3a'; q.shadowBlur = 26;
+        q.beginPath();
+        q.moveTo(W / 2 - lw / 2, H * 0.345);
+        q.lineTo(W / 2 - lw / 2 + lw * k3, H * 0.325);
+        q.stroke();
+        q.shadowBlur = 0;
+      }
+      // ???
+      if (t > T_Q && t < T_SLAM + 0.1) {
+        var a2 = 0.35 + 0.4 * Math.abs(Math.sin(t * 4));
+        q.globalAlpha = a2;
+        q.fillStyle = '#8a8aa4';
+        q.font = '700 ' + Math.min(W * 0.045, 44) + 'px Arial';
+        q.fillText('?   ?   ?', W / 2, H * 0.46);
+        q.globalAlpha = 1;
+      }
+      // GRAND MALL SECRET
+      if (t > T_SLAM) {
+        var k4 = Math.min(1, (t - T_SLAM) / 0.34);
+        var sc = 2.3 - 1.3 * k4;
+        var fs2 = Math.min(W * 0.062, 66);
+        q.save();
+        q.translate(W / 2, H * 0.585);
+        q.scale(sc, sc);
+        q.globalAlpha = k4;
+        q.shadowColor = 'rgba(255,43,58,0.8)'; q.shadowBlur = 40 * k4 + 8;
+        q.fillStyle = '#ff2b3a';
+        q.font = '900 ' + fs2 + 'px Arial';
+        q.fillText('GRAND MALL SECRET', 0, 0);
+        q.restore();
+        q.globalAlpha = 1;
+        if (k4 >= 1 && emb.length === 0) {
+          for (var e2 = 0; e2 < 46; e2++) emb.push({ x: 0, y: 0, a: Math.random() * 6.28, v: 90 + Math.random() * 300, l: 1, r: 1 + Math.random() * 2.4 });
+        }
+      }
+      // угли разлетаются
+      q.save();
+      q.translate(W / 2, H * 0.585);
+      for (e2 = 0; e2 < emb.length; e2++) {
+        var em2 = emb[e2]; em2.l -= 0.012;
+        if (em2.l <= 0) continue;
+        var dd = (1 - em2.l) * em2.v;
+        q.globalAlpha = em2.l;
+        q.fillStyle = '#ff5a2a';
+        q.fillRect(Math.cos(em2.a) * dd, Math.sin(em2.a) * dd - (1 - em2.l) * 26, em2.r, em2.r);
+      }
+      q.restore();
+      q.globalAlpha = 1;
+      // скан-линии и виньетка
+      q.fillStyle = 'rgba(0,0,0,0.16)';
+      for (var y = 0; y < H; y += 4) q.fillRect(-20, y, W + 40, 1);
+      var vg = q.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.36, W / 2, H / 2, Math.max(W, H) * 0.75);
+      vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.72)');
+      q.fillStyle = vg; q.fillRect(-20, -20, W + 40, H + 40);
+      q.restore();
+      // кнопка
+      if (t > T_GO && !done) { done = true; box.classList.add('fzi-go'); }
+      requestAnimationFrame(fr);
+    }
+    requestAnimationFrame(fr);
+    function fin() { if (t0 === null) t0 = performance.now() - 1; skipped = true; }
+    cv.addEventListener('click', fin);
+    document.getElementById('fziSkip').addEventListener('click', fin);
+    goBtn.addEventListener('click', function () {
+      try { sessionStorage.setItem('fzIntroSeen', '1'); } catch (e) {}
+      location.href = 'teaser.html?auto=1&back=news';
     });
   }
 
@@ -19492,7 +19650,6 @@ function claimFPReward(r, isPlus, claimKey) {
   };
 })();
 </script>
-
 <script src="update_script.js?v=309"></script>
 </body>
 

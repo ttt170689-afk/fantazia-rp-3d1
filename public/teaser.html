@@ -6815,6 +6815,7 @@ const URLP = {};
   URLP.noMusic = q.get('nomusic') === '1';
   URLP.lang = q.get('lang') === 'en' ? 'en' : 'ru';
   URLP.auto = q.get('auto') === '1';
+  URLP.back = q.get('back') === 'game' ? 'game' : 'news';
 
   // старт с конкретного шота: сдвигаем часы
   if (URLP.shot >= 1 && URLP.shot <= 5 && SHOTS2.length === 5) {
@@ -7370,8 +7371,8 @@ const barsB = DOC.getElementById('barB');
 const startEl = DOC.getElementById('start');
 const endEl = DOC.getElementById('end');
 if (URLP.auto) {
-  const pb = DOC.getElementById('play');
-  if (pb) pb.textContent = '\u25B6\u00A0\u041F\u0420\u041E\u0414\u041E\u041B\u0416\u0418\u0422\u042C';
+  // автовоспроизведение: старт без кнопки
+  setTimeout(function () { try { startShow(); } catch (e) {} }, 650);
 }
 const titleEl = DOC.getElementById('title');
 const OV = { flashW: 0, flashR: 0, fade: 1, fadeT: 1, punch: 0 };
@@ -8991,11 +8992,16 @@ let CUES = [
       endEl.classList.add('on');
       T.phase = 'end';
       if (URLP.auto && !DOC.getElementById('goGame')) {
+        const back = URLP.back === 'game' ? 'index.html?fromTeaser=1' : 'index.html?shownews=1';
         const gb = DOC.createElement('button');
         gb.id = 'goGame';
         gb.textContent = '\u25B6 \u0418\u0413\u0420\u0410\u0422\u042C';
-        gb.onclick = function () { location.href = 'index.html?fromTeaser=1'; };
+        gb.onclick = function () { location.href = back; };
         endEl.appendChild(gb);
+        // трейлер закрывается сам
+        setTimeout(function () {
+          if (T.phase === 'end') location.href = back;
+        }, 4200);
       }
   } }
 ];
