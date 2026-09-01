@@ -12890,6 +12890,29 @@ function closeNoteModal(ev) {
   document.getElementById('noteModal').style.display = 'none';
 }
 
+// журнал: перечитать собранные записки
+window.fzJournal = null;
+function fzOpenNotes() {
+  const have = [];
+  window.FZ_QUEST.notes.forEach((v, i) => { if (v) have.push(i); });
+  if (!have.length) { showNotification('📜 Записок пока нет — ищи янтарные свитки в городе', 'info'); return; }
+  document.exitPointerLock && document.exitPointerLock();
+  window.fzJournal = { have: have, i: have.length - 1 };
+  fzJournalShow();
+}
+function fzJournalShow() {
+  const j = window.fzJournal;
+  if (!j) return;
+  const idx = j.have[j.i];
+  document.getElementById('nmNum').textContent = 'стр. ' + (idx + 1) + '/6';
+  document.getElementById('nmText').innerHTML = FZ_NOTE_TEXTS[idx].t.replace(/\n/g, '<br>');
+  document.getElementById('noteModal').style.display = 'flex';
+  const nav = document.getElementById('nmNav');
+  if (nav) nav.style.display = j.have.length > 1 ? 'flex' : 'none';
+}
+window.fzNotePrev = function () { const j = window.fzJournal; if (!j) return; j.i = (j.i - 1 + j.have.length) % j.have.length; fzJournalShow(); };
+window.fzNoteNext = function () { const j = window.fzJournal; if (!j) return; j.i = (j.i + 1) % j.have.length; fzJournalShow(); };
+
 function fzPickNote(inter) {
   // найти ближайшую записку по позиции
   let best = null, bd = 1e9;
@@ -12916,7 +12939,7 @@ function fzPickNote(inter) {
     setTimeout(() => showNotification('🪓 Ищи ТОПОР на 3 этаже GRAND MALL', 'success'), 1400);
   } else if (n === 1) {
     setTimeout(() => showNotification('🎯 КВЕСТ: собери все 6 записок', 'info'), 1400);
-    setTimeout(() => showNotification('🎬 Кликни по чипу 📜 — посмотри ТИЗЕР', 'info'), 3200);
+    setTimeout(() => showNotification('📜 Кликни по чипу — перечитать записки', 'info'), 3200);
   }
   fzQuestChipUpdate();
 }
@@ -19472,10 +19495,9 @@ body.game-active canvas{touch-action:none}
     q4.fillStyle = '#dcdcf0'; q4.fillText('FANTAZIA RP', 320, 96);
     q4.strokeStyle = '#ff2b3a'; q4.lineWidth = 9;
     q4.beginPath(); q4.moveTo(96, 80); q4.lineTo(544, 74); q4.stroke();
-    q4.fillStyle = '#7a7a92'; q4.font = '700 52px Arial'; q4.fillText('? ? ?', 320, 168);
-    q4.fillStyle = '#ff4252'; q4.font = '900 58px Arial';
-    q4.shadowColor = '#ff2b3a'; q4.shadowBlur = 22;
-    q4.fillText('GRAND MALL SECRET', 320, 252);
+    q4.fillStyle = '#ff4252'; q4.font = '900 130px Arial';
+    q4.shadowColor = '#ff2b3a'; q4.shadowBlur = 38;
+    q4.fillText('SOON', 320, 236);
     var sign = new T.Mesh(new T.PlaneGeometry(6.2, 3.1),
       new T.MeshBasicMaterial({ map: new T.CanvasTexture(cnv), transparent: true, side: T.DoubleSide, depthWrite: false }));
     sign.position.set(0, 6.9, 0.4);
@@ -19502,7 +19524,7 @@ body.game-active canvas{touch-action:none}
         var dx = lp.position.x - 24, dz = lp.position.z - 15;
         if (dx * dx + dz * dz < 90 && Date.now() - lastNtf > 16000) {
           lastNtf = Date.now();
-          if (typeof showNotification === 'function') showNotification('🌀 Портал: FANTAZIA RP ??? — GRAND MALL SECRET', 'info');
+          if (typeof showNotification === 'function') showNotification('🌀 Портал — SOON…', 'info');
         }
       } catch (e) {}
     }, 1000);
@@ -19732,11 +19754,15 @@ window.addEventListener('DOMContentLoaded', function() {
 </html>
 
 <!-- ========== CHANGELOG MODAL ========== -->
-<div id="fzQuestChip" style="display:none" onclick="fzPlayTeaser()" title="Клик — тизер 🎬">📜 Записки: 0/6</div>
+<div id="fzQuestChip" style="display:none" onclick="fzOpenNotes()" title="Клик — читать записки">📜 Записки: 0/6</div>
 <div id="noteModal" onclick="closeNoteModal(event)">
   <div class="nm-paper">
     <div class="nm-num" id="nmNum">стр. 1/6</div>
     <div id="nmText"></div>
+    <div id="nmNav" style="display:none;justify-content:center;gap:14px;margin-top:10px">
+      <button class="nm-close" style="margin:0" onclick="fzNotePrev()">◀</button>
+      <button class="nm-close" style="margin:0" onclick="fzNoteNext()">▶</button>
+    </div>
     <button class="nm-close" onclick="closeNoteModal()">Положить в карман</button>
   </div>
 </div>

@@ -7440,6 +7440,12 @@ scene.add(GLOW);
 //  клыки · рваный капюшон · мускулистый торс · воротник-шипы · мантия ·
 //  когти · трон из черепов · руны · пепел · до поворота видна только голова
 // ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
+//  БОСС v5 — АПОГЕЙ: ДЕМОН
+//  плоть вместо кости · тлеющие трещины кожи · чёрные рога с золотом ·
+//  клыки · рваный капюшон · мускулистый торс · воротник-шипы · мантия ·
+//  когти · трон из черепов · руны · пепел · до поворота видна только голова
+// ═══════════════════════════════════════════════════════════════════
 (function () {
 const B4 = {
   head: null, cranium: null, browL: null, browR: null, jaw: null,
@@ -8719,6 +8725,23 @@ window.upBoss4 = function (dt, wall) {
   head.rotation.z = NZ.n1(wall * 0.2) * 0.02;
   cranium.rotation.x = Math.sin(wall * 0.5) * 0.012;
 
+  // хихиканье: после оборота периодически трясётся от смеха
+  let gEnv = 0;
+  if (turned && BOSS.turn >= 0) {
+    const g = T.t - BOSS.turn - 1.25;
+    if (g > 0) {
+      const cyc = g % 7;
+      if (cyc < 1.6) gEnv = Math.sin(cyc / 1.6 * Math.PI);
+    }
+  }
+  B4.gig = gEnv;
+  if (gEnv > 0) {
+    cranium.rotation.z = Math.sin(t * 34) * 0.045 * gEnv;
+    head.position.y += Math.abs(Math.sin(t * 17)) * 0.05 * gEnv;
+    head.rotation.z += Math.sin(t * 30) * 0.03 * gEnv;
+    torso.rotation.z = Math.sin(t * 34) * 0.018 * gEnv;
+  }
+
   // капюшон: языки дышат
   B4.hood.forEach((tg, i) => {
     tg.rotation.z += Math.sin(wall * 1.1 + tg.userData.ph) * 0.0006;
@@ -8754,6 +8777,8 @@ window.upBoss4 = function (dt, wall) {
   // челюсть: висит приоткрыта, после ревила медленно открывается шире
   const jawOpen = 0.1 + revealK * 0.34 + Math.sin(wall * 0.9) * 0.02;
   jaw.rotation.x = jawOpen;
+  // зубы стучат от смеха
+  if (B4.gig > 0) jaw.rotation.x += Math.abs(Math.sin(t * 22)) * 0.1 * B4.gig;
   // клыки чуть подрагивают
   B4.fangs.forEach((f, i) => {
     f.rotation.z = Math.sin(wall * 2.2 + i) * 0.02;
@@ -8876,6 +8901,7 @@ function FZGWind(wall) { return Math.sin(wall * 0.6) * 0.0006; }
 ;
 ;
 ;
+;
 
 // свет на морду при развороте
 const GLOWL = new THREE.PointLight(0xd4522e, 0, 15, 1.6);
@@ -8977,6 +9003,11 @@ let CUES = [
       tone(430, 130, 0.5, 'sawtooth', 0.045, 0.15);
       tone(360, 110, 0.55, 'sawtooth', 0.04, 0.9);
       tone(300, 95, 0.6, 'sawtooth', 0.045, 1.65);
+      // хи-хи-хи: тихий мёртвый смешок в темноте
+      tone(830, 660, 0.10, 'triangle', 0.05, 1.25);
+      tone(770, 600, 0.10, 'triangle', 0.05, 1.42);
+      tone(710, 540, 0.12, 'triangle', 0.045, 1.60);
+      tone(620, 470, 0.14, 'triangle', 0.04, 2.15);
   } },
 
   // кресло доехало: ГРОХОТ + глаза
