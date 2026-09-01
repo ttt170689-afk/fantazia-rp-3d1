@@ -7434,6 +7434,12 @@ scene.add(GLOW);
 //  клыки · рваный капюшон · мускулистый торс · воротник-шипы · мантия ·
 //  когти · трон из черепов · руны · пепел · до поворота видна только голова
 // ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
+//  БОСС v5 — АПОГЕЙ: ДЕМОН
+//  плоть вместо кости · тлеющие трещины кожи · чёрные рога с золотом ·
+//  клыки · рваный капюшон · мускулистый торс · воротник-шипы · мантия ·
+//  когти · трон из черепов · руны · пепел · до поворота видна только голова
+// ═══════════════════════════════════════════════════════════════════
 (function () {
 const B4 = {
   head: null, cranium: null, browL: null, browR: null, jaw: null,
@@ -7644,7 +7650,7 @@ cracksTop.forEach((c) => {
 });
 
 // тлеющий свет на морду — единственный в полной темноте
-const faceLight = new THREE.PointLight(0x9c3018, 0.7, 3.6, 1.7);
+const faceLight = new THREE.PointLight(0x9c3018, 0.3, 3.6, 1.7);
 faceLight.position.set(0, 0.12, 1.15);
 head.add(faceLight);
 B4.faceLight = faceLight;
@@ -8608,21 +8614,21 @@ scene.add(win);
 // стекло-свет
 const winGlow = new THREE.Mesh(
   new THREE.PlaneGeometry(1.9, 3.0),
-  new THREE.MeshBasicMaterial({ color: 0xc9d9f2, fog: false })
+  new THREE.MeshBasicMaterial({ color: 0x74829f, fog: false })
 );
 winGlow.position.y = 4.6;
 win.add(winGlow);
 // арка сверху
 const winArch = new THREE.Mesh(
   new THREE.CircleGeometry(0.95, 12, 0, Math.PI),
-  new THREE.MeshBasicMaterial({ color: 0xc9d9f2, fog: false })
+  new THREE.MeshBasicMaterial({ color: 0x74829f, fog: false })
 );
 winArch.position.y = 6.1;
 win.add(winArch);
 // ореол вокруг окна
 const winHalo = new THREE.Sprite(new THREE.SpriteMaterial({
   map: glowTex('rgba(215,228,255,1)', 'rgba(150,175,225,.4)', 'rgba(120,145,205,0)'),
-  transparent: true, opacity: 0.3, depthWrite: false,
+  transparent: true, opacity: 0.12, depthWrite: false,
   blending: THREE.AdditiveBlending, fog: false
 }));
 winHalo.scale.set(6.5, 7.5, 1);
@@ -8659,7 +8665,7 @@ archFrame.position.set(0, 6.1, 0.02);
 win.add(archFrame);
 // слабые лучи к трону
 const shaftM = new THREE.MeshBasicMaterial({
-  color: 0x9db4dc, transparent: true, opacity: 0.05, fog: false,
+  color: 0x9db4dc, transparent: true, opacity: 0.022, fog: false,
   depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide
 });
 B4.shafts = [];
@@ -8673,8 +8679,9 @@ B4.shafts = [];
 });
 B4.win = { glow: winGlow, halo: winHalo };
 
-// до поворота трона в темноте видна только голова
-B4.hideTillTurn = G.children.filter((c) => preG.indexOf(c) < 0 && c !== head);
+// до поворота трона тьма полная: не видно вообще ничего, только глаза
+// (глаза висят в BOSS.grp с старых версий — их не трогаем)
+B4.hideTillTurn = G.children.filter((c) => preG.indexOf(c) < 0);
 B4.hideTillTurn.forEach((c) => { c.visible = false; });
 
 // ═══ АНИМАЦИИ ═══
@@ -8691,8 +8698,8 @@ window.upBoss4 = function (dt, wall) {
   // луна за облаками: окно дышит
   const wm = 0.75 + 0.25 * Math.sin(wall * 0.5) * Math.sin(wall * 0.13 + 1);
   if (B4.win) {
-    B4.win.halo.material.opacity = 0.22 + 0.1 * wm;
-    B4.win.glow.material.color.setRGB(0.68 + 0.16 * wm, 0.74 + 0.14 * wm, 0.86 + 0.1 * wm);
+    B4.win.halo.material.opacity = 0.09 + 0.05 * wm;
+    B4.win.glow.material.color.setRGB(0.34 + 0.09 * wm, 0.38 + 0.08 * wm, 0.46 + 0.06 * wm);
   }
 
   // дыхание: грудная клетка и плечи
@@ -8868,6 +8875,7 @@ function FZGWind(wall) { return Math.sin(wall * 0.6) * 0.0006; }
 ;
 ;
 ;
+;
 
 // свет на морду при развороте
 const GLOWL = new THREE.PointLight(0xd4522e, 0, 15, 1.6);
@@ -8925,7 +8933,7 @@ let CUES = [
       if (DUN.moon) DUN.moon.intensity = 0.006;
       try { scene.fog = new THREE.Fog(0x000000, 1.2, 7.5); scene.background = new THREE.Color(0x000000); } catch (e) {}
       GLOW.material.opacity = 0;
-      try { GLOWL.intensity = 0.22; } catch (e) {}
+      try { GLOWL.intensity = 0.1; } catch (e) {}
       aHeartStart(52);
       RIG.hand = 0.25;
   } },
@@ -8934,7 +8942,7 @@ let CUES = [
   { t: 12.00, fn: () => { aHeartStop(); aHeartStart(46); } },
   { t: 16.40, fn: () => aRiser(1.5, 0.16) },
   { t: 17.90, fn: () => aHeartStop() },
-  { t: 18.00, fn: () => { GLOW.material.opacity = 0.62; } },
+  { t: 18.00, fn: () => { GLOW.material.opacity = 0.3; } },
 
   // 18.05: ВСЁ ГЛЮЧИТ
   { t: 18.05, fn: () => {
@@ -8961,8 +8969,8 @@ let CUES = [
       bossShroud(false);
       BOSS.turn = T.t;
       try { B4.reveal = T.t + 2.3; if (B4.hideTillTurn) B4.hideTillTurn.forEach((c) => { c.visible = true; }); } catch (e) {}
-      GLOW.material.opacity = 0.95;
-      GLOWL.intensity = 1.15;
+      GLOW.material.opacity = 0.45;
+      GLOWL.intensity = 0.55;
       // звук кресла: каменный скрежет + три скрипа
       noiseBurst(2.3, 190, 55, 0.8, 0.13, 0);
       tone(46, 30, 2.3, 'sine', 0.1, 0);
