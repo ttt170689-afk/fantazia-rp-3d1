@@ -1820,11 +1820,13 @@ function upBoss(dt, wall) {
     if (!e.userData.on) return;
     litN++;
     const age = wall - e.userData.tOn;
-    e.material.opacity = Math.min(1, age * 1.6);
+    const dimF = (typeof EYESFIX !== 'undefined' && EYESFIX.dim && EYESFIX.dim[i] !== undefined)
+      ? EYESFIX.dim[i] : 1;
+    e.material.opacity = Math.min(1, age * 1.6) * dimF;
     e.material.color.setHex(0xff2818);
     const er = e.userData.base;
-    e.scale.set(er * 10, er * 13, er * 7.5);
-    e.userData.halo.material.opacity = Math.min(0.6, age * 0.9);
+    e.scale.set(er * 10, er * 13 * (0.7 + dimF * 0.3), er * 7.5);
+    e.userData.halo.material.opacity = Math.min(0.6, age * 0.9) * dimF;
   });
   if (BOSS.shadowPool) {
     BOSS.shadowPool.position.z = g.position.z;
@@ -3693,7 +3695,7 @@ TEX.white = cvsTex(8, 8, (q, w, h) => {
   q.fillRect(0, 0, w, h);
 });
 
-const EYESFIX = { on: true, beams: [], active: false };
+const EYESFIX = { on: true, beams: [], active: false, headYaw: 0, headTurnAt: -1, dim: [] };
 
 // сохранить исходные локальные позиции глаз и гало
 (function eyesFixInit() {
@@ -3722,7 +3724,16 @@ function eyesFixUpdate() {
   const hx = 0;
   const hy = 3.82;
   const hz = 0;
-  BOSS.eyes.forEach((e) => {
+  // лёгкий доворот головы в темноте
+  let yaw = 0;
+  if (EYESFIX.headTurnAt > 0 && typeof T !== 'undefined') {
+    const kk = clamp((T.t - EYESFIX.headTurnAt) / 1.9, 0, 1);
+    yaw = (1 - Math.pow(1 - kk, 3)) * 0.52;
+  }
+  EYESFIX.headYaw = yaw;
+  const cy = Math.cos(yaw);
+  const sy = Math.sin(yaw);
+  BOSS.eyes.forEach((e, ii) => {
     if (!e.userData.on) {
       // потухший глаз прячется обратно в глазницу (следует за телом)
       e.position.set(e.userData.bx, e.userData.by, e.userData.bz);
@@ -3735,6 +3746,14 @@ function eyesFixUpdate() {
     const pz = e.userData.bz - hz;
     e.position.x = hx + px * cs - pz * sn;
     e.position.z = hz + px * sn + pz * cs;
+    // плюс доворот головы: глаза едут вместе с ней
+    const rx = e.position.x - hx;
+    const rz = e.position.z - hz;
+    e.position.x = hx + rx * cy - rz * sy;
+    e.position.z = hz + rx * sy + rz * cy;
+    // ушедший за профиль глаз виден хуже
+    const rz2 = e.position.z - hz;
+    EYESFIX.dim[ii] = rz2 < hz ? clamp(1 + (rz2 - 0) * 1.5, 0.3, 1) : 1;
     e.position.y = e.userData.by + Math.sin(EYESFIX.wobble || 0) * 0;
     const h = e.userData.halo;
     if (h) {
@@ -3742,6 +3761,10 @@ function eyesFixUpdate() {
       const qpz = h.userData.bz - hz;
       h.position.x = hx + qpx * cs - qpz * sn;
       h.position.z = hz + qpx * sn + qpz * cs;
+      const hrx = h.position.x - hx;
+      const hrz = h.position.z - hz;
+      h.position.x = hx + hrx * cy - hrz * sy;
+      h.position.z = hz + hrx * sy + hrz * cy;
     }
   });
 }
@@ -7411,6 +7434,7 @@ let CUES = [
   { t: 8.50, fn: () => {
       bossShroud(false);
       BLACKOUT.t = T.t;
+      try { EYESFIX.headTurnAt = T.t + 0.35; } catch (e) {}
       aSubDrop(0);
       glitch = 0.07;
       grade('void');
@@ -7539,6 +7563,7 @@ function resetShow() {
   cv.style.transform = 'none';
   // -- сброс систем v4 --
   try { duckTo(1, 0.05); } catch (e) {}
+  try { EYESFIX.headTurnAt = -1; EYESFIX.headYaw = 0; EYESFIX.dim = []; } catch (e) {}
   try { creditsShow(false); } catch (e) {}
   try { CARDS.el.style.opacity = '0'; CARDS.hideT = 0; } catch (e) {}
   try { dollyZoom(false); } catch (e) {}
