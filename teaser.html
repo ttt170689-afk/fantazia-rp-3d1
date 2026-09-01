@@ -1789,15 +1789,16 @@ function upBoss(dt, wall) {
   });
   // ОБОРОТ к камере
   if (BOSS.turn >= 0) {
+    // кресло-разворот: замашка назад, тяжёлый медленный поворот, докрутка
     const kt = T.t - BOSS.turn;
-    if (kt < 0.72) {
-      const k2 = kt / 0.72;
+    const dur = 2.4;
+    if (kt < dur) {
+      const k2 = kt / dur;
       const e = k2 * k2 * (3 - 2 * k2);
-      const recoil = kt < 0.13 ? (0.13 - kt) * 1.1 : 0; // замашка НАЗАД перед разворотом
+      const recoil = kt < 0.5 ? Math.sin((0.5 - kt) / 0.5 * Math.PI) * -0.42 : 0;
       g.rotation.y = Math.PI * (1 - e) + recoil;
     } else {
-      // overshoot: проскакивает и качается
-      const w = Math.sin((kt - 0.72) * 12) * 0.09 * Math.exp(-(kt - 0.72) * 4);
+      const w = Math.sin((kt - dur) * 6) * 0.075 * Math.exp(-(kt - dur) * 2.6);
       g.rotation.y = w;
     }
   }
@@ -2520,7 +2521,7 @@ function upV2(dt, wall) {
     st.rotation.x = sway;
     st.rotation.z = flare * 0.4;
     // юбка разлетается при развороте/рывке
-    const turnK = BOSS.turn >= 0 ? clamp((T.t - BOSS.turn) / 0.7, 0, 1) : 0;
+    const turnK = BOSS.turn >= 0 ? clamp((T.t - BOSS.turn) / 2.4, 0, 1) : 0;
     st.position.x = u.bx * (1 + turnK * 0.18);
     st.position.z = u.bz * (1 + turnK * 0.18);
   });
@@ -2537,10 +2538,6 @@ function upV2(dt, wall) {
   // -- блинки: глаза моргают (жутко) --
   BOSS.eyes.forEach((e, i) => {
     if (!e.userData.on) return;
-    const cyc = (wall * 0.35 + i * 0.31) % 1;
-    const lid = cyc < 0.035 ? Math.abs(Math.cos(cyc / 0.035 * Math.PI)) : 1;
-    e.scale.y *= lid;
-    e.userData.halo.material.opacity *= lid < 0.5 ? 0.5 + lid * 0.5 : 1;
   });
   // -- челюсть: редкое «щёлканье» зубами до рывка --
   if (BOSS.lunge <= 0) {
@@ -7353,7 +7350,7 @@ function upTimecode() {
   const ms = String(Math.floor((t % 1) * 100)).padStart(2, '0');
   const phase =
     T.phase === 'play'
-      ? t < 18 ? 'ПРОЛЁТ' : t < 18.35 ? 'СБОЙ' : t < 23.5 ? 'ГЛАЗА' : 'КОДА'
+      ? t < 18 ? 'ПРОЛЁТ' : t < 18.45 ? 'СБОЙ' : t < 23.9 ? 'КРЕСЛО' : 'КОДА'
       : T.phase.toUpperCase();
   const shotN = 0;
   TC.el.textContent =
@@ -7418,6 +7415,39 @@ GLOW.scale.set(6.2, 6.2, 1);
 GLOW.position.set(0, 3.95, BOSS_POS.z - 1.35);
 scene.add(GLOW);
 
+
+// свет на морду при развороте
+const GLOWL = new THREE.PointLight(0xd4522e, 0, 15, 1.6);
+GLOWL.position.set(0, 4.1, BOSS_POS.z - 0.6);
+scene.add(GLOWL);
+
+// PS1: все текстуры -> ближайший фильтр (жёсткие пиксели)
+function ps1Textures() {
+  const done = new Set();
+  scene.traverse((o) => {
+    const mats = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
+    mats.forEach((m) => {
+      const texs = [m.map, m.emissiveMap, m.lightMap].filter(Boolean);
+      texs.forEach((tx) => {
+        if (done.has(tx)) return;
+        done.add(tx);
+        tx.magFilter = THREE.NearestFilter;
+        tx.minFilter = THREE.NearestFilter;
+        tx.generateMipmaps = false;
+        tx.needsUpdate = true;
+      });
+    });
+  });
+}
+
+// PS1: дизер-сетка поверх кадра
+const dither = DOC.createElement('div');
+dither.style.cssText =
+  'position:fixed;inset:0;pointer-events:none;z-index:8;opacity:.16;' +
+  'mix-blend-mode:overlay;background-image:repeating-conic-gradient(' +
+  '#000 0% 25%,#fff 0% 50%);background-size:3px 3px;';
+DOC.body.appendChild(dither);
+
 let cueI = 0;
 let CUES = [
   { t: 0.00, fn: () => {
@@ -7427,10 +7457,16 @@ let CUES = [
       aDrone();
       aWind(5, 0.1);
       musDronesStart();
+      tone(28, 22, 6, 'sine', 0.12, 0);   // под-пол
       grade('void');
       BLACKOUT.t = 0;
       bossShroud(true, 0.78);
-      try { renderer.setPixelRatio(0.3); cv.style.imageRendering = 'pixelated'; } catch (e) {}
+      ps1Textures();
+      try {
+        renderer.setPixelRatio(0.3);
+        cv.style.imageRendering = 'pixelated';
+        cv.style.filter = 'contrast(1.07) saturate(1.06)';
+      } catch (e) {}
       for (let i = 0; i < DUN.flamesAll.length; i++) DUN.flamesAll[i].dieT = 0;
       if (DUN.amb) DUN.amb.intensity = 0.05;
       if (DUN.moon) DUN.moon.intensity = 0.02;
@@ -7439,42 +7475,62 @@ let CUES = [
       RIG.hand = 0.25;
   } },
   { t: 4.00, fn: () => aWhisper(0, 3) },
-  { t: 9.00, fn: () => aWhisper(0, 2) },
+  { t: 9.50, fn: () => aWhisper(0, 2) },
   { t: 12.00, fn: () => { aHeartStop(); aHeartStart(46); } },
-  { t: 16.60, fn: () => aRiser(1.3, 0.15) },
+  { t: 16.40, fn: () => aRiser(1.5, 0.16) },
   { t: 17.90, fn: () => aHeartStop() },
   { t: 18.00, fn: () => { GLOW.material.opacity = 0.62; } },
 
-  // 18.0: всё глючит
+  // 18.05: ВСЁ ГЛЮЧИТ
   { t: 18.05, fn: () => {
       glitch = 0.55;
       T.shake = 0.3;
       OV.flashR = 0.06;
+      aSubDrop(0);
       noiseBurst(0.28, 2400, 180, 0.4, 0.12, 0);
       tone(52, 24, 0.5, 'square', 0.08, 0);
   } },
   { t: 18.17, fn: () => { glitch = 0.18; } },
   { t: 18.50, fn: () => { glitch = 0; } },
 
-  // глаза медленно поворачиваются к нам
-  { t: 18.35, fn: () => {
+  // 18.45: ОН ПОВОРАЧИВАЕТ КРЕСЛО — скрип, камень, тяжело
+  { t: 18.45, fn: () => {
       try {
-        EYESFIX.headFrom = -1.15;
-        EYESFIX.headAmp = 0;
-        EYESFIX.headDur = 2.4;
-        EYESFIX.headTurnAt = T.t;
+        EYESFIX.on = false;
+        BOSS.eyes.forEach((e) => {
+          e.position.set(e.userData.bx, e.userData.by, e.userData.bz);
+          const h0 = e.userData.halo;
+          if (h0) h0.position.set(h0.userData.bx, h0.userData.by, h0.userData.bz);
+        });
       } catch (e) {}
-      tone(36, 30, 2.6, 'sine', 0.14, 0);
+      bossShroud(false);
+      BOSS.turn = T.t;
+      GLOW.material.opacity = 0.95;
+      GLOWL.intensity = 1.15;
+      // звук кресла: каменный скрежет + три скрипа
+      noiseBurst(2.3, 190, 55, 0.8, 0.13, 0);
+      tone(46, 30, 2.3, 'sine', 0.1, 0);
+      tone(430, 130, 0.5, 'sawtooth', 0.045, 0.15);
+      tone(360, 110, 0.55, 'sawtooth', 0.04, 0.9);
+      tone(300, 95, 0.6, 'sawtooth', 0.045, 1.65);
   } },
-  { t: 18.75, fn: () => ignite(0) },
-  { t: 19.10, fn: () => ignite(1) },
-  { t: 21.50, fn: () => { aHeartStart(40); musChoir(1.6); } },
 
-  // 23.5: в темноту
-  { t: 23.50, fn: () => { aHeartStop(); OV.fadeT = 1; } },
+  // кресло доехало: ГРОХОТ + глаза
+  { t: 20.85, fn: () => {
+      tone(44, 19, 0.9, 'sine', 0.3, 0);
+      noiseBurst(0.35, 480, 70, 0.6, 0.13, 0);
+      T.shake = 0.14;
+      ignite(0);
+  } },
+  { t: 21.15, fn: () => ignite(1) },
+  { t: 21.40, fn: () => { aHeartStart(40); musChoir(2.2); } },
+  { t: 21.60, fn: () => { try { bellToll(T.t + 0.1, 0.5); } catch (e) {} } },
 
-  // 24.4: конец
-  { t: 24.40, fn: () => {
+  // 23.9: в темноту
+  { t: 23.90, fn: () => { aHeartStop(); OV.fadeT = 1; } },
+
+  // 24.8: конец
+  { t: 24.80, fn: () => {
       barsT.classList.remove('on');
       barsB.classList.remove('on');
       endEl.classList.add('on');
@@ -7569,9 +7625,14 @@ function resetShow() {
   if (TOOLS.pauseTag) TOOLS.pauseTag.style.display = 'none';
   grade('none');
   cv.style.transform = 'none';
+  cv.style.filter = '';
   // -- сброс систем v4 --
   try { duckTo(1, 0.05); } catch (e) {}
-  try { EYESFIX.headTurnAt = -1; EYESFIX.headYaw = 0; EYESFIX.dim = [];
+  try {
+    EYESFIX.on = true;
+    EYESFIX.headTurnAt = -1; EYESFIX.headYaw = 0; EYESFIX.dim = [];
+    EYESFIX.headFrom = 0; EYESFIX.headAmp = 0.52; EYESFIX.headDur = 1.9;
+    GLOWL.intensity = 0;
     EYESFIX.headFrom = 0; EYESFIX.headAmp = 0.52; EYESFIX.headDur = 1.9; } catch (e) {}
   try { creditsShow(false); } catch (e) {}
   try { CARDS.el.style.opacity = '0'; CARDS.hideT = 0; } catch (e) {}
