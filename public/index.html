@@ -19332,6 +19332,8 @@ body.game-active{-webkit-touch-callout:none;-webkit-user-select:none;user-select
 #fzSkyHint{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:900;color:#dceaff;
   font:700 14px/1.3 Arial;letter-spacing:.08em;text-shadow:0 2px 8px #000;
   background:rgba(12,24,48,.6);border:1px solid rgba(140,180,255,.35);padding:10px 20px;border-radius:12px}
+body.game-active canvas{touch-action:none}
+#mobileTopBtns{flex-wrap:wrap!important;justify-content:center!important;max-width:72vw}
 @media(pointer:coarse){
   body.game-active .mob-btn{width:66px!important;height:66px!important;font-size:27px!important}
   body.game-active #joystickBase{width:150px!important;height:150px!important}
@@ -19341,6 +19343,40 @@ body.game-active{-webkit-touch-callout:none;-webkit-user-select:none;user-select
 <script>
 (function () {
   var TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+  // ── тизер при первом старте аккаунта ──
+  window.addEventListener('load', function () {
+    var realStart = window.startGame;
+    window.startGame = function () {
+      var nm = '';
+      try { var pn = document.getElementById('playerName'); nm = pn ? pn.value.trim() : ''; } catch (e) {}
+      var key = 'fzTeaser_' + (nm || 'player');
+      var seen = false;
+      try { seen = localStorage.getItem(key) === '1'; } catch (e) {}
+      if (!seen) {
+        try { if (nm) localStorage.setItem('fzLastName', nm); localStorage.setItem(key, '1'); } catch (e) {}
+        location.href = 'teaser.html?auto=1&back=game';
+        return;
+      }
+      if (typeof realStart === 'function') realStart.apply(this, arguments);
+    };
+  });
+  // возврат из тизера — сразу в игру
+  if (/[?&]fromTeaser=1/.test(location.search || '')) {
+    window.addEventListener('load', function () {
+      setTimeout(function () {
+        try {
+          var ss = document.getElementById('serverScreen'); if (ss) ss.style.display = 'none';
+          var cs = document.getElementById('createScreen'); if (cs) cs.style.display = 'block';
+          var pn2 = document.getElementById('playerName');
+          var nm2 = localStorage.getItem('fzLastName');
+          if (pn2 && nm2) pn2.value = nm2;
+        } catch (e) {}
+        setTimeout(function () { if (typeof window.startGame === 'function') window.startGame(); }, 900);
+      }, 500);
+    });
+  }
+
   var SX = 17, SZ = 27, START_Y = 118;
 
   // ── НЕБО: градиентный купол, солнце, дрейфующие облака ──
@@ -19384,7 +19420,7 @@ body.game-active{-webkit-touch-callout:none;-webkit-user-select:none;user-select
       q3.fillStyle = g3; q3.fillRect(0, 0, 256, 128);
     }
     var cTex = new T.CanvasTexture(c3);
-    for (var i = 0; i < 26; i++) {
+    for (var i = 0; i < (TOUCH ? 12 : 26); i++) {
       var sp = new T.Sprite(new T.SpriteMaterial({
         map: cTex, transparent: true, opacity: 0.5 + Math.random() * 0.35,
         depthWrite: false, fog: false
@@ -19535,6 +19571,50 @@ body.game-active{-webkit-touch-callout:none;-webkit-user-select:none;user-select
             if (e.changedTouches[i].identifier === tid) reset();
         }, { passive: false });
       }, 1500);
+    });
+  }
+
+  // ── доп. кнопки для телефона: чат, авто, карта, камера, настройки... ──
+  if (TOUCH) {
+    window.addEventListener('load', function () {
+      setTimeout(function () {
+        var row = document.getElementById('mobileTopBtns');
+        if (!row || row.dataset.fzExt) return;
+        row.dataset.fzExt = '1';
+        function btn(ico, ttl, fn) {
+          var d = document.createElement('div');
+          d.className = 'mob-top-btn';
+          d.title = ttl; d.textContent = ico;
+          var h = function (e) { e.preventDefault(); e.stopPropagation(); try { fn(); } catch (err) {} };
+          d.addEventListener('touchstart', h, { passive: false });
+          d.addEventListener('click', h);
+          row.appendChild(d);
+        }
+        btn('💬', 'Чат', function () {
+          var c = document.getElementById('chatInput');
+          if (c) { c.focus(); c.scrollIntoView({ block: 'center' }); }
+        });
+        btn('🔑', 'Сесть/выйти [F]', function () { handleCarInteraction(); });
+        btn('🗺️', 'Карта', function () {
+          if (typeof showMallMap === 'function') showMallMap();
+          else { var mb = document.getElementById('mallMapBtn'); if (mb) mb.click(); }
+        });
+        btn('🎥', 'Вид камеры', function () {
+          var next = (window.cameraMode === 'first') ? 'third' : 'first';
+          if (typeof setCameraMode === 'function') setCameraMode(next);
+        });
+        btn('⚙️', 'Настройки', function () {
+          if (typeof loadSettingsUI === 'function') loadSettingsUI();
+          var m = document.getElementById('settingsModal');
+          if (m) m.classList.add('show');
+        });
+        btn('📰', 'Что нового', function () {
+          var m = document.getElementById('changelogModal');
+          if (m) { m.style.display = 'flex'; m.classList.add('show'); }
+        });
+        btn('🎁', 'Награда', function () { openRewardModal(); });
+        btn('👗', 'Скин [B]', function () { openSkinEditor(); });
+      }, 800);
     });
   }
 
