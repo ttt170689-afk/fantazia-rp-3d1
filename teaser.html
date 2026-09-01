@@ -7416,6 +7416,979 @@ GLOW.position.set(0, 3.95, BOSS_POS.z - 1.35);
 scene.add(GLOW);
 
 
+// ═══════════════════════════════════════════════════════════════════
+//  БОСС v4 — АПОГЕЙ: новая оболочка Хранителя
+//  череп · витые рога с золотом · рваный капюшон · челюсть с зубами ·
+//  рёбра · воротник-шипы · мантия из клочьев · когти · трон из черепов ·
+//  руны · пепел с плеч · дыхание
+// ═══════════════════════════════════════════════════════════════════
+(function () {
+const B4 = {
+  head: null, cranium: null, browL: null, browR: null, jaw: null,
+  teeth: [], fangs: [], horns: [], rings: [], hood: [], neck: [],
+  ribs: [], sternum: null, collar: [], pads: [], cloak: [],
+  fingers: [], skullPile: [], throne: null, runes: [], ash: [],
+  breathP: 0, fingerT: 0, t: 0, reveal: -1
+};
+window.B4 = B4;
+
+const M = {
+  bone:  new THREE.MeshLambertMaterial({ color: 0x8d929e, emissive: 0x17141a, emissiveIntensity: 0.4 }),
+  bone2: new THREE.MeshLambertMaterial({ color: 0x776f66, emissive: 0x14100e, emissiveIntensity: 0.35 }),
+  gold:  new THREE.MeshLambertMaterial({ color: 0x6b5423, emissive: 0x2a1c06, emissiveIntensity: 0.5 }),
+  dark:  new THREE.MeshLambertMaterial({ color: 0x100c16, emissive: 0x16030c, emissiveIntensity: 0.5 }),
+  dark2: new THREE.MeshLambertMaterial({ color: 0x1a1220, emissive: 0x1c0510, emissiveIntensity: 0.45 }),
+  cloth: new THREE.MeshLambertMaterial({ color: 0x0b0712, emissive: 0x12030a, emissiveIntensity: 0.4 }),
+  cloth2:new THREE.MeshLambertMaterial({ color: 0x0e0a16, emissive: 0x0e0208, emissiveIntensity: 0.35 }),
+  pit:   new THREE.MeshBasicMaterial({ color: 0x000000 }),
+  gum:   new THREE.MeshLambertMaterial({ color: 0x2a0d12, emissive: 0x20050a, emissiveIntensity: 0.4 })
+};
+
+// скрыть старую оболочку — оставляем только глаза и их гало
+(function hideOldShell() {
+  const keep = new Set();
+  BOSS.eyes.forEach((e) => keep.add(e));
+  BOSS.halos.forEach((h) => keep.add(h));
+  if (window.BOSS3 && BOSS3.pupils) BOSS3.pupils.forEach((p) => keep.add(p));
+  BOSS.grp.traverse((o) => {
+    if ((o.isMesh || o.isSprite) && !keep.has(o)) o.visible = false;
+  });
+})();
+
+const G = BOSS.grp;
+
+// ── ЧЕРЕП: купол из пластин ──
+const head = new THREE.Group();
+head.position.set(0, 3.8, 0);
+G.add(head);
+B4.head = head;
+
+const cranium = new THREE.Group();
+head.add(cranium);
+B4.cranium = cranium;
+
+// затылок и купол — сегменты сферы
+const domeSegs = [
+  [0, 0.42, -0.05, 0.46, 0, 0],
+  [-0.3, 0.36, -0.08, 0.4, 0.25, 0.1],
+  [0.3, 0.36, -0.08, 0.4, -0.25, -0.1],
+  [0, 0.3, -0.3, 0.38, 0, 0.5],
+  [-0.26, 0.24, -0.26, 0.34, 0.2, 0.35],
+  [0.26, 0.24, -0.26, 0.34, -0.2, -0.35]
+];
+domeSegs.forEach((sg) => {
+  const plate = new THREE.Mesh(new THREE.SphereGeometry(sg[3], 9, 7, 0, Math.PI * 2, 0, Math.PI * 0.62), M.bone);
+  plate.position.set(sg[0], sg[1], sg[2]);
+  plate.rotation.set(sg[4], 0, sg[5]);
+  plate.scale.set(1, 1.12, 1.18);
+  cranium.add(plate);
+});
+
+// лобная пластина
+const forehead = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.34, 0.18), M.bone);
+forehead.position.set(0, 0.24, 0.34);
+forehead.rotation.x = 0.22;
+cranium.add(forehead);
+
+// надбровные дуги — тяжёлые, нависающие
+function browPlate(sx) {
+  const b = new THREE.Group();
+  const arch = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.055, 6, 10, Math.PI), M.bone);
+  arch.rotation.set(Math.PI / 2 + 0.25, 0, sx > 0 ? 0 : Math.PI);
+  b.add(arch);
+  const ridge = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.07, 0.16), M.bone);
+  ridge.position.set(sx * 0.1, 0.03, 0.05);
+  b.add(ridge);
+  const spike = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.14, 5), M.bone2);
+  spike.position.set(sx * 0.16, 0.09, 0.1);
+  spike.rotation.z = -sx * 0.7;
+  b.add(spike);
+  b.position.set(sx * 0.17, 0.12, 0.34);
+  cranium.add(b);
+  return b;
+}
+B4.browL = browPlate(-1);
+B4.browR = browPlate(1);
+
+// скулы
+[-1, 1].forEach((sx) => {
+  const cheek = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.2, 0.2), M.bone2);
+  cheek.position.set(sx * 0.26, -0.08, 0.22);
+  cheek.rotation.z = sx * 0.25;
+  cranium.add(cheek);
+});
+
+// носовая впадина
+const nose = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.16, 0.1), M.pit);
+nose.position.set(0, -0.02, 0.37);
+cranium.add(nose);
+const noseBridge = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.2, 0.08), M.bone);
+noseBridge.position.set(0, 0.1, 0.38);
+cranium.add(noseBridge);
+
+// глазницы: чёрные колодцы с костяной кромкой
+[-1, 1].forEach((sx) => {
+  const socket = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.15, 0.1, 10), M.pit);
+  socket.rotation.x = Math.PI / 2;
+  socket.position.set(sx * 0.16, 0.1, 0.32);
+  cranium.add(socket);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.035, 6, 12), M.bone);
+  rim.position.set(sx * 0.16, 0.1, 0.36);
+  cranium.add(rim);
+  const crack = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.2, 0.02), M.pit);
+  crack.position.set(sx * 0.2, -0.08, 0.35);
+  crack.rotation.z = sx * 0.2;
+  cranium.add(crack);
+});
+
+// шрам через лоб + скобы
+const scar = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.02, 0.02), M.pit);
+scar.position.set(0.04, 0.28, 0.43);
+scar.rotation.z = -0.28;
+cranium.add(scar);
+[-0.14, 0, 0.14].forEach((x) => {
+  const staple = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.06, 0.015), M.bone2);
+  staple.position.set(x + 0.04, 0.28 - x * 0.28, 0.44);
+  staple.rotation.z = -0.28;
+  cranium.add(staple);
+});
+
+// трещины темени
+const cracksTop = [
+  [-0.1, 0.5, 0.1, 0.3, 0.6], [0.12, 0.48, 0.05, -0.4, 1.1],
+  [0, 0.55, -0.1, 0.2, 0.2], [-0.2, 0.42, 0.2, 0.5, 0.9]
+];
+cracksTop.forEach((c) => {
+  const cr = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.16, 0.014), M.pit);
+  cr.position.set(c[0], c[1], c[2]);
+  cr.rotation.set(c[3], 0, c[4]);
+  cranium.add(cr);
+});
+
+// ── ЧЕЛЮСТЬ: подвижная, с двумя рядами зубов и клыками ──
+const jaw = new THREE.Group();
+jaw.position.set(0, -0.18, 0.08);
+head.add(jaw);
+B4.jaw = jaw;
+
+const jawBase = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.14, 0.34), M.bone2);
+jawBase.position.set(0, -0.05, 0.1);
+jaw.add(jawBase);
+// подбородок
+const chin = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.12, 0.16), M.bone2);
+chin.position.set(0, -0.12, 0.22);
+jaw.add(chin);
+// нижние клыки вперёд
+[-1, 1].forEach((sx) => {
+  const fang = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.22, 5), M.bone);
+  fang.position.set(sx * 0.17, 0.08, 0.27);
+  fang.rotation.x = -0.35;
+  jaw.add(fang);
+  B4.fangs.push(fang);
+});
+
+// зубы: два ряда, разной длины (таблица: x, верхРяд, длина)
+const TEETH_X = [-0.2, -0.16, -0.12, -0.08, -0.04, 0, 0.04, 0.08, 0.12, 0.16, 0.2];
+TEETH_X.forEach((x, i) => {
+  const odd = i % 2 === 0;
+  // верхний ряд (растёт из черепа вниз)
+  const up = new THREE.Mesh(
+    new THREE.ConeGeometry(0.022, 0.09 + (odd ? 0.03 : 0), 4), M.bone);
+  up.position.set(x, -0.12, 0.28);
+  up.rotation.x = Math.PI;
+  cranium.add(up);
+  B4.teeth.push(up);
+  // нижний ряд (из челюсти вверх)
+  const dn = new THREE.Mesh(
+    new THREE.ConeGeometry(0.02, 0.08 + (odd ? 0 : 0.03), 4), M.bone);
+  dn.position.set(x, -0.1, 0.26);
+  jaw.add(dn);
+  B4.teeth.push(dn);
+});
+
+// дёсны-тень за зубами
+const mouthPit = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.16, 0.1), M.pit);
+mouthPit.position.set(0, -0.14, 0.22);
+cranium.add(mouthPit);
+
+// ── ШЕЯ: позвонки ──
+const NECK_Y = [3.18, 3.32, 3.46, 3.6];
+NECK_Y.forEach((y, i) => {
+  const v = new THREE.Mesh(new THREE.CylinderGeometry(0.15 - i * 0.012, 0.17 - i * 0.012, 0.12, 8), M.bone2);
+  v.position.set(0, y - 3.8, 0.12);
+  v.rotation.x = 0.18;
+  head.add(v);
+  // остистый отросток
+  const sp = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.1, 4), M.bone2);
+  sp.position.set(0, y - 3.8 + 0.06, 0.0);
+  sp.rotation.x = -0.5;
+  head.add(sp);
+  B4.neck.push(v);
+});
+
+// ── РОГА: двойная спираль из сегментов, золотые кольца ──
+function buildHorn(sx) {
+  const root = new THREE.Group();
+  root.position.set(sx * 0.3, 0.3, -0.02);
+  root.rotation.z = -sx * 0.5;
+  head.add(root);
+  // 12 сегментов: вверх и в стороны, виток
+  const SEG = 12;
+  let parent = root;
+  const segs = [];
+  for (let i = 0; i < SEG; i++) {
+    const k = i / SEG;
+    const r = 0.075 * (1 - k * 0.82);
+    const len = 0.16 * (1 - k * 0.45);
+    const seg = new THREE.Group();
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.86, r, len, 7), i % 2 ? M.bone2 : M.dark);
+    mesh.position.y = len / 2;
+    seg.add(mesh);
+    // рёбра витка
+    const rib = new THREE.Mesh(new THREE.TorusGeometry(r * 1.05, r * 0.28, 5, 9), M.bone2);
+    rib.rotation.x = Math.PI / 2;
+    rib.position.y = len * 0.85;
+    seg.add(rib);
+    seg.position.y = i === 0 ? 0 : 0.15 * (1 - k * 0.4);
+    seg.rotation.z = sx * (0.16 + k * 0.1) * (i % 2 ? 1 : 0.7);
+    seg.rotation.x = -0.12 - k * 0.16;
+    parent.add(seg);
+    parent = seg;
+    segs.push(seg);
+    // золотое кольцо на 4-м и 8-м сегменте
+    if (i === 3 || i === 7) {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(r * 1.35, r * 0.22, 5, 10), M.gold);
+      ring.rotation.x = Math.PI / 2;
+      ring.position.y = len * 0.45;
+      seg.add(ring);
+      B4.rings.push(ring);
+    }
+  }
+  // кончик — острый
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.14, 5), M.bone);
+  tip.position.y = 0.16;
+  parent.add(tip);
+  return { root: root, segs: segs };
+}
+B4.horns.push(buildHorn(-1), buildHorn(1));
+
+// ── КАПЮШОН: рваная ткань вокруг головы ──
+const hood = new THREE.Group();
+hood.position.set(0, 0.12, -0.12);
+head.add(hood);
+// шейка капюшона — конус
+const hoodCone = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.52, 0.34, 0.6, 10, 1, true), M.cloth);
+hoodCone.position.y = 0.18;
+hood.add(hoodCone);
+// козырёк-тень над лбом
+const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.52, 0.1, 10, 1, true), M.cloth);
+brim.position.y = 0.44;
+brim.rotation.x = 0.15;
+hood.add(brim);
+// рваные языки капюшона (таблица: угол, длина, ширина, фаза)
+const HOOD_T = [
+  [-2.6, 0.5, 0.16, 0.4], [-1.9, 0.62, 0.18, 1.7], [-1.2, 0.55, 0.15, 2.6],
+  [-0.5, 0.7, 0.2, 0.9], [0.1, 0.58, 0.16, 4.1], [0.8, 0.66, 0.19, 3.3],
+  [1.5, 0.52, 0.15, 5.2], [2.2, 0.6, 0.17, 1.1], [2.9, 0.48, 0.14, 2.2],
+  [3.5, 0.56, 0.16, 0.2]
+];
+HOOD_T.forEach((t, i) => {
+  const tongue = new THREE.Mesh(new THREE.BoxGeometry(t[2], t[1], 0.03),
+    i % 2 ? M.cloth : M.cloth2);
+  const a = t[0];
+  tongue.position.set(Math.cos(a) * 0.42, 0.1 - t[1] * 0.4, Math.sin(a) * 0.42);
+  tongue.rotation.z = Math.cos(a) * 0.5;
+  tongue.rotation.x = -Math.sin(a) * 0.4;
+  tongue.userData.ph = t[3];
+  hood.add(tongue);
+  B4.hood.push(tongue);
+});
+
+// ── ТОРС: каркас под мантией — рёбра и грудина ──
+const torso = new THREE.Group();
+torso.position.set(0, 2.55, 0);
+G.add(torso);
+B4.torso = torso;
+
+// позвоночник
+const spine = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 1.3, 8), M.bone2);
+spine.position.set(0, 0.1, -0.18);
+torso.add(spine);
+// позвонки-остисты
+for (let i = 0; i < 7; i++) {
+  const sp = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.1, 4), M.bone2);
+  sp.position.set(0, 0.62 - i * 0.19, -0.1);
+  sp.rotation.x = -0.9;
+  torso.add(sp);
+}
+
+// рёбра: 5 пар, дуга сверху вниз
+const RIB_K = [
+  [0.5, 0.34, 0.16], [0.56, 0.3, 0.08], [0.58, 0.26, 0.0],
+  [0.54, 0.22, -0.08], [0.46, 0.18, -0.16]
+];
+RIB_K.forEach((rk, i) => {
+  [-1, 1].forEach((sx) => {
+    const rib = new THREE.Mesh(
+      new THREE.TorusGeometry(rk[1], 0.026, 5, 10, Math.PI * 0.85), M.bone);
+    rib.rotation.set(Math.PI / 2, 0, sx > 0 ? -0.25 : 0.25 + Math.PI);
+    rib.position.set(sx * rk[0] * 0.28, 0.42 - i * 0.21, rk[2]);
+    rib.scale.set(1, 1, 0.8);
+    torso.add(rib);
+    B4.ribs.push(rib);
+  });
+});
+
+// грудина
+const sternum = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.6, 0.05), M.bone);
+sternum.position.set(0, 0.18, 0.16);
+torso.add(sternum);
+B4.sternum = sternum;
+
+// ── ВОРОТНИК: костяные шипы вокруг шеи ──
+const COLLAR_N = 14;
+for (let i = 0; i < COLLAR_N; i++) {
+  const a = (i / COLLAR_N) * Math.PI * 2;
+  const big = i % 3 === 0;
+  const spike = new THREE.Mesh(
+    new THREE.ConeGeometry(big ? 0.05 : 0.032, big ? 0.42 : 0.24, 5), M.bone);
+  spike.position.set(Math.cos(a) * 0.52, 3.05 + (big ? 0.1 : 0), Math.sin(a) * 0.5);
+  spike.rotation.z = -Math.cos(a) * 0.85;
+  spike.rotation.x = Math.sin(a) * 0.85;
+  G.add(spike);
+  B4.collar.push(spike);
+}
+// основание воротника
+const collarBase = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.06, 6, 14), M.dark2);
+collarBase.rotation.x = Math.PI / 2;
+collarBase.position.y = 3.02;
+G.add(collarBase);
+
+// ── НАПЛЕЧНИКИ ──
+[-1, 1].forEach((sx) => {
+  const pad = new THREE.Group();
+  const shell = new THREE.Mesh(new THREE.SphereGeometry(0.34, 9, 7, 0, Math.PI * 2, 0, Math.PI * 0.55), M.dark2);
+  pad.add(shell);
+  // три шипа на плече
+  for (let k = 0; k < 3; k++) {
+    const sp = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.2 + k * 0.06, 5), M.bone);
+    sp.position.set(-0.12 + k * 0.12, 0.16, -0.08 + k * 0.1);
+    sp.rotation.z = sx * (0.4 - k * 0.35);
+    pad.add(sp);
+  }
+  pad.position.set(sx * 0.78, 3.02, 0);
+  pad.rotation.z = sx * 0.3;
+  G.add(pad);
+  B4.pads.push(pad);
+});
+
+// ── МАНТИЯ: клочья по кругу бёдер (таблица углов) ──
+const CLOAK_N = 26;
+for (let i = 0; i < CLOAK_N; i++) {
+  const a = (i / CLOAK_N) * Math.PI * 2;
+  // перед короче, спина длиннее
+  const front = Math.sin(a) > 0.3;
+  const len = front ? 0.7 + (i % 3) * 0.12 : 1.35 + (i % 4) * 0.14;
+  const cl = new THREE.Mesh(
+    new THREE.BoxGeometry(0.22, len, 0.04), i % 2 ? M.cloth : M.cloth2);
+  const r = 0.95;
+  cl.position.set(Math.cos(a) * r, 2.2 - len / 2, Math.sin(a) * r * 0.9);
+  cl.rotation.y = -a;
+  cl.rotation.x = Math.sin(a) * 0.12;
+  cl.userData = { ph: i * 0.7, bx: cl.position.x, bz: cl.position.z };
+  G.add(cl);
+  B4.cloak.push(cl);
+}
+// верхняя юбка-конус
+const skirt = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.82, 1.18, 1.15, 12, 1, true), M.cloth);
+skirt.position.y = 1.72;
+G.add(skirt);
+// пояс с золотой пряжкой
+const belt = new THREE.Mesh(new THREE.TorusGeometry(0.86, 0.05, 6, 14), M.dark2);
+belt.rotation.x = Math.PI / 2;
+belt.position.y = 2.28;
+G.add(belt);
+const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.14, 0.06), M.gold);
+buckle.position.set(0, 2.28, 0.86);
+G.add(buckle);
+
+// ── РУКИ: плечо-предплечье на подлокотниках, кисти с 4 пальцами ──
+function buildArm(sx) {
+  const arm = new THREE.Group();
+  arm.position.set(sx * 0.82, 2.86, 0.05);
+  G.add(arm);
+  // плечевая кость
+  const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.78, 7), M.bone2);
+  upper.position.set(0, -0.36, 0.22);
+  upper.rotation.x = 0.5;
+  arm.add(upper);
+  // предплечье
+  const fore = new THREE.Group();
+  fore.position.set(0, -0.72, 0.38);
+  arm.add(fore);
+  const foreM = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.065, 0.72, 7), M.bone2);
+  foreM.position.y = -0.32;
+  fore.add(foreM);
+  // наручь с шипами
+  const bracer = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.09, 0.4, 8, 1, true), M.dark2);
+  bracer.position.y = -0.18;
+  fore.add(bracer);
+  for (let k = 0; k < 3; k++) {
+    const sp = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.1, 4), M.bone);
+    sp.position.set(0.08, -0.1 - k * 0.12, 0.02);
+    sp.rotation.z = -1.2;
+    fore.add(sp);
+  }
+  // кисть
+  const hand = new THREE.Group();
+  hand.position.y = -0.68;
+  fore.add(hand);
+  const palm = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.2, 0.08), M.bone2);
+  hand.add(palm);
+  // 4 пальца × 2 фаланги + коготь
+  for (let f = 0; f < 4; f++) {
+    const fx = -0.06 + f * 0.04;
+    const f1 = new THREE.Group();
+    f1.position.set(fx, -0.1, 0.02);
+    hand.add(f1);
+    const seg1 = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.014, 0.11, 5), M.bone2);
+    seg1.position.y = -0.055;
+    f1.add(seg1);
+    const f2 = new THREE.Group();
+    f2.position.y = -0.11;
+    f1.add(f2);
+    const seg2 = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.011, 0.1, 5), M.bone2);
+    seg2.position.y = -0.05;
+    f2.add(seg2);
+    const claw = new THREE.Mesh(new THREE.ConeGeometry(0.016, 0.13, 5), M.bone);
+    claw.position.y = -0.15;
+    claw.rotation.x = 0.2;
+    f2.add(claw);
+    f1.userData = { f2: f2, ph: Math.random() * 6.28, side: sx, fi: f };
+    B4.fingers.push(f1);
+  }
+  arm.userData = { fore: fore, hand: hand, side: sx };
+  return arm;
+}
+B4.armsV4 = [buildArm(-1), buildArm(1)];
+
+// ── ВЕКИ: костяные козырьки над глазницами (полуприкрыт, усталый взгляд) ──
+[-1, 1].forEach((sx) => {
+  const lid = new THREE.Mesh(
+    new THREE.TorusGeometry(0.14, 0.045, 6, 10, Math.PI * 0.9), M.bone2);
+  lid.position.set(sx * 0.16, 0.16, 0.36);
+  lid.rotation.set(-0.3, 0, sx > 0 ? Math.PI * 0.05 : Math.PI * 0.95);
+  cranium.add(lid);
+});
+
+// ── ЗАДНИЙ РЯД ЗУБОВ (в тени) ──
+const BACK_TEETH_X = [-0.14, -0.07, 0, 0.07, 0.14];
+BACK_TEETH_X.forEach((x, i) => {
+  const up = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.07, 4), M.bone2);
+  up.position.set(x, -0.1, 0.2);
+  up.rotation.x = Math.PI;
+  cranium.add(up);
+  B4.teeth.push(up);
+  const dn = new THREE.Mesh(new THREE.ConeGeometry(0.016, 0.06, 4), M.bone2);
+  dn.position.set(x + 0.01, -0.08, 0.18);
+  jaw.add(dn);
+  B4.teeth.push(dn);
+});
+
+// ── ЛЕНТЫ НА РОГАХ: истлевшая ткань сегментами ──
+B4.horns.forEach((h, hi) => {
+  const sx = hi === 0 ? -1 : 1;
+  for (let L = 0; L < 2; L++) {
+    let parent = h.segs[3 + L * 4];
+    for (let k = 0; k < 5; k++) {
+      const rag = new THREE.Mesh(
+        new THREE.BoxGeometry(0.09 - k * 0.012, 0.2 + Math.sin(k * 2.1) * 0.08, 0.02),
+        k % 2 ? M.cloth : M.cloth2);
+      rag.position.set(sx * (0.05 + k * 0.012), -0.02 - k * 0.05, 0.05 + k * 0.02);
+      rag.rotation.z = sx * (0.3 + k * 0.12);
+      rag.rotation.y = 0.4 + k * 0.3;
+      rag.userData = { ph: k * 1.3 + hi, base: rag.rotation.z };
+      parent.add(rag);
+      B4.hood.push(rag); // качаются вместе с капюшоном
+    }
+  }
+});
+
+// ── ЦЕПИ: с наплечников на спинку трона ──
+function chain(side) {
+  const links = [];
+  for (let i = 0; i < 12; i++) {
+    const link = new THREE.Mesh(
+      new THREE.TorusGeometry(0.045, 0.014, 5, 8), M.dark2);
+    const k = i / 11;
+    link.position.set(
+      side * (0.78 - k * 0.1),
+      3.0 - k * 0.42,
+      -0.05 - k * 0.5);
+    link.rotation.y = (i % 2) * Math.PI / 2;
+    link.rotation.x = 0.3 + k * 0.4;
+    G.add(link);
+    links.push(link);
+  }
+  return links;
+}
+B4.chains = [chain(-1), chain(1)];
+
+// ── ПОДВЕСКИ НА ПОЯСЕ: костяные амулеты и монеты ──
+const PEND = [
+  [-0.5, 'bone'], [-0.32, 'coin'], [-0.12, 'bone'], [0.06, 'skull'],
+  [0.26, 'coin'], [0.44, 'bone'], [0.58, 'skull'], [-0.66, 'coin'], [0.14, 'bone']
+];
+PEND.forEach((p, i) => {
+  const g3 = new THREE.Group();
+  g3.position.set(p[0], 2.2, 0.82);
+  g3.userData = { ph: i * 0.9 };
+  G.add(g3);
+  const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.12, 4), M.cloth2);
+  cord.position.y = 0.06;
+  g3.add(cord);
+  if (p[1] === 'coin') {
+    const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.012, 8), M.gold);
+    coin.rotation.x = Math.PI / 2.1;
+    coin.position.y = -0.05;
+    g3.add(coin);
+  } else if (p[1] === 'skull') {
+    const mini = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.1, 0.09), M.bone2);
+    mini.position.y = -0.07;
+    g3.add(mini);
+  } else {
+    const talis = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.14, 5), M.bone);
+    talis.position.y = -0.08;
+    talis.rotation.x = Math.PI;
+    g3.add(talis);
+  }
+  B4.pendants = B4.pendants || [];
+  B4.pendants.push(g3);
+});
+
+// ── СВЕЧИ-ЧЕРЕПА: огни вокруг подножия (7 шт, зажигаются с поворотом) ──
+B4.candles = [];
+const CAND = [
+  [-1.5, 1.4], [-1.1, 1.9], [-0.5, 2.2], [0.2, 2.3], [0.8, 2.1], [1.3, 1.7], [1.6, 1.2]
+];
+CAND.forEach((c, i) => {
+  const g4 = new THREE.Group();
+  g4.position.set(c[0], 0.12, c[1]);
+  G.add(g4);
+  const base = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.2, 0.22), M.bone2);
+  g4.add(base);
+  const eyeP = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 5), M.pit);
+  eyeP.position.set(0, 0.03, 0.11);
+  g4.add(eyeP);
+  const flame = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: TEX.red, color: 0xffa030, transparent: true, opacity: 0,
+    depthWrite: false, blending: THREE.AdditiveBlending
+  }));
+  flame.scale.setScalar(0.22);
+  flame.position.y = 0.26;
+  g4.add(flame);
+  const li = new THREE.PointLight(0xff8030, 0, 3.4, 1.8);
+  li.position.y = 0.3;
+  g4.add(li);
+  B4.candles.push({ g: g4, fl: flame, li: li, ph: i * 1.1 });
+});
+
+// ── ПАР ИЗ НОСА: дыхание видно после ревила ──
+B4.steam = [];
+for (let i = 0; i < 10; i++) {
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: TEX.smoke, color: 0x9a8a80, transparent: true, opacity: 0,
+    depthWrite: false
+  }));
+  sp.scale.setScalar(rnd(0.1, 0.2));
+  sp.userData = { t: -1, ph: rnd(0, 6.28), side: i % 2 ? 1 : -1 };
+  head.add(sp);
+  B4.steam.push(sp);
+}
+
+
+// ── ВТОРЫЕ РОЖКИ НА ВИСКАХ (мелкие, изогнутые) ──
+[-1, 1].forEach((sx) => {
+  for (let k = 0; k < 2; k++) {
+    const h = new THREE.Group();
+    h.position.set(sx * (0.34 + k * 0.06), 0.18 - k * 0.1, -0.08 + k * 0.1);
+    h.rotation.z = -sx * (1.1 + k * 0.25);
+    head.add(h);
+    const seg1 = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.03, 0.2, 5), M.bone2);
+    seg1.position.y = 0.1;
+    h.add(seg1);
+    const seg2 = new THREE.Group();
+    seg2.position.y = 0.2;
+    seg2.rotation.z = -sx * 0.5;
+    h.add(seg2);
+    const seg2m = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.02, 0.14, 5), M.bone2);
+    seg2m.position.y = 0.07;
+    seg2.add(seg2m);
+    const tip2 = new THREE.Mesh(new THREE.ConeGeometry(0.013, 0.08, 4), M.bone);
+    tip2.position.y = 0.17;
+    seg2.add(tip2);
+  }
+});
+
+// ── ОКОВЫ НА ЗАПЯСТЬЯХ: разбитые браслеты с цепями ──
+B4.shackles = [];
+B4.armsV4.forEach((arm) => {
+  const u = arm.userData;
+  for (let k = 0; k < 3; k++) {
+    const half = new THREE.Mesh(
+      new THREE.TorusGeometry(0.1, 0.024, 5, 8, Math.PI), M.dark2);
+    half.position.y = -0.52 - k * 0.001;
+    half.rotation.y = k * 1.05;
+    u.fore.add(half);
+    B4.shackles.push(half);
+  }
+  // обрывок цепи с оков
+  for (let k = 0; k < 4; k++) {
+    const link = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.011, 4, 7), M.dark2);
+    link.position.set(u.side * 0.12, -0.5 - k * 0.07, -0.06 - k * 0.02);
+    link.rotation.y = (k % 2) * Math.PI / 2;
+    u.fore.add(link);
+    B4.shackles.push(link);
+  }
+});
+
+// ── ГВОЗДИ В ТРОНЕ: кованые, ржавые (таблица) ──
+const NAILS = [
+  [-0.7, 2.9, -0.5], [-0.3, 3.2, -0.5], [0.2, 3.35, -0.5], [0.65, 3.0, -0.5],
+  [-0.55, 2.2, -0.5], [0.45, 2.4, -0.5], [-0.72, 1.6, -0.52], [0.7, 1.62, -0.52],
+  [-0.6, 1.5, 0.75], [0.62, 1.52, 0.75], [-0.4, 1.5, 0.8], [0.42, 1.5, 0.8],
+  [-0.75, 2.6, -0.45], [0.75, 2.75, -0.45], [-0.15, 3.1, -0.52], [0.05, 2.0, -0.48],
+  [-0.68, 2.0, -0.55], [0.58, 2.15, -0.55]
+];
+NAILS.forEach((n) => {
+  const nail = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.07, 5), M.dark2);
+  nail.position.set(n[0], n[1], n[2]);
+  nail.rotation.x = n[2] > 0 ? -Math.PI / 2 : Math.PI / 2;
+  throne.add(nail);
+});
+
+// ── ОБЛОМОК КЛИНКА ПОД ТРОНОМ (трофей прошлых времён) ──
+const shard = new THREE.Group();
+shard.position.set(0.95, 0.06, 1.35);
+shard.rotation.set(0.2, 0.7, 0.12);
+G.add(shard);
+const blade = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.5, 0.02), M.bone2);
+blade.position.y = 0.24;
+shard.add(blade);
+const guard = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.05, 0.05), M.dark2);
+guard.position.y = 0.02;
+shard.add(guard);
+const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.03, 0.16, 6), M.cloth2);
+grip.position.y = -0.08;
+shard.add(grip);
+
+// ── ЗОЛОТОЕ КОЛЬЦО НА КОСТЯНОМ ПАЛЬЦЕ ──
+B4.armsV4.forEach((arm) => {
+  const u = arm.userData;
+  const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.021, 0.007, 5, 9), M.gold);
+  const finger = B4.fingers[(u.side > 0 ? 0 : 4) + 1];
+  if (finger) {
+    ring2.rotation.x = Math.PI / 2;
+    ring2.position.y = -0.1;
+    finger.add(ring2);
+    B4.rings.push(ring2);
+  }
+});
+
+
+// ── ТРОН: спинка с рогами, подлокотники-черепа, подножие из черепов ──
+const throne = new THREE.Group();
+G.add(throne);
+B4.throne = throne;
+
+// сидение
+const seat = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.18, 1.2), M.dark2);
+seat.position.y = 1.44;
+throne.add(seat);
+// спинка
+const backR = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.1, 0.2), M.dark2);
+backR.position.set(0, 2.5, -0.62);
+backR.rotation.x = -0.08;
+throne.add(backR);
+// рога на спинке
+[-1, 1].forEach((sx) => {
+  for (let k = 0; k < 3; k++) {
+    const horn = new THREE.Group();
+    horn.position.set(sx * (0.5 + k * 0.16), 3.4 + k * 0.14, -0.6);
+    horn.rotation.z = -sx * (0.5 + k * 0.2);
+    throne.add(horn);
+    const h1 = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.06, 0.5 - k * 0.1, 6), M.bone2);
+    h1.position.y = 0.24;
+    horn.add(h1);
+    const h2 = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.3 - k * 0.07, 5), M.bone);
+    h2.position.y = 0.55 - k * 0.1;
+    horn.add(h2);
+  }
+});
+// подлокотники: черепа грифонов
+function armrestSkull(sx) {
+  const sk = new THREE.Group();
+  sk.position.set(sx * 0.82, 1.72, 0.18);
+  throne.add(sk);
+  const cr = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.28, 0.34), M.bone2);
+  sk.add(cr);
+  const snout = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.12, 0.16), M.bone2);
+  snout.position.set(0, -0.06, 0.22);
+  sk.add(snout);
+  [-1, 1].forEach((ex) => {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 5), M.pit);
+    eye.position.set(ex * 0.08, 0.04, 0.15);
+    sk.add(eye);
+  });
+  for (let t = 0; t < 4; t++) {
+    const th = new THREE.Mesh(new THREE.ConeGeometry(0.015, 0.05, 4), M.bone);
+    th.position.set(-0.06 + t * 0.04, -0.1, 0.28);
+    th.rotation.x = Math.PI;
+    sk.add(th);
+  }
+  // рога-грифончики
+  [-1, 1].forEach((hx) => {
+    const h = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.16, 4), M.bone);
+    h.position.set(hx * 0.1, 0.2, -0.05);
+    h.rotation.z = -hx * 0.5;
+    sk.add(h);
+  });
+  return sk;
+}
+armrestSkull(-1);
+armrestSkull(1);
+
+// подножие: семь черепов грудой (таблица: x, z, масштаб, поворот)
+const SKULLS = [
+  [-0.5, 0.75, 1.0, 0.4], [0.05, 0.9, 1.15, -0.3], [0.55, 0.7, 0.9, 0.9],
+  [-0.2, 1.05, 0.8, 2.1], [0.35, 1.1, 0.75, 1.4], [-0.65, 1.0, 0.7, -1.2],
+  [0.1, 1.25, 0.6, 0.1]
+];
+SKULLS.forEach((sk, i) => {
+  const g2 = new THREE.Group();
+  g2.position.set(sk[0], 0.14 * (i % 2), sk[1]);
+  g2.rotation.y = sk[3];
+  g2.scale.setScalar(sk[2]);
+  throne.add(g2);
+  const cr = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.3, 0.38), M.bone2);
+  g2.add(cr);
+  const sn = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.13, 0.18), M.bone2);
+  sn.position.set(0, -0.07, 0.24);
+  g2.add(sn);
+  [-1, 1].forEach((ex) => {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 5), M.pit);
+    eye.position.set(ex * 0.09, 0.05, 0.17);
+    g2.add(eye);
+  });
+  const jaw2 = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.08, 0.2), M.bone2);
+  jaw2.position.set(0, -0.17, 0.2);
+  g2.add(jaw2);
+  B4.skullPile.push(g2);
+});
+
+// ножки трона
+[-1, 1].forEach((sx) => {
+  const leg = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.44, 0.16), M.dark2);
+  leg.position.set(sx * 0.6, 0.72, 0.4);
+  throne.add(leg);
+});
+
+// ── РУНЫ: три кольца вокруг трона ──
+const RUNE_CHARS = ['ᚠ', 'ᚢ', 'ᚦ', 'ᚨ', 'ᚱ', 'ᚲ', 'ᚷ', 'ᚹ', 'ᚺ', 'ᚾ', 'ᛁ', 'ᛃ',
+  'ᛇ', 'ᛈ', 'ᛉ', 'ᛊ', 'ᛏ', 'ᛒ', 'ᛖ', 'ᛗ', 'ᛚ', 'ᛜ', 'ᛞ', 'ᛟ'];
+function runeTex(ch) {
+  const c = DOC.createElement('canvas');
+  c.width = c.height = 64;
+  const q = c.getContext('2d');
+  q.clearRect(0, 0, 64, 64);
+  q.strokeStyle = 'rgba(255,90,60,.9)';
+  q.lineWidth = 5;
+  q.font = '44px serif';
+  q.textAlign = 'center';
+  q.textBaseline = 'middle';
+  q.strokeText(ch, 32, 34);
+  const t = new THREE.CanvasTexture(c);
+  t.needsUpdate = true;
+  return t;
+}
+[2.1, 2.7, 3.3].forEach((rr, ring) => {
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2 + ring * 0.4;
+    const spr = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: runeTex(RUNE_CHARS[(ring * 8 + i) % RUNE_CHARS.length]),
+      transparent: true, opacity: 0, depthWrite: false,
+      blending: THREE.AdditiveBlending
+    }));
+    spr.scale.setScalar(0.3);
+    spr.position.set(Math.cos(a) * rr, 0.25 + ring * 0.1, Math.sin(a) * rr);
+    spr.userData = { ring: ring, ph: a };
+    G.add(spr);
+    B4.runes.push(spr);
+  }
+});
+
+// ── ПЕПЕЛ: частицы с плеч (спрайты) ──
+const ashTex = TEX.smoke;
+for (let i = 0; i < 26; i++) {
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: ashTex, color: 0x5a4a44, transparent: true, opacity: 0,
+    depthWrite: false
+  }));
+  sp.scale.setScalar(rnd(0.06, 0.16));
+  sp.userData = {
+    ph: rnd(0, 6.28), sp: rnd(0.1, 0.3),
+    side: i % 2 ? 1 : -1, t: -1
+  };
+  G.add(sp);
+  B4.ash.push(sp);
+}
+
+// ═══ АНИМАЦИИ ═══
+window.upBoss4 = function (dt, wall) {
+  B4.t += dt;
+  const t = B4.t;
+  const bk = clamp((T.t - BLACKOUT.t) / 0.5, 0, 1);
+  const turned = BOSS.turn >= 0;
+  const turnK = turned ? clamp((T.t - BOSS.turn) / 2.4, 0, 1) : 0;
+  const revealK = B4.reveal > 0 ? clamp((T.t - B4.reveal) / 1.2, 0, 1) : 0;
+
+  // дыхание: грудная клетка и плечи
+  const br = Math.sin(wall * 0.75);
+  B4.breathP = br;
+  B4.torso.scale.set(1 + br * 0.02, 1 + br * 0.012, 1 + br * 0.03);
+  head.position.y = 3.8 + br * 0.014;
+  // больное дыхание после ревила — сбивчивое
+  if (revealK > 0) {
+    const gasp = Math.sin(wall * 2.6) * Math.max(0, Math.sin(wall * 0.4));
+    head.position.y += gasp * 0.02;
+  }
+
+  // микрон головы: слушает зал
+  const scan = NZ.fbm(wall * 0.24 + 7, 2) * 0.1;
+  head.rotation.y = scan * (1 - turnK);
+  head.rotation.z = NZ.n1(wall * 0.2) * 0.02;
+  cranium.rotation.x = Math.sin(wall * 0.5) * 0.012;
+
+  // капюшон: языки дышат
+  B4.hood.forEach((tg, i) => {
+    tg.rotation.z += Math.sin(wall * 1.1 + tg.userData.ph) * 0.0006;
+  });
+
+  // пальцы: барабанят по подлокотникам (когда кресло уже повёрнуто)
+  B4.fingerT += dt;
+  B4.fingers.forEach((f1) => {
+    const u = f1.userData;
+    const tap = turned
+      ? Math.max(0, Math.sin(wall * 3.1 + u.ph)) * 0.22
+      : Math.sin(wall * 0.8 + u.ph) * 0.04;
+    u.f2.rotation.x = 0.15 + tap;
+    f1.rotation.x = -tap * 0.6;
+  });
+
+  // мантия: клочья колышутся, разлетаются при повороте
+  B4.cloak.forEach((cl, i) => {
+    const u = cl.userData;
+    const wave = Math.sin(wall * 1.3 + u.ph) * 0.05;
+    cl.rotation.x = Math.sin(Math.atan2(u.bz, u.bx)) * 0.12 + wave + turnK * 0.3;
+    cl.position.x = u.bx * (1 + turnK * 0.22);
+    cl.position.z = u.bz * (1 + turnK * 0.22);
+  });
+
+  // руки: до поворота лежат на подлокотниках, после — сжимают их
+  B4.armsV4.forEach((arm) => {
+    const u = arm.userData;
+    arm.rotation.x = turnK * 0.08 + Math.sin(wall * 0.7 + u.side) * 0.008;
+    arm.rotation.z = u.side * (0.1 - turnK * 0.05);
+  });
+
+  // челюсть: висит приоткрыта, после ревила медленно открывается шире
+  const jawOpen = 0.1 + revealK * 0.34 + Math.sin(wall * 0.9) * 0.02;
+  jaw.rotation.x = jawOpen;
+  // клыки чуть подрагивают
+  B4.fangs.forEach((f, i) => {
+    f.rotation.z = Math.sin(wall * 2.2 + i) * 0.02;
+  });
+
+  // руны: разгораются с поворотом, вращаются
+  B4.runes.forEach((r) => {
+    const u = r.userData;
+    const on = turnK * (0.35 + Math.sin(wall * 1.4 + u.ph * 2) * 0.2);
+    r.material.opacity = Math.max(0, on) * bk;
+    const a = u.ph + wall * (0.12 + u.ring * 0.06);
+    const rr = 2.1 + u.ring * 0.6;
+    r.position.set(Math.cos(a) * rr, 0.25 + u.ring * 0.1, Math.sin(a) * rr);
+  });
+
+  // пепел с плеч: струйки, усиливаются при повороте кресла
+  B4.ash.forEach((sp) => {
+    const u = sp.userData;
+    if (u.t < 0 && Math.random() < dt * (0.1 + turnK * 0.5)) {
+      u.t = 0;
+      sp.position.set(u.side * rnd(0.6, 0.9), rnd(2.9, 3.1), rnd(-0.2, 0.2));
+      sp.material.opacity = rnd(0.1, 0.25);
+    }
+    if (u.t >= 0) {
+      u.t += dt;
+      sp.position.y += u.sp * dt * 0.6;
+      sp.position.x += Math.sin(u.t * 2 + u.ph) * dt * 0.12 + FZGWind(wall);
+      sp.material.opacity *= (1 - dt * 0.5);
+      if (u.t > 4 || sp.material.opacity < 0.01) { u.t = -1; sp.material.opacity = 0; }
+    }
+  });
+
+  // воротник-шипы: копошатся при повороте
+  B4.collar.forEach((sp, i) => {
+    sp.rotation.z += Math.sin(wall * 1.7 + i) * 0.0004 * (1 + turnK * 3);
+  });
+
+  // подвески на поясе звенят при повороте
+  (B4.pendants || []).forEach((p) => {
+    p.rotation.z = Math.sin(wall * 2.2 + p.userData.ph) * 0.1 * turnK;
+    p.rotation.x = Math.cos(wall * 1.7 + p.userData.ph) * 0.08 * turnK;
+  });
+
+  // свечи-черепа разгораются с поворотом
+  (B4.candles || []).forEach((c) => {
+    const on = turnK * (0.6 + Math.sin(wall * 9 + c.ph) * 0.25);
+    c.fl.material.opacity = Math.max(0, on);
+    c.li.intensity = Math.max(0, on) * 0.5;
+    c.fl.scale.setScalar(0.18 + Math.sin(wall * 8 + c.ph) * 0.04);
+  });
+
+  // пар из носа на выдохе после ревила
+  (B4.steam || []).forEach((sp) => {
+    const u = sp.userData;
+    const exhale = Math.max(0, Math.sin(wall * 0.75)) * revealK;
+    if (u.t < 0 && exhale > 0.6 && Math.random() < dt * 1.2) {
+      u.t = 0;
+      sp.position.set(u.side * 0.05, -0.05, 0.44);
+      sp.material.opacity = 0.14;
+    }
+    if (u.t >= 0) {
+      u.t += dt;
+      sp.position.z += dt * 0.3;
+      sp.position.y -= dt * 0.05;
+      sp.material.opacity *= (1 - dt * 1.4);
+      if (u.t > 1.6 || sp.material.opacity < 0.01) { u.t = -1; sp.material.opacity = 0; }
+    }
+  });
+
+  // цепи на плечах подрагивают
+  (B4.chains || []).forEach((ch, ci) => {
+    ch.forEach((link, i) => {
+      link.rotation.z = Math.sin(wall * 1.8 + i * 0.7 + ci) * 0.06 * (0.2 + turnK);
+    });
+  });
+};
+
+// лёгкий ветер для пепла (без внешних зависимостей)
+function FZGWind(wall) { return Math.sin(wall * 0.6) * 0.0006; }
+
+// B4.reveal ставится извне при ревиле морды
+})();
+
 // свет на морду при развороте
 const GLOWL = new THREE.PointLight(0xd4522e, 0, 15, 1.6);
 GLOWL.position.set(0, 4.1, BOSS_POS.z - 0.6);
@@ -7460,7 +8433,7 @@ let CUES = [
       tone(28, 22, 6, 'sine', 0.12, 0);   // под-пол
       grade('void');
       BLACKOUT.t = 0;
-      bossShroud(true, 0.78);
+      bossShroud(true, 0.3);
       ps1Textures();
       try {
         renderer.setPixelRatio(0.3);
@@ -7468,9 +8441,10 @@ let CUES = [
         cv.style.filter = 'contrast(1.07) saturate(1.06)';
       } catch (e) {}
       for (let i = 0; i < DUN.flamesAll.length; i++) DUN.flamesAll[i].dieT = 0;
-      if (DUN.amb) DUN.amb.intensity = 0.05;
-      if (DUN.moon) DUN.moon.intensity = 0.02;
-      GLOW.material.opacity = 0.3;
+      if (DUN.amb) DUN.amb.intensity = 0.012;
+      if (DUN.moon) DUN.moon.intensity = 0.006;
+      try { scene.fog = new THREE.Fog(0x020204, 2, 19); scene.background = new THREE.Color(0x020204); } catch (e) {}
+      GLOW.material.opacity = 0.2;
       aHeartStart(52);
       RIG.hand = 0.25;
   } },
@@ -7505,6 +8479,7 @@ let CUES = [
       } catch (e) {}
       bossShroud(false);
       BOSS.turn = T.t;
+      try { B4.reveal = T.t + 2.3; } catch (e) {}
       GLOW.material.opacity = 0.95;
       GLOWL.intensity = 1.15;
       // звук кресла: каменный скрежет + три скрипа
@@ -7560,7 +8535,7 @@ function upCamera(dt, wall) {
     cam.rotateZ(Math.sin(wall * 0.3) * 0.015);
     cam.fov = cine(56, 46, 0, 18, t) + Math.sin(wall * 0.5) * 0.35;
     // свечение разгорается по мере приближения
-    GLOW.material.opacity = 0.3 + kk * 0.3;
+    GLOW.material.opacity = 0.2 + kk * 0.34;
   } else {
     // статичный крупный план: голова на фоне круглого свечения
     const z = BOSS_POS.z + 5.1 + Math.sin(wall * 0.4) * 0.09;
@@ -7592,6 +8567,7 @@ function resetShow() {
   if (DUN.amb) DUN.amb.intensity = 0.46;
   if (DUN.moon) DUN.moon.intensity = 0.26;
   BOSS.turn = -1;
+  try { if (window.B4) B4.reveal = -1; } catch (e) {}
   BOSS.lunge = 0;
   BOSS.grp.rotation.y = Math.PI;
   BOSS.grp.position.set(BOSS_POS.x, 0, BOSS_POS.z);
@@ -7692,6 +8668,7 @@ function loop() {
     // -- мир (v4: глаза-фиккс ПОСЛЕ анимации босса) --
     upEyesFix(dt, wall);
     upBoss3(dt, wall);
+    try { upBoss4(dt, wall); } catch (e) {}
     upLake(dt, wall);
     upCrypt(dt, wall);
     upFauna(dt, wall);
