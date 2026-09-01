@@ -7466,7 +7466,9 @@ const G = BOSS.grp;
 // что висело в группе до нас — глазами не трогаем, но и не прячем
 const preG = G.children.slice();
 
-// ── ЧЕРЕП: купол из пластин ──
+// ── ГОЛОВА ДЕМОНА: сплошная мясная морда, не кость ──
+// глазницы BOSS.eyes: ±0.16, y +0.1, z +0.36 — координаты не трогать
+
 const head = new THREE.Group();
 head.position.set(0, 3.8, 0);
 G.add(head);
@@ -7476,107 +7478,137 @@ const cranium = new THREE.Group();
 head.add(cranium);
 B4.cranium = cranium;
 
-// затылок и купол — сегменты сферы
-const domeSegs = [
-  [0, 0.42, -0.05, 0.46, 0, 0],
-  [-0.3, 0.36, -0.08, 0.4, 0.25, 0.1],
-  [0.3, 0.36, -0.08, 0.4, -0.25, -0.1],
-  [0, 0.3, -0.3, 0.38, 0, 0.5],
-  [-0.26, 0.24, -0.26, 0.34, 0.2, 0.35],
-  [0.26, 0.24, -0.26, 0.34, -0.2, -0.35]
-];
-domeSegs.forEach((sg) => {
-  const plate = new THREE.Mesh(new THREE.SphereGeometry(sg[3], 9, 7, 0, Math.PI * 2, 0, Math.PI * 0.62), M.hide);
-  plate.position.set(sg[0], sg[1], sg[2]);
-  plate.rotation.set(sg[4], 0, sg[5]);
-  plate.scale.set(1, 1.12, 1.18);
-  cranium.add(plate);
+// мозговой купол
+const skullBox = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.5, 0.6), M.hide);
+skullBox.position.set(0, 0.2, -0.06);
+cranium.add(skullBox);
+const crown = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.16, 0.52), M.hide);
+crown.position.set(0, 0.5, -0.08);
+cranium.add(crown);
+// затылок
+const backhead = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.42, 0.24), M.hide2);
+backhead.position.set(0, 0.1, -0.42);
+cranium.add(backhead);
+// виски
+[-1, 1].forEach((sx) => {
+  const tp = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.34, 0.42), M.hide2);
+  tp.position.set(sx * 0.34, 0.16, -0.06);
+  cranium.add(tp);
 });
 
-// лобная пластина
-const forehead = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.34, 0.18), M.hide);
-forehead.position.set(0, 0.24, 0.34);
-forehead.rotation.x = 0.22;
-cranium.add(forehead);
-
-// надбровные дуги — тяжёлые, нависающие
-function browPlate(sx) {
-  const b = new THREE.Group();
-  const arch = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.055, 6, 10, Math.PI), M.hide2);
-  arch.rotation.set(Math.PI / 2 + 0.25, 0, sx > 0 ? 0 : Math.PI);
-  b.add(arch);
-  const ridge = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.07, 0.16), M.hide2);
-  ridge.position.set(sx * 0.1, 0.03, 0.05);
-  b.add(ridge);
-  const spike = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.14, 5), M.bone2);
-  spike.position.set(sx * 0.16, 0.09, 0.1);
-  spike.rotation.z = -sx * 0.7;
-  b.add(spike);
-  b.position.set(sx * 0.17, 0.12, 0.34);
-  cranium.add(b);
-  return b;
-}
-B4.browL = browPlate(-1);
-B4.browR = browPlate(1);
-
-// скулы
+// средняя часть лица
+const midface = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.3, 0.22), M.hide);
+midface.position.set(0, -0.02, 0.24);
+cranium.add(midface);
+// морда
+const muzzle = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.22, 0.24), M.hide);
+muzzle.position.set(0, -0.14, 0.28);
+cranium.add(muzzle);
+// массивные щеки-челюсти
 [-1, 1].forEach((sx) => {
-  const cheek = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.2, 0.2), M.hide2);
-  cheek.position.set(sx * 0.26, -0.08, 0.22);
-  cheek.rotation.z = sx * 0.25;
+  const cheek = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.34, 0.3), M.hide);
+  cheek.position.set(sx * 0.3, -0.15, 0.12);
+  cheek.rotation.z = sx * 0.16;
   cranium.add(cheek);
 });
 
-// носовая впадина
-const nose = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.16, 0.1), M.pit);
-nose.position.set(0, -0.02, 0.37);
-cranium.add(nose);
-const noseBridge = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.2, 0.08), M.hide2);
-noseBridge.position.set(0, 0.1, 0.38);
-cranium.add(noseBridge);
-// кольцо в носовой перегородке
-const septum = new THREE.Mesh(new THREE.TorusGeometry(0.028, 0.009, 5, 8), M.gold);
-septum.position.set(0, -0.09, 0.4);
-septum.rotation.x = 0.4;
-cranium.add(septum);
+// лоб
+const forehead = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.24, 0.16), M.hide);
+forehead.position.set(0, 0.35, 0.18);
+forehead.rotation.x = 0.3;
+cranium.add(forehead);
 
-// глазницы: чёрные колодцы с мясной кромкой
+// надбровье: злые V-плиты, внутренние концы вниз
 [-1, 1].forEach((sx) => {
-  const socket = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.15, 0.1, 10), M.pit);
+  const brow = new THREE.Mesh(new THREE.BoxGeometry(0.27, 0.11, 0.24), M.hide2);
+  brow.position.set(sx * 0.15, 0.2, 0.27);
+  brow.rotation.z = sx * 0.36;
+  brow.rotation.x = 0.14;
+  cranium.add(brow);
+  // шип на внешнем краю брови
+  const bs = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.14, 5), M.hornD);
+  bs.position.set(sx * 0.29, 0.27, 0.2);
+  bs.rotation.z = -sx * 0.65;
+  cranium.add(bs);
+});
+// переносица между бровей
+const glabella = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.11, 0.17), M.hide2);
+glabella.position.set(0, 0.14, 0.29);
+cranium.add(glabella);
+
+// глазницы: чёрные колодцы под козырьком бровей
+[-1, 1].forEach((sx) => {
+  const socket = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.15, 0.16, 10), M.pit);
   socket.rotation.x = Math.PI / 2;
-  socket.position.set(sx * 0.16, 0.1, 0.32);
+  socket.position.set(sx * 0.16, 0.1, 0.27);
   cranium.add(socket);
   const rim = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.035, 6, 12), M.hide2);
   rim.position.set(sx * 0.16, 0.1, 0.36);
   cranium.add(rim);
-  const crack = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.2, 0.02), M.pit);
-  crack.position.set(sx * 0.2, -0.08, 0.35);
-  crack.rotation.z = sx * 0.2;
-  cranium.add(crack);
-  // тлеющий след под глазом
-  const emberTear = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.14, 0.012), M.ember);
-  emberTear.position.set(sx * 0.21, -0.06, 0.36);
-  emberTear.rotation.z = sx * 0.25;
-  cranium.add(emberTear);
 });
 
-// шрам через лоб + скобы
-const scar = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.02, 0.02), M.pit);
-scar.position.set(0.04, 0.28, 0.43);
-scar.rotation.z = -0.28;
+// нос: горбинка, крылья, щели-ноздри
+const noseBridge = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.3, 0.11), M.hide2);
+noseBridge.position.set(0, -0.01, 0.35);
+noseBridge.rotation.x = 0.2;
+cranium.add(noseBridge);
+[-1, 1].forEach((sx) => {
+  const wing = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.06, 0.09), M.hide2);
+  wing.position.set(sx * 0.08, -0.12, 0.33);
+  cranium.add(wing);
+  const slit = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.085, 0.03), M.pit);
+  slit.position.set(sx * 0.05, -0.12, 0.37);
+  slit.rotation.z = sx * 0.6;
+  cranium.add(slit);
+});
+// кольцо в перегородке носа
+const septum = new THREE.Mesh(new THREE.TorusGeometry(0.028, 0.009, 5, 8), M.gold);
+septum.position.set(0, -0.16, 0.36);
+septum.rotation.x = 0.4;
+cranium.add(septum);
+
+// уши-плавники, остриём вверх
+[-1, 1].forEach((sx) => {
+  const ear = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.32, 4), M.hide2);
+  ear.position.set(sx * 0.41, 0.14, -0.04);
+  ear.rotation.z = -sx * 1.85;
+  ear.scale.z = 0.35;
+  cranium.add(ear);
+});
+
+// гребень по своду: костяные шипы с тлеющими кончиками
+const CREST = [
+  [0.62, 0.12, 0.17], [0.66, -0.06, 0.21], [0.63, -0.24, 0.17],
+  [0.55, 0.28, 0.11], [0.56, -0.4, 0.13]
+];
+CREST.forEach((c) => {
+  const sp = new THREE.Mesh(new THREE.ConeGeometry(0.035, c[2], 4), M.hornD);
+  sp.position.set(0, c[0], c[1]);
+  sp.rotation.x = c[1] > 0.15 ? 0.55 : (c[1] < -0.3 ? -0.55 : 0);
+  cranium.add(sp);
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(0.013, 0.05, 4), M.ember);
+  tip.position.set(0, c[0] + c[2] * 0.55 + 0.02, c[1]);
+  tip.rotation.x = sp.rotation.x;
+  cranium.add(tip);
+});
+
+// шрам через лоб со скобами
+const scar = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.025, 0.02), M.pit);
+scar.position.set(0.03, 0.38, 0.28);
+scar.rotation.z = -0.35;
 cranium.add(scar);
-[-0.14, 0, 0.14].forEach((x) => {
+[-0.12, 0, 0.12].forEach((x) => {
   const staple = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.06, 0.015), M.bone2);
-  staple.position.set(x + 0.04, 0.28 - x * 0.28, 0.44);
-  staple.rotation.z = -0.28;
+  staple.position.set(x + 0.03, 0.38 - x * 0.3, 0.28);
+  staple.rotation.z = -0.35;
   cranium.add(staple);
 });
 
-// трещины темени — кожа лопается, изнутри огонь
+// кожа лопается: тлеющие трещины по куполу
 const cracksTop = [
-  [-0.1, 0.5, 0.1, 0.3, 0.6], [0.12, 0.48, 0.05, -0.4, 1.1],
-  [0, 0.55, -0.1, 0.2, 0.2], [-0.2, 0.42, 0.2, 0.5, 0.9],
-  [0.18, 0.52, -0.12, -0.2, 0.8], [-0.05, 0.46, 0.18, 0.5, 1.3]
+  [-0.2, 0.44, 0.1, 0.3, 0.6], [0.23, 0.4, 0.0, -0.4, 1.1],
+  [0.1, 0.54, -0.18, 0.2, 0.2], [-0.25, 0.32, 0.16, 0.5, 0.9],
+  [0.26, 0.26, -0.22, -0.2, 0.8], [-0.1, 0.46, -0.3, 0.5, 1.3]
 ];
 cracksTop.forEach((c) => {
   const cr = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.16, 0.014), M.ember);
@@ -7584,15 +7616,29 @@ cracksTop.forEach((c) => {
   cr.rotation.set(c[3], 0, c[4]);
   cranium.add(cr);
 });
-// тлеющая щека-паутина у висков
+
+// тлеющие следы под глазами + паутина у висков
 [-1, 1].forEach((sx) => {
+  const emberTear = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.16, 0.012), M.ember);
+  emberTear.position.set(sx * 0.21, -0.06, 0.35);
+  emberTear.rotation.z = sx * 0.28;
+  cranium.add(emberTear);
   for (let k = 0; k < 3; k++) {
     const ve = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.1, 0.012), M.ember);
-    ve.position.set(sx * (0.3 + k * 0.02), 0.12 - k * 0.09, 0.3 - k * 0.06);
+    ve.position.set(sx * (0.31 + k * 0.02), 0.14 - k * 0.09, 0.22 - k * 0.05);
     ve.rotation.set(0.2, 0, sx * (0.7 + k * 0.2));
     cranium.add(ve);
   }
 });
+
+// тлеющий свет на морду — единственный в полной темноте
+const faceLight = new THREE.PointLight(0x9c3018, 0.7, 3.6, 1.7);
+faceLight.position.set(0, 0.12, 1.15);
+head.add(faceLight);
+B4.faceLight = faceLight;
+
+// материалы босса не растворяются в тумане
+Object.keys(M).forEach((k) => { M[k].fog = false; M[k].needsUpdate = true; });
 
 // ── ЧЕЛЮСТЬ: подвижная, с двумя рядами зубов и клыками ──
 const jaw = new THREE.Group();
@@ -8381,6 +8427,78 @@ for (let i = 0; i < 26; i++) {
   B4.ash.push(sp);
 }
 
+// ── ОКНО ЗА ТРОНОМ: холодный свет в полной темноте ──
+const win = new THREE.Group();
+win.position.set(0, 0, -24.6);
+scene.add(win);
+// стекло-свет
+const winGlow = new THREE.Mesh(
+  new THREE.PlaneGeometry(1.9, 3.0),
+  new THREE.MeshBasicMaterial({ color: 0xc9d9f2, fog: false })
+);
+winGlow.position.y = 4.6;
+win.add(winGlow);
+// арка сверху
+const winArch = new THREE.Mesh(
+  new THREE.CircleGeometry(0.95, 12, 0, Math.PI),
+  new THREE.MeshBasicMaterial({ color: 0xc9d9f2, fog: false })
+);
+winArch.position.y = 6.1;
+win.add(winArch);
+// ореол вокруг окна
+const winHalo = new THREE.Sprite(new THREE.SpriteMaterial({
+  map: glowTex('rgba(215,228,255,1)', 'rgba(150,175,225,.4)', 'rgba(120,145,205,0)'),
+  transparent: true, opacity: 0.3, depthWrite: false,
+  blending: THREE.AdditiveBlending, fog: false
+}));
+winHalo.scale.set(6.5, 7.5, 1);
+winHalo.position.set(0, 5.2, -0.3);
+win.add(winHalo);
+// решётка на окне: чёрный силуэт на свету
+const barM = new THREE.MeshBasicMaterial({ color: 0x05050c, fog: false });
+[-0.55, 0.55].forEach((bx) => {
+  const bar = new THREE.Mesh(new THREE.BoxGeometry(0.07, 3.0, 0.05), barM);
+  bar.position.set(bx, 4.6, 0.08);
+  win.add(bar);
+});
+const barC = new THREE.Mesh(new THREE.BoxGeometry(0.07, 4.9, 0.05), barM);
+barC.position.set(0, 5.15, 0.08);
+win.add(barC);
+const barH1 = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.07, 0.05), barM);
+barH1.position.set(0, 4.0, 0.08);
+win.add(barH1);
+const barH2 = barH1.clone();
+barH2.position.y = 5.2;
+win.add(barH2);
+// каменная рама
+const frameM = new THREE.MeshLambertMaterial({ color: 0x17131d, emissive: 0x0c0812, emissiveIntensity: 0.4, fog: false });
+[-1, 1].forEach((fx2) => {
+  const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.22, 3.7, 0.24), frameM);
+  pillar.position.set(fx2 * 1.03, 4.6, 0.02);
+  win.add(pillar);
+});
+const sill = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.26, 0.26), frameM);
+sill.position.set(0, 3.0, 0.02);
+win.add(sill);
+const archFrame = new THREE.Mesh(new THREE.TorusGeometry(0.98, 0.1, 6, 12, Math.PI), frameM);
+archFrame.position.set(0, 6.1, 0.02);
+win.add(archFrame);
+// слабые лучи к трону
+const shaftM = new THREE.MeshBasicMaterial({
+  color: 0x9db4dc, transparent: true, opacity: 0.05, fog: false,
+  depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide
+});
+B4.shafts = [];
+[[-0.55, -0.14], [0, 0], [0.55, 0.14]].forEach((s) => {
+  const sh = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 6.5), shaftM);
+  sh.position.set(s[0], 3.3, -22.6);
+  sh.rotation.x = -0.55;
+  sh.rotation.y = s[1];
+  scene.add(sh);
+  B4.shafts.push(sh);
+});
+B4.win = { glow: winGlow, halo: winHalo };
+
 // до поворота трона в темноте видна только голова
 B4.hideTillTurn = G.children.filter((c) => preG.indexOf(c) < 0 && c !== head);
 B4.hideTillTurn.forEach((c) => { c.visible = false; });
@@ -8396,6 +8514,12 @@ window.upBoss4 = function (dt, wall) {
   // угли в трещинах дышат как пульс
   const em = 0.72 + 0.28 * Math.sin(t * 2.2) * Math.sin(t * 0.9) + 0.08 * Math.sin(t * 9.4);
   M.ember.color.setRGB(1, 0.32 * em + 0.08, 0.1 * em);
+  // луна за облаками: окно дышит
+  const wm = 0.75 + 0.25 * Math.sin(wall * 0.5) * Math.sin(wall * 0.13 + 1);
+  if (B4.win) {
+    B4.win.halo.material.opacity = 0.22 + 0.1 * wm;
+    B4.win.glow.material.color.setRGB(0.68 + 0.16 * wm, 0.74 + 0.14 * wm, 0.86 + 0.1 * wm);
+  }
 
   // дыхание: грудная клетка и плечи
   const br = Math.sin(wall * 0.75);
@@ -8532,6 +8656,8 @@ function FZGWind(wall) { return Math.sin(wall * 0.6) * 0.0006; }
 // B4.reveal ставится извне при ревиле морды
 })();
 ;
+;
+;
 
 // свет на морду при развороте
 const GLOWL = new THREE.PointLight(0xd4522e, 0, 15, 1.6);
@@ -8587,8 +8713,9 @@ let CUES = [
       for (let i = 0; i < DUN.flamesAll.length; i++) DUN.flamesAll[i].dieT = 0;
       if (DUN.amb) DUN.amb.intensity = 0.012;
       if (DUN.moon) DUN.moon.intensity = 0.006;
-      try { scene.fog = new THREE.Fog(0x020204, 2, 19); scene.background = new THREE.Color(0x020204); } catch (e) {}
-      GLOW.material.opacity = 0.2;
+      try { scene.fog = new THREE.Fog(0x000000, 1.2, 7.5); scene.background = new THREE.Color(0x000000); } catch (e) {}
+      GLOW.material.opacity = 0;
+      try { GLOWL.intensity = 0.22; } catch (e) {}
       aHeartStart(52);
       RIG.hand = 0.25;
   } },
