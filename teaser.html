@@ -91,6 +91,7 @@
 <script id="cine">
 
 // ═══════════ ЧАСТЬ p1 ═══════════
+// ═══════════ ЧАСТЬ p1 ═══════════
 (function(){
 'use strict';
 // ═══════════════════════════════════════════════════════════════════
@@ -430,6 +431,8 @@ const speechStop = () => { try { speechSynthesis.cancel(); } catch (e) {} };
 // глобальное состояние
 const T = { t: 0, wall: 0, phase: 'start', shake: 0, speed: 1 };
 
+
+// ═══════════ ЧАСТЬ p2 ═══════════
 // ═══════════ ЧАСТЬ p2 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ПОДЗЕМЕЛЬЕ — зал Хранителя (максимальная детализация)
@@ -1052,6 +1055,8 @@ function upDungeon(dt, wall) {
 }
 const STATUE_AWAKE = { t: -1 };
 
+
+// ═══════════ ЧАСТЬ p2b ═══════════
 // ═══════════ ЧАСТЬ p2b ═══════════
 // ═════════════ ДОПОЛНИТЕЛЬНАЯ ДЕТАЛИЗАЦИЯ ПОДЗЕМЕЛЬЯ ═════════════
 const DUN2 = { rats: [], drips: [], bubbles: [], chandelier: null, gateBars: [] };
@@ -1475,6 +1480,8 @@ function upExtras(dt, wall) {
   }
 }
 
+
+// ═══════════ ЧАСТЬ p3 ═══════════
 // ═══════════ ЧАСТЬ p3 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ХРАНИТЕЛЬ — самая детальная модель босса
@@ -1887,6 +1894,8 @@ function upBoss(dt, wall) {
   }
 }
 
+
+// ═══════════ ЧАСТЬ p3b ═══════════
 // ═══════════ ЧАСТЬ p3b ═══════════
 // ═════════════ ДОРАБОТКА БОССА: спинные шипы, глифы, тень-пульт ─════════════
 (function bossExtras() {
@@ -1956,6 +1965,8 @@ function upBoss(dt, wall) {
   });
 })();
 
+
+// ═══════════ ЧАСТЬ p5 ═══════════
 // ═══════════ ЧАСТЬ p5 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ДВИЖОК КАЧЕСТВА: изинг · шум · риг камеры · реверб · частицы · цвет
@@ -2278,6 +2289,8 @@ function upEngine(dt, wall) {
   fpsAdapt(dt);
 }
 
+
+// ═══════════ ЧАСТЬ p6 ═══════════
 // ═══════════ ЧАСТЬ p6 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  АНИМАЦИИ v2: мантия-полосы · скан головы · блинки · корни парка ·
@@ -2693,6 +2706,8 @@ function upV2(dt, wall) {
   }
 }
 
+
+// ═══════════ ЧАСТЬ p7 ═══════════
 // ═══════════ ЧАСТЬ p7 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  СЦЕНИЧЕСКАЯ ДОРАБОТКА: ниши · балкон-наблюдатели · ковровая дорожка
@@ -3153,6 +3168,8 @@ function upPolish(dt, wall) {
   }
 }
 
+
+// ═══════════ ЧАСТЬ p8 ═══════════
 // ═══════════ ЧАСТЬ p8 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  СВЕТОВАЯ ГЛУБИНА: bounce-блики факелов · мокрые лужи · контровой
@@ -3248,6 +3265,8 @@ function upLightDepth(dt, wall) {
   }
 }
 
+
+// ═══════════ ЧАСТЬ p9 ═══════════
 // ═══════════ ЧАСТЬ p9 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ЗВУКОВАЯ ГЛУБИНА: 3-слойный дрон · тёмный хор · саб-гул
@@ -3335,6 +3354,8 @@ function musStop() {
   MUS.nodes = [];
 }
 
+
+// ═══════════ ЧАСТЬ p11 ═══════════
 // ═══════════ ЧАСТЬ p11 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ПЛЁНКА v3: gate weave · мерцание экспозиции · дыхание letterbox
@@ -3363,6 +3384,8 @@ function upFilm(dt, wall) {
   }
 }
 
+
+// ═══════════ ЧАСТЬ p12 ═══════════
 // ═══════════ ЧАСТЬ p12 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  АПСИДА ЗА АЛТАРЁМ: витраж-роза · подиум · канделябры
@@ -3541,6 +3564,8 @@ function upApse(dt, wall) {
   });
 }
 
+
+// ═══════════ ЧАСТЬ p13 ═══════════
 // ═══════════ ЧАСТЬ p13 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ВТОРОЙ ПРОХОД ДЕТАЛИЗАЦИИ: горгульи · жаровня-тренога · кольцо
@@ -3727,6 +3752,8 @@ function upDetails2(dt, wall) {
   if (V6.salt) V6.salt.material.opacity = 0.42 * (1 - bk) + (Math.random() < 0.01 ? 0.15 : 0);
 }
 
+
+// ═══════════ ЧАСТЬ p14 ═══════════
 // ═══════════ ЧАСТЬ p14 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ГЛАЗА-ФИКС: тело поворачивается — глаза НЕ ШЕВЕЛЯТСЯ.
@@ -3982,6 +4009,8 @@ function upEyesFix(dt, wall) {
   }
 }
 
+
+// ═══════════ ЧАСТЬ p15 ═══════════
 // ═══════════ ЧАСТЬ p15 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ПОДЗЕМНОЕ ОЗЕРО — боковой грот сквозь пролом в левой стене
@@ -4389,6 +4418,8 @@ function upLake(dt, wall) {
   }
 }
 
+
+// ═══════════ ЧАСТЬ p16 ═══════════
 // ═══════════ ЧАСТЬ p16 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  КРИПТА-ГАЛЕРЕЯ — правый пролом: коридор гробниц
@@ -4733,6 +4764,8 @@ function upCrypt(dt, wall) {
   }
 }
 
+
+// ═══════════ ЧАСТЬ p17 ═══════════
 // ═══════════ ЧАСТЬ p17 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ЖИВНОСТЬ: СТАЯ ЛЕТУЧИХ МЫШЕЙ (boids) · мотыльки у огня · тени-змеи
@@ -4975,6 +5008,8 @@ function upFauna(dt, wall) {
   snakesUpdate(dt, wall);
 }
 
+
+// ═══════════ ЧАСТЬ p18 ═══════════
 // ═══════════ ЧАСТЬ p18 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  КИНЕМАТОГРАФИЯ v2 — новый маршрут пролёта: 5 шотов
@@ -5114,6 +5149,8 @@ function shotInfo() {
   return null;
 }
 
+
+// ═══════════ ЧАСТЬ p19 ═══════════
 // ═══════════ ЧАСТЬ p19 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ЗВУК v3: подземная река · колокол · дакинг по актам · финальный микс
@@ -5253,6 +5290,8 @@ function upSound3(dt, wall) {
   stepsUpdate(dt);
 }
 
+
+// ═══════════ ЧАСТЬ p20 ═══════════
 // ═══════════ ЧАСТЬ p20 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  СВЕТ v2: год-реи (объёмные лучи) · молния сквозь решётку ·
@@ -5454,6 +5493,8 @@ function upLight2(dt, wall) {
   lightningUpdate(dt, wall);
 }
 
+
+// ═══════════ ЧАСТЬ p21 ═══════════
 // ═══════════ ЧАСТЬ p21 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ДЕКОР-3: реликварии · копья-стойки · гобелены · мозаика пола ·
@@ -5827,6 +5868,8 @@ function upDecor3(dt, wall) {
   });
 }
 
+
+// ═══════════ ЧАСТЬ p22 ═══════════
 // ═══════════ ЧАСТЬ p22 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ТЮРЬМА ДУШ — дальний угол зала: клетки с призраками
@@ -6022,6 +6065,8 @@ function upSouls(dt, wall) {
   }
 }
 
+
+// ═══════════ ЧАСТЬ p23 ═══════════
 // ═══════════ ЧАСТЬ p23 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ТАЙНАЯ РЕКА за водопадом + скрытый алтарь (глубина грота)
@@ -6151,6 +6196,8 @@ function upRiver(dt, wall) {
   });
 }
 
+
+// ═══════════ ЧАСТЬ p24 ═══════════
 // ═══════════ ЧАСТЬ p24 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  НАДПИСИ И ТАЙНЫ: каменные таблички с текстом · журнал смотрителя ·
@@ -6389,6 +6436,8 @@ function upLore(dt, wall) {
   }
 }
 
+
+// ═══════════ ЧАСТЬ p25 ═══════════
 // ═══════════ ЧАСТЬ p25 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  БОСС v3: огненные пряди · доспех-пластины · зрачки-щели ·
@@ -6554,6 +6603,8 @@ function upBoss3(dt, wall) {
   });
 }
 
+
+// ═══════════ ЧАСТЬ p26 ═══════════
 // ═══════════ ЧАСТЬ p26 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  СЮРПРИЗ: ОХОТНИК С ФАКЕЛОМ — на 8-й секунде силуэт человека
@@ -6640,6 +6691,8 @@ function upHunter(dt, wall) {
 }
 HUNTER.fading = 0;
 
+
+// ═══════════ ЧАСТЬ p27 ═══════════
 // ═══════════ ЧАСТЬ p27 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ФИНАЛ-ПОЛИШ: продакшн-карточки · credits-скролл
@@ -6715,6 +6768,8 @@ function creditsShow(on) {
   }
 }
 
+
+// ═══════════ ЧАСТЬ p28 ═══════════
 // ═══════════ ЧАСТЬ p28 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ███ ЛЕГЕНДА И ТЕХНИЧЕСКИЙ АРХИВ ТИЗЕРА ███
@@ -6899,451 +6954,8 @@ function creditsShow(on) {
   · финал всегда тихий: это решение автора, v2.5 и далее
 */
 
-// ═══════════ ЧАСТЬ p29 ═══════════
-// ═══════════════════════════════════════════════════════════════════
-//  СВОБОДНАЯ КАМЕРА — после титров исследуй подземелье сам
-//  [WASD] ходьба · [Shift] бег · [Space]/[C] вверх-вниз · мышь
-//  [F] включить/выключить · [L] вернуть свет · [G] разбудить глаза
-// ═══════════════════════════════════════════════════════════════════
-const FREE = {
-  on: false,
-  yaw: 0,
-  pitch: 0,
-  pos: new THREE.Vector3(0, 3.2, 24),
-  vel: new THREE.Vector3(),
-  keys: {},
-  speed: 6,
-  hint: null,
-  mouseLocked: false
-};
 
-(function freeCamInit() {
-  // подсказка-плашка
-  const hint = DOC.createElement('div');
-  hint.style.cssText =
-    'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:42;' +
-    'background:rgba(8,6,10,.85);border:1px solid rgba(255,120,120,.3);' +
-    'border-radius:12px;padding:10px 18px;color:#e8cccc;' +
-    'font:600 11px/1.8 monospace;letter-spacing:.1em;display:none;' +
-    'pointer-events:none;backdrop-filter:blur(6px);text-align:center;';
-  hint.innerHTML =
-    '🔍 СВОБОДНАЯ КАМЕРА · [WASD] идти · [Shift] бег · [Space]/[C] вверх/вниз · мышь — осмотр<br>' +
-    '[L] свет · [G] глаза · [B] блэкаут · [F] выход · [S] скриншот';
-  DOC.body.appendChild(hint);
-  FREE.hint = hint;
-
-  // клавиатура
-  window.addEventListener('keydown', (ev) => {
-    const k = ev.key.toLowerCase();
-    FREE.keys[k] = true;
-    if (k === 'f' && T.phase === 'end') freeCamToggle();
-    if (!FREE.on) return;
-    if (k === 'l') {
-      // вернуть свет
-      BLACKOUT.t = -1;
-      DUN.flamesAll.forEach((tc) => { tc.on = 1; tc.dieT = -1; });
-      if (DUN.amb) DUN.amb.intensity = 0.62;
-      if (DUN.moon) DUN.moon.intensity = 0.4;
-      grade('warm');
-    }
-    if (k === 'b') {
-      BLACKOUT.t = T.t;
-      grade('void');
-    }
-    if (k === 'g') {
-      BOSS.eyes.forEach((e, i) => {
-        setTimeout(() => {
-          e.userData.on = true;
-          e.userData.tOn = T.wall;
-        }, i * 160);
-      });
-    }
-  });
-  window.addEventListener('keyup', (ev) => {
-    FREE.keys[ev.key.toLowerCase()] = false;
-  });
-  // мышь
-  DOC.addEventListener('click', () => {
-    if (FREE.on && !FREE.mouseLocked) {
-      cv.requestPointerLock && cv.requestPointerLock();
-    }
-  });
-  DOC.addEventListener('pointerlockchange', () => {
-    FREE.mouseLocked = DOC.pointerLockElement === cv;
-  });
-  DOC.addEventListener('mousemove', (ev) => {
-    if (!FREE.on || !FREE.mouseLocked) return;
-    FREE.yaw -= ev.movementX * 0.0022;
-    FREE.pitch -= ev.movementY * 0.0022;
-    FREE.pitch = clamp(FREE.pitch, -1.45, 1.45);
-  });
-})();
-
-function freeCamToggle() {
-  FREE.on = !FREE.on;
-  FREE.hint.style.display = FREE.on ? 'block' : 'none';
-  if (FREE.on) {
-    // старт с текущего положения камеры
-    FREE.pos.copy(cam.position);
-    FREE.yaw = Math.PI; // смотрим в зал
-    FREE.pitch = 0;
-    // мягко вернуть часть света, если была тьма
-    if (BLACKOUT.t >= 0) {
-      grade('colder');
-    }
-    if (DOC.exitPointerLock) DOC.exitPointerLock();
-  } else {
-    if (DOC.exitPointerLock) DOC.exitPointerLock();
-  }
-}
-
-// границы зала (грубые коллизии)
-function freeClamp(p) {
-  // главный неф
-  p.x = clamp(p.x, -12.6, 12.6);
-  p.z = clamp(p.z, -25.6, 37.0);
-  p.y = clamp(p.y, 0.6, 11.8);
-  return p;
-}
-
-function upFreeCam(dt, wall) {
-  if (!FREE.on) return;
-  // направление
-  const sinY = Math.sin(FREE.yaw);
-  const cosY = Math.cos(FREE.yaw);
-  const forward = new THREE.Vector3(-sinY, 0, -cosY);
-  const right = new THREE.Vector3(cosY, 0, -sinY);
-  const acc = new THREE.Vector3();
-  if (FREE.keys['w'] || FREE.keys['ц'] || FREE.keys['arrowup']) acc.add(forward);
-  if (FREE.keys['s'] || FREE.keys['ы'] || FREE.keys['arrowdown']) acc.sub(forward);
-  if (FREE.keys['d'] || FREE.keys['в'] || FREE.keys['arrowright']) acc.add(right);
-  if (FREE.keys['a'] || FREE.keys['ф'] || FREE.keys['arrowleft']) acc.sub(right);
-  if (FREE.keys['q'] || FREE.keys['й']) acc.y += 1;
-  if (FREE.keys['e'] || FREE.keys['у']) acc.y -= 1;
-  if (FREE.keys[' ']) acc.y += 1;
-  if (FREE.keys['c'] || FREE.keys['с']) acc.y -= 1;
-  const run = FREE.keys['shift'] ? 2.6 : 1;
-  if (acc.lengthSq() > 0) acc.normalize().multiplyScalar(FREE.speed * run);
-  // плавное ускорение
-  FREE.vel.lerp(acc, Math.min(1, dt * 7));
-  FREE.pos.add(FREE.vel.clone().multiplyScalar(dt));
-  freeClamp(FREE.pos);
-  // применяем к камере
-  cam.position.copy(FREE.pos);
-  const look = new THREE.Vector3(
-    FREE.pos.x - Math.sin(FREE.yaw) * Math.cos(FREE.pitch),
-    FREE.pos.y + Math.sin(FREE.pitch),
-    FREE.pos.z - Math.cos(FREE.yaw) * Math.cos(FREE.pitch)
-  );
-  cam.lookAt(look);
-  cam.fov = 58;
-  cam.updateProjectionMatrix();
-}
-
-// ═══════════ ЧАСТЬ p30 ═══════════
-// ═══════════════════════════════════════════════════════════════════
-//  ФОТО-РЕЖИМ — красивые кадры из подземелья
-//  [1..5] фильтры · [N] ракурс-пресет · [S] снимок в PNG
-// ═══════════════════════════════════════════════════════════════════
-const PHOTO = { filter: 0, flashEl: null };
-
-(function photoInit() {
-  // вспышка снимка
-  const fl = DOC.createElement('div');
-  fl.style.cssText =
-    'position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:60;' +
-    'transition:opacity .1s;';
-  DOC.body.appendChild(fl);
-  PHOTO.flashEl = fl;
-  window.addEventListener('keydown', (ev) => {
-    if (!FREE.on) return;
-    const k = ev.key;
-    if (k >= '1' && k <= '5') {
-      PHOTO.filter = parseInt(k, 10) - 1;
-      applyPhotoFilter();
-    }
-    if (k.toLowerCase() === 'n') photoPreset();
-  });
-})();
-
-const PHOTO_FILTERS = [
-  { name: 'ЧИСТЫЙ', css: 'none' },
-  { name: 'КРОВЬ', css: 'saturate(.5) contrast(1.3) brightness(.72) sepia(.2) hue-rotate(-25deg)' },
-  { name: 'ПЛЁНКА', css: 'saturate(1.1) contrast(1.12) brightness(.96) sepia(.16)' },
-  { name: 'НОЧЬ', css: 'saturate(.2) contrast(1.4) brightness(.6) hue-rotate(12deg)' },
-  { name: 'СЕПИЯ', css: 'saturate(.4) contrast(1.1) brightness(.9) sepia(.6)' }
-];
-function applyPhotoFilter() {
-  const f = PHOTO_FILTERS[PHOTO.filter];
-  cv.style.filter = f.css;
-  if (TOOLS.phaseEl) {
-    TOOLS.phaseEl.textContent = 'ФИЛЬТР: ' + f.name + ' [' + (PHOTO.filter + 1) + ']';
-  }
-}
-function photoGradeRestore() {
-  // вернуться к сценовому цветокору
-  const bk = BLACKOUT.t >= 0;
-  grade(bk ? 'void' : 'warm');
-}
-
-// ракурс-пресеты: красивые точки зала
-const PHOTO_PRESETS = [
-  { pos: [0, 1.2, 4], look: [0, 4.0, -15], name: 'аллея свечей' },
-  { pos: [8.5, 2.6, -6], look: [0, 3.4, -15], name: 'три четверти' },
-  { pos: [0, 9.5, 12], look: [0, 1.0, -10], name: 'с высоты' },
-  { pos: [-11, 2.0, 24], look: [0, 3.0, 0], name: 'от озера' },
-  { pos: [0, 3.1, -7.5], look: [0, 4.1, -15], name: 'в упор' }
-];
-let photoPresetI = 0;
-function photoPreset() {
-  photoPresetI = (photoPresetI + 1) % PHOTO_PRESETS.length;
-  const p = PHOTO_PRESETS[photoPresetI];
-  FREE.pos.set(p.pos[0], p.pos[1], p.pos[2]);
-  FREE.yaw = Math.atan2(
-    FREE.pos.x - p.look[0],
-    FREE.pos.z - p.look[2]
-  );
-  FREE.pitch = Math.atan2(
-    p.look[1] - FREE.pos.y,
-    Math.hypot(p.look[0] - FREE.pos.x, p.look[2] - FREE.pos.z)
-  );
-  if (TOOLS.phaseEl) {
-    TOOLS.phaseEl.textContent = 'РАКУРС: ' + p.name + ' [N]';
-  }
-}
-
-// ═══════════ ЧАСТЬ p31 ═══════════
-// ═══════════════════════════════════════════════════════════════════
-//  ХРОНИКИ ШЕСТИ ЗАПИСОК — найди их все в свободном режиме
-//  Записки лежат по всему подземелью. Подойди ближе 2.2 м и [E].
-//  Найдены все 6 → тайна парка открывается.
-// ═══════════════════════════════════════════════════════════════════
-const NOTES = { list: [], found: 0, panel: null, hintEl: null, nearI: -1, openI: -1 };
-
-(function notesInit() {
-  // тексты записок (см. легенду в p28)
-  const DATA = [
-    {
-      pos: [-9.9, 1.02, 21.4],
-      title: 'ЗАПИСКА I — СМОТРИТЕЛЬ',
-      text: 'Меня зовут Эрик. Я был смотрителем парка двадцать лет.\n\nЛюди приходили с фантазиями, и фантазии сбывались. Так это работало. Никто не знал, ПОЧЕМУ.\n\nЯ знаю. Парк держится на Сфере. Она под алтарём. Она живая.\n\nЕсли ты это читаешь — он уже начал поворачиваться.'
-    },
-    {
-      pos: [7.8, 0.98, -9.6],
-      title: 'ЗАПИСКА II — РЕБЁНОК',
-      text: 'мама говорит под моллом есть парк\nя слышу его ночью через вентиляцию\nон дышит\n\nдядя с рогами говорил мне HELLO\nя не боюсь\nа мама боится'
-    },
-    {
-      pos: [-28.4, 0.5, 24.2],
-      title: 'ЗАПИСКА III — ГЕОЛОГ',
-      text: 'Отчёт бурения, скважина 7-Б, глубина −41.8 м.\n\nПорода пустая. Дальше — полость с воздухом 14°C, постоянная.\nВ пробе воды: органика. Живая органика. На минус сорок двух метрах.\n\nКомиссия рекомендует: остановить работы. Мы не остановились.'
-    },
-    {
-      pos: [19.6, 0.52, 1.4],
-      title: 'ЗАПИСКА IV — СВЯЩЕННИК',
-      text: 'Я отпевал молл в день открытия. Шутил, что отпевать надо парк.\n\nПод сводами не поют голоса. Эхо возвращается на полсекунды РАНЬШЕ, чем ты замолчал.\n\nЯ проверял трижды. Оно отвечает первым.'
-    },
-    {
-      pos: [3.2, 1.06, -13.2],
-      title: 'ЗАПИСКА V — ПОСЛЕДНИЙ ГОСТЬ',
-      text: 'Он сидит у алтаря и ждёт. Я спросил — чего?\n\nОн сказал: «СШЕДШИХ». Так и сказал — сшедших. Тех, кто сошёл с ума от города, где всё сбывается.\n\nОн собирает их. Под полом. В клетках. Их там... много.'
-    },
-    {
-      pos: [-41.6, 0.6, 19.4],
-      title: 'ЗАПИСКА VI — ОН САМ',
-      text: 'почерк нечеловеческий, буквы в разные стороны\n\nГОРОД ВЗЯЛ ДАР. ГОРДУ НЕ НУЖЕН ПАРК. ГОРДУ НУЖЕН ПОГРЕБ.\n\nЯ НЕ КРАДУ ФАНТАЗИИ. Я ХРАНЮ ИХ. ВСЕ ШЕСТЬ ВАШИХ ПРАВД ЛЕЖАТ У МЕНЯ.\n\nПРИХОДИ. Я ВЕЖЛИВ. Я ВСЕГДА ГОВОРЮ HELLO.'
-    }
-  ];
-
-  // панель чтения
-  const panel = DOC.createElement('div');
-  panel.style.cssText =
-    'position:fixed;inset:0;z-index:44;display:none;align-items:center;justify-content:center;' +
-    'background:rgba(2,1,3,.88);backdrop-filter:blur(10px);cursor:pointer;';
-  const sheet = DOC.createElement('div');
-  sheet.style.cssText =
-    'max-width:560px;width:88%;max-height:76vh;overflow:auto;background:' +
-    'linear-gradient(160deg,#1c1410 0%,#241812 50%,#191009 100%);border:1px solid #4a3626;' +
-    'border-radius:6px;padding:34px 40px;color:#cdb894;box-shadow:0 30px 80px #000,' +
-    'inset 0 0 60px rgba(0,0,0,.5);font:14px/1.85 Georgia, serif;white-space:pre-wrap;';
-  const ttl = DOC.createElement('div');
-  ttl.style.cssText =
-    'color:#ff9d9d;font:600 13px monospace;letter-spacing:.3em;margin-bottom:18px;';
-  const txt = DOC.createElement('div');
-  txt.style.color = '#cdb894';
-  const close = DOC.createElement('div');
-  close.style.cssText =
-    'margin-top:26px;color:#6a5844;font:600 10px monospace;letter-spacing:.28em;';
-  close.textContent = '[E] / КЛИК — ЗАКРЫТЬ';
-  sheet.appendChild(ttl);
-  sheet.appendChild(txt);
-  sheet.appendChild(close);
-  panel.appendChild(sheet);
-  DOC.body.appendChild(panel);
-  panel.addEventListener('click', () => notesClose());
-  NOTES.panel = panel;
-  NOTES.ttlEl = ttl;
-  NOTES.txtEl = txt;
-
-  // подсказка подбора
-  const hintEl = DOC.createElement('div');
-  hintEl.style.cssText =
-    'position:fixed;bottom:12%;left:50%;transform:translateX(-50%);z-index:43;' +
-    'background:rgba(8,6,10,.9);border:1px solid rgba(255,157,157,.4);border-radius:10px;' +
-    'padding:10px 22px;color:#ffdada;font:600 12px monospace;letter-spacing:.2em;' +
-    'display:none;pointer-events:none;';
-  NOTES.hintEl = hintEl;
-  DOC.body.appendChild(hintEl);
-
-  // счётчик находок
-  const cnt = DOC.createElement('div');
-  cnt.style.cssText =
-    'position:fixed;top:64px;right:16px;z-index:42;color:#b9a694;' +
-    'font:600 11px monospace;letter-spacing:.18em;display:none;text-align:right;';
-  NOTES.cntEl = cnt;
-  DOC.body.appendChild(cnt);
-
-  // мешы записок: маленькие светящиеся свитки
-  DATA.forEach((d, i) => {
-    const g = new THREE.Group();
-    // бумага
-    const paper = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.34, 0.46),
-      new THREE.MeshBasicMaterial({
-        color: 0xd9c9a8,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.95
-      })
-    );
-    paper.rotation.x = -Math.PI / 2 + 0.12;
-    paper.rotation.z = (i * 1.7) % Math.PI;
-    paper.position.y = 0.035;
-    g.add(paper);
-    // подсветка-луч
-    const beam = new THREE.Mesh(
-      new THREE.ConeGeometry(0.34, 1.7, 12, 1, true),
-      new THREE.MeshBasicMaterial({
-        color: 0xffe9b0,
-        transparent: true,
-        opacity: 0.07,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending
-      })
-    );
-    beam.position.y = 0.85;
-    g.add(beam);
-    // огонёк
-    const spark = new THREE.Mesh(
-      new THREE.SphereGeometry(0.035, 8, 8),
-      new THREE.MeshBasicMaterial({ color: 0xffd27a })
-    );
-    spark.position.y = 0.28;
-    g.add(spark);
-    g.position.set(d.pos[0], d.pos[1], d.pos[2]);
-    scene.add(g);
-    NOTES.list.push({
-      g: g,
-      paper: paper,
-      beam: beam,
-      spark: spark,
-      data: d,
-      found: false,
-      phase: i * 1.3
-    });
-  });
-
-  // клавиша E
-  window.addEventListener('keydown', (ev) => {
-    const k = ev.key.toLowerCase();
-    if (k === 'e' || k === 'у') {
-      if (NOTES.openI >= 0) {
-        notesClose();
-      } else if (FREE.on && NOTES.nearI >= 0) {
-        notesOpen(NOTES.nearI);
-      }
-    }
-  });
-})();
-
-function notesOpen(i) {
-  const n = NOTES.list[i];
-  if (n.found) return;
-  n.found = true;
-  NOTES.found++;
-  NOTES.openI = i;
-  NOTES.ttlEl.textContent = n.data.title;
-  NOTES.txtEl.textContent = n.data.text;
-  NOTES.panel.style.display = 'flex';
-  // звук: бумага (шум короткий)
-  try {
-    const ac = AU;
-    if (ac) {
-      const o = ac.createOscillator();
-      const gN = ac.createGain();
-      o.type = 'triangle';
-      o.frequency.setValueAtTime(680, ac.currentTime);
-      o.frequency.exponentialRampToValueAtTime(240, ac.currentTime + 0.12);
-      gN.gain.setValueAtTime(0.05, ac.currentTime);
-      gN.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.14);
-      o.connect(gN).connect(ac.destination);
-      o.start();
-      o.stop(ac.currentTime + 0.15);
-    }
-  } catch (e) {}
-  // визуально: записка ярче, луч гаснет
-  n.beam.material.opacity = 0;
-  n.spark.material.color.setHex(0x7dff9d);
-  notesCount();
-  if (NOTES.found === 6) {
-    setTimeout(() => {
-      cardShow('ТАЙНА ПАРКА — 6 / 6 · ОН ЖДАЛ ИМЕННО ТЕБЯ', 4.0);
-      bellToll(T.wall + 0.1, 0.5);
-    }, 400);
-  }
-}
-function notesClose() {
-  NOTES.openI = -1;
-  NOTES.panel.style.display = 'none';
-}
-function notesCount() {
-  NOTES.cntEl.style.display = FREE.on ? 'block' : 'none';
-  NOTES.cntEl.innerHTML =
-    'ЗАПИСКИ: ' + NOTES.found + ' / 6' +
-    (NOTES.found < 6 ? '<br><span style="color:#6a5844">ищи золотые лучи</span>' : '<br><span style="color:#7dff9d">все найдены</span>');
-}
-
-function upNotes(dt, wall) {
-  if (!FREE.on) {
-    NOTES.hintEl.style.display = 'none';
-    return;
-  }
-  notesCount();
-  let nearI = -1;
-  let bestD = 2.2;
-  NOTES.list.forEach((n, i) => {
-    // живость: покачивание огонька
-    n.phase += dt * 2.2;
-    n.spark.position.y = 0.28 + Math.sin(n.phase) * 0.05;
-    n.spark.scale.setScalar(0.9 + Math.sin(n.phase * 2.3) * 0.15);
-    const d = cam.position.distanceTo(n.g.position);
-    if (d < bestD) {
-      bestD = d;
-      nearI = i;
-    }
-  });
-  NOTES.nearI = nearI;
-  if (NOTES.openI >= 0) {
-    NOTES.hintEl.style.display = 'none';
-  } else if (nearI >= 0 && !NOTES.list[nearI].found) {
-    NOTES.hintEl.textContent = '[E] — ПОДОБРАТЬ ' + NOTES.list[nearI].data.title;
-    NOTES.hintEl.style.display = 'block';
-  } else {
-    NOTES.hintEl.style.display = 'none';
-  }
-}
-
+// ═══════════ ЧАСТЬ p32 ═══════════
 // ═══════════ ЧАСТЬ p32 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  САМОТЕСТЫ — при загрузке проверяют целостность всех систем
@@ -7408,10 +7020,6 @@ function selftestRun() {
   stCheck('охотник: группа есть', () => !!HUNTER.g);
   stCheck('карточки: элемент DOM', () => !!CARDS.el && CARDS.el.isConnected);
   stCheck('credits: элемент DOM', () => !!CREDITS.wrap && CREDITS.wrap.isConnected);
-  stCheck('записки: 6 расставлены', () => NOTES.list.length === 6);
-  stCheck('записки: панель чтения', () => !!NOTES.panel);
-  stCheck('своб.камера: подсказка', () => !!FREE.hint);
-  stCheck('фото: 5 фильтров', () => PHOTO_FILTERS.length === 5);
   stCheck('флэш-слой #flashW', () => !!DOC.getElementById('flashW'));
   stCheck('кино-бары #barT/#barB', () =>
     !!DOC.getElementById('barT') && !!DOC.getElementById('barB'));
@@ -7461,6 +7069,8 @@ function selftestRun() {
   });
 })();
 
+
+// ═══════════ ЧАСТЬ p33 ═══════════
 // ═══════════ ЧАСТЬ p33 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ДИЗАЙН-ДОКУМЕНТАЦИЯ — как устроен каждый эффект (справка)
@@ -7549,6 +7159,8 @@ function selftestRun() {
   · requestAnimationFrame один; dt клампится ≤ 0.05
 */
 
+
+// ═══════════ ЧАСТЬ p34 ═══════════
 // ═══════════ ЧАСТЬ p34 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ПЛЁНКА v2 — зерно, царапины, волос, вибрирование кадра,
@@ -7712,11 +7324,12 @@ function upFilm2(dt, wall) {
   }
 }
 
+
+// ═══════════ ЧАСТЬ p35 ═══════════
 // ═══════════ ЧАСТЬ p35 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  URL-ПРЕСЕТЫ — быстрый просмотр любого момента тизера
 //    ?shot=N   (1..5) — начать с шота N кино-блока
-//    ?free=1          — сразу свободная камера
 //    ?light=0         — свет с самого начала выключен
 //    ?nomusic=1       — тишина (без аудио)
 //    ?lang=ru|en      — титры
@@ -7726,7 +7339,6 @@ const URLP = {};
 (function urlParamsInit() {
   const q = new URLSearchParams(location.search);
   URLP.shot = parseInt(q.get('shot') || '0', 10) || 0;
-  URLP.free = q.get('free') === '1';
   URLP.noLight = q.get('light') === '0';
   URLP.noMusic = q.get('nomusic') === '1';
   URLP.lang = q.get('lang') === 'en' ? 'en' : 'ru';
@@ -7751,11 +7363,11 @@ function urlpLateHooks() {
     BLACKOUT.t = 0;
     grade('void');
   }
-  if (URLP.free && T.phase === 'end') {
-    freeCamToggle();
-  }
+  // v4.1: свободная камера вырезана — тизер без геймплея
 }
 
+
+// ═══════════ ЧАСТЬ p36 ═══════════
 // ═══════════ ЧАСТЬ p36 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  КОММЕНТАРИЙ РЕЖИССЁРА — субтитры-трек на весь тизер
@@ -7790,7 +7402,7 @@ const DIR_TRACK = [
   [22.6, 'без стинга. без скримера. так решено с версии два'],
   [23.1, 'полная тишина. шесть секунд её держим'],
   [23.9, 'аккорд. минус восемнадцать децибел. карточка'],
-  [25.0, 'конец. нажмите F — и останьтесь в парке сами']
+  [25.0, 'конец. тизер — не игра. игра будет ждать вас отдельно']
 ];
 
 (function directorInit() {
@@ -7834,6 +7446,8 @@ function upDirector(wall) {
   }
 }
 
+
+// ═══════════ ЧАСТЬ p37 ═══════════
 // ═══════════ ЧАСТЬ p37 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ЭНЦИКЛОПЕДИЯ ПОДЗЕМЕЛЬЯ — справочник мира (док-блок)
@@ -7935,6 +7549,8 @@ function upDirector(wall) {
     капюшон. полное лицо — привилегия финала игры.
 */
 
+
+// ═══════════ ЧАСТЬ p38 ═══════════
 // ═══════════ ЧАСТЬ p38 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ЖУРНАЛ СБОРКИ — история всех версий тизера (changelog)
@@ -8003,6 +7619,11 @@ function upDirector(wall) {
     URL-пресеты: ?shot= ?free= ?light=0 ?nomusic=
     дизайн-док, энциклопедия, глоссарий, этот журнал
 
+  v4.1 «ЧИСТОЕ КИНО» — ИГРОВАЯ ЧАСТЬ ВЫРЕЗАНА
+    убраны: свободная камера, сбор записок, мини-карта,
+    фото-режим, осмотр объектов, эпилог-собирательство, сид
+    тизер снова просто тизер: 26 секунд кино и титры
+
   СОВМЕСТИМОСТЬ И ПРАВИЛА
     тизер автономен: один HTML, three.min.js inline
     игра (public/index.html) не тронута ни строкой
@@ -8010,111 +7631,8 @@ function upDirector(wall) {
     никакого стинга: финал тихий (решение автора v2.5)
 */
 
-// ═══════════ ЧАСТЬ p39 ═══════════
-// ═══════════════════════════════════════════════════════════════════
-//  МИНИ-КАРТА — план подземелья в углу (свободный режим, [M])
-//  canvas 2D: зал, грот, крипта, точки записок, позиция игрока
-// ═══════════════════════════════════════════════════════════════════
-const MMAP = { on: false, cv: null, ctx: null };
 
-(function minimapInit() {
-  const cvM = DOC.createElement('canvas');
-  cvM.width = 210;
-  cvM.height = 260;
-  cvM.style.cssText =
-    'position:fixed;top:64px;left:16px;z-index:41;display:none;' +
-    'background:rgba(6,4,8,.88);border:1px solid rgba(255,157,157,.35);' +
-    'border-radius:10px;pointer-events:none;';
-  DOC.body.appendChild(cvM);
-  MMAP.cv = cvM;
-  MMAP.ctx = cvM.getContext('2d');
-
-  window.addEventListener('keydown', (ev) => {
-    const k = ev.key.toLowerCase();
-    if ((k === 'm' || k === 'ь') && FREE.on) {
-      MMAP.on = !MMAP.on;
-      cvM.style.display = MMAP.on ? 'block' : 'none';
-    }
-  });
-})();
-
-// мир → карта: x∈[−45..45] → px, z∈[−28..38] → py
-function mmapX(x) { return 105 + x * 2.2; }
-function mmapY(z) { return 233 - z * 4.0; }
-
-function upMinimap(wall) {
-  if (!MMAP.on || !FREE.on) return;
-  const g = MMAP.ctx;
-  g.clearRect(0, 0, 210, 260);
-
-  // заголовок
-  g.fillStyle = '#8a7a6a';
-  g.font = '9px monospace';
-  g.fillText('ПОДЗЕМЕЛЬЕ · −42 м', 12, 16);
-  g.fillText('[M] закрыть', 130, 16);
-
-  // главный неф
-  g.strokeStyle = 'rgba(255,200,150,.5)';
-  g.lineWidth = 1;
-  g.strokeRect(mmapX(-13.5), mmapY(39), 27 * 2.2, 66 * 4.0 * 0.925);
-
-  // апсида (полукруг)
-  g.beginPath();
-  g.arc(mmapX(0), mmapY(-26.2), 9.5 * 2.2, Math.PI, 0);
-  g.stroke();
-
-  // ритуальный круг
-  g.strokeStyle = 'rgba(255,120,120,.45)';
-  g.beginPath();
-  g.arc(mmapX(0), mmapY(-8), 10.4 * 2.2, 0, Math.PI * 2);
-  g.stroke();
-
-  // грот-озеро (слева-внизу)
-  g.strokeStyle = 'rgba(120,220,255,.5)';
-  g.strokeRect(mmapX(-42), mmapY(34), 26 * 2.2, 17 * 4.0 * 0.8);
-  g.fillStyle = 'rgba(120,220,255,.08)';
-  g.fillRect(mmapX(-42), mmapY(34), 26 * 2.2, 17 * 4.0 * 0.8);
-
-  // крипта (справа)
-  g.strokeStyle = 'rgba(200,150,255,.45)';
-  g.strokeRect(mmapX(14), mmapY(14), 8 * 2.2 * 1.4, 26 * 4.0 * 0.5);
-
-  // босс
-  g.fillStyle = '#ff5d5d';
-  g.beginPath();
-  g.arc(mmapX(0), mmapY(-14), 3.5, 0, Math.PI * 2);
-  g.fill();
-  g.fillStyle = '#a88';
-  g.font = '8px monospace';
-  g.fillText('ОН', mmapX(0) - 6, mmapY(-14) - 6);
-
-  // записки
-  NOTES.list.forEach((n) => {
-    g.fillStyle = n.found ? '#7dff9d' : '#ffd27a';
-    g.beginPath();
-    g.arc(mmapX(n.g.position.x), mmapY(n.g.position.z), 2.2, 0, Math.PI * 2);
-    g.fill();
-  });
-
-  // игрок + конус взгляда
-  const px = mmapX(FREE.pos.x);
-  const py = mmapY(FREE.pos.z);
-  g.fillStyle = '#fff';
-  g.beginPath();
-  g.arc(px, py, 3, 0, Math.PI * 2);
-  g.fill();
-  g.strokeStyle = 'rgba(255,255,255,.5)';
-  g.beginPath();
-  g.moveTo(px, py);
-  g.lineTo(px - Math.sin(FREE.yaw) * 14, py - Math.cos(FREE.yaw) * 14);
-  g.stroke();
-
-  // легенда
-  g.fillStyle = '#7a6a5a';
-  g.font = '8px monospace';
-  g.fillText('● записка   ● ты   ● он', 12, 252);
-}
-
+// ═══════════ ЧАСТЬ p40 ═══════════
 // ═══════════ ЧАСТЬ p40 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  CONFIG — все ключевые числа тизера в одном месте
@@ -8226,6 +7744,8 @@ function cfg(path, def) {
   return o === undefined ? def : o;
 }
 
+
+// ═══════════ ЧАСТЬ p41 ═══════════
 // ═══════════ ЧАСТЬ p41 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  АРХИВ ТЕКСТОВ — всё, что можно прочитать в тизере
@@ -8288,6 +7808,8 @@ function cfg(path, def) {
   HELLO — голос pitch 0.1, rate 0.48, единственное слово.
 */
 
+
+// ═══════════ ЧАСТЬ p42 ═══════════
 // ═══════════ ЧАСТЬ p42 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ЧЕКЛИСТ РЕЛИЗА + СПРАВКА [H] — экран помощи поверх всего
@@ -8338,10 +7860,9 @@ const HELP = { el: null };
     '<div style="color:#ff9d9d;letter-spacing:.3em;font-size:12px;margin-bottom:14px">СПРАВКА</div>' +
     '<b style="color:#fff">ВО ВРЕМЯ ТИЗЕРА</b><br>' +
     '[P] пауза · [O] slow-mo · [S] скриншот · [F1] тех-панель · [K] комментарий режиссёра<br><br>' +
-    '<b style="color:#fff">ПОСЛЕ ТИТРОВ</b><br>' +
-    '[F] свободная камера · [WASD] идти · [Shift] бег · [Space]/[C] вверх/вниз · мышь — осмотр<br>' +
-    '[E] подобрать записку · [M] мини-карта · [N] ракурс · [1..5] фильтры<br>' +
-    '[L] включить свет · [B] блэкаут · [G] глаза · [H] эта справка<br><br>' +
+    '<b style="color:#fff">ТИЗЕР · ЧИСТОЕ КИНО</b><br>' +
+    'это рекламный ролик — без игрового режима<br>' +
+    'игра FANTAZIA RP 3D — отдельно<br><br>' +
     '<div style="color:#6a5844">клик — закрыть</div></div>';
   DOC.body.appendChild(el);
   el.addEventListener('click', () => { el.style.display = 'none'; });
@@ -8353,163 +7874,8 @@ const HELP = { el: null };
   });
 })();
 
-// ═══════════ ЧАСТЬ p43 ═══════════
-// ═══════════════════════════════════════════════════════════════════
-//  ЭПИЛОГ: ОСВОБОЖДЕНИЕ ПАРКА
-//  Собери 6/6 записок в свободном режиме — и подземелье
-//  меняется навсегда: босс закрывает глаза, вода светлеет,
-//  из пола поднимаются светящиеся ростки. Тьма уходит.
-// ═══════════════════════════════════════════════════════════════════
-const EPILOG = { on: false, t0: 0, sprouts: [], aura: null, done: false };
 
-function epilogStart() {
-  if (EPILOG.on || EPILOG.done) return;
-  EPILOG.on = true;
-  EPILOG.t0 = T.wall;
-
-  // 1) глаза босса гаснут НАВСЕГДА (медленно, один за другим)
-  BOSS.eyes.forEach((e, i) => {
-    setTimeout(() => {
-      e.userData.on = false;
-      e.userData.dieAt = T.wall;
-    }, 900 + i * 420);
-  });
-
-  // 2) свет возвращается — но другой: холодный утренний
-  setTimeout(() => {
-    if (DUN.amb) {
-      DUN.amb.color && DUN.amb.color.setHex(0x9db8d6);
-      DUN.amb.intensity = 0.5;
-    }
-    if (scene.fog) {
-      scene.fog.color && scene.fog.color.setHex(0x131a24);
-    }
-    renderer.setClearColor(0x0d1219, 1);
-    grade('cold');
-  }, 2400);
-
-  // 3) ростки: 60 светящихся стеблей из пола зала
-  const sproutGeo = new THREE.ConeGeometry(0.035, 1.0, 5);
-  for (let i = 0; i < 60; i++) {
-    const mat = new THREE.MeshBasicMaterial({
-      color: i % 7 === 0 ? 0xbfffd0 : 0x7dff9d,
-      transparent: true,
-      opacity: 0
-    });
-    const m = new THREE.Mesh(sproutGeo, mat);
-    const ang = Math.random() * Math.PI * 2;
-    const rad = 2 + Math.random() * 9.5;
-    m.position.set(
-      Math.cos(ang) * rad,
-      -0.5,
-      Math.sin(ang) * rad * 0.8 - 4
-    );
-    m.scale.set(1, 0.1, 1);
-    scene.add(m);
-    EPILOG.sprouts.push({
-      m: m,
-      mat: mat,
-      delay: 2.8 + Math.random() * 2.2,
-      sway: Math.random() * Math.PI * 2,
-      h: 0.5 + Math.random() * 0.7
-    });
-  }
-
-  // 4) аура над алтарём
-  const aura = new THREE.Mesh(
-    new THREE.SphereGeometry(3.4, 20, 14),
-    new THREE.MeshBasicMaterial({
-      color: 0x9dffd0,
-      transparent: true,
-      opacity: 0,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
-    })
-  );
-  aura.position.set(0, 2.6, -13);
-  scene.add(aura);
-  EPILOG.aura = aura;
-
-  // 5) звук: мажорный рассвет-аккорд (полная противоположность
-  //    финальному минорному: те же голоса, другие частоты)
-  try {
-    const ac = AU;
-    if (ac) {
-      [130.8, 196.0, 261.6, 329.6, 392.0].forEach((f, i) => {
-        const o = ac.createOscillator();
-        const g = ac.createGain();
-        o.type = i < 2 ? 'sine' : 'triangle';
-        o.frequency.value = f * (1 + (Math.random() - 0.5) * 0.004);
-        g.gain.setValueAtTime(0, ac.currentTime + 2.4);
-        g.gain.linearRampToValueAtTime(0.028 - i * 0.003, ac.currentTime + 4.2);
-        g.gain.linearRampToValueAtTime(0.0, ac.currentTime + 14);
-        o.connect(g).connect(ac.destination);
-        o.start(ac.currentTime + 2.4);
-        o.stop(ac.currentTime + 14.2);
-      });
-    }
-  } catch (e) {}
-
-  // 6) карточки эпилога
-  setTimeout(() => cardShow('ШЕСТЬ ПРАВД СОБРАНЫ', 3.4), 3200);
-  setTimeout(() => cardShow('ПАРК ФАНТАЗИИ ОСВОБОЖДЁН', 4.0), 7200);
-  setTimeout(() => {
-    cardShow('СПАСИБО, ЧТО ДОШЁЛ ДО КОНЦА', 4.6);
-    creditsShow(true);
-  }, 12000);
-
-  // 7) духи-виски покидают крипту: им больше нечего охранять
-  CRYPT.wisps.forEach((w, i) => {
-    w.userData.leaving = true;
-    w.userData.leaveDelay = i * 0.4;
-  });
-}
-
-function upEpilog(dt, wall) {
-  if (!EPILOG.on) return;
-  const Tm = wall - EPILOG.t0;
-
-  // ростки растут и качаются
-  EPILOG.sprouts.forEach((s) => {
-    if (Tm > s.delay) {
-      const grow = Math.min(1, (Tm - s.delay) / 2.4);
-      s.m.scale.y = 0.1 + grow * s.h;
-      s.m.position.y = -0.5 + (grow * s.h) / 2;
-      s.mat.opacity = grow * 0.85;
-      // качание
-      s.sway += dt * 1.4;
-      s.m.rotation.z = Math.sin(s.sway) * 0.08;
-      s.m.rotation.x = Math.cos(s.sway * 0.7) * 0.05;
-    }
-  });
-
-  // аура дышит
-  if (EPILOG.aura) {
-    EPILOG.aura.material.opacity =
-      0.05 + Math.sin(Tm * 0.8) * 0.03 + Math.min(0.06, Tm * 0.008);
-    EPILOG.aura.scale.setScalar(1 + Math.sin(Tm * 0.5) * 0.04);
-  }
-
-  // вода светлеет
-  if (LAKE.water && LAKE.water.material) {
-    const target = 0x3d7a8f;
-    LAKE.water.material.color.lerp(new THREE.Color(target), dt * 0.4);
-  }
-
-  // духи уплывают вверх и растворяются
-  CRYPT.wisps.forEach((w) => {
-    if (w.userData.leaving && Tm > 3 + w.userData.leaveDelay) {
-      w.position.y += dt * 0.6;
-      if (w.material) w.material.opacity = Math.max(0, w.material.opacity - dt * 0.25);
-    }
-  });
-
-  // конец эпилога: стоп-кадр, всё остаётся как есть
-  if (Tm > 18 && !EPILOG.done) {
-    EPILOG.done = true;
-  }
-}
-
+// ═══════════ ЧАСТЬ p44 ═══════════
 // ═══════════ ЧАСТЬ p44 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ПАРТИТУРА СТРАХА — график напряжения по секундам (док)
@@ -8562,6 +7928,8 @@ function upEpilog(dt, wall) {
   · лицо не показывается. никогда.
 */
 
+
+// ═══════════ ЧАСТЬ p45 ═══════════
 // ═══════════ ЧАСТЬ p45 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  СТАТИСТИКА СЕАНСА — счётчики просмотра ([F1] панель)
@@ -8581,14 +7949,6 @@ const STATS = {
 let statsPathT = 0;
 function upStats(dt) {
   STATS.frames++;
-  if (FREE.on) STATS.freeCamSec += dt;
-  STATS.notesFound = NOTES.found;
-  statsPathT += dt;
-  if (statsPathT > 0.5 && FREE.on) {
-    statsPathT = 0;
-    STATS.path.push([FREE.pos.x, FREE.pos.z]);
-    if (STATS.path.length > 400) STATS.path.shift();
-  }
 }
 
 function statsSummary() {
@@ -8602,6 +7962,8 @@ function statsSummary() {
   );
 }
 
+
+// ═══════════ ЧАСТЬ p46 ═══════════
 // ═══════════ ЧАСТЬ p46 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  АТРИБУЦИИ И ЛИЦЕНЗИИ
@@ -8638,6 +8000,8 @@ function statsSummary() {
                           · конец ·
 */
 
+
+// ═══════════ ЧАСТЬ p47 ═══════════
 // ═══════════ ЧАСТЬ p47 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ДЕТАЛИ-80: восемьдесят микро-декораций (каждая — руками)
@@ -8847,92 +8211,8 @@ function upD80(dt, wall) {
   });
 }
 
-// ═══════════ ЧАСТЬ p48 ═══════════
-// ═══════════════════════════════════════════════════════════════════
-//  ОСМОТР: 12 объектов с подписями (свободная камера)
-//  Подойди к объекту — внизу всплывает его описание.
-// ═══════════════════════════════════════════════════════════════════
-const LOOK = { el: null, active: -1, cool: 0 };
 
-const LOOKABLES = [
-  { pos: [0, 1.4, -13.6], r: 4.5, name: 'ФОЛИАНТ',
-    text: 'книга в железном окладе. страницы слиплись. на обложке — глаз без века' },
-  { pos: [0, 0.4, -8], r: 6.5, name: 'РИТУАЛЬНЫЙ КРУГ',
-    text: 'три кольца, ров с красной жидкостью, двенадцать пузырей. соль по периметру' },
-  { pos: [2.9, 1.2, -12.4], r: 3.4, name: 'СФЕРА ФАНТАЗИИ',
-    text: 'та самая. живая. бьётся в такт сердцу под полом' },
-  { pos: [-9.8, 1.5, 21.2], r: 4.2, name: 'ПЕЧАТЬ ТЮРЬМЫ',
-    text: 'рунический замок на клетках. держится на вере города в молл' },
-  { pos: [-10.4, 1.4, 21.2], r: 3.6, name: 'КЛЕТКИ ДУШ',
-    text: 'три клетки. призраки внутри — это не люди. это фантазии, которые так и не сбылись' },
-  { pos: [0, 7.2, -26.2], r: 5.0, name: 'ВИТРАЖ-РОЗА',
-    text: 'двенадцать секторов. в медальоне — глаз. снаружи он выглядит как логотип молла' },
-  { pos: [0, 4.2, -15.0], r: 4.0, name: 'ХРАНИТЕЛЬ',
-    text: 'сидит. семь глаз. ждет. говорит hello. читает чужие записки' },
-  { pos: [-29, 0.6, 25], r: 8.0, name: 'ПОДЗЕМНОЕ ОЗЕРО',
-    text: 'вода чистая, 14 градусов круглый год. в пробах — живая органика' },
-  { pos: [-38.5, 2.0, 20], r: 5.0, name: 'ВОДОПАД',
-    text: 'падает из разлома в своде. за ним — тайная река и алтарь' },
-  { pos: [22, 1.2, 2], r: 7.0, name: 'КРИПТА',
-    text: 'шесть ниш. два открытых саркофага. скелет, который встаёт, делает это без злобы' },
-  { pos: [-8.8, 1.0, 33.6], r: 3.6, name: 'СТОЛ СМОТРИТЕЛЯ',
-    text: 'журнал, карта города, перечень душ. 349 имён. последнее дописано другой рукой' },
-  { pos: [0, 1.0, 12.0], r: 5.5, name: 'ЗАЛ',
-    text: '27 на 66 метров. свод-бочка. раньше здесь пели карусели' }
-];
-
-(function lookInit() {
-  const el = DOC.createElement('div');
-  el.style.cssText =
-    'position:fixed;bottom:20%;left:50%;transform:translateX(-50%);z-index:42;' +
-    'max-width:64%;text-align:center;pointer-events:none;opacity:0;' +
-    'transition:opacity .4s;';
-  el.innerHTML =
-    '<div style="color:#ffdada;font:600 11px monospace;letter-spacing:.3em;' +
-    'margin-bottom:6px;text-shadow:0 2px 6px #000"></div>' +
-    '<div style="color:#d8cfc4;font:italic 13px/1.5 Georgia, serif;' +
-    'text-shadow:0 2px 6px #000"></div>';
-  DOC.body.appendChild(el);
-  LOOK.el = el;
-  LOOK.nameEl = el.children[0];
-  LOOK.textEl = el.children[1];
-})();
-
-function upLook(dt, wall) {
-  if (!FREE.on) {
-    if (LOOK.active >= 0) {
-      LOOK.active = -1;
-      LOOK.el.style.opacity = '0';
-    }
-    return;
-  }
-  LOOK.cool -= dt;
-  let best = -1;
-  let bestD = 1e9;
-  const fwd = new THREE.Vector3();
-  cam.getWorldDirection(fwd);
-  LOOKABLES.forEach((L, i) => {
-    const p = new THREE.Vector3(L.pos[0], L.pos[1], L.pos[2]);
-    const to = p.clone().sub(cam.position);
-    const d = to.length();
-    if (d < L.r && to.normalize().dot(fwd) > 0.86 && d < bestD) {
-      bestD = d;
-      best = i;
-    }
-  });
-  if (best !== LOOK.active && LOOK.cool <= 0) {
-    LOOK.active = best;
-    LOOK.cool = 0.3;
-    if (best >= 0) {
-      LOOK.nameEl.textContent = '◈ ' + LOOKABLES[best].name;
-      LOOK.textEl.textContent = LOOKABLES[best].text;
-      LOOK.el.style.opacity = '1';
-    } else {
-      LOOK.el.style.opacity = '0';
-    }
-  }
-}
-
+// ═══════════ ЧАСТЬ p49 ═══════════
 // ═══════════ ЧАСТЬ p49 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ДЕТАЛИ ГРОТА И КРИПТЫ — вторая волна микро-декора
@@ -9110,6 +8390,8 @@ function upD81(dt, wall) {
   // статичный декор — микро-мерцание нет; держим для симметрии API
 }
 
+
+// ═══════════ ЧАСТЬ p50 ═══════════
 // ═══════════ ЧАСТЬ p50 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  КОНСОЛЬНЫЙ БАННЕР — приветствие в devtools
@@ -9140,59 +8422,8 @@ function upD81(dt, wall) {
   });
 })();
 
-// ═══════════ ЧАСТЬ p51 ═══════════
-// ═══════════════════════════════════════════════════════════════════
-//  СИД-РЕЖИМ: ?seed=N — каждый просмотр чуть другой
-//  (меняются точки записок, фазы духов, ракурс пресетов)
-// ═══════════════════════════════════════════════════════════════════
-const SEED = { v: 1, rng: null, active: false };
 
-(function seedInit() {
-  const m = location.search.match(/[?&]seed=(\d+)/);
-  if (!m) return;
-  SEED.v = parseInt(m[1], 10) || 1;
-  SEED.active = true;
-
-  // детерминированный ГПСЧ (mulberry32)
-  SEED.rng = (function () {
-    let a = SEED.v >>> 0;
-    return function () {
-      a |= 0;
-      a = (a + 0x6d2b79f5) | 0;
-      let t = Math.imul(a ^ (a >>> 15), 1 | a);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  })();
-
-  // перемешиваем записки по «тёплым» точкам зала
-  const spots = [
-    [-9.9, 1.02, 21.4], [7.8, 0.98, -9.6], [-28.4, 0.5, 24.2],
-    [19.6, 0.52, 1.4], [3.2, 1.06, -13.2], [-41.6, 0.6, 19.4],
-    [-6.2, 0.98, 4.8], [6.6, 1.04, 9.2], [-11.8, 0.96, 30.2],
-    [11.2, 1.0, 18.6]
-  ];
-  // заметка VI всегда за водопадом (канон), остальные тасуем
-  const order = [0, 1, 2, 3, 4].sort(() => SEED.rng() - 0.5);
-  NOTES.list.forEach((n, i) => {
-    if (i >= 5) return; // VI-я на месте
-    const sp = spots[order[i] % order.length + (i === 0 ? 0 : 0)] || spots[i];
-    n.g.position.set(sp[0], sp[1], sp[2]);
-  });
-
-  // фазы духов и мотыльков пересеиваем
-  CRYPT.wisps.forEach((w) => { w.userData.ph2 = SEED.rng() * 6.28; });
-  FAUNA.moths.forEach((mo) => { mo.userData.ph2 = SEED.rng() * 6.28; });
-
-  console.log('%cсид #' + SEED.v + ' активен: подземелье перемешано', 'color:#9ad');
-})();
-
-function seedInfo() {
-  return SEED.active
-    ? 'сид #' + SEED.v + ' — этот подземелье только твой'
-    : 'сид не задан (?seed=N для своего варианта)';
-}
-
+// ═══════════ ЧАСТЬ p52 ═══════════
 // ═══════════ ЧАСТЬ p52 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  БРАУЗЕРНЫЕ ХУКИ — поведение вкладки (полиш реального мира)
@@ -9233,12 +8464,10 @@ function seedInfo() {
     } catch (e) {}
   });
 
-  // запрет контекстного меню в свободной камере (правая кнопка не нужна)
-  cv.addEventListener('contextmenu', (ev) => {
-    if (FREE.on) ev.preventDefault();
-  });
+  // контекстное меню в тизере не нужно
+  cv.addEventListener('contextmenu', (ev) => ev.preventDefault());
 
-  // клик по финальному экрану тоже открывает свободную камеру
+  // двойной клик по финальному экрану = повторить тизер
   endElHook();
 })();
 
@@ -9247,10 +8476,13 @@ function endElHook() {
   const el = DOC.getElementById('end');
   if (!el) return;
   el.addEventListener('dblclick', () => {
-    if (T.phase === 'end') freeCamToggle();
+    const r = DOC.getElementById('replay');
+    if (r) r.click();
   });
 }
 
+
+// ═══════════ ЧАСТЬ p53 ═══════════
 // ═══════════ ЧАСТЬ p53 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ПЕРЕЧЕНЬ ДУШ: генератор 349 имён (пасхалка из записки смотрителя)
@@ -9330,6 +8562,8 @@ function soulsReport() {
   });
 })();
 
+
+// ═══════════ ЧАСТЬ p54 ═══════════
 // ═══════════ ЧАСТЬ p54 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  КАРТА КОДА — индекс всех функций cine-блока (навигация)
@@ -9462,19 +8696,6 @@ function soulsReport() {
 
   p28 ТЕХ-АРХИВ (док-блок): таймлайн, реестр геометрии
 
-  p29 СВОБОДНАЯ КАМЕРА
-    FREE = { on, yaw, pitch, pos, vel, keys }
-    freeCamToggle(), upFreeCam(dt, wall)
-    [L] свет, [B] блэкаут, [G] глаза
-
-  p30 ФОТО-РЕЖИМ
-    PHOTO_FILTERS[5], applyPhotoFilter()
-    PHOTO_PRESETS[5], photoPreset()
-
-  p31 ЗАПИСКИ
-    NOTES = { list[6], found, panel }
-    notesOpen(i), notesClose(), upNotes(dt, wall)
-
   p32 САМОтЕСТЫ
     stCheck(name, fn), selftestRun()
     ?debug=1 — панель на экране
@@ -9496,9 +8717,6 @@ function soulsReport() {
 
   p38 ЖУРНАЛ СБОРКИ (док-блок)
 
-  p39 МИНИ-КАРТА
-    MMAP, mmapX/mmapY, upMinimap(wall), [M]
-
   p40 CONFIG
     CONFIG{cam,eyes,turn,snd,blackout,fauna,lake,notes,free,film,hello}
     cfg(path, def)
@@ -9507,9 +8725,6 @@ function soulsReport() {
 
   p42 ЧЕКЛИСТ+СПРАВКА [H]
     HELP.el
-
-  p43 ЭПИЛОГ
-    EPILOG, epilogStart(), upEpilog(dt, wall)
 
   p44 ПАРТИТУРА СТРАХА (док-блок)
 
@@ -9521,16 +8736,10 @@ function soulsReport() {
   p47 ДЕТАЛИ-80
     D80.items, upD80(dt, wall)
 
-  p48 ОСМОТР
-    LOOKABLES[12], upLook(dt, wall)
-
   p49 ДЕТАЛИ ГРОТА/КРИПТЫ
     D81.items, upD81(dt, wall)
 
   p50 БАННЕР консоли
-
-  p51 СИД-РЕЖИМ
-    SEED, seedInfo(), ?seed=N
 
   p52 БРАУЗЕРНЫЕ ХУКИ
     visibilitychange-пауза, beforeunload, resize
@@ -9540,12 +8749,16 @@ function soulsReport() {
 
   p54 КАРТА КОДА (этот файл)
 
+  (p29 p30 p31 p39 p43 p48 p51 — вырезаны в v4.1 «чистое кино»)
+
   p4  КУТ-СЦЕНА (ПОСЛЕДНИЙ)
     CUES[44], runCues(), upCamera(dt, wall)
     resetShow(), startShow(), upBlackout(dt)
     loop() — главный цикл
 */
 
+
+// ═══════════ ЧАСТЬ p55 ═══════════
 // ═══════════ ЧАСТЬ p55 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  ИНСТРУМЕНТ ПРОСМОТРА: таймкод-оверлей [T] + чит-состояния
@@ -9630,6 +8843,8 @@ function upTimecode() {
     ' · fps~' + (STATS.frames > 0 ? Math.round(STATS.frames / Math.max(0.1, (Date.now() - STATS.startedAt) / 1000)) : 0);
 }
 
+
+// ═══════════ ЧАСТЬ p4 ═══════════
 // ═══════════ ЧАСТЬ p4 ═══════════
 // ═══════════════════════════════════════════════════════════════════
 //  КУТ-СЦЕНА v4 ФИНАЛЬНАЯ: кино-блок → СВЕТ ВЫКЛ → ГЛАЗА → ПОВОРОТ
@@ -9773,7 +8988,7 @@ CUES = [
       barsB.classList.remove('on');
       endEl.classList.add('on');
       T.phase = 'end';
-      try { cardShow('[F] — ОСТАТЬСЯ В ПОДЗЕМЕЛЬЕ · [H] — СПРАВКА', 6.0); } catch (e) {}
+      try { cardShow('FANTAZIA RP 3D · «ТЕНЬ ПАРКА ФАНТАЗИИ»', 4.0); } catch (e) {}
   } }
 ];
 
@@ -9879,11 +9094,6 @@ function resetShow() {
   try { CARDS.el.style.opacity = '0'; CARDS.hideT = 0; } catch (e) {}
   try { dollyZoom(false); } catch (e) {}
   try { DIR.lastLine = -1; DIR.el.style.opacity = '0'; } catch (e) {}
-  try {
-    FREE.on = false;
-    FREE.hint.style.display = 'none';
-    if (DOC.exitPointerLock) DOC.exitPointerLock();
-  } catch (e) {}
   try { if (URLP.shot) T.t = URLP.startT || 0; } catch (e) {}
 }
 function startShow() {
@@ -9964,19 +9174,12 @@ function loop() {
       const cineTook = upCineCam(dt, wall);
       if (!cineTook) upCamera(dt, wall);
     }
-    // ── свободная камера (после тизера) ──
-    upFreeCam(dt, wall);
-    if (!FREE.on) RIG.apply(cam, dt, wall);
-    if (T.shake > 0.001 && !FREE.on) {
+    RIG.apply(cam, dt, wall);
+    if (T.shake > 0.001) {
       cam.position.x += rnd(-1, 1) * T.shake * 0.42;
       cam.position.y += rnd(-1, 1) * T.shake * 0.32;
       T.shake = Math.max(0, T.shake - dt * 1.5);
     }
-    // ── интерактив свободного режима ──
-    upNotes(dt, wall);
-    upLook(dt, wall);
-    upMinimap(wall);
-    upEpilog(dt, wall);
     renderer.render(scene, cam);
   } catch (e) {}
   post2D(dt);
@@ -10000,6 +9203,7 @@ setTimeout(() => {
   try { selftestRun(); } catch (e) { console.warn('selftest:', e); }
 }, 3200);
 })();
+
 
 </script>
 </body>
