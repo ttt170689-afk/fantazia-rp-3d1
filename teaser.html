@@ -90,7 +90,7 @@
 (function(){
 'use strict';
 //  FANTAZIA RP 3D — «ПОДЗЕМЕЛЬЕ ХРАНИТЕЛЯ»
-//  кут-сцена: пролёт к боссу → свет гаснет → глаза → поворот → HELLO!
+//  кут-сцена: пролёт к боссу → свет гаснет → глаза → поворот → финал!
 const DOC = document;
 const cv = DOC.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, preserveDrawingBuffer: true });
@@ -370,28 +370,6 @@ function aImpact(when, big) {
   noiseBurst(big ? 0.7 : 0.4, 900, 90, 0.7, big ? 0.26 : 0.15, when || 0, 'lowpass');
 }
 function aSubDrop(when) { tone(60, 22, 2.6, 'sine', 0.4, when || 0); }
-function aHelloSting(when) { // «HELLO!» — стинг из бездны
-  if (!AU) return;
-  const t0 = AU.currentTime + (when || 0);
-  const sh = AU.createWaveShaper();
-  sh.curve = makeDist(7);
-  const g = AU.createGain();
-  g.gain.setValueAtTime(0.0001, t0);
-  g.gain.exponentialRampToValueAtTime(0.15, t0 + 0.05);
-  g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.6);
-  [196, 293, 370].forEach((f, i) => {
-    const o = AU.createOscillator();
-    o.type = i === 1 ? 'square' : 'sawtooth';
-    o.frequency.setValueAtTime(f, t0);
-    o.frequency.exponentialRampToValueAtTime(f * 0.24, t0 + 1.4);
-    o.connect(sh);
-    o.start(t0); o.stop(t0 + 1.6);
-  });
-  sh.connect(g); g.connect(MG);
-  noiseBurst(1.1, 3000, 400, 1.4, 0.06, when || 0);
-  tone(46, 19, 2.2, 'sine', 0.2, when || 0);
-  tone(110, 38, 1.4, 'sine', 0.22, when || 0);
-}
 
 // -- речь (браузерный синтез) --
 const VOICE = { ru: null, en: null };
@@ -404,19 +382,6 @@ function pickVoices() {
 if ('speechSynthesis' in window) {
   pickVoices();
   speechSynthesis.onvoiceschanged = pickVoices;
-}
-function speak(text, opts) {
-  if (!('speechSynthesis' in window)) return;
-  try {
-    const u = new SpeechSynthesisUtterance(text);
-    const o = opts || {};
-    u.voice = o.lang === 'en' ? (VOICE.en || VOICE.ru) : (VOICE.ru || VOICE.en);
-    if (u.voice) u.lang = u.voice.lang;
-    u.pitch = o.pitch != null ? o.pitch : 0.05;
-    u.rate = o.rate != null ? o.rate : 0.6;
-    speechSynthesis.cancel();
-    speechSynthesis.speak(u);
-  } catch (e) {}
 }
 const speechStop = () => { try { speechSynthesis.cancel(); } catch (e) {} };
 
@@ -695,7 +660,7 @@ const BOSS_POS = { x: 0, z: -15 };
       new THREE.MeshLambertMaterial({ color: 0x27222e }));
     socle.position.y = 0.3;
     g.add(socle);
-    // ГЛАЗА статуй — тускло красные (оживают при HELLO)
+    // ГЛАЗА статуй — тускло красные (оживают в темноте)
     [-0.12, 0.12].forEach((ex) => {
       const e = new THREE.Mesh(
         new THREE.SphereGeometry(0.045, 8, 6),
@@ -1029,7 +994,7 @@ function upDungeon(dt, wall) {
   DUN.shafts.forEach((sh, i) => {
     sh.material.opacity = (0.035 + Math.sin(wall * 0.7 + i * 2) * 0.02) * (1 - bk);
   });
-  // глаза статуй: загораются при HELLO
+  // глаза статуй: загораются в темноте
   if (STATUE_AWAKE.t >= 0) {
     const k = clamp((T.t - STATUE_AWAKE.t) / 0.4, 0, 1);
     DUN.statueEyes.forEach((e) => {
@@ -1835,7 +1800,7 @@ function upBoss(dt, wall) {
       g.rotation.y = w;
     }
   }
-  // РЫВОК на HELLO
+  // РЫВОК в финале
   if (BOSS.lunge > 0) {
     // DE-SCREAMER: не рывок, а МЕДЛЕННОЕ НАДВИГАНИЕ
     const e = EZ.quintOut(clamp((T.t - BOSS.lunge) / 1.7, 0, 1));
@@ -3058,7 +3023,7 @@ function upPolish(dt, wall) {
     n.redGlow.material.opacity = (0.3 + Math.sin(wall * 1.7 + n.ph) * 0.12) * (1 - bk);
     n.cf.material.opacity = (0.75 + Math.sin(wall * 8 + n.ph) * 0.25) * (1 - bk);
   });
-  // наблюдатели: покачиваются, глаза загораются при HELLO
+  // наблюдатели: покачиваются, глаза загораются в темноте
   const awakeK = STATUE_AWAKE.t >= 0 ? clamp((T.t - STATUE_AWAKE.t) / 0.5, 0, 1) : 0;
   V3.watchers.forEach((w2, i) => {
     w2.g.rotation.z = Math.sin(wall * 0.5 + w2.ph) * 0.02;
@@ -3809,7 +3774,7 @@ function eyesFadeUpdate(dt) {
   }
 }
 
-// -- ЛУЧИ ИЗ ГЛАЗ на HELLO: тонкие конусы к камере --
+// -- лучи из глаз: тонкие конусы к камере --
 (function eyeBeams() {
   for (let i = 0; i < 2; i++) {
     const beam = new THREE.Mesh(
@@ -4938,7 +4903,7 @@ function upFauna(dt, wall) {
 //  КИНЕМАТОГРАФИЯ v2 — новый маршрут пролёта: 5 шотов
 //  арка ворот → ферма-облёт колонн → вид сверху на круг →
 //  проход у крипты → финальный подход к Хранителю
-//  + фокал-пулл + доли-зум на HELLO + анаморф 2.39:1
+//  + фокал-пулл + доли-зум в темноте + анаморф 2.39:1
 const CIN2 = { active: true, shot: 0, tShot: 0 };
 
 // шоты: время начала/конца, позиция from/to, взгляд from/to, fov from/to, кривая
@@ -5038,7 +5003,7 @@ function upCineCam(dt, wall) {
   return true;
 }
 
-// -- ДОЛИ-ЗУМ на HELLO (камера отъезжает, fov растёт — «судорога空间») --
+// -- ДОЛИ-ЗУМ в темноте (камера отъезжает, fov растёт — «судорога空间») --
 let dollyZoomK = 0;
 function dollyZoom(trigger) {
   if (trigger) dollyZoomK = 1;
@@ -5111,7 +5076,7 @@ function riverStart() {
   } catch (e) {}
 }
 
-// -- КОЛОКОЛ: глубокий биение из шахты на HELLO --
+// -- КОЛОКОЛ: глубокий биение из шахты в темноте --
 function bellToll(when, gain) {
   if (!AU) return;
   const t0 = AU.currentTime + (when || 0);
@@ -5293,7 +5258,7 @@ const LIGHT2 = { rays: [], swing: [], flash: 0, eyeProj: null };
   });
 })();
 
-// -- ПРОЕКЦИЯ ГЛАЗА на полу (появляется на HELLO) --
+// -- ПРОЕКЦИЯ ГЛАЗА на полу (появляется в финале) --
 (function eyeProjection() {
   const tex = cvsTex(128, 128, (q, w, h) => {
     q.clearRect(0, 0, w, h);
@@ -5759,7 +5724,7 @@ function upDecor3(dt, wall) {
         Math.sin(a) * 0.14
       );
     });
-    // на HELLO Сфера вспыхивает ярко (реликвия отзывается)
+    // в финале Сфера вспыхивает ярко (реликвия отзывается)
     if (BOSS.lunge > 0) {
       const k = clamp((T.t - BOSS.lunge) / 0.9, 0, 1);
       R.core.material.emissiveIntensity = Math.max(R.core.material.emissiveIntensity, k * 2.2);
@@ -5955,7 +5920,7 @@ function upSouls(dt, wall) {
     gh.ghost.position.y = Math.sin(wall * 0.8 + gh.ph) * 0.1;
     gh.ghost.rotation.y = Math.sin(wall * 0.35 + gh.ph) * 0.7;
     gh.li.intensity = 0.3 * wisp * (1 - bk);
-    // на HELLO призраки ВЫРЫВАЮТСЯ (клетки трясутся)
+    // в финале призраки ВЫРЫВАЮТСЯ (клетки трясутся)
     if (BOSS.lunge > 0) {
       const k = clamp((T.t - BOSS.lunge) / 0.7, 0, 1);
       gh.ghost.position.x = Math.sin(wall * 27 + i * 4) * 0.05 * k;
@@ -6627,8 +6592,7 @@ function cardsUpdate(dt) {
     'СИНЕМАТОГРАФИЯ — ОДНА КАМЕРА<br><br>' +
     'СОБЕРИ 6 ЗАПИСОК<br>' +
     'ВОЗЬМИ ТОПОР<br>' +
-    'ОСВОБОДИ ПАРК<br><br>' +
-    '<span style="color:#6a5f58">он всё ещё говорит hello</span><br><br><br>';
+    'ОСВОБОДИ ПАРК<br><br><br>';
   wrap.appendChild(col);
   DOC.body.appendChild(wrap);
   CREDITS.wrap = wrap;
@@ -6847,82 +6811,6 @@ function urlpLateHooks() {
     grade('void');
   }
   // v4.1: свободная камера вырезана — тизер без геймплея
-}
-
-
-//  КОММЕНТАРИЙ РЕЖИССЁРА — субтитры-трек на весь тизер
-//  (вкл/выкл клавишей [K]; по умолчанию ВЫКЛ, чтобы не мешать)
-const DIR = { el: null, on: false, lastLine: -1 };
-
-// таймкоды согласованы со спецификацией из тех-архива (p28)
-const DIR_TRACK = [
-  [0.2,  'мы на минус сорок два. ниже города. ниже молла'],
-  [0.8,  'три дрона: суб-осциллятор, детюн-пара и воздух'],
-  [2.4,  'шот первый: ворота. камера не едет — втягивается'],
-  [3.4,  'колонна слева. факел наклоняется нам навстречу'],
-  [5.2,  'сердце. пятьдесят восемь ударов. это его сердце'],
-  [7.2,  'крипта справа. саркофаги. один — открыт'],
-  [7.8,  'встающий скелет. он встаёт уже четыреста лет'],
-  [8.2,  'охотник с факелом. он не заметит нас. никогда'],
-  [10.6, 'падение сверху. дыхание зала замирает'],
-  [11.2, 'шестьдесят семь ударов. голова нашла камеру'],
-  [12.0, 'факелы гаснут по одному. слушай, как захлёбываются'],
-  [13.5, 'света больше нет. остаётся только он'],
-  [16.1, 'блэкаут. настоящий. саб уходит под порог слуха'],
-  [17.6, 'семь глаз. по одному. щелчок — и глаз'],
-  [18.0, 'они не следят за головой. они следят за ТОБОЙ'],
-  [18.8, 'сорок четыре удара. хор входит из-под пола'],
-  [19.3, 'поворот. замашка — разворот — качание. мантия не успевает'],
-  [19.9, 'и главное: тело повернулось. глаза — нет'],
-  [20.0, 'hello. это единственное громкое слово за двадцать секунд'],
-  [20.4, 'лучи из глаз — это не атака. это прожектор вежливости'],
-  [21.0, 'сфера фантазии вспыхнула. статуи открыли глаза'],
-  [21.6, 'кода: глаза гаснут по одному. камера отплывает'],
-  [22.6, 'без стинга. без скримера. так решено с версии два'],
-  [23.1, 'полная тишина. шесть секунд её держим'],
-  [23.9, 'аккорд. минус восемнадцать децибел. карточка'],
-  [25.0, 'конец. тизер — не игра. игра будет ждать вас отдельно']
-];
-
-(function directorInit() {
-  const el = DOC.createElement('div');
-  el.style.cssText =
-    'position:fixed;bottom:7%;left:50%;transform:translateX(-50%);z-index:40;' +
-    'max-width:72%;text-align:center;color:#ffe9c9;' +
-    'font:italic 13px/1.6 Georgia, serif;text-shadow:0 2px 8px #000;' +
-    'opacity:0;transition:opacity .25s;pointer-events:none;';
-  DOC.body.appendChild(el);
-  DIR.el = el;
-
-  window.addEventListener('keydown', (ev) => {
-    if (ev.key.toLowerCase() === 'k' || ev.key.toLowerCase() === 'л') {
-      DIR.on = !DIR.on;
-      if (!DIR.on) DIR.el.style.opacity = '0';
-      if (TOOLS.phaseEl && DIR.on) {
-        TOOLS.phaseEl.textContent = 'КОММЕНТАРИЙ: ВКЛ [K]';
-      }
-    }
-  });
-})();
-
-function upDirector(wall) {
-  if (!DIR.on) return;
-  let idx = -1;
-  for (let i = 0; i < DIR_TRACK.length; i++) {
-    if (wall >= DIR_TRACK[i][0]) idx = i;
-  }
-  if (idx !== DIR.lastLine) {
-    DIR.lastLine = idx;
-    if (idx >= 0) {
-      DIR.el.textContent = '— ' + DIR_TRACK[idx][1];
-      DIR.el.style.opacity = '1';
-    }
-  }
-  // последние строки держим дольше
-  if (idx >= 0) {
-    const nextAt = idx + 1 < DIR_TRACK.length ? DIR_TRACK[idx + 1][0] : 1e9;
-    if (wall > nextAt - 0.4) DIR.el.style.opacity = '0';
-  }
 }
 
 
@@ -7384,7 +7272,6 @@ function endElHook() {
 
 //  ИНСТРУМЕНТ ПРОСМОТРА: таймкод-оверлей [T] + чит-состояния
 //  ?eyes   — мгновенно: тьма + все глаза + поворот
-//  ?hello  — мгновенно: HELLO-момент
 //  ?calm   — светлый зал без таймлайна (для скринов)
 const TC = { el: null, on: false };
 
@@ -7420,21 +7307,6 @@ const TC = { el: null, on: false };
       });
     }, 600);
   }
-  if (/[?&]hello/.test(q)) {
-    setTimeout(() => {
-      BLACKOUT.t = T.t;
-      grade('void');
-      BOSS.eyes.forEach((e) => {
-        e.userData.on = true;
-        e.userData.tOn = T.wall;
-      });
-      BOSS.turn = T.t - 0.8;
-      BOSS.lunge = T.t;
-      STATUE_AWAKE.t = T.t;
-      try { dollyZoom(true); } catch (e) {}
-      try { duckTo(0.12, 0.08); } catch (e) {}
-    }, 900);
-  }
   if (/[?&]calm/.test(q)) {
     setTimeout(() => {
       try { urlpLateHooks(); } catch (e) {}
@@ -7453,7 +7325,7 @@ function upTimecode() {
   const ms = String(Math.floor((t % 1) * 100)).padStart(2, '0');
   const phase =
     T.phase === 'play'
-      ? t < 8.5 ? 'ПРОЛЁТ' : t < 8.95 ? 'ТЬМА' : t < 10.1 ? 'ГЛАЗА' : t < 12.3 ? 'HELLO' : 'КОДА'
+      ? t < 8.5 ? 'ПРОЛЁТ' : t < 8.95 ? 'ТЬМА' : t < 12 ? 'ГЛАЗА' : 'КОДА'
       : T.phase.toUpperCase();
   const shotN = 0;
   TC.el.textContent =
@@ -7465,7 +7337,7 @@ function upTimecode() {
 
 
 //  КУТ-СЦЕНА v4 ФИНАЛЬНАЯ: кино-блок → СВЕТ ВЫКЛ → ГЛАЗА → ПОВОРОТ
-//  (тело поворачивается — глаза НЕ двигаются) → HELLO → тихая кода
+//  пролёт → свет вырубается → глаза
 //  + свободная камера, записки, эпилог, мини-карта, фото-режим
 const barsT = DOC.getElementById('barT');
 const barsB = DOC.getElementById('barB');
@@ -7529,28 +7401,11 @@ let CUES = [
   { t: 9.49, fn: () => ignite(6) },
   { t: 9.60, fn: () => { aHeartStart(44); musChoir(1.4); } },
 
-  // 10.1: HELLO — он сидит, глаза светятся
-  { t: 10.10, fn: () => {
-      OV.flashR = 0.10;
-      OV.punch = 0.16;
-      T.shake = 0.12;
-      aHelloSting(0);
-      musChoir(2.4);
-      speak('Hello!', { lang: 'en', pitch: 0.1, rate: 0.48 });
-      cap('HELLO', null, false);
-      RIG.hand = 0.3;
-      try { EYESFIX.beamAt = T.t; } catch (e) {}
-      try { dollyZoom(true); } catch (e) {}
-      try { duckTo(0.12, 0.08); } catch (e) {}
-      try { bellToll(T.t + 0.3, 0.45); } catch (e) {}
-  } },
-  { t: 11.90, fn: () => { try { duckTo(1, 1.6); } catch (e) {} } },
-
   // 12.3: тишина и тьма
-  { t: 12.30, fn: () => { aHeartStop(); capOff(); OV.fadeT = 1; glitch = 0; } },
+  { t: 12.00, fn: () => { aHeartStop(); capOff(); OV.fadeT = 1; glitch = 0; } },
 
   // 12.9: конец
-  { t: 12.90, fn: () => {
+  { t: 12.60, fn: () => {
       barsT.classList.remove('on');
       barsB.classList.remove('on');
       endEl.classList.add('on');
@@ -7585,7 +7440,7 @@ function upCamera(dt, wall) {
     cam.lookAt(0, 4.15, BOSS_POS.z);
     cam.fov = 50;
   } else {
-    // HELLO: очень медленное надвигание
+    // финал: медленный дрейф к нему в темноте
     const k = clamp((t - 10.1) / 2.3, 0, 1);
     const ease = 1 - Math.pow(1 - k, 5);
     const z = -6.5 + ease * 1.4;
@@ -7658,7 +7513,6 @@ function resetShow() {
   try { creditsShow(false); } catch (e) {}
   try { CARDS.el.style.opacity = '0'; CARDS.hideT = 0; } catch (e) {}
   try { dollyZoom(false); } catch (e) {}
-  try { DIR.lastLine = -1; DIR.el.style.opacity = '0'; } catch (e) {}
   try { if (URLP.shot) T.t = URLP.startT || 0; } catch (e) {}
 }
 function startShow() {
@@ -7729,7 +7583,6 @@ function loop() {
     upEngine(dt, wall);
     upFilm(dt, wall);
     upFilm2(dt, wall);
-    upDirector(wall);
     cardsUpdate(dt);
     dollyZoomUpdate(dt);
     upBlackout(dt);
