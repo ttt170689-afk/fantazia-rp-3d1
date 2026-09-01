@@ -7475,6 +7475,17 @@ const endEl = DOC.getElementById('end');
 const titleEl = DOC.getElementById('title');
 const OV = { flashW: 0, flashR: 0, fade: 1, fadeT: 1, punch: 0 };
 
+// поджиг глаза (щелчок)
+const ignite = (i) => {
+  const e = BOSS.eyes[i];
+  if (e && !e.userData.on) {
+    e.userData.on = true;
+    e.userData.tOn = T.wall;
+    tone(rnd(700, 950), 500, 0.06, 'square', 0.032, 0);
+  }
+};
+
+let cueI = 0;
 let CUES = [
   // 0-6с: ПРОЛЁТ
   { t: 0.00, fn: () => {
