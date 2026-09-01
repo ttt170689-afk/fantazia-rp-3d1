@@ -1855,12 +1855,11 @@ function upBoss(dt, wall) {
     if (!e.userData.on) return;
     litN++;
     const age = wall - e.userData.tOn;
-    const flick = 0.8 + Math.sin(wall * 10 + i * 2.3) * 0.2;
-    e.material.opacity = Math.min(1, age * 1.6) * flick;
+    e.material.opacity = Math.min(1, age * 1.6);
     e.material.color.setHex(0xff2818);
     const er = e.userData.base;
-    e.scale.set(er * 10 * (BOSS.lunge > 0 ? 1.2 : 1), er * 13 * flick, er * 7.5);
-    e.userData.halo.material.opacity = Math.min(0.65, age * 0.9) * flick;
+    e.scale.set(er * 10, er * 13, er * 7.5);
+    e.userData.halo.material.opacity = Math.min(0.6, age * 0.9);
   });
   if (BOSS.shadowPool) {
     BOSS.shadowPool.position.z = g.position.z;
@@ -3831,8 +3830,10 @@ function eyesFadeUpdate(dt) {
   }
 })();
 function eyeBeamsUpdate(dt, wall) {
-  const active = BOSS.lunge > 0 && T.t - BOSS.lunge < 2.2;
-  const k = active ? clamp((T.t - BOSS.lunge) / 0.6, 0, 1) : 0;
+  let src = 0;
+  if (BOSS.lunge > 0 && T.t - BOSS.lunge < 2.2) src = BOSS.lunge;
+  if (EYESFIX.beamAt > 0 && T.t - EYESFIX.beamAt < 2.6) src = EYESFIX.beamAt;
+  const k = src ? clamp((T.t - src) / 0.6, 0, 1) : 0;
   EYESFIX.beams.forEach((b, i) => {
     const e = BOSS.eyes[i];
     if (!e) return;
@@ -3844,7 +3845,7 @@ function eyeBeamsUpdate(dt, wall) {
     const dir = new THREE.Vector3().subVectors(cam.position, wp).normalize();
     const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir);
     b.quaternion.copy(q);
-    b.material.opacity = 0.16 * k * (0.7 + Math.sin(wall * 17 + i * 3) * 0.3);
+    b.material.opacity = 0.15 * k;
     b.scale.set(1 + k * 1.6, 1 + k * 1.6, 1);
   });
 }
@@ -7452,7 +7453,7 @@ function upTimecode() {
   const ms = String(Math.floor((t % 1) * 100)).padStart(2, '0');
   const phase =
     T.phase === 'play'
-      ? t < 6 ? 'ПРОЛЁТ' : t < 6.35 ? 'ТЬМА' : t < 7.4 ? 'ГЛАЗА' : t < 9.6 ? 'HELLO' : 'КОДА'
+      ? t < 8.5 ? 'ПРОЛЁТ' : t < 8.95 ? 'ТЬМА' : t < 10.1 ? 'ГЛАЗА' : t < 12.3 ? 'HELLO' : 'КОДА'
       : T.phase.toUpperCase();
   const shotN = 0;
   TC.el.textContent =
@@ -7485,7 +7486,7 @@ const ignite = (i) => {
 
 let cueI = 0;
 let CUES = [
-  // 0-6с: ПРОЛЁТ
+  // 0-8.5с: медленный пролёт (он сидит у алтаря, спиной)
   { t: 0.00, fn: () => {
       OV.fadeT = 0;
       barsT.classList.add('on');
@@ -7498,16 +7499,16 @@ let CUES = [
       if (DUN.moon) DUN.moon.intensity = 0.26;
       RIG.hand = 1;
   } },
-  { t: 0.15, fn: () => { try { riverStart(); } catch (e) {} } },
-  { t: 0.35, fn: () => capIntro('ГЛУБИНА: −42 МЕТРА', 'ЛОГОВО ХРАНИТЕЛЯ') },
-  { t: 0.80, fn: () => aHeartStart(58) },
-  { t: 2.00, fn: () => capOff() },
-  { t: 3.20, fn: () => { aWhisper(0, 4); grade('cold'); } },
-  { t: 4.60, fn: () => aRiser(1.2, 0.25) },
-  { t: 5.40, fn: () => aHeartStop() },
+  { t: 0.20, fn: () => { try { riverStart(); } catch (e) {} } },
+  { t: 0.40, fn: () => capIntro('ГЛУБИНА: −42 МЕТРА', 'ЛОГОВО ХРАНИТЕЛЯ') },
+  { t: 0.90, fn: () => aHeartStart(58) },
+  { t: 2.40, fn: () => capOff() },
+  { t: 3.60, fn: () => { aWhisper(0, 4); grade('cold'); } },
+  { t: 6.80, fn: () => aRiser(1.4, 0.22) },
+  { t: 8.00, fn: () => aHeartStop() },
 
-  // 6.0: СВЕТ ВЫКЛ + ПОВОРАЧИВАЕТСЯ
-  { t: 6.00, fn: () => {
+  // 8.5: СВЕТ ВЫКЛ (он не встаёт — просто сидит)
+  { t: 8.50, fn: () => {
       BLACKOUT.t = T.t;
       aSubDrop(0);
       glitch = 0.07;
@@ -7516,48 +7517,40 @@ let CUES = [
       for (let i = 0; i < DUN.flamesAll.length; i++) {
         DUN.flamesAll[i].dieT = T.t + i * 0.03;
       }
-      BOSS.turn = T.t;
   } },
 
-  // 6.35-6.9: ГЛАЗА загораются подряд
-  { t: 6.35, fn: () => ignite(0) },
-  { t: 6.44, fn: () => ignite(1) },
-  { t: 6.53, fn: () => ignite(2) },
-  { t: 6.62, fn: () => ignite(3) },
-  { t: 6.71, fn: () => ignite(4) },
-  { t: 6.80, fn: () => ignite(5) },
-  { t: 6.89, fn: () => ignite(6) },
-  { t: 6.95, fn: () => { aHeartStart(44); musChoir(1.2); } },
+  // 8.95-9.5: ГЛАЗА загораются (ровным светом)
+  { t: 8.95, fn: () => ignite(0) },
+  { t: 9.04, fn: () => ignite(1) },
+  { t: 9.13, fn: () => ignite(2) },
+  { t: 9.22, fn: () => ignite(3) },
+  { t: 9.31, fn: () => ignite(4) },
+  { t: 9.40, fn: () => ignite(5) },
+  { t: 9.49, fn: () => ignite(6) },
+  { t: 9.60, fn: () => { aHeartStart(44); musChoir(1.4); } },
 
-  // 7.4: HELLO
-  { t: 7.40, fn: () => {
-      BOSS.lunge = T.t;
-      STATUE_AWAKE.t = T.t;
-      OV.flashR = 0.12;
-      OV.punch = 0.22;
-      T.shake = 0.18;
-      glitch = 0.03;
+  // 10.1: HELLO — он сидит, глаза светятся
+  { t: 10.10, fn: () => {
+      OV.flashR = 0.10;
+      OV.punch = 0.16;
+      T.shake = 0.12;
       aHelloSting(0);
-      DUN.embers.forEach((e) => {
-        const a = rnd(0, Math.PI * 2);
-        e.userData.burst = { x: Math.cos(a) * rnd(0.8, 2.2), z: Math.sin(a) * rnd(0.8, 2.2), t: 0 };
-      });
       musChoir(2.4);
       speak('Hello!', { lang: 'en', pitch: 0.1, rate: 0.48 });
       cap('HELLO', null, false);
-      RIG.hand = 0.4;
+      RIG.hand = 0.3;
+      try { EYESFIX.beamAt = T.t; } catch (e) {}
       try { dollyZoom(true); } catch (e) {}
       try { duckTo(0.12, 0.08); } catch (e) {}
       try { bellToll(T.t + 0.3, 0.45); } catch (e) {}
   } },
-  { t: 9.00, fn: () => { try { duckTo(1, 1.6); } catch (e) {} } },
+  { t: 11.90, fn: () => { try { duckTo(1, 1.6); } catch (e) {} } },
 
-  // 9.6: тишина и тьма
-  { t: 9.60, fn: () => { aHeartStop(); capOff(); OV.fadeT = 1; glitch = 0; } },
+  // 12.3: тишина и тьма
+  { t: 12.30, fn: () => { aHeartStop(); capOff(); OV.fadeT = 1; glitch = 0; } },
 
-  // 11.8: конец
-  { t: 10.00, fn: () => {
-      titleEl.classList.remove('on');
+  // 12.9: конец
+  { t: 12.90, fn: () => {
       barsT.classList.remove('on');
       barsB.classList.remove('on');
       endEl.classList.add('on');
@@ -7575,35 +7568,35 @@ function runCues() {
 // -- камера кут-сцены (старый путь — кино-блок до 16.4 отдаёт ей) --
 function upCamera(dt, wall) {
   const t = T.t;
-  if (t < 6) {
-    // 6 секунд от входа почти вплотную
-    const z = cine(36, -6.5, 0, 6, t);
-    const y = cine(3.7, 3.05, 0, 6, t) + Math.sin(wall * 1.15) * 0.09;
-    const x = Math.sin(wall * 0.42) * lerp(1.6, 0.35, t / 6) + Math.sin(t * 0.35) * 0.4;
+  if (t < 8.5) {
+    // медленный пролёт 8.5 секунд
+    const z = cine(36, -6.5, 0, 8.5, t);
+    const y = cine(3.7, 3.05, 0, 8.5, t) + Math.sin(wall * 0.9) * 0.07;
+    const x = Math.sin(wall * 0.3) * lerp(1.6, 0.3, t / 8.5) + Math.sin(t * 0.22) * 0.3;
     cam.position.set(x, y, z);
-    const lookY = cine(2.6, 4.2, 1.5, 6, t);
+    const lookY = cine(2.6, 4.15, 2, 8.5, t);
     cam.lookAt(0, lookY, BOSS_POS.z);
-    cam.rotateZ(Math.sin(wall * 0.45) * 0.022);
-    cam.fov = cine(64, 50, 0, 6, t) + Math.sin(wall * 0.85) * 0.5;
-  } else if (t < 7.4) {
-    // тьма + разворот: камера замерла
-    const z = -6.5 + Math.sin(wall * 0.5) * 0.2;
-    cam.position.set(Math.sin(wall * 0.34) * 0.28, 3.05 + Math.sin(wall * 0.8) * 0.07, z);
+    cam.rotateZ(Math.sin(wall * 0.32) * 0.016);
+    cam.fov = cine(64, 50, 0, 8.5, t) + Math.sin(wall * 0.6) * 0.4;
+  } else if (t < 10.1) {
+    // тьма: камера почти замерла
+    const z = -6.5 + Math.sin(wall * 0.4) * 0.16;
+    cam.position.set(Math.sin(wall * 0.26) * 0.22, 3.05 + Math.sin(wall * 0.7) * 0.05, z);
     cam.lookAt(0, 4.15, BOSS_POS.z);
     cam.fov = 50;
   } else {
-    // HELLO: медленное надвигание
-    const k = clamp((t - 7.4) / 2.4, 0, 1);
+    // HELLO: очень медленное надвигание
+    const k = clamp((t - 10.1) / 2.3, 0, 1);
     const ease = 1 - Math.pow(1 - k, 5);
-    const z = -6.5 + ease * 1.9;
-    cam.position.set(Math.sin(wall * 0.3) * 0.2, 3.05, z);
+    const z = -6.5 + ease * 1.4;
+    cam.position.set(Math.sin(wall * 0.24) * 0.16, 3.05, z);
     cam.lookAt(0, 4.15, BOSS_POS.z);
     cam.fov = 50;
   }
   if (OV.punch > 0) {
-    OV.punch = Math.max(0, OV.punch - dt * 2.0);
-    cam.fov -= OV.punch * 13;
-    cam.position.z += OV.punch * 1.1;
+    OV.punch = Math.max(0, OV.punch - dt * 1.6);
+    cam.fov -= OV.punch * 10;
+    cam.position.z += OV.punch * 0.8;
   }
   cam.updateProjectionMatrix();
 }
