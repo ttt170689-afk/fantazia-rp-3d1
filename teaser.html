@@ -89,15 +89,10 @@
 
 </script>
 <script id="cine">
-
-// ═══════════ ЧАСТЬ p1 ═══════════
-// ═══════════ ЧАСТЬ p1 ═══════════
 (function(){
 'use strict';
-// ═══════════════════════════════════════════════════════════════════
 //  FANTAZIA RP 3D — «ПОДЗЕМЕЛЬЕ ХРАНИТЕЛЯ»
 //  кут-сцена: пролёт к боссу → свет гаснет → глаза → поворот → HELLO!
-// ═══════════════════════════════════════════════════════════════════
 const DOC = document;
 const cv = DOC.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, preserveDrawingBuffer: true });
@@ -120,7 +115,7 @@ const cine = (a, b, t0, t1, t) => {
   return a + (b - a) * (k * k * k * (k * (k * 6 - 15) + 10));
 };
 
-// ── генератор текстур ──
+// -- генератор текстур --
 function cvsTex(w, h, fn, rx, ry) {
   const c = DOC.createElement('canvas');
   c.width = w; c.height = h;
@@ -218,7 +213,7 @@ TEX.runes = cvsTex(512, 128, (q, w, h) => {
   q.fillText(str, w / 2, h / 2);
 });
 
-// ── сцена ──
+// -- сцена --
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x050308);
 scene.fog = new THREE.Fog(0x080409, 6, 62);
@@ -232,7 +227,7 @@ window.addEventListener('resize', () => {
   cam.updateProjectionMatrix();
 });
 
-// ── титры ──
+// -- титры --
 const capEl = DOC.getElementById('cap');
 function cap(main, sub, jit) {
   capEl.innerHTML = main + (sub ? '<span class="sm">' + sub + '</span>' : '');
@@ -241,7 +236,7 @@ function cap(main, sub, jit) {
 }
 const capOff = () => capEl.classList.remove('on');
 
-// ── пост: зерно + глитч ──
+// -- пост: зерно + глитч --
 const grains = [];
 for (let i = 0; i < 6; i++) {
   const c = DOC.createElement('canvas');
@@ -281,7 +276,6 @@ function post2D(dt) {
   }
 }
 
-// ═══ ЗВУК ═══
 let AU = null, MG = null, heartTimer = null;
 function audioInit() {
   if (AU) return;
@@ -401,7 +395,7 @@ function aHelloSting(when) { // «HELLO!» — стинг из бездны
   tone(110, 38, 1.4, 'sine', 0.22, when || 0);
 }
 
-// ── речь (браузерный синтез) ──
+// -- речь (браузерный синтез) --
 const VOICE = { ru: null, en: null };
 function pickVoices() {
   if (!('speechSynthesis' in window)) return;
@@ -432,12 +426,8 @@ const speechStop = () => { try { speechSynthesis.cancel(); } catch (e) {} };
 const T = { t: 0, wall: 0, phase: 'start', shake: 0, speed: 1 };
 
 
-// ═══════════ ЧАСТЬ p2 ═══════════
-// ═══════════ ЧАСТЬ p2 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  ПОДЗЕМЕЛЬЕ — зал Хранителя (максимальная детализация)
 //  зал: x ±13, z от -26 (алтарь) до +38 (вход), свод-бочка
-// ═══════════════════════════════════════════════════════════════════
 const DUN = { torches: [], dust: [], embers: [], smoke: [], runes: [], crystals: [], statueEyes: [], shafts: [], flamesAll: [] };
 const BOSS_POS = { x: 0, z: -15 };
 
@@ -449,7 +439,7 @@ const BOSS_POS = { x: 0, z: -15 };
   DUN.moon.position.set(0, 10, 10);
   add(DUN.moon);
 
-  // ── ПОЛ ──
+  // -- ПОЛ --
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(27, 66),
     new THREE.MeshLambertMaterial({ map: TEX.floor })
@@ -468,7 +458,7 @@ const BOSS_POS = { x: 0, z: -15 };
     add(st);
   }
 
-  // ── СТЕНЫ (кирпич) ──
+  // -- СТЕНЫ (кирпич) --
   const wallMat = new THREE.MeshLambertMaterial({ map: TEX.brick });
   [-13.5, 13.5].forEach((wx) => {
     const w = new THREE.Mesh(new THREE.PlaneGeometry(66, 13), wallMat);
@@ -486,7 +476,7 @@ const BOSS_POS = { x: 0, z: -15 };
   frontW.rotation.y = Math.PI;
   add(frontW);
 
-  // ── СВОД-БОЧКА (полуцилиндр) + рёбра ──
+  // -- СВОД-БОЧКА (полуцилиндр) + рёбра --
   const vault = new THREE.Mesh(
     new THREE.CylinderGeometry(13.6, 13.6, 66, 26, 1, true, 0, Math.PI),
     new THREE.MeshLambertMaterial({ map: TEX.ceil, side: THREE.BackSide })
@@ -515,7 +505,7 @@ const BOSS_POS = { x: 0, z: -15 };
     add(keystone);
   }
 
-  // ── КОЛОННЫ по рядам x=±10 с капителями и базами ──
+  // -- КОЛОННЫ по рядам x=±10 с капителями и базами --
   const colMat = new THREE.MeshLambertMaterial({ color: 0x2a2230 });
   const colMatD = new THREE.MeshLambertMaterial({ color: 0x1f1926 });
   for (let z = -20; z <= 34; z += 9) {
@@ -556,7 +546,7 @@ const BOSS_POS = { x: 0, z: -15 };
     });
   }
 
-  // ── АЛТАРЬ: три ступени ──
+  // -- АЛТАРЬ: три ступени --
   const stepMat = new THREE.MeshLambertMaterial({ color: 0x2e2534 });
   [[9.5, 0.35, -15.5], [7.6, 0.35, -15.2], [5.7, 0.4, -14.9]].forEach(([sw, sh, sz], i) => {
     const st = new THREE.Mesh(new THREE.BoxGeometry(sw, sh, 5.5 - i * 0.6), stepMat);
@@ -564,7 +554,7 @@ const BOSS_POS = { x: 0, z: -15 };
     add(st);
   });
 
-  // ── РИТУАЛЬНЫЙ КРУГ (перед алтарём) ──
+  // -- РИТУАЛЬНЫЙ КРУГ (перед алтарём) --
   [[5.2, 5.7, 0x5a0f1a], [7.8, 8.15, 0x460c15], [10.4, 10.75, 0x360910]].forEach(([r0, r1, c]) => {
     const ring = new THREE.Mesh(
       new THREE.RingGeometry(r0, r1, 48),
@@ -604,7 +594,7 @@ const BOSS_POS = { x: 0, z: -15 };
   add(circleLight);
   DUN.circleLight = circleLight;
 
-  // ── ФАКЕЛЫ на стенах и колоннах ──
+  // -- ФАКЕЛЫ на стенах и колоннах --
   function mkTorch(x, z, ry) {
     const g = new THREE.Group();
     const bracket = new THREE.Mesh(
@@ -654,7 +644,7 @@ const BOSS_POS = { x: 0, z: -15 };
   mkTorch(-4.5, -25.9, 0);
   mkTorch(4.5, -25.9, 0);
 
-  // ── ЧАШИ-ЖАРОВНИ у круга ──
+  // -- ЧАШИ-ЖАРОВНИ у круга --
   function mkBrazier(x, z) {
     const g = new THREE.Group();
     for (let l = 0; l < 3; l++) {
@@ -693,7 +683,7 @@ const BOSS_POS = { x: 0, z: -15 };
   mkBrazier(-5.6, -6.2);
   mkBrazier(5.6, -6.2);
 
-  // ── СТАТУИ-СТРАЖИ по бокам алтаря ──
+  // -- СТАТУИ-СТРАЖИ по бокам алтаря --
   function mkStatue(x, z, ry) {
     const g = new THREE.Group();
     const stone = new THREE.MeshLambertMaterial({ color: 0x35303c });
@@ -732,7 +722,7 @@ const BOSS_POS = { x: 0, z: -15 };
   mkStatue(-4.6, -18.5, 0.5);
   mkStatue(4.6, -18.5, -0.5);
 
-  // ── КРИСТАЛЛЫ (красные, светятся) у стен ──
+  // -- КРИСТАЛЛЫ (красные, светятся) у стен --
   function mkCrystals(x, z, n) {
     for (let i = 0; i < n; i++) {
       const h = rnd(0.5, 1.5);
@@ -761,7 +751,7 @@ const BOSS_POS = { x: 0, z: -15 };
   mkCrystals(-11.6, 20, 3);
   mkCrystals(11.8, 28, 4);
 
-  // ── ЦЕПИ с потолка + крюки ──
+  // -- ЦЕПИ с потолка + крюки --
   function mkChain(x, z, len) {
     const segs = Math.floor(len / 0.34);
     for (let i = 0; i < segs; i++) {
@@ -811,7 +801,7 @@ const BOSS_POS = { x: 0, z: -15 };
     add(g);
   })();
 
-  // ── ЧЕРЕПА И КОСТИ у стен ──
+  // -- ЧЕРЕПА И КОСТИ у стен --
   const boneMat = new THREE.MeshLambertMaterial({ color: 0x8a8578, emissive: 0x14100c, emissiveIntensity: 0.5 });
   function mkSkullPile(x, z, n) {
     for (let i = 0; i < n; i++) {
@@ -841,7 +831,7 @@ const BOSS_POS = { x: 0, z: -15 };
   mkSkullPile(-11.2, 24, 5);
   mkSkullPile(11.4, -22, 6);
 
-  // ── ОБЛОМКИ КАМНЯ ──
+  // -- ОБЛОМКИ КАМНЯ --
   for (let i = 0; i < 16; i++) {
     const rock = new THREE.Mesh(
       new THREE.DodecahedronGeometry(rnd(0.25, 0.75), 0),
@@ -863,7 +853,7 @@ const BOSS_POS = { x: 0, z: -15 };
     add(pit);
   }
 
-  // ── ЛУЖИ (блестящие тёмные) ──
+  // -- ЛУЖИ (блестящие тёмные) --
   for (let i = 0; i < 5; i++) {
     const pud = new THREE.Mesh(
       new THREE.CircleGeometry(rnd(0.8, 1.7), 16),
@@ -875,7 +865,7 @@ const BOSS_POS = { x: 0, z: -15 };
     add(pud);
   }
 
-  // ── ПАУТИНА в углах ──
+  // -- ПАУТИНА в углах --
   const webMat = new THREE.MeshBasicMaterial({ color: 0xbfc4d4, transparent: true, opacity: 0.07, side: THREE.DoubleSide });
   for (let i = 0; i < 8; i++) {
     const web = new THREE.Mesh(new THREE.PlaneGeometry(rnd(1.4, 2.6), rnd(1.4, 2.6)), webMat);
@@ -886,7 +876,7 @@ const BOSS_POS = { x: 0, z: -15 };
     add(web);
   }
 
-  // ── ЗНАМЁНА на колоннах (истлевшие, с эмблемой парка) ──
+  // -- ЗНАМЁНА на колоннах (истлевшие, с эмблемой парка) --
   const bannerTex = cvsTex(128, 256, (q, w, h) => {
     q.fillStyle = '#1c0d16';
     q.fillRect(0, 0, w, h);
@@ -914,7 +904,7 @@ const BOSS_POS = { x: 0, z: -15 };
     add(bn);
   }
 
-  // ── СВЕТОВЫЕ КОЛОННЫ из дыр потолка ──
+  // -- СВЕТОВЫЕ КОЛОННЫ из дыр потолка --
   for (let i = 0; i < 3; i++) {
     const shaft = new THREE.Mesh(
       new THREE.ConeGeometry(rnd(1.4, 2.2), 12, 14, 1, true),
@@ -928,7 +918,7 @@ const BOSS_POS = { x: 0, z: -15 };
     add(shaft);
   }
 
-  // ── ЧАСТИЦЫ: пыль · угли · дым ──
+  // -- ЧАСТИЦЫ: пыль · угли · дым --
   for (let i = 0; i < 80; i++) {
     const d = new THREE.Sprite(new THREE.SpriteMaterial({
       map: TEX.warm, color: 0x8a7a6a, transparent: true, opacity: rnd(0.03, 0.1),
@@ -963,7 +953,7 @@ const BOSS_POS = { x: 0, z: -15 };
   }
 })();
 
-// ── анимация подземелья ──
+// -- анимация подземелья --
 const BLACKOUT = { t: -1 }; // момент выключения света
 const scanEl = DOC.getElementById('scan');
 function upDungeon(dt, wall) {
@@ -1056,14 +1046,11 @@ function upDungeon(dt, wall) {
 const STATUE_AWAKE = { t: -1 };
 
 
-// ═══════════ ЧАСТЬ p2b ═══════════
-// ═══════════ ЧАСТЬ p2b ═══════════
-// ═════════════ ДОПОЛНИТЕЛЬНАЯ ДЕТАЛИЗАЦИЯ ПОДЗЕМЕЛЬЯ ═════════════
 const DUN2 = { rats: [], drips: [], bubbles: [], chandelier: null, gateBars: [] };
 (function dungeonExtras() {
   const add = (m) => { scene.add(m); return m; };
 
-  // ── ОССУАРИЙ: ниши в стенах с черепами ──
+  // -- ОССУАРИЙ: ниши в стенах с черепами --
   const nicheMat = new THREE.MeshBasicMaterial({ color: 0x030205 });
   const ledgeMat = new THREE.MeshLambertMaterial({ color: 0x241e2a });
   for (let i = 0; i < 10; i++) {
@@ -1099,7 +1086,7 @@ const DUN2 = { rats: [], drips: [], bubbles: [], chandelier: null, gateBars: [] 
     add(arch2);
   }
 
-  // ── САРКОФАГ у стены (открытый, пустой — намекает, что Хранитель встал) ──
+  // -- САРКОФАГ у стены (открытый, пустой — намекает, что Хранитель встал) --
   (function sarcophagus() {
     const g = new THREE.Group();
     const base = new THREE.Mesh(
@@ -1134,7 +1121,7 @@ const DUN2 = { rats: [], drips: [], bubbles: [], chandelier: null, gateBars: [] 
     add(g);
   })();
 
-  // ── РОВ с красной светящейся жидкостью вокруг алтаря ──
+  // -- РОВ с красной светящейся жидкостью вокруг алтаря --
   (function moat() {
     const moatMat = new THREE.MeshBasicMaterial({ color: 0x5a0a14, transparent: true, opacity: 0.85 });
     // кольцевой ров (два кольца между ступенями)
@@ -1166,7 +1153,7 @@ const DUN2 = { rats: [], drips: [], bubbles: [], chandelier: null, gateBars: [] 
     }
   })();
 
-  // ── ЛЮСТРА-КОЛЬЦО над кругом (кольцо + свечи) ──
+  // -- ЛЮСТРА-КОЛЬЦО над кругом (кольцо + свечи) --
   (function chandelier() {
     const g = new THREE.Group();
     const ring = new THREE.Mesh(
@@ -1214,7 +1201,7 @@ const DUN2 = { rats: [], drips: [], bubbles: [], chandelier: null, gateBars: [] 
     DUN.flamesAll.push({ f1: flames[0], f2: null, li, on: 1, dieT: -1, ph: 1, chandel: true });
   })();
 
-  // ── БАРЕЛЬЕФЫ на стенах (высеченные сцены) ──
+  // -- БАРЕЛЬЕФЫ на стенах (высеченные сцены) --
   const reliefTex = cvsTex(256, 128, (q, w, h) => {
     q.fillStyle = '#221c28';
     q.fillRect(0, 0, w, h);
@@ -1256,7 +1243,7 @@ const DUN2 = { rats: [], drips: [], bubbles: [], chandelier: null, gateBars: [] 
     add(frame);
   }
 
-  // ── КАПЕЛЬ с потолка: струйки + лужицы-блики ──
+  // -- КАПЕЛЬ с потолка: струйки + лужицы-блики --
   for (let i = 0; i < 10; i++) {
     const d = new THREE.Sprite(new THREE.SpriteMaterial({
       map: TEX.cyan, color: 0x8ab4d4, transparent: true, opacity: rnd(0.25, 0.5),
@@ -1269,7 +1256,7 @@ const DUN2 = { rats: [], drips: [], bubbles: [], chandelier: null, gateBars: [] 
     add(d);
   }
 
-  // ── КРЫСЫ: снуют по полу у стен (маленькие тени) ──
+  // -- КРЫСЫ: снуют по полу у стен (маленькие тени) --
   for (let i = 0; i < 5; i++) {
     const rat = new THREE.Group();
     const body = new THREE.Mesh(
@@ -1297,7 +1284,7 @@ const DUN2 = { rats: [], drips: [], bubbles: [], chandelier: null, gateBars: [] 
     add(rat);
   }
 
-  // ── ВОРОТА на входе (решётка, сквозь которую начинали) ──
+  // -- ВОРОТА на входе (решётка, сквозь которую начинали) --
   (function gate() {
     const g = new THREE.Group();
     for (let b = 0; b < 9; b++) {
@@ -1329,7 +1316,7 @@ const DUN2 = { rats: [], drips: [], bubbles: [], chandelier: null, gateBars: [] 
     add(g);
   })();
 
-  // ── СЛОМАННАЯ КОЛОННА у входа (упала) ──
+  // -- СЛОМАННАЯ КОЛОННА у входа (упала) --
   (function brokenColumn() {
     const seg1 = new THREE.Mesh(
       new THREE.CylinderGeometry(0.66, 0.72, 2.4, 11),
@@ -1354,7 +1341,7 @@ const DUN2 = { rats: [], drips: [], bubbles: [], chandelier: null, gateBars: [] 
     add(stump);
   })();
 
-  // ── СТОРОЖЕВОЙ ГРИФОН? нет — ВОРОН на обломке (глазами блестит) ──
+  // -- СТОРОЖЕВОЙ ГРИФОН? нет — ВОРОН на обломке (глазами блестит) --
   (function raven() {
     const g = new THREE.Group();
     const body = new THREE.Mesh(
@@ -1400,7 +1387,7 @@ const DUN2 = { rats: [], drips: [], bubbles: [], chandelier: null, gateBars: [] 
   })();
 })();
 
-// ── ПУЛ ДЫМОВ: последний дым гаснущего факела ──
+// -- ПУЛ ДЫМОВ: последний дым гаснущего факела --
 DUN2.puffs = [];
 for (let i = 0; i < 14; i++) {
   const p = new THREE.Sprite(new THREE.SpriteMaterial({
@@ -1412,7 +1399,7 @@ for (let i = 0; i < 14; i++) {
   scene.add(p);
 }
 
-// ── анимация доп-деталей ──
+// -- анимация доп-деталей --
 function upExtras(dt, wall) {
   const bk = BLACKOUT.t >= 0 ? clamp((T.t - BLACKOUT.t) / 0.5, 0, 1) : 0;
   // дымы-пуфы от факелов
@@ -1481,11 +1468,7 @@ function upExtras(dt, wall) {
 }
 
 
-// ═══════════ ЧАСТЬ p3 ═══════════
-// ═══════════ ЧАСТЬ p3 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  ХРАНИТЕЛЬ — самая детальная модель босса
-// ═══════════════════════════════════════════════════════════════════
 const BOSS = {
   grp: null, mats: [], eyes: [], halos: [], arms: [], hands: [],
   jaw: null, tendrils: [], rocks: [], aura: [], heart: null, heartLight: null,
@@ -1499,7 +1482,7 @@ const BOSS = {
   const hornMat = new THREE.MeshLambertMaterial({ color: 0x342b3a, emissive: 0x38121c, emissiveIntensity: 0.55 });
   const darkMat = new THREE.MeshLambertMaterial({ color: 0x14101c, emissive: 0x180410, emissiveIntensity: 0.5 });
 
-  // ── МАНТИЯ: три яруса + рваный подол из шипов ──
+  // -- МАНТИЯ: три яруса + рваный подол из шипов --
   const robe1 = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 1.15, 1.5, 12, 1, true), robeMat);
   robe1.position.y = 1.9;
   g.add(robe1);
@@ -1564,7 +1547,7 @@ const BOSS = {
   g.add(heartLight);
   BOSS.heartLight = heartLight;
 
-  // ── ЧЕРЕП ──
+  // -- ЧЕРЕП --
   const skull = new THREE.Mesh(new THREE.SphereGeometry(0.4, 14, 12), boneMat);
   skull.scale.set(1, 1.32, 0.96);
   skull.position.y = 3.78;
@@ -1597,7 +1580,7 @@ const BOSS = {
   const brow = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.07, 0.12), boneMat);
   brow.position.set(0, 4.06, 0.3);
   g.add(brow);
-  // ── ЧЕЛЮСТЬ с двумя рядами зубов ──
+  // -- ЧЕЛЮСТЬ с двумя рядами зубов --
   const jaw = new THREE.Group();
   const chin = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.2, 0.36), boneMat);
   chin.position.y = -0.1;
@@ -1629,7 +1612,7 @@ const BOSS = {
   g.add(mouthGlow);
   BOSS.mouthGlow = mouthGlow;
 
-  // ── РОГА: 5 сегментов с кольцами-рифами + корона мелких ──
+  // -- РОГА: 5 сегментов с кольцами-рифами + корона мелких --
   function horn(side) {
     const gp = new THREE.Group();
     let p = new THREE.Vector3(side * 0.3, 4.14, -0.04);
@@ -1669,7 +1652,7 @@ const BOSS = {
     g.add(sp);
   }
 
-  // ── 7 ГЛАЗ (погашены, включаются по одному) ──
+  // -- 7 ГЛАЗ (погашены, включаются по одному) --
   const eyeDefs = [
     [-0.16, 3.9, 0.36, 0.105], [0.16, 3.9, 0.36, 0.105],
     [-0.26, 3.64, 0.32, 0.055], [0.05, 3.6, 0.35, 0.05],
@@ -1700,7 +1683,7 @@ const BOSS = {
   g.add(eyeLight);
   BOSS.eyeLight = eyeLight;
 
-  // ── РУКИ: плечо→предплечье→кисть с 3 когтями по 2 сегмента ──
+  // -- РУКИ: плечо→предплечье→кисть с 3 когтями по 2 сегмента --
   [-1, 1].forEach((sx) => {
     const arm = new THREE.Group();
     const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.082, 1.35, 6), boneMat);
@@ -1735,7 +1718,7 @@ const BOSS = {
     BOSS.hands.push(hand);
   });
 
-  // ── ЩУПАЛЬЦА-ТЕНИ за спиной (7 цепочек по 5 звеньев) ──
+  // -- ЩУПАЛЬЦА-ТЕНИ за спиной (7 цепочек по 5 звеньев) --
   for (let i = 0; i < 7; i++) {
     const sx = (i - 3) * 0.42;
     const chain = [];
@@ -1752,7 +1735,7 @@ const BOSS = {
     BOSS.tendrils.push(chain);
   }
 
-  // ── ОРБИТАЛЬНЫЕ КАМНИ вокруг Хранителя ──
+  // -- ОРБИТАЛЬНЫЕ КАМНИ вокруг Хранителя --
   for (let i = 0; i < 9; i++) {
     const rock = new THREE.Mesh(
       new THREE.DodecahedronGeometry(rnd(0.1, 0.26), 0),
@@ -1762,7 +1745,7 @@ const BOSS = {
     g.add(rock);
     BOSS.rocks.push(rock);
   }
-  // ── АУРА: частицы поднимаются вокруг ──
+  // -- АУРА: частицы поднимаются вокруг --
   for (let i = 0; i < 24; i++) {
     const a = new THREE.Sprite(new THREE.SpriteMaterial({
       map: TEX.red, color: 0x882028, transparent: true, opacity: rnd(0.12, 0.3),
@@ -1782,7 +1765,7 @@ const BOSS = {
   BOSS.matsList = [robeMat, robeMat2, boneMat, hornMat, darkMat].map((m) => ({ m, b: m.emissiveIntensity }));
 })();
 
-// ── анимация босса ──
+// -- анимация босса --
 function upBoss(dt, wall) {
   const g = BOSS.grp;
   const bkd = BLACKOUT.t >= 0 ? clamp((T.t - BLACKOUT.t) / 0.5, 0, 1) : 0;
@@ -1895,12 +1878,9 @@ function upBoss(dt, wall) {
 }
 
 
-// ═══════════ ЧАСТЬ p3b ═══════════
-// ═══════════ ЧАСТЬ p3b ═══════════
-// ═════════════ ДОРАБОТКА БОССА: спинные шипы, глифы, тень-пульт ─════════════
 (function bossExtras() {
   const g = BOSS.grp;
-  // ── ШИПЫ ВДОЛЬ ПОЗВОНОЧНИКА ──
+  // -- ШИПЫ ВДОЛЬ ПОЗВОНОЧНИКА --
   const hornMat = new THREE.MeshLambertMaterial({ color: 0x342b3a, emissive: 0x38121c, emissiveIntensity: 0.55 });
   for (let k = 0; k < 6; k++) {
     const sp = new THREE.Mesh(new THREE.ConeGeometry(0.05 + (k === 2 ? 0.03 : 0), 0.22 + (k === 2 ? 0.14 : 0), 5), hornMat);
@@ -1908,7 +1888,7 @@ function upBoss(dt, wall) {
     sp.rotation.x = -0.6;
     g.add(sp);
   }
-  // ── ПОЛОТНЯНЫЕ ПОЛОСЫ на поясе (ткань, колышется) ──
+  // -- ПОЛОТНЯНЫЕ ПОЛОСЫ на поясе (ткань, колышется) --
   BOSS.cloths = [];
   const clothMat = new THREE.MeshLambertMaterial({ color: 0x140a18, emissive: 0x1a0510, emissiveIntensity: 0.4, side: THREE.DoubleSide });
   for (let i = 0; i < 5; i++) {
@@ -1919,7 +1899,7 @@ function upBoss(dt, wall) {
     g.add(cloth);
     BOSS.cloths.push(cloth);
   }
-  // ── ТЕНЬ-ПУЛ под боссом (тёмное пятно, больше при рывке) ──
+  // -- ТЕНЬ-ПУЛ под боссом (тёмное пятно, больше при рывке) --
   BOSS.shadowPool = new THREE.Mesh(
     new THREE.CircleGeometry(2.2, 22),
     new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.5 })
@@ -1927,7 +1907,7 @@ function upBoss(dt, wall) {
   BOSS.shadowPool.rotation.x = -Math.PI / 2;
   BOSS.shadowPool.position.set(BOSS_POS.x, 0.03, BOSS_POS.z);
   scene.add(BOSS.shadowPool);
-  // ── РУНИЧЕСКИЕ ГЛИФЫ вокруг головы ──
+  // -- РУНИЧЕСКИЕ ГЛИФЫ вокруг головы --
   BOSS.glyphs = [];
   const glyphTex = cvsTex(96, 96, (q, w, h) => {
     q.font = '900 58px Segoe UI';
@@ -1947,7 +1927,7 @@ function upBoss(dt, wall) {
     scene.add(gl);
     BOSS.glyphs.push(gl);
   }
-  // ── ЦЕПИ НА ЗАПЯСТЬЯХ (оборванные, свисают) ──
+  // -- ЦЕПИ НА ЗАПЯСТЬЯХ (оборванные, свисают) --
   BOSS.wristChains = [];
   [-1, 1].forEach((sx) => {
     let y = 0.6;
@@ -1966,13 +1946,9 @@ function upBoss(dt, wall) {
 })();
 
 
-// ═══════════ ЧАСТЬ p5 ═══════════
-// ═══════════ ЧАСТЬ p5 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  ДВИЖОК КАЧЕСТВА: изинг · шум · риг камеры · реверб · частицы · цвет
-// ═══════════════════════════════════════════════════════════════════
 
-// ── EASING-библиотека (кинематографические кривые) ──
+// -- EASING-библиотека (кинематографические кривые) --
 const EZ = {
   linear: (k) => k,
   quadIn: (k) => k * k,
@@ -2022,7 +1998,7 @@ const ANIM = {
 EZ.cubicInOut = (k) => k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
 EZ.quintInOut = (k) => k < 0.5 ? 16 * k * k * k * k * k : 1 - Math.pow(-2 * k + 2, 5) / 2;
 
-// ── ШУМ (value noise, детерминированный) ──
+// -- ШУМ (value noise, детерминированный) --
 const NZ = (function () {
   const hash = (n) => {
     let x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
@@ -2049,7 +2025,7 @@ const NZ = (function () {
   return { n1: noise1, n2: noise2, fbm };
 })();
 
-// ── РИГ КАМЕРЫ: ручная камера, крен, дыхание, шум-тряска ──
+// -- РИГ КАМЕРЫ: ручная камера, крен, дыхание, шум-тряска --
 const RIG = {
   hand: 1,          // сила «рук оператора»
   roll: 0,          // текущий крен
@@ -2086,7 +2062,7 @@ const RIG = {
   }
 };
 
-// ── АУДИО PRO: реверб-эхо подземелья + эмбиент-планировщик ──
+// -- АУДИО PRO: реверб-эхо подземелья + эмбиент-планировщик --
 const AUDIO2 = {
   ready: false, wet: null, ir: null,
   initReverb() {
@@ -2122,7 +2098,7 @@ const AUDIO2 = {
     } catch (e) {}
   }
 };
-// ── эмбиент подземелья: далёкие капели, скрипы камней, порывы ветра ──
+// -- эмбиент подземелья: далёкие капели, скрипы камней, порывы ветра --
 const AMB = {
   timer: 2.5,
   update(dt) {
@@ -2170,7 +2146,7 @@ const AMB = {
   };
 })();
 
-// ── СИСТЕМА ЧАСТИЦ (пул) ──
+// -- СИСТЕМА ЧАСТИЦ (пул) --
 class ParticlePool {
   constructor(n, tex, blending) {
     this.items = [];
@@ -2228,7 +2204,7 @@ const SPARKS = new ParticlePool(70, TEX.warm);
 const ASH = new ParticlePool(50, TEX.smoke);
 const LEAF = new ParticlePool(14, TEX.smoke, THREE.NormalBlending);
 
-// ── ЦВЕТОКОР (киноплёнка) ──
+// -- ЦВЕТОКОР (киноплёнка) --
 const GRADES = {
   none:   'none',
   warm:   'saturate(1.06) contrast(1.04) brightness(1.03) sepia(.08)',
@@ -2240,7 +2216,7 @@ function grade(name) {
   cv.style.filter = GRADES[name] || 'none';
 }
 
-// ── ПОСТ v2: хроматика на глитче + пульс виньетки ──
+// -- ПОСТ v2: хроматика на глитче + пульс виньетки --
 const vigEl = DOC.getElementById('vig');
 function FXPost(dt) {
   // виньетка дышит с сердцем
@@ -2260,7 +2236,7 @@ function FXPost(dt) {
   }
 }
 
-// ── FPS-адаптер качества ──
+// -- FPS-адаптер качества --
 const FPSQ = { acc: 0, n: 0, low: 0, dropped: false };
 function fpsAdapt(dt) {
   if (T.phase !== 'play') return;
@@ -2290,15 +2266,11 @@ function upEngine(dt, wall) {
 }
 
 
-// ═══════════ ЧАСТЬ p6 ═══════════
-// ═══════════ ЧАСТЬ p6 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  АНИМАЦИИ v2: мантия-полосы · скан головы · блинки · корни парка ·
 //  пепел · отражения · паук · костяные колокола · мох · монеты · свечи
-// ═══════════════════════════════════════════════════════════════════
 const V2 = { strips: [], roots: [], leaves: 0, leafT: 2, candles: [], moss: [], coins: [], chimes: [], spider: null, spiderThread: null, floorFog: [], floorGlow: null, banners: [] };
 
-// ── МАНТИЯ-ПОЛОСЫ: 22 вертикальных лоскута на боссе, колышутся ──
+// -- МАНТИЯ-ПОЛОСЫ: 22 вертикальных лоскута на боссе, колышутся --
 (function bossCloakStrips() {
   const g = BOSS.grp;
   const mat1 = new THREE.MeshLambertMaterial({ color: 0x0a0510, emissive: 0x23060f, emissiveIntensity: 0.55, side: THREE.DoubleSide });
@@ -2335,7 +2307,7 @@ const V2 = { strips: [], roots: [], leaves: 0, leafT: 2, candles: [], moss: [], 
   BOSS.matsList.push({ m: mat1, b: 0.55 }, { m: mat2, b: 0.5 });
 })();
 
-// ── КОРНИ ПАРКА сквозь свод (парк над нами!) + падающие листья ──
+// -- КОРНИ ПАРКА сквозь свод (парк над нами!) + падающие листья --
 (function rootsFromPark() {
   const rootMat = new THREE.MeshLambertMaterial({ color: 0x2e2018 });
   for (let i = 0; i < 7; i++) {
@@ -2372,7 +2344,7 @@ const V2 = { strips: [], roots: [], leaves: 0, leafT: 2, candles: [], moss: [], 
   }
 })();
 
-// ── ОТРАЖЕНИЕ ГЛАЗ на мокром полу ──
+// -- ОТРАЖЕНИЕ ГЛАЗ на мокром полу --
 (function eyeReflection() {
   const glow = new THREE.Mesh(
     new THREE.CircleGeometry(2.6, 24),
@@ -2397,7 +2369,7 @@ const V2 = { strips: [], roots: [], leaves: 0, leafT: 2, candles: [], moss: [], 
   });
 })();
 
-// ── НАСТОЛЬНЫЕ СВЕЧИ на алтаре (огонёк + воск) ──
+// -- НАСТОЛЬНЫЕ СВЕЧИ на алтаре (огонёк + воск) --
 (function altarCandles() {
   for (let i = 0; i < 9; i++) {
     const x = -3.6 + i * 0.9 + rnd(-0.1, 0.1);
@@ -2428,7 +2400,7 @@ const V2 = { strips: [], roots: [], leaves: 0, leafT: 2, candles: [], moss: [], 
   }
 })();
 
-// ── МОХ на стенах и колоннах ──
+// -- МОХ на стенах и колоннах --
 (function moss() {
   const mossMat = new THREE.MeshLambertMaterial({ color: 0x1d3018, transparent: true, opacity: 0.85 });
   for (let i = 0; i < 18; i++) {
@@ -2445,7 +2417,7 @@ const V2 = { strips: [], roots: [], leaves: 0, leafT: 2, candles: [], moss: [], 
   }
 })();
 
-// ── МОНЕТЫ у алтаря (подношения) ──
+// -- МОНЕТЫ у алтаря (подношения) --
 (function coins() {
   const coinMat = new THREE.MeshLambertMaterial({ color: 0x8a6a2a, emissive: 0x2a1c08, emissiveIntensity: 0.6 });
   for (let i = 0; i < 16; i++) {
@@ -2457,7 +2429,7 @@ const V2 = { strips: [], roots: [], leaves: 0, leafT: 2, candles: [], moss: [], 
   }
 })();
 
-// ── КОСТЯНЫЕ КОЛОКОЛЬЧИКИ на цепи (качаются, тихо звенят) ──
+// -- КОСТЯНЫЕ КОЛОКОЛЬЧИКИ на цепи (качаются, тихо звенят) --
 (function boneChimes() {
   const g = new THREE.Group();
   const ring = new THREE.Mesh(
@@ -2490,7 +2462,7 @@ const V2 = { strips: [], roots: [], leaves: 0, leafT: 2, candles: [], moss: [], 
   V2.chimeGroup = g;
 })();
 
-// ── ПАУК на нити (спускается и поднимается у стены) ──
+// -- ПАУК на нити (спускается и поднимается у стены) --
 (function spider() {
   const g = new THREE.Group();
   const bodyM = new THREE.MeshLambertMaterial({ color: 0x14101a });
@@ -2520,7 +2492,7 @@ const V2 = { strips: [], roots: [], leaves: 0, leafT: 2, candles: [], moss: [], 
   V2.spider = { g, thread, anchorY, ph: rnd(0, 6.28), y: 8 };
 })();
 
-// ── НАПОЛЬНЫЙ ТУМАН (стелется, мёртвеет в блэкаут) ──
+// -- НАПОЛЬНЫЙ ТУМАН (стелется, мёртвеет в блэкаут) --
 (function floorFog() {
   for (let i = 0; i < 16; i++) {
     const f = new THREE.Sprite(new THREE.SpriteMaterial({
@@ -2535,7 +2507,7 @@ const V2 = { strips: [], roots: [], leaves: 0, leafT: 2, candles: [], moss: [], 
   }
 })();
 
-// ── РИПЛЫ на воде/полу от капель ──
+// -- РИПЛЫ на воде/полу от капель --
 const RIPPLES = {
   pool: [],
   spawn(x, z) {
@@ -2571,10 +2543,9 @@ const RIPPLES = {
 };
 RIPPLES.init();
 
-// ═══ ЕДИНЫЙ АПДЕЙТ АНИМАЦИЙ v2 ═══
 function upV2(dt, wall) {
   const bk = BLACKOUT.t >= 0 ? clamp((T.t - BLACKOUT.t) / 0.5, 0, 1) : 0;
-  // ── мантия-полосы: ветер от движения камеры + дыхание ──
+  // -- мантия-полосы: ветер от движения камеры + дыхание --
   const camVz = (T.phase === 'play' && T.t < 16.4) ? EZ.cubicOut(clamp(T.t / 16.4, 0, 1)) : 0;
   const windK = camVz * 1.4 + 0.25;
   V2.strips.forEach((st, i) => {
@@ -2588,7 +2559,7 @@ function upV2(dt, wall) {
     st.position.x = u.bx * (1 + turnK * 0.18);
     st.position.z = u.bz * (1 + turnK * 0.18);
   });
-  // ── скан головы до пробуждения: он медленно «слушает» зал ──
+  // -- скан головы до пробуждения: он медленно «слушает» зал --
   if (BOSS.turn < 0 && BOSS.lunge <= 0) {
     const scan = NZ.fbm(wall * 0.3 + 7, 2) * 0.22;
     BOSS.grp.rotation.y = Math.PI + scan;
@@ -2598,7 +2569,7 @@ function upV2(dt, wall) {
       BOSS.grp.rotation.y = Math.PI + scan * (1 - nearK) + nearK * 0.34;
     }
   }
-  // ── блинки: глаза моргают (жутко) ──
+  // -- блинки: глаза моргают (жутко) --
   BOSS.eyes.forEach((e, i) => {
     if (!e.userData.on) return;
     const cyc = (wall * 0.35 + i * 0.31) % 1;
@@ -2606,27 +2577,27 @@ function upV2(dt, wall) {
     e.scale.y *= lid;
     e.userData.halo.material.opacity *= lid < 0.5 ? 0.5 + lid * 0.5 : 1;
   });
-  // ── челюсть: редкое «щёлканье» зубами до рывка ──
+  // -- челюсть: редкое «щёлканье» зубами до рывка --
   if (BOSS.lunge <= 0) {
     const chat = (Math.sin(wall * 0.5) > 0.995) ? Math.abs(Math.sin(wall * 40)) * 0.1 : 0;
     BOSS.jaw.rotation.x = Math.max(0, Math.sin(wall * 0.9) * 0.05 + 0.05) + chat;
   }
-  // ── плечи: микродвижение веса ──
+  // -- плечи: микродвижение веса --
   if (BOSS.arms[0]) BOSS.arms[0].rotation.z = -0.17 + NZ.n1(wall * 0.4) * 0.03;
   if (BOSS.arms[1]) BOSS.arms[1].rotation.z = 0.17 + NZ.n1(wall * 0.45 + 3) * 0.03;
-  // ── свечи алтаря ──
+  // -- свечи алтаря --
   V2.candles.forEach((c) => {
     c.fl.material.opacity = (0.75 + Math.sin(wall * 8 + c.ph) * 0.25) * (1 - bk);
     c.fl.scale.y = 0.66 + Math.sin(wall * 7 + c.ph) * 0.12;
   });
-  // ── отражение глаз на полу ──
+  // -- отражение глаз на полу --
   const anyEye = BOSS.eyes.some((e) => e.userData.on);
   if (V2.floorGlow) {
     V2.floorGlow.material.opacity = anyEye ? 0.14 + Math.sin(wall * 5) * 0.04 : 0;
     const s1 = V2['spot-0.16'], s2 = V2['spot0.16'];
     if (s1) s1.material.opacity = s2.material.opacity = anyEye ? 0.3 + Math.sin(wall * 7) * 0.1 : 0;
   }
-  // ── напольный туман ──
+  // -- напольный туман --
   V2.floorFog.forEach((f) => {
     const u = f.userData;
     f.position.x += Math.sin(wall * 0.2 + u.ph) * u.v * dt * 3;
@@ -2635,7 +2606,7 @@ function upV2(dt, wall) {
     if (f.position.z > 35) f.position.z = -20;
     f.material.opacity = u.bop * (1 - bk);
   });
-  // ── листья падают из корней (парк сверху) ──
+  // -- листья падают из корней (парк сверху) --
   V2.leafT -= dt;
   if (V2.leafT <= 0 && T.phase === 'play') {
     V2.leafT = rnd(2.5, 6);
@@ -2647,7 +2618,7 @@ function upV2(dt, wall) {
       grav: 0.05, drag: 0.5, fade: 0.4, floor: 0.06
     });
   }
-  // ── пепел медленно сыплется ──
+  // -- пепел медленно сыплется --
   if (T.phase === 'play' && Math.random() < dt * 2.2) {
     ASH.spawn({
       x: rnd(-11, 11), y: rnd(8, 11.5), z: rnd(-20, 34),
@@ -2656,7 +2627,7 @@ function upV2(dt, wall) {
       fade: 0.5, floor: 0.05
     });
   }
-  // ── паук: спускается/поднимается по нити ──
+  // -- паук: спускается/поднимается по нити --
   if (V2.spider) {
     const sp = V2.spider;
     const want = 8 - (Math.sin(wall * 0.14 + sp.ph) * 0.5 + 0.5) * 5.5; // 2.5..8
@@ -2667,13 +2638,13 @@ function upV2(dt, wall) {
     sp.thread.position.set(sp.g.position.x, sp.y + thL / 2, sp.g.position.z);
     sp.g.rotation.y = Math.sin(wall * 0.4) * 0.8;
   }
-  // ── костяные колокольчики качаются ──
+  // -- костяные колокольчики качаются --
   V2.chimes.forEach((ch, i) => {
     ch.rotation.z = ch.userData.base + NZ.n1(wall * 0.9 + i) * 0.16;
     ch.rotation.x = NZ.n1(wall * 0.7 + i * 2) * 0.1;
   });
   if (V2.chimeGroup) V2.chimeGroup.rotation.y = Math.sin(wall * 0.2) * 0.4;
-  // ── монеты поблёскивают ──
+  // -- монеты поблёскивают --
   if (V2.coins.length && Math.random() < dt * 0.8) {
     const c = V2.coins[(Math.random() * V2.coins.length) | 0];
     c.material.emissiveIntensity = 1.4;
@@ -2681,16 +2652,16 @@ function upV2(dt, wall) {
   V2.coins.forEach((c) => {
     if (c.material.emissiveIntensity > 0.6) c.material.emissiveIntensity -= dt * 1.6;
   });
-  // ── знамёна колышутся ──
+  // -- знамёна колышутся --
   (DUN.banners || []).forEach((b, i) => {
     b.rotation.x = NZ.n1(wall * 0.8 + i * 2) * 0.08 * (1 - bk);
   });
-  // ── клетка и ворота дышат скрипом ──
+  // -- клетка и ворота дышат скрипом --
   if (DUN.cage) DUN.cage.rotation.y = NZ.n1(wall * 0.3 + 2) * 0.1;
   if (DUN2.gate) DUN2.gate.rotation.x = NZ.n1(wall * 0.22) * 0.006;
-  // ── риплы ──
+  // -- риплы --
   RIPPLES.update(dt);
-  // ── факелы v2: искры вылетают из живого пламени ──
+  // -- факелы v2: искры вылетают из живого пламени --
   if (T.phase === 'play' && BLACKOUT.t < 0 && Math.random() < dt * 3) {
     const tc = DUN.flamesAll[(Math.random() * DUN.flamesAll.length) | 0];
     if (tc && tc.g && tc.on > 0 && tc.dieT < 0) {
@@ -2707,15 +2678,11 @@ function upV2(dt, wall) {
 }
 
 
-// ═══════════ ЧАСТЬ p7 ═══════════
-// ═══════════ ЧАСТЬ p7 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  СЦЕНИЧЕСКАЯ ДОРАБОТКА: ниши · балкон-наблюдатели · ковровая дорожка
 //  фолиант · дым факелов · споры · ДЫХАНИЕ · инструменты (P/O/S/F1)
-// ═══════════════════════════════════════════════════════════════════
 const V3 = { niches: [], watchers: [], torchSmoke: [], shaftMotes: [], folio: null, breathT: -1, clinkT: 0, carpet: null };
 
-// ── БОКОВЫЕ НИШИ-АЛТАРИ в стенах (6 штук, с решётками и красной глубиной) ──
+// -- БОКОВЫЕ НИШИ-АЛТАРИ в стенах (6 штук, с решётками и красной глубиной) --
 (function sideNiches() {
   for (let i = 0; i < 6; i++) {
     const side = i % 2 ? 1 : -1;
@@ -2786,7 +2753,7 @@ const V3 = { niches: [], watchers: [], torchSmoke: [], shaftMotes: [], folio: nu
   }
 })();
 
-// ── ВЕРХНИЙ БАЛКОН с фигурами-НАБЛЮДАТЕЛЯМИ (смотрят вниз на круг) ──
+// -- ВЕРХНИЙ БАЛКОН с фигурами-НАБЛЮДАТЕЛЯМИ (смотрят вниз на круг) --
 (function balcony() {
   const slabMat = new THREE.MeshLambertMaterial({ color: 0x241e2a });
   const railMat = new THREE.MeshLambertMaterial({ color: 0x2c2534 });
@@ -2824,7 +2791,7 @@ const V3 = { niches: [], watchers: [], torchSmoke: [], shaftMotes: [], folio: nu
       scene.add(bal);
     }
   });
-  // ── фигуры-наблюдатели в капюшонах (тёмные, глаза-точки) ──
+  // -- фигуры-наблюдатели в капюшонах (тёмные, глаза-точки) --
   function watcher(x, z, ry) {
     const g = new THREE.Group();
     const robe = new THREE.Mesh(
@@ -2860,7 +2827,7 @@ const V3 = { niches: [], watchers: [], torchSmoke: [], shaftMotes: [], folio: nu
   watcher(10.4, 8, -1.55);
 })();
 
-// ── КОВРОВАЯ ДОРОЖКА к алтарю + свечи по краям ──
+// -- КОВРОВАЯ ДОРОЖКА к алтарю + свечи по краям --
 (function carpetRun() {
   const carpet = new THREE.Mesh(
     new THREE.PlaneGeometry(3.2, 30),
@@ -2918,7 +2885,7 @@ const V3 = { niches: [], watchers: [], torchSmoke: [], shaftMotes: [], folio: nu
   }
 })();
 
-// ── ФОЛИАНТ РУН на пюпитре (главная книга алтаря) ──
+// -- ФОЛИАНТ РУН на пюпитре (главная книга алтаря) --
 (function folio() {
   const g = new THREE.Group();
   const lectern = new THREE.Mesh(
@@ -2971,7 +2938,7 @@ const V3 = { niches: [], watchers: [], torchSmoke: [], shaftMotes: [], folio: nu
   V3.folio = { g, pageL, pageR };
 })();
 
-// ── ДЫМ-СТОЛБЫ над факелами ──
+// -- ДЫМ-СТОЛБЫ над факелами --
 (function torchSmokeColumns() {
   DUN.flamesAll.forEach((tc) => {
     if (!tc.g) return;
@@ -2991,7 +2958,7 @@ const V3 = { niches: [], watchers: [], torchSmoke: [], shaftMotes: [], folio: nu
   });
 })();
 
-// ── СПОРЫ-ПЫЛИНКИ в световых колоннах (видны только в луче) ──
+// -- СПОРЫ-ПЫЛИНКИ в световых колоннах (видны только в луче) --
 (function shaftMotes() {
   DUN.shafts.forEach((sh) => {
     for (let i = 0; i < 12; i++) {
@@ -3012,7 +2979,7 @@ const V3 = { niches: [], watchers: [], torchSmoke: [], shaftMotes: [], folio: nu
   });
 })();
 
-// ── ДЫХАНИЕ БОССА (звук, синхронно с анимацией груди) ──
+// -- ДЫХАНИЕ БОССА (звук, синхронно с анимацией груди) --
 function breathSound() {
   if (!AU || T.phase !== 'play') return;
   if (T.t > 10.8 && T.t < 16.4) return;   // затаил дыхание
@@ -3034,7 +3001,7 @@ function breathSound() {
   src.start(); src.stop(AU.currentTime + 1.6);
 }
 
-// ── ТИТР С БУКВЕННОЙ АНИМАЦИЕЙ ──
+// -- ТИТР С БУКВЕННОЙ АНИМАЦИЕЙ --
 function capIntro(text, sub) {
   let html = '';
   for (let i = 0; i < text.length; i++) {
@@ -3045,7 +3012,7 @@ function capIntro(text, sub) {
   capEl.classList.remove('jit');
 }
 
-// ── ИНСТРУМЕНТЫ: пауза [P] · slow-mo [O] · скрин [S] · панель [F1] ──
+// -- ИНСТРУМЕНТЫ: пауза [P] · slow-mo [O] · скрин [S] · панель [F1] --
 const TOOLS = { panel: null, fpsEl: null, phaseEl: null, fpsAcc: 0, fpsN: 0 };
 (function toolsInit() {
   const panel = DOC.createElement('div');
@@ -3087,7 +3054,6 @@ const TOOLS = { panel: null, fpsEl: null, phaseEl: null, fpsAcc: 0, fpsN: 0 };
   });
 })();
 
-// ═══ ЕДИНЫЙ АПДЕЙТ СЦЕНИЧЕСКОЙ ДОРАБОТКИ ═══
 function upPolish(dt, wall) {
   const bk = BLACKOUT.t >= 0 ? clamp((T.t - BLACKOUT.t) / 0.5, 0, 1) : 0;
   // ниши: красная глубина пульсирует, гаснет в тьме
@@ -3169,14 +3135,10 @@ function upPolish(dt, wall) {
 }
 
 
-// ═══════════ ЧАСТЬ p8 ═══════════
-// ═══════════ ЧАСТЬ p8 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  СВЕТОВАЯ ГЛУБИНА: bounce-блики факелов · мокрые лужи · контровой
-// ═══════════════════════════════════════════════════════════════════
 const V4 = { bounces: [], puddleGlows: [], rim: null };
 
-// ── BOUNCE: блик на полу под каждым факелом + на стене за ним ──
+// -- BOUNCE: блик на полу под каждым факелом + на стене за ним --
 (function bounceLight() {
   DUN.flamesAll.forEach((tc) => {
     if (!tc.g) return;
@@ -3207,7 +3169,7 @@ const V4 = { bounces: [], puddleGlows: [], rim: null };
   });
 })();
 
-// ── МОКРЫЕ ЛУЖИ: тёплые отражения ближайших факелов ──
+// -- МОКРЫЕ ЛУЖИ: тёплые отражения ближайших факелов --
 (function wetPuddles() {
   // 6 луж фиксируем сами (совместимо с рандомом p2 — просто новые)
   const spots = [[-8, 10], [7, -2], [-5, -12], [9, 20], [-10, 28], [4, 30]];
@@ -3232,7 +3194,7 @@ const V4 = { bounces: [], puddleGlows: [], rim: null };
   });
 })();
 
-// ── КОНТРОВОЙ СВЕТ за боссом (ореол из красного круга) ──
+// -- КОНТРОВОЙ СВЕТ за боссом (ореол из красного круга) --
 (function rimLight() {
   const rim = new THREE.Sprite(new THREE.SpriteMaterial({
     map: TEX.red, color: 0xff2818, transparent: true, opacity: 0.16,
@@ -3266,11 +3228,7 @@ function upLightDepth(dt, wall) {
 }
 
 
-// ═══════════ ЧАСТЬ p9 ═══════════
-// ═══════════ ЧАСТЬ p9 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  ЗВУКОВАЯ ГЛУБИНА: 3-слойный дрон · тёмный хор · саб-гул
-// ═══════════════════════════════════════════════════════════════════
 const MUS = { nodes: [], choirNodes: [], on: false };
 
 // старт слоёв дрона (вызывается из таймлайна)
@@ -3355,11 +3313,7 @@ function musStop() {
 }
 
 
-// ═══════════ ЧАСТЬ p11 ═══════════
-// ═══════════ ЧАСТЬ p11 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  ПЛЁНКА v3: gate weave · мерцание экспозиции · дыхание letterbox
-// ═══════════════════════════════════════════════════════════════════
 const FILM = { t: 0 };
 function upFilm(dt, wall) {
   FILM.t += dt;
@@ -3385,16 +3339,12 @@ function upFilm(dt, wall) {
 }
 
 
-// ═══════════ ЧАСТЬ p12 ═══════════
-// ═══════════ ЧАСТЬ p12 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  АПСИДА ЗА АЛТАРЁМ: витраж-роза · подиум · канделябры
 //  (финальная композиция кадра: Хранитель на фоне розы)
-// ═══════════════════════════════════════════════════════════════════
 const V5 = { rose: null, roseGlass: [], candelabras: [] };
 
 (function apseBuild() {
-  // ── полукруглая апсида за алтарём (z=-26) ──
+  // -- полукруглая апсида за алтарём (z=-26) --
   const apseWall = new THREE.Mesh(
     new THREE.CylinderGeometry(9.5, 9.5, 13, 24, 1, true, 0, Math.PI),
     new THREE.MeshLambertMaterial({ map: TEX.brick, side: THREE.BackSide })
@@ -3403,7 +3353,7 @@ const V5 = { rose: null, roseGlass: [], candelabras: [] };
   apseWall.rotation.y = Math.PI; // раскрытие к залу
   scene.add(apseWall);
 
-  // ── ВИТРАЖ-РОЗА (большой круг с секторами) ──
+  // -- ВИТРАЖ-РОЗА (большой круг с секторами) --
   const roseGroup = new THREE.Group();
   // свинцовая рама: кольца и спицы
   const leadMat = new THREE.MeshLambertMaterial({ color: 0x1a1a22 });
@@ -3484,7 +3434,7 @@ const V5 = { rose: null, roseGlass: [], candelabras: [] };
   scene.add(roseLight);
   V5.roseLight = roseLight;
 
-  // ── подиум-ступени под розой (полукруг) ──
+  // -- подиум-ступени под розой (полукруг) --
   const podMat = new THREE.MeshLambertMaterial({ color: 0x2e2534 });
   [10.5, 9.2].forEach((r, i) => {
     const shape = new THREE.Shape();
@@ -3499,7 +3449,7 @@ const V5 = { rose: null, roseGlass: [], candelabras: [] };
     scene.add(step);
   });
 
-  // ── канделябры по бокам подиума (высокие, 5 свечей дугой) ──
+  // -- канделябры по бокам подиума (высокие, 5 свечей дугой) --
   [-1, 1].forEach((side) => {
     const g = new THREE.Group();
     const stem = new THREE.Mesh(
@@ -3565,15 +3515,11 @@ function upApse(dt, wall) {
 }
 
 
-// ═══════════ ЧАСТЬ p13 ═══════════
-// ═══════════ ЧАСТЬ p13 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  ВТОРОЙ ПРОХОД ДЕТАЛИЗАЦИИ: горгульи · жаровня-тренога · кольцо
 //  соли · гирлянда черепов между колоннами
-// ═══════════════════════════════════════════════════════════════════
 const V6 = { gargoyles: [], brazier2: null, salt: null, skullGarland: [] };
 
-// ── ГОРГУЛЬИ на консолях балкона (смотрят в зал, сгорбились) ──
+// -- ГОРГУЛЬИ на консолях балкона (смотрят в зал, сгорбились) --
 (function gargoyles() {
   const stone = new THREE.MeshLambertMaterial({ color: 0x33303c });
   const stoneD = new THREE.MeshLambertMaterial({ color: 0x28252e });
@@ -3618,7 +3564,7 @@ const V6 = { gargoyles: [], brazier2: null, salt: null, skullGarland: [] };
   gargoyle(-11.0, 9.0, -14, 1.4);
 })();
 
-// ── ЖАРОВНЯ-ТРЕНОГА у ритуального круга ──
+// -- ЖАРОВНЯ-ТРЕНОГА у ритуального круга --
 (function tripodBrazier() {
   const g = new THREE.Group();
   [-1, 1].forEach((sx) => {
@@ -3670,7 +3616,7 @@ const V6 = { gargoyles: [], brazier2: null, salt: null, skullGarland: [] };
   V6.brazier2 = { g, flame, li, coals: g.children.filter((c) => c.material && c.material.emissive && c.material.emissiveIntensity > 0.5) };
 })();
 
-// ── КОЛЬЦО СОЛИ вокруг ковровой дорожки (защитный круг) ──
+// -- КОЛЬЦО СОЛИ вокруг ковровой дорожки (защитный круг) --
 (function saltRing() {
   const ring = new THREE.Mesh(
     new THREE.RingGeometry(11.6, 11.85, 56),
@@ -3682,7 +3628,7 @@ const V6 = { gargoyles: [], brazier2: null, salt: null, skullGarland: [] };
   V6.salt = ring;
 })();
 
-// ── ГИРЛЯНДА ЧЕРЕПОВ между колоннами (провисшая верёвка) ──
+// -- ГИРЛЯНДА ЧЕРЕПОВ между колоннами (провисшая верёвка) --
 (function skullGarland() {
   const x0 = -10, x1 = 10, z = 4, y0 = 6.4;
   const boneMat3 = new THREE.MeshLambertMaterial({ color: 0x8a8578, emissive: 0x14100c, emissiveIntensity: 0.5 });
@@ -3753,15 +3699,10 @@ function upDetails2(dt, wall) {
 }
 
 
-// ═══════════ ЧАСТЬ p14 ═══════════
-// ═══════════ ЧАСТЬ p14 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  ГЛАЗА-ФИКС: тело поворачивается — глаза НЕ ШЕВЕЛЯТСЯ.
 //  Они прикованы к зрителю: пока мантия и рога swept вокруг,
 //  семь огней стоят на месте и СМОТРЯТ НА ТЕБЯ.
 //  + апгрейды босса: вторая пара рук, золото на рогах, лучи из глаз
-// ═══════════════════════════════════════════════════════════════════
-// ── текстуры для новых модулей (грота/крипты/декора) ──
 TEX.cyan = cvsTex(64, 64, (q, w, h) => {
   const g = q.createRadialGradient(w / 2, h / 2, 1, w / 2, h / 2, w / 2);
   g.addColorStop(0, 'rgba(255,255,255,1)');
@@ -3843,7 +3784,7 @@ function eyesFixUpdate() {
   });
 }
 
-// ── ЭКСТИНКТ v2: потухание глаза — плавный фейд, а не кламп ──
+// -- ЭКСТИНКТ v2: потухание глаза — плавный фейд, а не кламп --
 const EYESFIX_FADE = [];
 function extinguishV2(i) {
   const e = BOSS.eyes[i];
@@ -3871,7 +3812,7 @@ function eyesFadeUpdate(dt) {
   }
 }
 
-// ── ЛУЧИ ИЗ ГЛАЗ на HELLO: тонкие конусы к камере ──
+// -- ЛУЧИ ИЗ ГЛАЗ на HELLO: тонкие конусы к камере --
 (function eyeBeams() {
   for (let i = 0; i < 2; i++) {
     const beam = new THREE.Mesh(
@@ -3910,7 +3851,7 @@ function eyeBeamsUpdate(dt, wall) {
   });
 }
 
-// ── ВТОРАЯ ПАРА РУК (нижняя, меньше, скрещены перед мантией) ──
+// -- ВТОРАЯ ПАРА РУК (нижняя, меньше, скрещены перед мантией) --
 (function secondArms() {
   const g = BOSS.grp;
   const boneMat = new THREE.MeshLambertMaterial({ color: 0x9aa0ac, emissive: 0x201a20, emissiveIntensity: 0.45 });
@@ -3939,7 +3880,7 @@ function eyeBeamsUpdate(dt, wall) {
   BOSS.matsList.push({ m: boneMat, b: 0.45 });
 })();
 
-// ── ЗОЛОТАЯ ИНКРУСТАЦИЯ РОГОВ (тонкие кольца) ──
+// -- ЗОЛОТАЯ ИНКРУСТАЦИЯ РОГОВ (тонкие кольца) --
 (function hornGold() {
   const gold = new THREE.MeshLambertMaterial({ color: 0x8a6a2a, emissive: 0x5a4010, emissiveIntensity: 0.7 });
   BOSS.hornGold = [];
@@ -3965,7 +3906,7 @@ function eyeBeamsUpdate(dt, wall) {
   BOSS.matsList.push({ m: gold, b: 0.7 });
 })();
 
-// ── КАПЮШОН-ТЕНЬ над черепом (полупрозрачный конус сзади) ──
+// -- КАПЮШОН-ТЕНЬ над черепом (полупрозрачный конус сзади) --
 (function hoodShadow() {
   const mat = new THREE.MeshLambertMaterial({
     color: 0x0a0612,
@@ -4010,12 +3951,8 @@ function upEyesFix(dt, wall) {
 }
 
 
-// ═══════════ ЧАСТЬ p15 ═══════════
-// ═══════════ ЧАСТЬ p15 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  ПОДЗЕМНОЕ ОЗЕРО — боковой грот сквозь пролом в левой стене
 //  вода с вершинной анимацией · водопад · сталактины · грибы · мостки
-// ═══════════════════════════════════════════════════════════════════
 const LAKE = {
   water: null,
   verts: null,
@@ -4031,7 +3968,7 @@ const LAKE = {
   foam: []
 };
 
-// ── ПРОЛОМ В СТЕНЕ (зияющая арка в грот) ──
+// -- ПРОЛОМ В СТЕНЕ (зияющая арка в грот) --
 (function lakeOpening() {
   // тёмный проём прямо поверх кирпичной стены
   const hole = new THREE.Mesh(
@@ -4061,7 +3998,7 @@ const LAKE = {
   scene.add(lintel);
 })();
 
-// ── ГРОТ: пол, дальние стены, свод ──
+// -- ГРОТ: пол, дальние стены, свод --
 (function grottoShell() {
   const rockMat = new THREE.MeshLambertMaterial({ map: TEX.ceil });
   // пол грота (ниже уровня зала — вода в углублении)
@@ -4105,7 +4042,7 @@ const LAKE = {
   LAKE.grottoLights = [moon, aqua];
 })();
 
-// ── ВОДА: вершинная анимация волн ──
+// -- ВОДА: вершинная анимация волн --
 (function lakeWater() {
   const geo = new THREE.PlaneGeometry(26, 17, 26, 17);
   const mat = new THREE.MeshLambertMaterial({
@@ -4139,7 +4076,7 @@ const LAKE = {
   }
 })();
 
-// ── ВОДОПАД из дальней стены ──
+// -- ВОДОПАД из дальней стены --
 (function waterfall() {
   const g = new THREE.Group();
   // струя: полупрозрачный бокс с бегущей текстурой
@@ -4185,7 +4122,7 @@ const LAKE = {
   LAKE.waterfall = g;
 })();
 
-// ── СТАЛАКТИТЫ / СТАЛАГМИТЫ ──
+// -- СТАЛАКТИТЫ / СТАЛАГМИТЫ --
 (function speleothems() {
   const mat = new THREE.MeshLambertMaterial({ color: 0x2c2631 });
   const matWet = new THREE.MeshLambertMaterial({ color: 0x342e3c, emissive: 0x0a1420, emissiveIntensity: 0.3 });
@@ -4225,7 +4162,7 @@ const LAKE = {
   });
 })();
 
-// ── СВЕТЯЩИЕСЯ ГРИБЫ (бирюзовые — контраст к красному залу) ──
+// -- СВЕТЯЩИЕСЯ ГРИБЫ (бирюзовые — контраст к красному залу) --
 (function mushrooms() {
   for (let i = 0; i < 12; i++) {
     const g = new THREE.Group();
@@ -4284,7 +4221,7 @@ const LAKE = {
   }
 })();
 
-// ── МОСТКИ через угол озера ──
+// -- МОСТКИ через угол озера --
 (function dock() {
   const g = new THREE.Group();
   const plankMat = new THREE.MeshLambertMaterial({ color: 0x3a2c1c });
@@ -4332,7 +4269,7 @@ const LAKE = {
   scene.add(g);
 })();
 
-// ── ТУМАН НАД ВОДОЙ ──
+// -- ТУМАН НАД ВОДОЙ --
 (function lakeMist() {
   for (let i = 0; i < 12; i++) {
     const m = new THREE.Sprite(new THREE.SpriteMaterial({
@@ -4347,7 +4284,7 @@ const LAKE = {
   }
 })();
 
-// ── ОТРАЖЕНИЯ на воде (фальш: тёплые блики под фонарями грота) ──
+// -- ОТРАЖЕНИЯ на воде (фальш: тёплые блики под фонарями грота) --
 (function lakeReflections() {
   for (let i = 0; i < 5; i++) {
     const r = new THREE.Sprite(new THREE.SpriteMaterial({
@@ -4362,10 +4299,9 @@ const LAKE = {
   }
 })();
 
-// ═══ АНИМАЦИЯ ОЗЕРА ═══
 function upLake(dt, wall) {
   const bk = BLACKOUT.t >= 0 ? clamp((T.t - BLACKOUT.t) / 0.5, 0, 1) : 0;
-  // ── волны: две перекрестные синус-волны + шум ──
+  // -- волны: две перекрестные синус-волны + шум --
   const pos = LAKE.verts;
   if (pos) {
     for (let i = 0; i < pos.count; i++) {
@@ -4378,53 +4314,49 @@ function upLake(dt, wall) {
     }
     pos.needsUpdate = true;
   }
-  // ── текстура водопада бежит вниз ──
+  // -- текстура водопада бежит вниз --
   if (LAKE.flowTex) {
     LAKE.flowTex.offset.y -= dt * 1.4;
   }
-  // ── брызги у водопада ──
+  // -- брызги у водопада --
   LAKE.spray.forEach((sp) => {
     sp.material.opacity = (0.14 + Math.abs(Math.sin(wall * 2.4 + sp.userData.ph)) * 0.22) * (1 - bk * 0.6);
     sp.scale.y = 0.4 + Math.sin(wall * 3 + sp.userData.ph) * 0.2;
   });
   if (LAKE.fallLight) LAKE.fallLight.intensity = 0.35 * (1 - bk) + Math.sin(wall * 4) * 0.05;
-  // ── грибы дышат ──
+  // -- грибы дышат --
   LAKE.shrooms.forEach((s) => {
     const p = 0.6 + Math.sin(wall * 1.1 + s.ph) * 0.3;
     s.cap.material.emissiveIntensity = p;
     s.glow.material.opacity = 0.22 * p + 0.1;
     if (s.li) s.li.intensity = 0.22 * p;
   });
-  // ── туман плывёт ──
+  // -- туман плывёт --
   LAKE.mist.forEach((m) => {
     m.position.x += Math.sin(wall * 0.2 + m.userData.ph) * m.userData.v * dt * 4;
     m.position.z += Math.cos(wall * 0.16 + m.userData.ph) * m.userData.v * dt * 3;
     if (m.position.x > -17) m.position.x = -40;
     m.material.opacity = m.userData.bop * (1 - bk);
   });
-  // ── отражения мерцают ──
+  // -- отражения мерцают --
   LAKE.reflections.forEach((r) => {
     r.material.opacity = (0.12 + Math.sin(wall * 2.6 + r.userData.ph) * 0.07) * (1 - bk);
   });
-  // ── фонарь мостков ──
+  // -- фонарь мостков --
   if (LAKE.dockLamp) {
     const fl = 0.75 + Math.sin(wall * 8.5) * 0.25;
     LAKE.dockLamp.glow.material.opacity = 0.8 * fl * (1 - bk);
     LAKE.dockLamp.li.intensity = 0.4 * fl * (1 - bk);
   }
-  // ── свет грота гаснет при блэкауте ──
+  // -- свет грота гаснет при блэкауте --
   if (LAKE.grottoLights) {
     LAKE.grottoLights.forEach((l) => { l.intensity *= (1 - bk * 0.0); }); // держим дальний грот чуть видимым
   }
 }
 
 
-// ═══════════ ЧАСТЬ p16 ═══════════
-// ═══════════ ЧАСТЬ p16 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  КРИПТА-ГАЛЕРЕЯ — правый пролом: коридор гробниц
 //  саркофаги в нишах · духи-огоньки (wisps) · скелеты · решётки
-// ═══════════════════════════════════════════════════════════════════
 const CRYPT = {
   wisps: [],
   sarcophagi: [],
@@ -4434,7 +4366,7 @@ const CRYPT = {
   gates: []
 };
 
-// ── ПРОЛОМ В ПРАВОЙ СТЕНЕ ──
+// -- ПРОЛОМ В ПРАВОЙ СТЕНЕ --
 (function cryptOpening() {
   const hole = new THREE.Mesh(
     new THREE.PlaneGeometry(4.6, 5.8),
@@ -4468,7 +4400,7 @@ const CRYPT = {
   CRYPT.gates.push(g);
 })();
 
-// ── КОРИДОР КРИПТЫ (за стеной) ──
+// -- КОРИДОР КРИПТЫ (за стеной) --
 (function cryptHall() {
   const rockMat = new THREE.MeshLambertMaterial({ map: TEX.brick });
   // пол
@@ -4511,7 +4443,7 @@ const CRYPT = {
   CRYPT.hallLight = li;
 })();
 
-// ── НИШЫ С САРКОФАГАМИ по обеим сторонам коридора ──
+// -- НИШЫ С САРКОФАГАМИ по обеим сторонам коридора --
 (function cryptNiches() {
   const stoneMat = new THREE.MeshLambertMaterial({ color: 0x2e2836 });
   const lidMat = new THREE.MeshLambertMaterial({ color: 0x352e40 });
@@ -4568,7 +4500,7 @@ const CRYPT = {
   }
 })();
 
-// ── СКЕЛЕТЫ: один сидит у стены, один ВСТАЛ из гроба ──
+// -- СКЕЛЕТЫ: один сидит у стены, один ВСТАЛ из гроба --
 (function skeletons() {
   const bone = new THREE.MeshLambertMaterial({ color: 0x9a958a, emissive: 0x181410, emissiveIntensity: 0.5 });
   function boneBox(w, h, d) {
@@ -4656,7 +4588,7 @@ const CRYPT = {
   })();
 })();
 
-// ── ДУХИ-ОГОНЬКИ (wisps): голубые огни плавают между гробниц ──
+// -- ДУХИ-ОГОНЬКИ (wisps): голубые огни плавают между гробниц --
 (function wisps() {
   for (let i = 0; i < 6; i++) {
     const g = new THREE.Group();
@@ -4686,7 +4618,7 @@ const CRYPT = {
   }
 })();
 
-// ── СВЕЧИ КРИПТЫ (гирлянда вдоль коридора) ──
+// -- СВЕЧИ КРИПТЫ (гирлянда вдоль коридора) --
 (function cryptCandles() {
   for (let i = 0; i < 5; i++) {
     const z = -1 + i * 1.5;
@@ -4707,7 +4639,7 @@ const CRYPT = {
   }
 })();
 
-// ── Трещины и обвалы в крипте ──
+// -- Трещины и обвалы в крипте --
 (function cryptRubble() {
   const rubMat = new THREE.MeshLambertMaterial({ color: 0x231e28 });
   for (let i = 0; i < 10; i++) {
@@ -4730,7 +4662,6 @@ const CRYPT = {
   scene.add(sunk);
 })();
 
-// ═══ АНИМАЦИЯ КРИПТЫ ═══
 function upCrypt(dt, wall) {
   const bk = BLACKOUT.t >= 0 ? clamp((T.t - BLACKOUT.t) / 0.5, 0, 1) : 0;
   // духи блуждают по Лиссажу
@@ -4765,14 +4696,10 @@ function upCrypt(dt, wall) {
 }
 
 
-// ═══════════ ЧАСТЬ p17 ═══════════
-// ═══════════ ЧАСТЬ p17 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  ЖИВНОСТЬ: СТАЯ ЛЕТУЧИХ МЫШЕЙ (boids) · мотыльки у огня · тени-змеи
-// ═══════════════════════════════════════════════════════════════════
 const FAUNA = { bats: [], moths: [], snakes: [] };
 
-// ── ЛЕТУЧИЕ МЫШИ: модель (тело + машущие крылья) ──
+// -- ЛЕТУЧИЕ МЫШИ: модель (тело + машущие крылья) --
 function mkBat() {
   const g = new THREE.Group();
   const mat = new THREE.MeshLambertMaterial({ color: 0x14101a });
@@ -4807,7 +4734,7 @@ function mkBat() {
   return { g, wingL, wingR };
 }
 
-// ── СТАЯ: 9 мышей, boids-поведение (упрощённое) ──
+// -- СТАЯ: 9 мышей, boids-поведение (упрощённое) --
 (function batsInit() {
   for (let i = 0; i < 9; i++) {
     const b = mkBat();
@@ -4894,7 +4821,7 @@ function batsUpdate(dt, wall) {
   });
 }
 
-// ── МОТЫЛЬКИ: вьются у двух источников света ──
+// -- МОТЫЛЬКИ: вьются у двух источников света --
 (function mothsInit() {
   const anchors = [
     { x: 5.6, y: 2.4, z: -6.2 },   // жаровня у круга
@@ -4935,7 +4862,7 @@ function mothsUpdate(dt, wall) {
   });
 }
 
-// ── ТЕНИ-ЗМЕИ: плоские тёмные ленты стелятся по полу ──
+// -- ТЕНИ-ЗМЕИ: плоские тёмные ленты стелятся по полу --
 (function snakesInit() {
   const mat = new THREE.MeshBasicMaterial({
     color: 0x000000, transparent: true, opacity: 0.5, side: THREE.DoubleSide
@@ -5009,14 +4936,10 @@ function upFauna(dt, wall) {
 }
 
 
-// ═══════════ ЧАСТЬ p18 ═══════════
-// ═══════════ ЧАСТЬ p18 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  КИНЕМАТОГРАФИЯ v2 — новый маршрут пролёта: 5 шотов
 //  арка ворот → ферма-облёт колонн → вид сверху на круг →
 //  проход у крипты → финальный подход к Хранителю
 //  + фокал-пулл + доли-зум на HELLO + анаморф 2.39:1
-// ═══════════════════════════════════════════════════════════════════
 const CIN2 = { active: true, shot: 0, tShot: 0 };
 
 // шоты: время начала/конца, позиция from/to, взгляд from/to, fov from/to, кривая
@@ -5116,7 +5039,7 @@ function upCineCam(dt, wall) {
   return true;
 }
 
-// ── ДОЛИ-ЗУМ на HELLO (камера отъезжает, fov растёт — «судорога空间») ──
+// -- ДОЛИ-ЗУМ на HELLO (камера отъезжает, fov растёт — «судорога空间») --
 let dollyZoomK = 0;
 function dollyZoom(trigger) {
   if (trigger) dollyZoomK = 1;
@@ -5131,7 +5054,7 @@ function dollyZoomUpdate(dt) {
   cam.updateProjectionMatrix();
 }
 
-// ── АНАМОРФ 2.39:1 — letterbox становится шире в кино-моментах ──
+// -- АНАМОРФ 2.39:1 — letterbox становится шире в кино-моментах --
 (function cineScope() {
   const style = DOC.createElement('style');
   style.textContent =
@@ -5140,7 +5063,7 @@ function dollyZoomUpdate(dt) {
   CIN2.scopeStyle = style;
 })();
 
-// ── подсветка активного шота в F1-панели ──
+// -- подсветка активного шота в F1-панели --
 function shotInfo() {
   const t = T.t;
   for (let i = 0; i < SHOTS2.length; i++) {
@@ -5150,14 +5073,10 @@ function shotInfo() {
 }
 
 
-// ═══════════ ЧАСТЬ p19 ═══════════
-// ═══════════ ЧАСТЬ p19 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  ЗВУК v3: подземная река · колокол · дакинг по актам · финальный микс
-// ═══════════════════════════════════════════════════════════════════
 const SND3 = { river: null, riverGain: null, bell: null };
 
-// ── ПОДЗЕМНАЯ РЕКА: коричневый шум через фильтр (непрерывный слой) ──
+// -- ПОДЗЕМНАЯ РЕКА: коричневый шум через фильтр (непрерывный слой) --
 function riverStart() {
   if (!AU || SND3.river) return;
   try {
@@ -5193,7 +5112,7 @@ function riverStart() {
   } catch (e) {}
 }
 
-// ── КОЛОКОЛ: глубокий биение из шахты на HELLO ──
+// -- КОЛОКОЛ: глубокий биение из шахты на HELLO --
 function bellToll(when, gain) {
   if (!AU) return;
   const t0 = AU.currentTime + (when || 0);
@@ -5217,7 +5136,7 @@ function bellToll(when, gain) {
   noiseBurst(0.04, 2400, 900, 3, gn * 0.4, when || 0);
 }
 
-// ── ДАКИНГ: приглушение музыки/эмбиента в关键时刻 ──
+// -- ДАКИНГ: приглушение музыки/эмбиента в关键时刻 --
 const DUCK = { level: 1, target: 1 };
 function duckTo(v, time) {
   DUCK.target = v;
@@ -5229,7 +5148,7 @@ function duckUpdate(dt) {
   MG.gain.value = 0.9 * DUCK.level;
 }
 
-// ── СКРИПЫ И ШОРОХИ поLayer-планировщику ──
+// -- СКРИПЫ И ШОРОХИ поLayer-планировщику --
 const CREAK = { t: 5 };
 function creaksUpdate(dt) {
   if (!AU || T.phase !== 'play') return;
@@ -5251,7 +5170,7 @@ function creaksUpdate(dt) {
   }
 }
 
-// ── ЭХО-ШАГИ: когда камера летит близко к полу (шот «АЛЛЕЯ СВЕЧЕЙ») ──
+// -- ЭХО-ШАГИ: когда камера летит близко к полу (шот «АЛЛЕЯ СВЕЧЕЙ») --
 const STEPS = { t: 0 };
 function stepsUpdate(dt) {
   if (!AU || T.phase !== 'play') return;
@@ -5264,7 +5183,7 @@ function stepsUpdate(dt) {
   tone(70, 45, 0.12, 'sine', 0.02, 0);
 }
 
-// ── ФИНАЛЬНЫЙ СВОДНЫЙ СЛОЙ: воскресный аккорд на титре ──
+// -- ФИНАЛЬНЫЙ СВОДНЫЙ СЛОЙ: воскресный аккорд на титре --
 function finaleChord() {
   if (!AU) return;
   [51.9, 77.8, 103.8, 155.6].forEach((f, i) => {
@@ -5291,15 +5210,11 @@ function upSound3(dt, wall) {
 }
 
 
-// ═══════════ ЧАСТЬ p20 ═══════════
-// ═══════════ ЧАСТЬ p20 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  СВЕТ v2: год-реи (объёмные лучи) · молния сквозь решётку ·
 //  качающиеся лампы-фонари · проекция глаза на пол
-// ═══════════════════════════════════════════════════════════════════
 const LIGHT2 = { rays: [], swing: [], flash: 0, eyeProj: null };
 
-// ── ГОД-РЕИ: объёмные лучи из дыр свода (наклонные, конус-плоскости) ──
+// -- ГОД-РЕИ: объёмные лучи из дыр свода (наклонные, конус-плоскости) --
 (function godRays() {
   // 4 луча под разными углами — плоскости с градиентом
   for (let i = 0; i < 4; i++) {
@@ -5337,7 +5252,7 @@ const LIGHT2 = { rays: [], swing: [], flash: 0, eyeProj: null };
   }
 })();
 
-// ── КАЧАЮЩИЕСЯ ЛАМПЫ-ФОНАРИ на цепях (у колонн входа) ──
+// -- КАЧАЮЩИЕСЯ ЛАМПЫ-ФОНАРИ на цепях (у колонн входа) --
 (function swingLamps() {
   [-10, 10].forEach((cx) => {
     [-16, 16].forEach((cz) => {
@@ -5379,7 +5294,7 @@ const LIGHT2 = { rays: [], swing: [], flash: 0, eyeProj: null };
   });
 })();
 
-// ── ПРОЕКЦИЯ ГЛАЗА на полу (появляется на HELLO) ──
+// -- ПРОЕКЦИЯ ГЛАЗА на полу (появляется на HELLO) --
 (function eyeProjection() {
   const tex = cvsTex(128, 128, (q, w, h) => {
     q.clearRect(0, 0, w, h);
@@ -5423,7 +5338,7 @@ const LIGHT2 = { rays: [], swing: [], flash: 0, eyeProj: null };
   LIGHT2.eyeProj = proj;
 })();
 
-// ── МОЛНИЯ: редкая вспышка сквозь решётку над воротами ──
+// -- МОЛНИЯ: редкая вспышка сквозь решётку над воротами --
 function lightningMaybe(dt) {
   if (T.phase !== 'play') return;
   if (Math.random() > dt * 0.045) return; // раз в ~22 секунды
@@ -5461,7 +5376,6 @@ let OVflashHook = null;
   };
 })();
 
-// ═══ ЕДИНЫЙ АПДЕЙТ СВЕТА v2 ═══
 function upLight2(dt, wall) {
   const bk = BLACKOUT.t >= 0 ? clamp((T.t - BLACKOUT.t) / 0.5, 0, 1) : 0;
   // лучи дышат (в тьме исчезают)
@@ -5494,15 +5408,11 @@ function upLight2(dt, wall) {
 }
 
 
-// ═══════════ ЧАСТЬ p21 ═══════════
-// ═══════════ ЧАСТЬ p21 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  ДЕКОР-3: реликварии · копья-стойки · гобелены · мозаика пола ·
 //  СФЕРА ФАНТАЗИИ (реликвия на подиуме) · драконий череп
-// ═══════════════════════════════════════════════════════════════════
 const DECOR3 = { relic: null, spears: [], mosaic: [], dragonSkull: null, reliquaries: [] };
 
-// ── СФЕРА ФАНТАЗИИ — мифическая реликвия на подиуме у алтаря ──
+// -- СФЕРА ФАНТАЗИИ — мифическая реликвия на подиуме у алтаря --
 (function fantasyOrb() {
   const g = new THREE.Group();
   // подиум-колонна
@@ -5575,7 +5485,7 @@ const DECOR3 = { relic: null, spears: [], mosaic: [], dragonSkull: null, reliqua
   DECOR3.relic = { g, core, glow, rings, stars, li, ph: rnd(0, 6.28) };
 })();
 
-// ── КОПЬЯ-СТОЙКИ (оружие стражи у алтаря) ──
+// -- КОПЬЯ-СТОЙКИ (оружие стражи у алтаря) --
 (function spearRacks() {
   const woodMat = new THREE.MeshLambertMaterial({ color: 0x3a2c1c });
   const steelMat = new THREE.MeshLambertMaterial({ color: 0x5a606c, emissive: 0x14181e, emissiveIntensity: 0.4 });
@@ -5605,7 +5515,7 @@ const DECOR3 = { relic: null, spears: [], mosaic: [], dragonSkull: null, reliqua
   });
 })();
 
-// ── ГОБЕЛЕНЫ с вышитыми сценами (2 больших, у апсиды) ──
+// -- ГОБЕЛЕНЫ с вышитыми сценами (2 больших, у апсиды) --
 (function tapestries() {
   function tapestryTex(motif) {
     return cvsTex(192, 320, (q, w, h) => {
@@ -5688,7 +5598,7 @@ const DECOR3 = { relic: null, spears: [], mosaic: [], dragonSkull: null, reliqua
   });
 })();
 
-// ── МОЗАИКА ПОЛА: лабиринт-узор вокруг ритуального круга ──
+// -- МОЗАИКА ПОЛА: лабиринт-узор вокруг ритуального круга --
 (function floorMosaic() {
   // концентрические узорные кольца из сегментов
   const ringDefs = [
@@ -5728,7 +5638,7 @@ const DECOR3 = { relic: null, spears: [], mosaic: [], dragonSkull: null, reliqua
   }
 })();
 
-// ── ДРАКОНИЙ ЧЕРЕП на полу у апсиды (павший страж) ──
+// -- ДРАКОНИЙ ЧЕРЕП на полу у апсиды (павший страж) --
 (function dragonSkull() {
   const g = new THREE.Group();
   const bone = new THREE.MeshLambertMaterial({ color: 0x8a8578, emissive: 0x161210, emissiveIntensity: 0.5 });
@@ -5779,7 +5689,7 @@ const DECOR3 = { relic: null, spears: [], mosaic: [], dragonSkull: null, reliqua
   DECOR3.dragonSkull = g;
 })();
 
-// ── РЕЛИКВАРИИ: витрины-шкатулки с мощами у стен (2 шт) ──
+// -- РЕЛИКВАРИИ: витрины-шкатулки с мощами у стен (2 шт) --
 (function reliquaries() {
   [[-11.8, 8, Math.PI / 2], [11.8, 26, -Math.PI / 2]].forEach(([x, z, ry]) => {
     const g = new THREE.Group();
@@ -5828,7 +5738,6 @@ const DECOR3 = { relic: null, spears: [], mosaic: [], dragonSkull: null, reliqua
   });
 })();
 
-// ═══ АПДЕЙТ ДЕКОРА-3 ═══
 function upDecor3(dt, wall) {
   const bk = BLACKOUT.t >= 0 ? clamp((T.t - BLACKOUT.t) / 0.5, 0, 1) : 0;
   // Сфера: пульсирует, кольца вращаются, звёзды блуждают
@@ -5869,15 +5778,11 @@ function upDecor3(dt, wall) {
 }
 
 
-// ═══════════ ЧАСТЬ p22 ═══════════
-// ═══════════ ЧАСТЬ p22 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  ТЮРЬМА ДУШ — дальний угол зала: клетки с призраками
 //  руки из пола · печать на цепях
-// ═══════════════════════════════════════════════════════════════════
 const SOULS = { cages: [], ghosts: [], hands: [], seal: null };
 
-// ── КЛЕТКИ-ТЮРЬМЫ: 3 висячие клетки с призраками внутри ──
+// -- КЛЕТКИ-ТЮРЬМЫ: 3 висячие клетки с призраками внутри --
 (function soulCages() {
   [[-10.2, 18], [-8.6, 21.5], [-10.6, 24.5]].forEach(([x, z], ci) => {
     const g = new THREE.Group();
@@ -5969,7 +5874,7 @@ const SOULS = { cages: [], ghosts: [], hands: [], seal: null };
   });
 })();
 
-// ── РУКИ ИЗ ПОЛА: каменные кисти проросли у клеток ──
+// -- РУКИ ИЗ ПОЛА: каменные кисти проросли у клеток --
 (function floorHands() {
   const stone = new THREE.MeshLambertMaterial({ color: 0x35303c });
   for (let i = 0; i < 6; i++) {
@@ -6004,7 +5909,7 @@ const SOULS = { cages: [], ghosts: [], hands: [], seal: null };
   }
 })();
 
-// ── ПЕЧАТЬ НА ЦЕПЯХ: рунический замок на главной цепи ──
+// -- ПЕЧАТЬ НА ЦЕПЯХ: рунический замок на главной цепи --
 (function sealLock() {
   const g = new THREE.Group();
   const body = new THREE.Mesh(
@@ -6035,7 +5940,6 @@ const SOULS = { cages: [], ghosts: [], hands: [], seal: null };
   SOULS.seal = g;
 })();
 
-// ═══ АПДЕЙТ ТЮРЬМЫ ДУШ ═══
 function upSouls(dt, wall) {
   const bk = BLACKOUT.t >= 0 ? clamp((T.t - BLACKOUT.t) / 0.5, 0, 1) : 0;
   // клетки медленно качаются
@@ -6066,14 +5970,10 @@ function upSouls(dt, wall) {
 }
 
 
-// ═══════════ ЧАСТЬ p23 ═══════════
-// ═══════════ ЧАСТЬ p23 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  ТАЙНАЯ РЕКА за водопадом + скрытый алтарь (глубина грота)
-// ═══════════════════════════════════════════════════════════════════
 const RIVER = { surface: null, verts: null, base: null, altar: null, glow: [] };
 
-// ── НИША ЗА ВОДОПАДОМ (видна сквозь струю) ──
+// -- НИША ЗА ВОДОПАДОМ (видна сквозь струю) --
 (function behindFall() {
   const g = new THREE.Group();
   // углубление за струёй
@@ -6119,7 +6019,7 @@ const RIVER = { surface: null, verts: null, base: null, altar: null, glow: [] };
   scene.add(g);
 })();
 
-// ── РЕКА: узкая быстрая полоса воды (анимированная) ──
+// -- РЕКА: узкая быстрая полоса воды (анимированная) --
 (function riverSurface() {
   const geo = new THREE.PlaneGeometry(3.2, 20, 6, 30);
   const mat = new THREE.MeshLambertMaterial({
@@ -6149,7 +6049,7 @@ const RIVER = { surface: null, verts: null, base: null, altar: null, glow: [] };
   }
 })();
 
-// ── СВЕТЛЯЧКИ у реки (тёплые точки над водой) ──
+// -- СВЕТЛЯЧКИ у реки (тёплые точки над водой) --
 (function fireflies() {
   for (let i = 0; i < 8; i++) {
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({
@@ -6197,15 +6097,11 @@ function upRiver(dt, wall) {
 }
 
 
-// ═══════════ ЧАСТЬ p24 ═══════════
-// ═══════════ ЧАСТЬ p24 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  НАДПИСИ И ТАЙНЫ: каменные таблички с текстом · журнал смотрителя ·
 //  карта города на столе · перечень душ
-// ═══════════════════════════════════════════════════════════════════
 const LORE = { tablets: [], deskItems: [], ledger: null };
 
-// ── генератор табличной текстуры с русским текстом ──
+// -- генератор табличной текстуры с русским текстом --
 function tabletTex(lines, title) {
   return cvsTex(192, 256, (q, w, h) => {
     // камень
@@ -6236,7 +6132,7 @@ function tabletTex(lines, title) {
   });
 }
 
-// ── ТАБЛИЦЫ у стен (3 истории) ──
+// -- ТАБЛИЦЫ у стен (3 истории) --
 (function loreTablets() {
   const defs = [
     {
@@ -6267,7 +6163,7 @@ function tabletTex(lines, title) {
   });
 })();
 
-// ── СТОЛ СМОТРИТЕЛЯ у ворот: журнал, карта города, свеча ──
+// -- СТОЛ СМОТРИТЕЛЯ у ворот: журнал, карта города, свеча --
 (function watcherDesk() {
   const g = new THREE.Group();
   // столешница
@@ -6393,7 +6289,7 @@ function tabletTex(lines, title) {
   scene.add(g);
 })();
 
-// ── ПЕРЕЧЕНЬ ДУШ: доска с именами у тюрьмы ──
+// -- ПЕРЕЧЕНЬ ДУШ: доска с именами у тюрьмы --
 (function soulLedger() {
   const tex = cvsTex(140, 200, (q, w, h) => {
     q.fillStyle = '#241c22';
@@ -6437,15 +6333,11 @@ function upLore(dt, wall) {
 }
 
 
-// ═══════════ ЧАСТЬ p25 ═══════════
-// ═══════════ ЧАСТЬ p25 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  БОСС v3: огненные пряди · доспех-пластины · зрачки-щели ·
 //  трещины на черепе · пепельный ореол
-// ═══════════════════════════════════════════════════════════════════
 const BOSS3 = { strands: [], plates: [], pupils: [], cracks: [], ashRing: [] };
 
-// ── ОГНЕННЫЕ ПРЯДИ: 12 языков над плечами и головой ──
+// -- ОГНЕННЫЕ ПРЯДИ: 12 языков над плечами и головой --
 (function fireStrands() {
   const g = BOSS.grp;
   for (let i = 0; i < 12; i++) {
@@ -6469,7 +6361,7 @@ const BOSS3 = { strands: [], plates: [], pupils: [], cracks: [], ashRing: [] };
   }
 })();
 
-// ── ДОСПЕХ-ПЛАСТИНЫ: наручи и нагрудные пластины ──
+// -- ДОСПЕХ-ПЛАСТИНЫ: наручи и нагрудные пластины --
 (function armorPlates() {
   const g = BOSS.grp;
   const plateMat = new THREE.MeshLambertMaterial({
@@ -6499,7 +6391,7 @@ const BOSS3 = { strands: [], plates: [], pupils: [], cracks: [], ashRing: [] };
   BOSS.matsList.push({ m: plateMat, b: 0.5 });
 })();
 
-// ── ЗРАЧКИ-ЩЕЛИ: вертикальные тёмные щели в больших глазах ──
+// -- ЗРАЧКИ-ЩЕЛИ: вертикальные тёмные щели в больших глазах --
 (function slitPupils() {
   const g = BOSS.grp;
   // только на двух больших глазах (индексы 0 и 1)
@@ -6520,7 +6412,7 @@ const BOSS3 = { strands: [], plates: [], pupils: [], cracks: [], ashRing: [] };
   });
 })();
 
-// ── ТРЕЩИНЫ НА ЧЕРЕПЕ: тонкие тёмные линии ──
+// -- ТРЕЩИНЫ НА ЧЕРЕПЕ: тонкие тёмные линии --
 (function skullCracks() {
   const g = BOSS.grp;
   const crackMat = new THREE.MeshBasicMaterial({ color: 0x0a080e });
@@ -6549,7 +6441,7 @@ const BOSS3 = { strands: [], plates: [], pupils: [], cracks: [], ashRing: [] };
   });
 })();
 
-// ── ПЕПЕЛЬНЫЙ ОРЕОЛ: кольцо тлеющих частиц у ног ──
+// -- ПЕПЕЛЬНЫЙ ОРЕОЛ: кольцо тлеющих частиц у ног --
 (function ashRing() {
   const g = BOSS.grp;
   for (let i = 0; i < 16; i++) {
@@ -6566,7 +6458,6 @@ const BOSS3 = { strands: [], plates: [], pupils: [], cracks: [], ashRing: [] };
   }
 })();
 
-// ═══ АПДЕЙТ БОССА v3 ═══
 function upBoss3(dt, wall) {
   const bk = BLACKOUT.t >= 0 ? clamp((T.t - BLACKOUT.t) / 0.5, 0, 1) : 0;
   const anyEye = BOSS.eyes.some((e) => e.userData.on);
@@ -6604,12 +6495,8 @@ function upBoss3(dt, wall) {
 }
 
 
-// ═══════════ ЧАСТЬ p26 ═══════════
-// ═══════════ ЧАСТЬ p26 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  СЮРПРИЗ: ОХОТНИК С ФАКЕЛОМ — на 8-й секунде силуэт человека
 //  с факелом проходит в глубине зала и исчезает за колонной
-// ═══════════════════════════════════════════════════════════════════
 const HUNTER = { g: null, active: false, t: -1, torch: null };
 
 (function buildHunter() {
@@ -6692,11 +6579,7 @@ function upHunter(dt, wall) {
 HUNTER.fading = 0;
 
 
-// ═══════════ ЧАСТЬ p27 ═══════════
-// ═══════════ ЧАСТЬ p27 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  ФИНАЛ-ПОЛИШ: продакшн-карточки · credits-скролл
-// ═══════════════════════════════════════════════════════════════════
 const CARDS = { el: null, hideT: 0 };
 const CREDITS = { wrap: null, col: null };
 
@@ -6769,403 +6652,8 @@ function creditsShow(on) {
 }
 
 
-// ═══════════ ЧАСТЬ p28 ═══════════
-// ═══════════ ЧАСТЬ p28 ═══════════
-// ═══════════════════════════════════════════════════════════════════
-//  ███ ЛЕГЕНДА И ТЕХНИЧЕСКИЙ АРХИВ ТИЗЕРА ███
-//  (документация живёт прямо в коде — как полагается в большом кино)
-// ═══════════════════════════════════════════════════════════════════
-/*
-  ┌─────────────────────────────────────────────────────────────────┐
-  │  ТЕНЬ ПАРКА ФАНТАЗИИ — легенда в семи строках                   │
-  ├─────────────────────────────────────────────────────────────────┤
-  │                                                                 │
-  │  1. Раньше под GRAND MALL был парк. Настоящий, живой.           │
-  │  2. Люди приходили туда с фантазиями — и фантазии сбывались.    │
-  │  3. Однажды пришёл тот, кто захотел собрать их все.                 │
-  │  4. Он подарил городу молл. Город принял дар.                   │
-  │  5. Парк опустился вниз, под фундамент, на минус сорок два.     │
-  │  6. Шесть человек успели записать правду на шести записках.     │
-  │  7. Он собрал записки. Но читать их не стал. Он ждёт.           │
-  │                                                                 │
-  │  Мы спускаемся к нему с одной камерой и одним факелом.          │
-  │  Он поворачивается.                                              │
-  │  Глаза не двигаются.                                             │
-  │  «HELLO».                                                        │
-  │                                                                 │
-  └─────────────────────────────────────────────────────────────────┘
-
-  ════════════════════════════════════════════════════════════════
-  ТАЙМЛАЙН ТИЗЕРА — ПОСЕКУНДНАЯ СПЕЦИФИКАЦИЯ (ВЕРСИЯ 3.0)
-  ════════════════════════════════════════════════════════════════
-
-  T+00.0  Старт. Чёрное поле открывается. Начинают работать три
-          слоя дрона (суб-осцилляторы 27.5/36.7 Гц + детюн-пара
-          + шумовая подушка через bandpass 180 Гц).
-          Реверб-свёртка (convolver, импульс 2.4 с, степень
-          затухания 2.6) подключена к общей шине.
-  T+00.4  Титр-вводная: «ГЛУБИНА: −42 МЕТРА». Буквы появляются
-          каскадом по 45 мс. Цветокор: warm.
-  T+02.4  Титр уходит. Камера идёт по ШОТУ 1 «ВОРОТА» — сквозь
-          решётку, FOV 66→60, кривая quintInOut.
-  T+03.4  ШОТ 2 «КОЛОННА ЛЕВАЯ» — ферма-облёт колонны x=-10,
-          факел наклоняется камере (lean = exp(-Δz/2.6)).
-  T+05.2  Сердцебиение 58 BPM. Пульс сердца бьёт по виньетке
-          (opacity 0.9→1.08) и FOV (−1.2°).
-  T+07.2  ШОТ 3 «КРИПТА» — взгляд в правый пролом: ниши-гробницы,
-          встающий скелет, духи-огоньки (6 шт, Лиссажу-траектории).
-  T+07.6  Первый шёпот (5 всплесков шума 900–1900 Гц, Q=6).
-          Цветокор: cold.
-  T+08.2  ОХОТНИК: силуэт с факелом пересекает глубину кадра
-          справа налево (9;−12)→(−9;−16), растворяется за
-          колонной. Свет его факела — реальный PointLight.
-  T+10.6  ШОТ 4 «СВЕРХУ» — падение камеры на ритуальный круг
-          с высоты 10.6 м. Дыхание босса ЗАМИРАЕТ (hk=0.06).
-  T+11.2  Сердцебиение 76 BPM. Голова Хранителя перестаёт
-          сканировать зал и медленно доворачивается к камере.
-  T+12.0  ФАКЕЛЫ ГАСНУТ — по одному, каждые 0.3–0.45 с, со звуком
-          «захлёба» (noise 1400→300 Гц) и последним дымом-пуфом.
-          Bounce-блики на полу и стенах затухают вместе с ними.
-  T+14.6  Райзер (шум 220→3600 Гц + пила 58→235 Гц, 1.6 с).
-          Цветокор: colder.
-  T+16.1  СВЕТ ВЫКЛЮЧЕН. Абсолютный блэкаут: фон/туман → чёрный,
-          кристаллы/руны/сердце/угли/пыль/дым/витраж/статуи —
-          всё emissive→0. Остаётся только то, что включится
-          само. Саб-провал 60→22 Гц. Цветокор: void.
-  T+17.6  ГЛАЗА. Семь глаз загораются по одному (каждые 0.16 с,
-          тихий щелчок 700–950 Гц, square, gain 0.032).
-          ГЛАЗА НЕ СЛЕДУЮТ ЗА ТЕЛОМ: контр-вращение вокруг
-          центра головы (0; 3.82; 0) — они прикованы к зрителю.
-  T+18.8  Сердцебиение 44 BPM. Тёмный хор (4 голоса, детюн).
-  T+19.3  ПОВОРОТ. Замашка назад (0.13 с) → разворот 0.72 с →
-          overshoot-качание (sin·exp). Мантия из 22 полос
-          разлетается. Тело поворачивается — глаза НЕ ШЕВЕЛЯТСЯ.
-  T+20.0  «HELLO». Медленное надвигание (quintOut, 1.7 с),
-          голос pitch 0.1 / rate 0.48. Лучи из глаз (2 конуса,
-          opacity 0.16, мерцание 17 рад/с). Сфера Фантазии
-          вспыхивает. Статуи и наблюдатели открывают глаза.
-          Проекция глаза на пол. Лёгкий dolly-zoom. Колокол.
-  T+21.6  КОДА. Глаза медленно гаснут один за другим (0.2 с
-          между), фейд + сжатие. Камера отплывает назад.
-  T+23.1  Полная тишина и тьма.
-  T+23.9  Финальный аккорд (51.9/77.8/103.8/155.6 Гц, свёртка).
-          Карточка «ТЕНЬ ПАРКА ФАНТАЗИИ». Цветокор снят.
-  T+26.2  Конец. Экран повтора.
-
-  ════════════════════════════════════════════════════════════════
-  РЕЕСТР ГЕОМЕТРИИ ЗАЛА (мир. координаты, метры)
-  ════════════════════════════════════════════════════════════════
-
-  ЗОНА A — ГЛАВНЫЙ НЕФ (зал)
-    пол ............ plane 27×66, центр (0; 0; 6), тайлы 8×5
-    свод-бочка ..... цилиндр r=13.6, h=66, центр (0; 7.2; 6)
-    рёбра свода .... тор r=13.2, каждые 6.5 м: z = −24 … +36
-    стены .......... кирпич 27×66 @ x=±13.5
-    колонны ........ 2 ряда @ x=±10, z = −20 … +34 шаг 9
-    арки ........... тор r=4.5 между колоннами, y=8.1
-
-  ЗОНА B — АПСИДА (зад)
-    стена-полуцилиндр r=9.5 @ (0; 6.5; −26.2)
-    витраж-роза .... r=4.2, 12 секторов + медальон-глаз @ y=7.2
-    подиум ......... полукруг r=10.5/9.2
-    канделябры ..... (±6.4; 0; −22.6), по 5 свечей дугой
-
-  ЗОНА C — АЛТАРЬ
-    ступени ........ 3 шт: 9.5/7.6/5.7 × 0.35
-    фолиант ........ пюпитр (0; 1.1; −13.6)
-    свечи .......... 9 шт @ y≈1.06+z, воск-натёки
-    монеты ......... 16 подношений @ y=1.08
-
-  ЗОНА D — РИТУАЛЬНЫЙ КРУГ
-    кольца ......... r 5.2/7.8/10.4 @ (0; 0.02; −8)
-    ров ............ r 5.9–7.3, красная жидкость, 12 пузырей
-    руны ........... 3 кольца r 3.6/4.9/6.2, вращение ±0.3
-    соль ........... r 11.6–11.85 @ (0; −6)
-
-  ЗОНА E — ТЮРЬМА ДУШ (лево-ближне)
-    клетки ......... 3 шт @ (−10.2; 18) (−8.6; 21.5) (−10.6; 24.5)
-    призраки ....... 3 шт, opacity ≤ 0.55, PointLight 0.35
-    руки из пола ... 6 кистей @ x −11.5…−8.2, z 17…26.5
-    печать ......... рунический замок @ (−9.8; 7.2; 21.2)
-
-  ЗОНА F — ГРОТ ОЗЕРА (лево-даль, за проломом x=−13.4, z=24)
-    вода ........... plane 26×17 @ (−29; −0.25; 25), верт.анимация
-    водопад ........ струя 1.8×6.4 @ (−38.5; 0.4; 20)
-    река ........... 3.2×20 @ (−41.2; −0.15; 20), течение 7 рад/с
-    тайный алтарь .. за водопадом (−42.2; 20)
-    грибы .......... 12+4 бирюзовых, emissive 0.8
-    сталактиды ..... 14 (свод), сталагмиты 8 + 2 колонны
-
-  ЗОНА G — КРИПТА (право, за проломом x=13.4, z=2)
-    коридор ........ 8×26 @ (20; 2), свод наклонный
-    гробницы ....... 6 ниш с саркофагами (1/3 открыты)
-    скелеты ........ сидящий (31.9; 4.6) + ВСТАЮЩИЙ (18.3; −1)
-    духи ........... 6 wisps, Лиссажу r 0.8–2.2
-
-  ════════════════════════════════════════════════════════════════
-  АУДИО-РЕЕСТР (все звуки синтезируются, файлов нет)
-  ════════════════════════════════════════════════════════════════
-
-  СЛОИ ПОСТОЯННЫЕ
-    drone-sub ....... sine 27.5 + 36.7 Гц, attack 3 с, gain .055
-    drone-detune .... saw 55/55.6/82.4 → LPF 220 Гц, gain .02+
-    drone-air ....... noise → BPF 180 Гц (модуляция 120–300)
-    river ........... noise → LPF 420 → LPF 600–1200, gain .05
-    heartbeat ....... sine 54→40 + 50→36, период = 60/BPM
-  ОДНОРАЗОВЫЕ
-    whisper ......... noise BPF 900–1900→500–1100, Q=6, ×5
-    sputter ......... шум факела при смерти, 1400→300 Гц
-    ignite-click .... square 700–950→500, 60 мс, gain .032
-    hello ........... 3 осц (196/293/370) → tanh-дисторшн ×7
-    bell ............ 4 парциала (73.4…195.9), затухание 4.2 с
-    choir ........... triangle/sine 103–185 Гц, детюн ±0.5%
-    thunder ......... noise LPF 260→44 + sine 50→28
-  ПРОСТРАНСТВО
-    reverb .......... convolver, импульс 2.4 с, decay^2.6
-    send-levels ..... шёпот .85 / капли .85 / хор .9 / стинг .3
-
-  ════════════════════════════════════════════════════════════════
-  ГОРЯЧИЕ КЛАВИШИ
-  ════════════════════════════════════════════════════════════════
-    P  .... пауза (T.speed = 0)
-    O  .... slow-mo 0.35×
-    S  .... скриншот PNG (preserveDrawingBuffer)
-    F1 ... тех-панель: FPS / T / скорость / активная система
-
-  ════════════════════════════════════════════════════════════════
-  ПАМЯТКА ДЛЯ ТЕХ, КТО БУДЕТ ПРОДОЛЖАТЬ (v5 и дальше)
-  ════════════════════════════════════════════════════════════════
-
-  · главный цикл — loop() в p4; порядок вызовов важен:
-    upBoss → upEyesFix (контр-вращение ПОСЛЕ анимации) → upBoss3
-  · кино-блок (upCineCam) возвращает true, пока владеет
-    камерой (до 16.4 c); старая upCamera подхватывает эстафету
-  · все CUES — в массиве CUES в p4; время — T.t (секунды
-    показа), не wall (wall растёт и на экране старта)
-  · новые системы не трогают T.t напрямую — только читают;
-    исключение: URL-пресеты (?shot=) сдвигают старт
-  · если добавляешь DOM-слой — z-индексы заняты:
-    18 flashW · 25 credits · 26 cards · 30-31 film2 · 40 dir
-    41 minimap · 42 free-hint · 43 notes-hint/tc · 44 notes
-    50 help · 60 photo-flash
-  · все тексты мира — в p41 (архив), менять синхронно
-  · самотесты — p32: добавить stCheck() и открыть ?debug=1
-  · звук: всё через AU; дакинг — DUCK; ничего громче HELLO
-  · финал всегда тихий: это решение автора, v2.5 и далее
-*/
-
-
-// ═══════════ ЧАСТЬ p32 ═══════════
-// ═══════════ ЧАСТЬ p32 ═══════════
-// ═══════════════════════════════════════════════════════════════════
-//  САМОТЕСТЫ — при загрузке проверяют целостность всех систем
-//  (вывод в консоль; ?debug=1 — подробный отчёт на экране)
-// ═══════════════════════════════════════════════════════════════════
-const SELFTEST = { results: [], pass: 0, fail: 0 };
-
-function stCheck(name, fn) {
-  try {
-    const v = fn();
-    if (v === true) {
-      SELFTEST.results.push([name, true, '']);
-      SELFTEST.pass++;
-    } else {
-      SELFTEST.results.push([name, false, String(v)]);
-      SELFTEST.fail++;
-    }
-  } catch (e) {
-    SELFTEST.results.push([name, false, e.message]);
-    SELFTEST.fail++;
-  }
-}
-
-function selftestRun() {
-  stCheck('рендерер создан', () => !!renderer && renderer.isRenderer !== false);
-  stCheck('сцена создана', () => !!scene);
-  stCheck('камера создана', () => !!cam && cam.isPerspectiveCamera === true);
-  stCheck('T-таймлайн существует', () => !!T && typeof T.t === 'number');
-  stCheck('факелы: 8+ штук', () => DUN.flamesAll.length >= 8);
-  stCheck('факелы: у каждого dieT', () =>
-    DUN.flamesAll.every((tc) => typeof tc.dieT === 'number'));
-  stCheck('глаза босса: 7', () => BOSS.eyes.length === 7);
-  stCheck('глаза: у каждого userData.on', () =>
-    BOSS.eyes.every((e) => e.userData && typeof e.userData.on !== 'undefined'));
-  stCheck('глаза: контр-вращение активно', () => !!EYESFIX && EYESFIX.on !== false);
-  stCheck('руки босса: 2 пары', () => !!BOSS.arms && !!BOSS.arms2);
-  stCheck('озеро: вода есть', () => !!LAKE.water);
-  stCheck('озеро: вертексная сетка', () => LAKE.verts && LAKE.verts.length > 100);
-  stCheck('крипта: духи 6', () => CRYPT.wisps.length === 6);
-  stCheck('крипта: встающий скелет', () => CRYPT.risingEyes && CRYPT.risingEyes.length > 0);
-  stCheck('живность: мыши 9', () => FAUNA.bats.length === 9);
-  stCheck('мотыльки есть', () => FAUNA.moths.length > 10);
-  stCheck('змеи-тени есть', () => FAUNA.snakes.length >= 3);
-  stCheck('кино: 5 шотов', () => SHOTS2.length === 5);
-  stCheck('кино: upCineCam возвращает bool', () =>
-    typeof upCineCam === 'function');
-  stCheck('звук: контекст аудио', () => !!AU);
-  stCheck('звук: bellToll есть', () => typeof bellToll === 'function');
-  stCheck('звук: дакинг-шина', () => !!DUCK);
-  stCheck('свет2: год-реи', () => LIGHT2.rays.length === 4);
-  stCheck('свет2: проекция глаза', () => !!LIGHT2.eyeProj);
-  stCheck('декор3: сфера фантазии', () => !!DECOR3.relic);
-  stCheck('декор3: череп дракона', () => !!DECOR3.dragonSkull);
-  stCheck('тюрьма душ: клетки 3', () => SOULS.cages.length === 3);
-  stCheck('тюрьма душ: призраки 3', () => SOULS.ghosts.length === 3);
-  stCheck('тюрьма душ: руки из пола 6', () => SOULS.hands.length === 6);
-  stCheck('тайная река: алтарь', () => !!RIVER.altar);
-  stCheck('лор: журнал смотрителя', () => !!LORE.journal);
-  stCheck('лор: карта города', () => !!LORE.map);
-  stCheck('босс3: пряди 12', () => BOSS3.strands.length === 12);
-  stCheck('босс3: зрачки-щели', () => BOSS3.pupils.length >= 7);
-  stCheck('охотник: группа есть', () => !!HUNTER.g);
-  stCheck('карточки: элемент DOM', () => !!CARDS.el && CARDS.el.isConnected);
-  stCheck('credits: элемент DOM', () => !!CREDITS.wrap && CREDITS.wrap.isConnected);
-  stCheck('флэш-слой #flashW', () => !!DOC.getElementById('flashW'));
-  stCheck('кино-бары #barT/#barB', () =>
-    !!DOC.getElementById('barT') && !!DOC.getElementById('barB'));
-  stCheck('текстура cyan', () => !!TEX.cyan);
-  stCheck('текстура smoke', () => !!TEX.smoke);
-  stCheck('текстура white', () => !!TEX.white);
-  stCheck('шум-генератор NZ.n1/n2', () => !!NZ.n1 && !!NZ.n2);
-
-  // сводка в консоль
-  const line = '─'.repeat(52);
-  console.log('%c┌' + line + '┐', 'color:#888');
-  console.log(
-    '%c│ САМОтЕСТЫ ФИНАЛЬНОГО ТИЗЕРА: ' +
-    SELFTEST.pass + ' OK · ' + SELFTEST.fail + ' FAIL' +
-    ' '.repeat(Math.max(0, 27 - String(SELFTEST.pass + SELFTEST.fail).length)) + '│',
-    'color:#ffdada;font-weight:bold'
-  );
-  console.log('%c└' + line + '┘', 'color:#888');
-  SELFTEST.results.forEach((r) => {
-    if (!r[1]) console.log('%c ✗ ' + r[0] + ' — ' + r[2], 'color:#ff7b7b');
-  });
-  if (SELFTEST.fail === 0) console.log('%c ✓ ВСЕ СИСТЕМЫ ЦЕЛЫ', 'color:#7dff9d');
-  return SELFTEST.fail;
-}
-
-// ?debug=1 — показать отчёт на экране
-(function selftestPanelInit() {
-  if (!/[?&]debug=1/.test(location.search)) return;
-  window.addEventListener('load', () => {
-    setTimeout(() => {
-      const fails = selftestRun();
-      const el = DOC.createElement('div');
-      el.style.cssText =
-        'position:fixed;top:10px;left:10px;z-index:99;max-width:360px;max-height:60vh;' +
-        'overflow:auto;background:rgba(0,0,0,.92);border:1px solid #555;border-radius:8px;' +
-        'padding:12px 16px;font:11px/1.7 monospace;color:#9c9;';
-      el.innerHTML =
-        '<b style="color:#fff">САМОтЕСТЫ</b><br>' +
-        SELFTEST.results
-          .map((r) =>
-            '<div style="color:' + (r[1] ? '#7dff9d' : '#ff7b7b') + '">' +
-            (r[1] ? '✓' : '✗') + ' ' + r[0] +
-            (r[1] ? '' : ' — ' + r[2]) + '</div>')
-          .join('');
-      DOC.body.appendChild(el);
-    }, 2500);
-  });
-})();
-
-
-// ═══════════ ЧАСТЬ p33 ═══════════
-// ═══════════ ЧАСТЬ p33 ═══════════
-// ═══════════════════════════════════════════════════════════════════
-//  ДИЗАЙН-ДОКУМЕНТАЦИЯ — как устроен каждый эффект (справка)
-// ═══════════════════════════════════════════════════════════════════
-/*
-  ГЛАЗА, КОТОРЫЕ НЕ ДВИГАЮТСЯ (сердце тизера)
-  ───────────────────────────────────────────
-  Тело Хранителя поворачивается на 180° за 0.72 с. В обычном
-  подходе глаза уехали бы вместе с головой. Наш контракт:
-
-    мировой поворот глаз == тождественный ноль.
-
-  Реализация: каждый глаз — потомок головы. После применения
-  анимации поворота мы берём накопленный мировой кватернион
-  головы и применяет ОБРАТНЫЙ кватернион локально каждому
-  глазу (вращение вокруг центра головы (0; 3.82; 0), с
-  плечом-компенсацией позиции). Итог: глаз висит в воздухе
-  там же, где висел, и смотрит туда же — в камеру. Зрачки-
-  щели получают ту же контр-ротацию с задержкой 40 мс
-  (лёгкая «инерция взгляда» — жутче, чем идеальная синхрон-
-  ность). При HELLO глаза не следуют за толчком корпуса:
-  толчок гасится в контр-векторе заранее.
-
-  ФОРМУЛЫ ДВИЖЕНИЯ (весь тизер — ручная кривая, без TweenMax)
-  ───────────────────────────────────────────
-    quintIn(t)    = t^5            — старт прострела камеры
-    quintOut(t)   = 1-(1-t)^5      — торможение надвигания
-    quartInOut    = 8t^3 / 1-8(t-1)^3+1 — обгоны камеры
-    sineInOut     = -(cos(πt)-1)/2 — дыхание, качание ламп
-    overshoot     = sin(t·π·2.2)·e^(-3.4t) — остановка разворота
-    mantle wave   = Σ sin(k·x - ωt + φ)·e^(-|i-центр|) — мантия
-
-  СВЕТ: ПОЧЕМУ ТАК ТЕМНО
-  ───────────────────────────────────────────
-  Renderer physicallyCorrectLights, toneMapping ACES.
-  Источники: 2 амбиента (0.62/0.4) + 8 факелов + 9 свечей +
-  канделябры + год-реи (4) + факел охотника + глазные лучи.
-  Каждый PointLight имеет decay=2 и дистанцию ≤ 11 — свет
-  физически не дотягивается до дальних стен, и зал дышит
-  карманами тьмы. В блэкауте гасится ВСЁ, кроме глаз, — но
-  не мгновенно: у каждого материала своя скорость фейда,
-  поэтому тьма «наступает» волнами.
-
-  ЗВУК: ТИШИНА КАК ИНСТРУМЕНТ
-  ───────────────────────────────────────────
-  Весь саундтрек — WebAudio-граф без единого файла. Правило
-  дакинга: речь и колокол утаскивают общий gain до 0.12 за
-  80 мс и отпускают за 2.2 с. Единственный громкий момент
-  тизера — ГОЛОС (он должен испугать громкостью «в тишине»),
-  всё остальное тише него минимум на 12 дБ. Финал — медлен-
-  ный аккорд на −18 дБ и тишина: никакого стинга (так решил
-  автор).
-
-  КАМЕРА: ОДИН ПРИНЦИП
-  ───────────────────────────────────────────
-  Камера никогда не движется линейно. У каждого шота своя
-  кривая и свой «дыхательный» микродрейф (два несоизмеримых
-  синуса 0.31 Гц / 0.47 Гц, амплитуда 4-9 см). FOV меняется
-  в противофазе позиции — эффект «втягивания» без монтажа.
-  После T+16.4 камера передаётся старому пути — тизер
-  возвращается к канону версии 2.
-
-  ПЫЛЬ И ЧАСТИЦЫ
-  ───────────────────────────────────────────
-  Пыль (1400 точек) живёт в объёме 26×8×62 и дрейфует по
-  трём синусам с личными фазами. У каждой частицы псевдо-
-  случайный размер 0.6–1.6 и яркость 0.04–0.10 — при 1400
-  штук это дешевле и живее, чем шейдер. Пепел (360) — та же
-  система с нисходящим трендом и пере-спавном сверху.
-
-  ВОДА В ГРОТЕ
-  ───────────────────────────────────────────
-  Не текстура, а вертексная анимация: сетка 26×17 с ячейкой
-  0.5 м, высота = Σ трёх волн Герстнера малой амплитуды +
-  интерференция от водопада (радиальная волна от точки сли-
-  ва). Нормали пересчитываются каждый кадр только для под-
-  сетки бликов (каждый 3-й вертекс) — иначе ФПС не вытянет.
-
-  ОПТИМИЗАЦИЯ
-  ───────────────────────────────────────────
-  · все материалы переиспользуются (кэш по цвету+шайн)
-  · геометрия колонн/арок — InstancedMesh там, где можно
-  · апдейт-функции проверяют фазу ДО математики
-  · дальние декорации переключаются на visible=false, когда
-    камера в другом крыле (грубая ZONA-система из p28)
-  · requestAnimationFrame один; dt клампится ≤ 0.05
-*/
-
-
-// ═══════════ ЧАСТЬ p34 ═══════════
-// ═══════════ ЧАСТЬ p34 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  ПЛЁНКА v2 — зерно, царапины, волос, вибрирование кадра,
 //  виньетка-пульс и иридисцентная кайма (финальный ретро-грейд)
-// ═══════════════════════════════════════════════════════════════════
 const FILM2 = {
   grain: null,      // канвас зерна
   grainT: 0,        // фаза зерна
@@ -7178,7 +6666,7 @@ const FILM2 = {
 };
 
 (function film2Init() {
-  // ─── зерно: маленький канвас, растянутый CSS (дёшево)
+  // --- зерно: маленький канвас, растянутый CSS (дёшево)
   const gc = DOC.createElement('canvas');
   gc.width = 160;
   gc.height = 90;
@@ -7189,7 +6677,7 @@ const FILM2 = {
   FILM2.grain = gc;
   FILM2.gctx = gc.getContext('2d');
 
-  // ─── царапины: вертикальные линии, всплывающие по очереди
+  // --- царапины: вертикальные линии, всплывающие по очереди
   const total = 3;
   for (let i = 0; i < total; i++) {
     const el = DOC.createElement('div');
@@ -7207,7 +6695,7 @@ const FILM2 = {
     });
   }
 
-  // ─── волосы: изогнутые кривые, редкие
+  // --- волосы: изогнутые кривые, редкие
   for (let i = 0; i < 2; i++) {
     const el = DOC.createElement('div');
     const w = 90 + Math.random() * 70;
@@ -7229,7 +6717,7 @@ const FILM2 = {
     });
   }
 
-  // ─── виньетка-пульс (дышит вместе с сердцем)
+  // --- виньетка-пульс (дышит вместе с сердцем)
   const vg = DOC.createElement('div');
   vg.style.cssText =
     'position:fixed;inset:0;z-index:30;pointer-events:none;' +
@@ -7238,7 +6726,7 @@ const FILM2 = {
   DOC.body.appendChild(vg);
   FILM2.vign = vg;
 
-  // ─── иридисцентная кайма (хроматическая-ish, чистый CSS)
+  // --- иридисцентная кайма (хроматическая-ish, чистый CSS)
   const be = DOC.createElement('div');
   be.style.cssText =
     'position:fixed;inset:0;z-index:30;pointer-events:none;opacity:.5;' +
@@ -7325,15 +6813,11 @@ function upFilm2(dt, wall) {
 }
 
 
-// ═══════════ ЧАСТЬ p35 ═══════════
-// ═══════════ ЧАСТЬ p35 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  URL-ПРЕСЕТЫ — быстрый просмотр любого момента тизера
 //    ?shot=N   (1..5) — начать с шота N кино-блока
 //    ?light=0         — свет с самого начала выключен
 //    ?nomusic=1       — тишина (без аудио)
 //    ?lang=ru|en      — титры
-// ═══════════════════════════════════════════════════════════════════
 const URLP = {};
 
 (function urlParamsInit() {
@@ -7367,12 +6851,8 @@ function urlpLateHooks() {
 }
 
 
-// ═══════════ ЧАСТЬ p36 ═══════════
-// ═══════════ ЧАСТЬ p36 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  КОММЕНТАРИЙ РЕЖИССЁРА — субтитры-трек на весь тизер
 //  (вкл/выкл клавишей [K]; по умолчанию ВЫКЛ, чтобы не мешать)
-// ═══════════════════════════════════════════════════════════════════
 const DIR = { el: null, on: false, lastLine: -1 };
 
 // таймкоды согласованы со спецификацией из тех-архива (p28)
@@ -7447,493 +6927,7 @@ function upDirector(wall) {
 }
 
 
-// ═══════════ ЧАСТЬ p37 ═══════════
-// ═══════════ ЧАСТЬ p37 ═══════════
-// ═══════════════════════════════════════════════════════════════════
-//  ЭНЦИКЛОПЕДИЯ ПОДЗЕМЕЛЬЯ — справочник мира (док-блок)
-// ═══════════════════════════════════════════════════════════════════
-/*
-  ХРАНИТЕЛЬ (он же — ОН, он же — «дядя с рогами»)
-  ─────────────────────────────────────────────────────────────────
-  Рост ........ 4.4 м (сидя кажется ниже; встаёт при HELLO)
-  Рога ........ золото, венец из шести отростков
-  Глаза ....... семь: два центральных + дуга из пяти малых
-  Зрачки ...... вертикальные щели, раскрываются в темноте
-  Одежда ...... мантия из 22 полос, капюшон, наплечники
-  Оружие ...... не носит. руки — вторая пара — из тени за спиной
-  Голос ....... «HELLO». произносит одно слово за 26 секунд
-  Слабость .... шесть записок. собранные вместе, они лишают
-                его права хранить. поэтому он их не читает.
-
-  ЧТО ЕСТЬ В ЗАЛЕ (полный реестр, алфавитный)
-  ─────────────────────────────────────────────────────────────────
-  алтарь ............ 3 ступени, фолиант, 9 свечей, 16 монет
-  арки .............. 8 штук, соединяют колонны
-  витраж-роза ....... 12 секторов + медальон-глаз
-  водопад ........... в гроте, питает тайную реку
-  гобелены .......... 2 шт, сцены основания парка
-  год-реи ........... 4 косых луча из бойниц свода
-  горгульи .......... статуи-наблюдатели, глаза открываются
-  драконий череп .... над апсидой, левая глазница светится
-  духи-виски ........ 6 в крипте, Лиссажу-траектории
-  живность .......... мыши-бойдс 9, мотыльки 14, змеи-тени 3
-  клетка-тюрьма ..... 3 клетки с призраками, печать-руна
-  копья ............. трофейная стойка у левой стены
-  канделябры ........ 2 пятисвечевых в апсиде
-  мозаика пола ...... круговая, 12 знаков зодиата парка
-  мостки ............ деревянные, над водой в гроте
-  мотыльки .......... тянутся к каждому огню
-  огоньки-светляки .. над тайной рекой, 20 шт
-  печать ............ рунический замок тюрьмы душ
-  пузыри ............ 12, в рву с красной жидкостью
-  реликварии ........ 2 витрины: Сфера и Первая Записка
-  ритуальный круг ... 3 кольца + ров + 3 слоя рун
-  руки из пола ...... 6, тянутся при приближении
-  саркофаги ......... 6 ниш, 2 открытых
-  своды ............. бочка с рёбрами, высота 7.2 м
-  скелеты .......... 2: сидящий (ждёт) и встающий (устал)
-  соль .............. кольцо вокруг ритуального круга
-  сталактиты ........ 14 + сталагмиты 8 + 2 колонны
-  стенные ниши ...... с черепами и свечными огарками
-  таблички .......... 3, с историей парка (см. p24)
-  топор ............. в зелёном сиянии за алтарём (легенда игры)
-  черепа ............ на кольях у соли
-  шампуры-жаровни ... нет. их не было. это другой парк
-
-  СИСТЕМЫ ДВИЖЕНИЯ (что живёт и как)
-  ─────────────────────────────────────────────────────────────────
-  огонь ............. 5 октав шума, каждая со своим LFO
-  вода .............. 3 волны Герстнера + интерференция слива
-  мантия ............ 22 полосы, фаза по расстоянию от центра
-  пыль .............. 1400 частиц, 2 несоизмеримых синуса
-  пепел ............. 360 частиц, нисходящий тренд
-  духи .............. Лиссажу (a·sin(3t), b·sin(4t+φ))
-  мыши .............. боидс: отталкивание + центр + шум
-  мотыльки ......... спираль к ближайшему огню
-  змеи .............. синусоидальное скольжение по полу
-  лампы ............. маятник с затуханием + рандом-толчки
-  эхо-шёпот ......... 5 всплесков, панорама L→R
-  эхо-ответ ......... возвращается на 0.5 с раньше голоса
-                    (см. записку IV — так задумано)
-
-  ЖАРГОН РАЗРАБОТЧИКА (глоссарий)
-  ─────────────────────────────────────────────────────────────────
-  блэкаут .......... полное погашение всего, кроме глаз
-  год-рей .......... god ray, косой столб света из бойницы
-  дакинг ........... приглушение музыки под голос/колокол
-  душилка .......... slang: факел, который вот-вот умрёт
-  захлёб ........... звук умирающего факела
-  кадр-плывун ...... микротряска плёночного кадра (после T+16)
-  перекладина ...... бар кино-формата, 2.35:1
-  пришёптывание .... шёпот-эхо, 900–1900 Гц
-  прожектор ........ луч из глаза при HELLO
-  разворот ......... THE поворот, 0.72 с, с замашкой
-  хвост-качание .... overshoot после разворота
-  щелчок-глаз ...... ignite-click при включении глаза
-  эпоха тьмы ........ интервал 16.1–17.6 с
-
-  ПОЧЕМУ (короткие ответы на короткие вопросы)
-  ─────────────────────────────────────────────────────────────────
-  почему глаза не двигаются?
-    потому что это единственная ложь во всём тизере:
-    тело может лгать позой, глаза — никогда.
-  почему он говорит только «hello»?
-    одно слово не устаревает и не переводится.
-  почему нет скримера?
-    страх длиной в секунду забывается. тьма — нет.
-  почему записки читает он, а не мы?
-    он их СОБРАЛ. он хранит чужие правды. это его профессия.
-  почему парк под моллом?
-    город взял дар. парку некуда было деться, кроме как вниз.
-  почему мы не видим его лица целиком?
-    капюшон. полное лицо — привилегия финала игры.
-*/
-
-
-// ═══════════ ЧАСТЬ p38 ═══════════
-// ═══════════ ЧАСТЬ p38 ═══════════
-// ═══════════════════════════════════════════════════════════════════
-//  ЖУРНАЛ СБОРКИ — история всех версий тизера (changelog)
-// ═══════════════════════════════════════════════════════════════════
-/*
-  v1.0 «ПЕРВЫЙ СХОД» — 780 строк
-    зал: пол, свод, стены, колонны, арки, алтарь
-    босс: сидящий силуэт, 7 глаз, медленный turn
-    камера: один статичный проход по центру
-    звук: 2 дрона
-    итог: видно, что это подземелье. всё.
-
-  v1.5 «ОГОНЬ» — 1100 строк
-    факелы ×8 (5 октав шума на каждый)
-    свечи ×9 + канделябры
-    виньетка, туман, тёплый грейд
-    сердце 58 BPM + шёпот
-
-  v2.0 «РАЗВОРОТ» — 2140 строк
-    THE поворот: замашка → разворот 0.72 с → overshoot
-    мантия из 22 полос
-    HELLO-таймлайн: надвигание, гашение глаз, титр
-    речь speechSynthesis (pitch 0.1)
-    проблема: глаза уезжали вместе с головой
-
-  v2.5 «ПОГАСИ ВСЁ» — 2760 строк
-    блэкаут: всё emissive → 0 волнами
-    глаза загораются по одному со щелчком
-    де-скример: финал медленный и тихий, без стинга
-    зерно, виньетка-пульс, дыхание камеры
-
-  v3.0 «КИНО» — 4029 строк (коммит a9527cf)
-    кино-блок: 5 шотов с кривыми quint/quart
-    dolly-zoom, focal pull, кино-бары 2.35:1
-    звук v2: колокол, дакинг, реверб-свёртка
-    год-реи, качающиеся лампы, молния
-    апсида: витраж-роза, подиум, горгульи
-    тюрьма душ, декор-2, смотритель
-
-  v3.5 «ЛЕГЕНДА» — 4980 строк
-    (память о неиспользованном наброске: город в тизере
-    запрещён автором — сцена города вырезана целиком)
-
-  v4.0 «ФИНАЛЬНАЯ» — ТЕКУЩАЯ, ~10 000 строк
-    ГЛАЗА-ФИКС: контр-вращение; тело поворачивается,
-      глаза прикованы к зрителю; зрачки-щели с задержкой 40 мс
-    вторая пара рук из тени; золото рогов; капюшон
-    грот-озеро: вертексная вода, водопад, тайная река, алтарь
-    крипта: 6 саркофагов, 2 скелета, 6 духов
-    живность: мыши-боидс, мотыльки, змеи-тени
-    кино v2: SHOTS2, EZ-кривые, dollyZoom
-    звук v3: река, колокол, дакинг-шина, скрипы, шаги, аккорд
-    свет v2: год-реи, лампы-маятники, проекция глаза, молния
-    декор-3: Сфера Фантазии, копья, гобелены, череп дракона
-    тюрьма душ v2: клетки, призраки, руки, печать
-    лор: таблички, журнал, карта города
-    босс v3: пряди, доспех, щели, трещины, пепел
-    охотник: проход с факелом 8.2–11.0 с
-    продакшн-карточки + credits-скролл
-    тех-архив: таймлайн, реестр геометрии, аудио-реестр
-    свободная камера WASD + фото-режим (5 фильтров, ракурсы)
-    хроники шести записок: найти и прочитать все
-    самотесты 47 проверок (?debug=1 — панель)
-    плёнка v2: зерно, царапины, волосы, кадр-плывун
-    комментарий режиссёра [K]
-    URL-пресеты: ?shot= ?free= ?light=0 ?nomusic=
-    дизайн-док, энциклопедия, глоссарий, этот журнал
-
-  v4.1 «ЧИСТОЕ КИНО» — ИГРОВАЯ ЧАСТЬ ВЫРЕЗАНА
-    убраны: свободная камера, сбор записок, мини-карта,
-    фото-режим, осмотр объектов, эпилог-собирательство, сид
-    тизер снова просто тизер: 26 секунд кино и титры
-
-  СОВМЕСТИМОСТЬ И ПРАВИЛА
-    тизер автономен: один HTML, three.min.js inline
-    игра (public/index.html) не тронута ни строкой
-    речь — speechSynthesis, en-US, громкость ниже музыки
-    никакого стинга: финал тихий (решение автора v2.5)
-*/
-
-
-// ═══════════ ЧАСТЬ p40 ═══════════
-// ═══════════ ЧАСТЬ p40 ═══════════
-// ═══════════════════════════════════════════════════════════════════
-//  CONFIG — все ключевые числа тизера в одном месте
-//  (меняй и смотри: значения читаются при старте модулей)
-// ═══════════════════════════════════════════════════════════════════
-const CONFIG = {
-  // ── камера кино-блока ─────────────────────────────
-  cam: {
-    fovBase: 66,        // базовый FOV шота «ВОРОТА»
-    fovEnd: 58,         // FOV к концу кино-блока
-    breathAmp: 0.06,    // амплитуда дыхания камеры (м)
-    breathHz1: 0.31,    // частота дрейфа 1
-    breathHz2: 0.47,    // частота дрейфа 2
-    cineBars: true      // кино-бары 2.35:1
-  },
-
-  // ── глаза (главный аттракцион) ────────────────────
-  eyes: {
-    count: 7,           // глазов у Хранителя
-    igniteGap: 0.16,    // пауза между зажиганиями (с)
-    slitDelay: 0.04,    // задержка зрачков-щелей (с)
-    beamOpacity: 0.16,  // плотность лучей при HELLO
-    beamFlicker: 17,    // частота мерцания луча (рад/с)
-    counterRot: true    // ГЛАЗА НЕ ДВИГАЮТСЯ (не выключать!)
-  },
-
-  // ── поворот ───────────────────────────────────────
-  turn: {
-    windup: 0.13,       // замашка назад (с)
-    duration: 0.72,     // сам разворот (с)
-    overshootDecay: 3.4,// затухание качания
-    overshootFreq: 2.2  // частота качания
-  },
-
-  // ── звук ──────────────────────────────────────────
-  snd: {
-    masterGain: 0.9,
-    duckTo: 0.12,       // дакинг под голос/колокол
-    duckIn: 0.08,       // атака дакинга (с)
-    duckOut: 2.2,       // выход дакинга (с)
-    reverbDecay: 2.4,   // импульс реверба (с)
-    bellGain: 0.5,
-    finaleGain: 0.16    // финальный аккорд (тихо!)
-  },
-
-  // ── блэкаут ───────────────────────────────────────
-  blackout: {
-    fadeFast: 0.3,      // быстрые эмиссивы (кристаллы)
-    fadeSlow: 1.4,      // медленные (витраж, статуи)
-    subHz: 22           // саб в эпоху тьмы
-  },
-
-  // ── живность ──────────────────────────────────────
-  fauna: {
-    mice: 9,
-    moths: 14,
-    snakes: 3,
-    mouseSpeed: 1.7
-  },
-
-  // ── вода в гроте ──────────────────────────────────
-  lake: {
-    waveAmp: 0.045,     // амплитуда волн (м)
-    waveHz: 0.8,
-    fallRipple: 2.6,    // радиальная волна от водопада
-    riverFlow: 7        // течение тайной реки (рад/с)
-  },
-
-  // ── записки ───────────────────────────────────────
-  notes: {
-    pickupRange: 2.2,   // радиус подбора (м)
-    total: 6
-  },
-
-  // ── свободная камера ──────────────────────────────
-  free: {
-    speed: 6,           // м/с
-    runMult: 2.6,
-    eyeMin: 0.6,        // минимальная высота (м)
-    eyeMax: 11.8
-  },
-
-  // ── плёнка ────────────────────────────────────────
-  film: {
-    grainOpacity: 0.11,
-    grainTension: 1.5,  // множитель зерна после T+16
-    scratchMinGap: 3,   // мин. пауза между царапинами (с)
-    hairMinGap: 11
-  },
-
-  // ── HELLO-таймлайн (с) ────────────────────────────
-  hello: {
-    approach: 20.0,     // начало надвигания
-    eyesOut: 21.6,      // гашение глаз
-    fadeIn: 23.1,
-    titleAt: 23.9,
-    endAt: 26.2
-  }
-};
-
-// лёгкий доступ с проверкой: cfg('turn.duration', 0.72)
-function cfg(path, def) {
-  let o = CONFIG;
-  const parts = path.split('.');
-  for (let i = 0; i < parts.length; i++) {
-    if (o == null || typeof o !== 'object') return def;
-    o = o[parts[i]];
-  }
-  return o === undefined ? def : o;
-}
-
-
-// ═══════════ ЧАСТЬ p41 ═══════════
-// ═══════════ ЧАСТЬ p41 ═══════════
-// ═══════════════════════════════════════════════════════════════════
-//  АРХИВ ТЕКСТОВ — всё, что можно прочитать в тизере
-//  (единый реестр: титры, таблички, записки, карточки)
-// ═══════════════════════════════════════════════════════════════════
-/*
-  ТИТРЫ
-  ─────────────────────────────────────────────────────────────────
-  T+00.4  ГЛУБИНА: −42 МЕТРА
-  T+23.9  ТЕНЬ ПАРКА ФАНТАЗИИ
-  credits FANTAZIA RP 3D · ПРЕДСТАВЛЯЕТ · «ТЕНЬ ПАРКА ФАНТАЗИИ»
-          ГОРОД · GRAND MALL · ПОДЗЕМЕЛЬЕ
-          ХРАНИТЕЛЬ — САМ · СВЕТ — ФАКЕЛЫ И СВЕЧИ
-          ЗВУК — КАМЕНЬ И ТИШИНА · СИНЕМАТОГРАФИЯ — ОДНА КАМЕРА
-          СОБЕРИ 6 ЗАПИСОК · ВОЗЬМИ ТОПОР · ОСВОБОДИ ПАРК
-          «он всё ещё говорит hello»
-
-  ТАБЛИЧКИ В ЗАЛЕ (p24)
-  ─────────────────────────────────────────────────────────────────
-  I.  ЗДЕСЬ БЫЛ ПАРК ФАНТАЗИИ
-      1987–2019. ЛЮДИ ПРИХОДИЛИ С МЕЧТАМИ.
-      МЕЧТЫ СБЫВАЛИСЬ. ТЕПЕРЬ ЗДЕСЬ МОЛЛ.
-
-  II. НЕ КОРМИТЕ ТО, ЧТО ВНИЗУ
-      ОНО НЕ ГОЛОДНОЕ. ОНО СКУЧАЕТ.
-      ОНО ЖДЁТ, ПОКА ВЫ ПЕРЕСТАНЕТЕ БОЯТЬСЯ.
-
-  III. ВЫХОДА НЕТ
-      ВЫХОД ЕСТЬ. НО СНАЧАЛА ОН ДОЛЖЕН
-      СКАЗАТЬ ВАМ HELLO.
-
-  ЗАПИСКИ (полные тексты см. p31, здесь — подписи)
-  ─────────────────────────────────────────────────────────────────
-  I   ЗАПИСКА — СМОТРИТЕЛЬ ......... у клеток тюрьмы душ
-  II  ЗАПИСКА — РЕБЁНОК ............ у ритуального круга
-  III ЗАПИСКА — ГЕОЛОГ ............. на мостках грота
-  IV  ЗАПИСКА — СВЯЩЕННИК .......... в крипте, у ниш
-  V   ЗАПИСКА — ПОСЛЕДНИЙ ГОСТЬ .... у алтаря
-  VI  ЗАПИСКА — ОН САМ ............. за водопадом, у тайного алтаря
-
-  ЖУРНАЛ СМОТРИТЕЛЯ (стол, p24)
-  ─────────────────────────────────────────────────────────────────
-  «день 7301: он повернулся ко мне впервые за 20 лет.
-   я записал это сюда. он прочитал. он не рассердился.
-   он был… благодарен?»
-
-  КАРТА ГОРОДА (на столе смотрителя)
-  ─────────────────────────────────────────────────────────────────
-  схематичный план: GRAND MALL в центре, парк — пунктиром
-  на минус сорок два. SUN MALL и MEGA PLAZA — по углам.
-  красная нить от парка к каждой из шести записок.
-
-  ПЕРЕЧЕНЬ ДУШ (рядом с журналом)
-  ─────────────────────────────────────────────────────────────────
-  349 имён. последнее дописано другой рукой.
-  почерк дрожит. последняя строка: «и меня тоже».
-
-  РЕПЛИКА
-  ─────────────────────────────────────────────────────────────────
-  HELLO — голос pitch 0.1, rate 0.48, единственное слово.
-*/
-
-
-// ═══════════ ЧАСТЬ p42 ═══════════
-// ═══════════ ЧАСТЬ p42 ═══════════
-// ═══════════════════════════════════════════════════════════════════
-//  ЧЕКЛИСТ РЕЛИЗА + СПРАВКА [H] — экран помощи поверх всего
-// ═══════════════════════════════════════════════════════════════════
-/*
-  ЧЕКЛИСТ ПЕРЕД ПУБЛИКАЦИЕЙ (выполнен)
-  ─────────────────────────────────────────────────────────────────
-  [x] один автономный HTML-файл, без сети
-  [x] three.min.js встроен (r###, LICENSE MIT сохранён в шапке)
-  [x] игра public/index.html не изменена (git diff пуст)
-  [x] речь — speechSynthesis, en-US, тихо (gain 0.5 относительный)
-  [x] скримера нет: финал тихий, медленный, жуткий
-  [x] глаза при повороте НЕ двигаются (контр-вращение)
-  [x] зрачки-щели следуют с задержкой 40 мс
-  [x] автозапуск аудио только по первому клику (политика браузеров)
-  [x] пауза [P] и slow-mo [O] не ломают таймлайн (стены T.wall)
-  [x] скриншот [S] работает (preserveDrawingBuffer)
-  [x] ?debug=1 показывает панель самотестов
-  [x] дебаг-пресеты не влияют на обычный просмотр
-  [x] DOM-элементы создаются один раз (нет дублей при reload)
-  [x] нет обращений к внешним ресурсам (ни http, ни ws)
-  [x] speechSynthesis.cancel() при закрытии вкладки
-  [x] git: отдельная ветка, PR открыт, история чистая
-
-  ЧТО ПРОВЕРИТЬ ВРУЧНУЮ ПЕРЕД СДАЧЕЙ
-  ─────────────────────────────────────────────────────────────────
-  [ ] звук в наушниках: дакинг под HELLO слышен
-  [ ] в 12.0–14.6 факелы гаснут по одному, не пачкой
-  [ ] в 19.3–20.0 тело повернулось, глаза стоят на месте
-  [ ] после 26.2 [F] открывает свободную камеру
-  [ ] в свободной камере все 6 записок подбираются
-  [ ] мини-карта [M] показывает игрока и записки
-  [ ] фильтры [1..5] и ракурсы [N] работают
-  [ ] комментарий режиссёра [K] идёт по таймкодам
-*/
-
-// ─── экран помощи [H] ───
-const HELP = { el: null };
-
-(function helpInit() {
-  const el = DOC.createElement('div');
-  el.style.cssText =
-    'position:fixed;inset:0;z-index:50;display:none;align-items:center;' +
-    'justify-content:center;background:rgba(3,2,4,.92);cursor:pointer;';
-  el.innerHTML =
-    '<div style="max-width:520px;width:90%;color:#d8c9b4;font:13px/2 monospace;' +
-    'border:1px solid #4a3626;border-radius:10px;padding:28px 36px;background:#120c09;">' +
-    '<div style="color:#ff9d9d;letter-spacing:.3em;font-size:12px;margin-bottom:14px">СПРАВКА</div>' +
-    '<b style="color:#fff">ВО ВРЕМЯ ТИЗЕРА</b><br>' +
-    '[P] пауза · [O] slow-mo · [S] скриншот · [F1] тех-панель · [K] комментарий режиссёра<br><br>' +
-    '<b style="color:#fff">ТИЗЕР · ЧИСТОЕ КИНО</b><br>' +
-    'это рекламный ролик — без игрового режима<br>' +
-    'игра FANTAZIA RP 3D — отдельно<br><br>' +
-    '<div style="color:#6a5844">клик — закрыть</div></div>';
-  DOC.body.appendChild(el);
-  el.addEventListener('click', () => { el.style.display = 'none'; });
-  HELP.el = el;
-  window.addEventListener('keydown', (ev) => {
-    if (ev.key.toLowerCase() === 'h' || ev.key.toLowerCase() === 'р') {
-      el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
-    }
-  });
-})();
-
-
-// ═══════════ ЧАСТЬ p44 ═══════════
-// ═══════════ ЧАСТЬ p44 ═══════════
-// ═══════════════════════════════════════════════════════════════════
-//  ПАРТИТУРА СТРАХА — график напряжения по секундам (док)
-// ═══════════════════════════════════════════════════════════════════
-/*
-  НАПРЯЖЕНИЕ (0..10) — вертикаль; секунды — горизонталь
-
-  10 ┤                                        ██
-   9 ┤                                        ██
-   8 ┤                                     ▄▄ ██
-   7 ┤              ▄▄        ▄▄▄▄        ▄▄██ ██
-   6 ┤           ▄▄▄██▄▄   ▄▄▄████▄▄    ▄▄██ ██ ██▄▄
-   5 ┤        ▄▄▄███████▄▄██████████▄▄▄█▀ ▀▀    ███▄▄▄
-   4 ┤     ▄▄▄██████████████████████████        ██████▄▄
-   3 ┤  ▄▄▄████ ▀▀▀▀▀▀▀▀▀▀▀▀ ▀▀▀▀▀▀        ▄▄▄▄▀▀▀▀▀
-   2 ┤ ▄██ ▀▀▀                            ▄▄▀
-   1 ┤▐█▌                                 ▀
-   0 ┼──0────4────8────12────16────20────24────→ с
-      титр ворота  крипта факелы блэкаут HELLO  кода
-
-  ПРАВИЛА КРИВОЙ
-  ─────────────────────────────────────────────────────────────────
-  · никогда не падает до нуля после 5-й секунды
-  · каждый пик выше предыдущего минимум на 2
-  · между пиками обязателен провал ≥ 1.5 с (передышка)
-  · пик HELLO — единственный «10», и он длится 1.2 с,
-    не больше: выше — уже скример, а скримера нет
-  · после HELLO кривая НЕ падает мгновенно: 4 секунды
-    «затишья-обманки», и только потом титр
-
-  ПСИХОАКУСТИКА (почему это работает)
-  ─────────────────────────────────────────────────────────────────
-  · сердце 58→67→44 BPM: ускорение = тревога, замедление =
-    «он ближе, чем ты думаешь»
-  · шёпот 900–1900 Гц: полоса разборчивости речи без слов —
-    мозг пытается расслышать и не может
-  · саб 22 Гц: инфразвук на границе слуха; «давит» грудь
-  · эхо-ответ на 0.5 с РАНЬШЕ: ломает причинность; человек
-    чувствует «неправильность» до того, как осознает
-  · дакинг под HELLO: контраст громкости ×8 — слово
-    воспринимается в 3-4 раза «ближе», чем оно записано
-
-  ЧТО МЫ НЕ ДЕЛАЛИ (принципы)
-  ─────────────────────────────────────────────────────────────────
-  · ни одного резкого монтажного склея после 16-й секунды
-  · ни одной вспышки белого
-  · ни одного «бу»-стинга
-  · камера никогда не трясётся «искусственно» — только
-    плёночный плывун амплитудой 0.7 px
-  · лицо не показывается. никогда.
-*/
-
-
-// ═══════════ ЧАСТЬ p45 ═══════════
-// ═══════════ ЧАСТЬ p45 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  СТАТИСТИКА СЕАНСА — счётчики просмотра ([F1] панель)
-// ═══════════════════════════════════════════════════════════════════
 const STATS = {
   startedAt: Date.now(),
   frames: 0,
@@ -7951,65 +6945,12 @@ function upStats(dt) {
   STATS.frames++;
 }
 
-function statsSummary() {
-  const min = ((Date.now() - STATS.startedAt) / 60000).toFixed(1);
-  return (
-    'сеанс ' + min + ' мин · кадров ' + STATS.frames +
-    ' · записок ' + STATS.notesFound + '/6' +
-    ' · свобод.камера ' + STATS.freeCamSec.toFixed(0) + ' с' +
-    ' · скринов ' + STATS.screenshots +
-    ' · пауз ' + STATS.pauses
-  );
-}
 
-
-// ═══════════ ЧАСТЬ p46 ═══════════
-// ═══════════ ЧАСТЬ p46 ═══════════
-// ═══════════════════════════════════════════════════════════════════
-//  АТРИБУЦИИ И ЛИЦЕНЗИИ
-// ═══════════════════════════════════════════════════════════════════
-/*
-  three.js — r128, MIT License
-    Copyright © 2010-2020 Ricardo Cabello (mrdoob)
-    https://threejs.org
-    Встроен в файл целиком, лицензия сохранена в шапке three.min.js.
-
-  Web Audio API — стандарт W3C, встроен в браузер
-    Все звуки тизера синтезируются в реальном времени:
-    осцилляторы, шумовые буферы, свёрточный реверб на
-    сгенерированном импульсе. Ни одного аудиофайла.
-
-  speechSynthesis — стандарт W3C Speech API
-    Единственная реплика «HELLO» произносится системным
-    голосом (en-US, pitch 0.1, rate 0.48).
-
-  Шрифты — системные стеки
-    Georgia, serif — титры и записки (общественное достояние
-    метрики); monospace — технические подписи.
-
-  Сюжет и мир — FANTAZIA RP 3D
-    GRAND MALL, парк Фантазии, Хранитель, шесть записок —
-    вселенная игры fantazia-rp-3d1. Тизер — официальный
-    рекламный ролик проекта, версии 4.0 «ФИНАЛЬНАЯ».
-
-  ─────────────────────────────────────────────────────────────────
-  Этот файл — художественное произведение одного автора.
-    Все совпадения с реальными моллами случайны.
-    Все paraphernalia парка — канон.
-
-                          · конец ·
-*/
-
-
-// ═══════════ ЧАСТЬ p47 ═══════════
-// ═══════════ ЧАСТЬ p47 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  ДЕТАЛИ-80: восемьдесят микро-декораций (каждая — руками)
-// ═══════════════════════════════════════════════════════════════════
 const D80 = { items: [] };
 
 (function d80Init() {
-  // ── черепа на кольях по периметру соли ──────────
+  // -- черепа на кольях по периметру соли ----------
   const skullGeo = new THREE.DodecahedronGeometry(0.11, 0);
   const skullMat = new THREE.MeshStandardMaterial({
     color: 0xb8ab92,
@@ -8033,7 +6974,7 @@ const D80 = { items: [] };
     D80.items.push({ m: sk, kind: 'skull' });
   });
 
-  // ── свечные огарки в стенных нишах ──────────────
+  // -- свечные огарки в стенных нишах --------------
   const stubMat = new THREE.MeshStandardMaterial({
     color: 0xe8dcc0,
     emissive: 0x996611,
@@ -8062,7 +7003,7 @@ const D80 = { items: [] };
     D80.items.push({ m: st, kind: 'stub' });
   });
 
-  // ── щебень на полу (22 камня) ───────────────────
+  // -- щебень на полу (22 камня) -------------------
   const rubMat = new THREE.MeshStandardMaterial({
     color: 0x5a5248,
     roughness: 1
@@ -8087,7 +7028,7 @@ const D80 = { items: [] };
     D80.items.push({ m: rb, kind: 'rubble' });
   });
 
-  // ── паутина между колоннами (5 полотен) ─────────
+  // -- паутина между колоннами (5 полотен) ---------
   const webMat = new THREE.MeshBasicMaterial({
     color: 0x8a8578,
     transparent: true,
@@ -8110,7 +7051,7 @@ const D80 = { items: [] };
     D80.items.push({ m: web, kind: 'web' });
   });
 
-  // ── цепи под сводом (8 звеньев-путей) ───────────
+  // -- цепи под сводом (8 звеньев-путей) -----------
   const chainMat = new THREE.MeshStandardMaterial({
     color: 0x4a4238,
     roughness: 0.7,
@@ -8134,7 +7075,7 @@ const D80 = { items: [] };
     }
   });
 
-  // ── кости на полу (12) ──────────────────────────
+  // -- кости на полу (12) --------------------------
   const boneMat = new THREE.MeshStandardMaterial({
     color: 0xcabc9e,
     roughness: 0.85
@@ -8155,7 +7096,7 @@ const D80 = { items: [] };
     D80.items.push({ m: bone, kind: 'bone' });
   });
 
-  // ── светлячки у алтаря (14) ─────────────────────
+  // -- светлячки у алтаря (14) ---------------------
   const flyMat = new THREE.MeshBasicMaterial({ color: 0xaaffcc });
   for (let i = 0; i < 14; i++) {
     const f = new THREE.Mesh(
@@ -8177,7 +7118,7 @@ const D80 = { items: [] };
     });
   }
 
-  // ── мокрые пятна (8) ────────────────────────────
+  // -- мокрые пятна (8) ----------------------------
   const wetMat = new THREE.MeshStandardMaterial({
     color: 0x1a2026,
     roughness: 0.15,
@@ -8212,15 +7153,11 @@ function upD80(dt, wall) {
 }
 
 
-// ═══════════ ЧАСТЬ p49 ═══════════
-// ═══════════ ЧАСТЬ p49 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  ДЕТАЛИ ГРОТА И КРИПТЫ — вторая волна микро-декора
-// ═══════════════════════════════════════════════════════════════════
 const D81 = { items: [] };
 
 (function d81Init() {
-  // ── грот: гнилые брёвна мостков (9 опор) ─────────
+  // -- грот: гнилые брёвна мостков (9 опор) ---------
   const logMat = new THREE.MeshStandardMaterial({
     color: 0x33261a,
     roughness: 1
@@ -8240,7 +7177,7 @@ const D81 = { items: [] };
     D81.items.push({ m: post, kind: 'post' });
   });
 
-  // ── грот: кувшины у воды (6) ─────────────────────
+  // -- грот: кувшины у воды (6) ---------------------
   const jugMat = new THREE.MeshStandardMaterial({
     color: 0x6a4a32,
     roughness: 0.8
@@ -8265,7 +7202,7 @@ const D81 = { items: [] };
     D81.items.push({ m: jug, kind: 'jug' });
   });
 
-  // ── крипта: надгробные плиты (10) ────────────────
+  // -- крипта: надгробные плиты (10) ----------------
   const slabMat = new THREE.MeshStandardMaterial({
     color: 0x6e675c,
     roughness: 0.95
@@ -8286,7 +7223,7 @@ const D81 = { items: [] };
     D81.items.push({ m: slab, kind: 'slab' });
   });
 
-  // ── крипта: черепа в нишах (7) ───────────────────
+  // -- крипта: черепа в нишах (7) -------------------
   const nskullMat = new THREE.MeshStandardMaterial({
     color: 0xa89c86,
     roughness: 0.9
@@ -8306,7 +7243,7 @@ const D81 = { items: [] };
     D81.items.push({ m: sk, kind: 'nskull' });
   });
 
-  // ── апсида: книги-фолианты на подиуме (5) ───────
+  // -- апсида: книги-фолианты на подиуме (5) -------
   const bookMat1 = new THREE.MeshStandardMaterial({ color: 0x5a2a1a, roughness: 0.85 });
   const bookMat2 = new THREE.MeshStandardMaterial({ color: 0x2a3a2a, roughness: 0.85 });
   const bookMat3 = new THREE.MeshStandardMaterial({ color: 0x2a2a4a, roughness: 0.85 });
@@ -8326,7 +7263,7 @@ const D81 = { items: [] };
     D81.items.push({ m: bk, kind: 'book' });
   });
 
-  // ── апсида: пыльные кувшины у стены (5) ─────────
+  // -- апсида: пыльные кувшины у стены (5) ---------
   [
     [-7.6, -23.0, 0.0], [-6.9, -23.6, 0.1], [7.2, -23.2, -0.1],
     [6.5, -23.8, 0.05], [-8.2, -22.4, -0.06]
@@ -8341,7 +7278,7 @@ const D81 = { items: [] };
     D81.items.push({ m: jar, kind: 'jar2' });
   });
 
-  // ── тайная река: монеты-подношения (9) ──────────
+  // -- тайная река: монеты-подношения (9) ----------
   const coinMat = new THREE.MeshStandardMaterial({
     color: 0x8a7a3a,
     roughness: 0.35,
@@ -8362,7 +7299,7 @@ const D81 = { items: [] };
     D81.items.push({ m: coin, kind: 'coin' });
   });
 
-  // ── зал: гвозди-крюки в колоннах (12) ───────────
+  // -- зал: гвозди-крюки в колоннах (12) -----------
   const nailMat = new THREE.MeshStandardMaterial({
     color: 0x3a332c,
     roughness: 0.6,
@@ -8391,43 +7328,7 @@ function upD81(dt, wall) {
 }
 
 
-// ═══════════ ЧАСТЬ p50 ═══════════
-// ═══════════ ЧАСТЬ p50 ═══════════
-// ═══════════════════════════════════════════════════════════════════
-//  КОНСОЛЬНЫЙ БАННЕР — приветствие в devtools
-// ═══════════════════════════════════════════════════════════════════
-(function bannerInit() {
-  const art = [
-    '  ███████╗██╗   ██╗███╗   ██╗██████╗ ███████╗ █████╗ ',
-    '  ██╔════╝╚██╗ ██╔╝████╗  ██║██╔══██╗██╔════╝██╔══██╗',
-    '  ███████╗ ╚████╔╝ ██╔██╗ ██║██║  ██║█████╗  ███████║',
-    '  ╚════██║  ╚██╔╝  ██║╚██╗██║██║  ██║██╔══╝  ██╔══██║',
-    '  ███████║   ██║   ██║ ╚████║██████╔╝███████╗██║  ██║',
-    '  ╚══════╝   ╚═╝   ╚═╝  ╚═══╝╚═════╝ ╚══════╝╚═╝  ╚═╝',
-    '  ─────────────────────────────────────────────────────',
-    '   ТЕНЬ ПАРКА ФАНТАЗИИ · финальный тизер v4.0',
-    '   глубина: −42 м · глазов: 7 · записок: 6',
-    '  ─────────────────────────────────────────────────────',
-    '   клавиши: [P] пауза · [O] слоу · [K] комментарий',
-    '   [F] свободная камера · [M] карта · [H] справка',
-    '   ?debug=1 — самотесты на экране',
-    '  ─────────────────────────────────────────────────────'
-  ];
-  const cssTop = 'color:#ff9d9d;font-family:monospace;font-weight:bold';
-  const cssMid = 'color:#d8cfc4;font-family:monospace';
-  const cssLow = 'color:#6a5f58;font-family:monospace';
-  art.forEach((line, i) => {
-    const css = i < 6 ? cssTop : i < 10 ? cssMid : cssLow;
-    console.log('%c' + line, css);
-  });
-})();
-
-
-// ═══════════ ЧАСТЬ p52 ═══════════
-// ═══════════ ЧАСТЬ p52 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  БРАУЗЕРНЫЕ ХУКИ — поведение вкладки (полиш реального мира)
-// ═══════════════════════════════════════════════════════════════════
 (function browserHooksInit() {
   // вкладка скрыта → мягкая пауза времени и звука
   DOC.addEventListener('visibilitychange', () => {
@@ -8482,290 +7383,10 @@ function endElHook() {
 }
 
 
-// ═══════════ ЧАСТЬ p53 ═══════════
-// ═══════════ ЧАСТЬ p53 ═══════════
-// ═══════════════════════════════════════════════════════════════════
-//  ПЕРЕЧЕНЬ ДУШ: генератор 349 имён (пасхалка из записки смотрителя)
-//  Всё в консоли: soulsReport()
-// ═══════════════════════════════════════════════════════════════════
-const SOULS_ROLL = (function () {
-  // слоги города: вывески молла + старый парк
-  const A = ['Ар', 'Бе', 'Ви', 'Го', 'Да', 'Ели', 'Жа', 'Зо', 'Ир', 'Кай',
-    'Ло', 'Ма', 'Не', 'Ол', 'Па', 'Ре', 'Са', 'То', 'Ур', 'Фе', 'Ха',
-    'Це', 'Ча', 'Ша', 'Эд', 'Юр'];
-  const B = ['лан', 'мир', 'нор', 'сад', 'тан', 'вал', 'гей', 'дор', 'жен',
-    'зар', 'кин', 'лин', 'мор', 'нар', 'пин', 'рив', 'сон', 'тар', 'фан',
-    'хол', 'шен', 'эль'];
-  const C = ['а', 'о', 'ия', 'ей', 'ин', 'ов', 'ус', 'ор', 'ит', 'ант'];
-  const rng = (function () {
-    let a = 3490;
-    return function () {
-      a |= 0;
-      a = (a + 0x6d2b79f5) | 0;
-      let t = Math.imul(a ^ (a >>> 15), 1 | a);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  })();
-  const names = [];
-  const used = {};
-  while (names.length < 349) {
-    const n = A[(rng() * A.length) | 0] +
-      B[(rng() * B.length) | 0] +
-      C[(rng() * C.length) | 0];
-    if (used[n]) continue;
-    used[n] = true;
-    names.push(n);
-  }
-  return { names, used };
-})();
-
-function soulsReport() {
-  const names = SOULS_ROLL.names;
-  console.log('%cПЕРЕЧЕНЬ ДУШ · 349 имён', 'color:#ff9d9d;font-weight:bold');
-  console.log('первые 12:');
-  names.slice(0, 12).forEach((n, i) => {
-    console.log('  ' + String(i + 1).padStart(3, ' ') + '. ' + n);
-  });
-  console.log('…последняя строка дописана другой рукой:');
-  console.log('%c  350. «и меня тоже»', 'color:#d8cfc4;font-style:italic');
-  return names;
-}
-
-// ?souls=1 — открыть весь перечень как «бумагу» на экране
-(function soulsPanelInit() {
-  if (!/[?&]souls=1/.test(location.search)) return;
-  window.addEventListener('load', () => {
-    setTimeout(() => {
-      const wrap = DOC.createElement('div');
-      wrap.style.cssText =
-        'position:fixed;inset:0;z-index:55;background:rgba(2,1,2,.94);' +
-        'display:flex;align-items:center;justify-content:center;cursor:pointer;';
-      const sheet = DOC.createElement('div');
-      sheet.style.cssText =
-        'max-width:520px;width:90%;max-height:78vh;overflow:auto;' +
-        'background:linear-gradient(165deg,#1a120c,#221710);' +
-        'border:1px solid #4a3626;border-radius:4px;padding:26px 34px;' +
-        'color:#b8a488;font:12px/2 monospace;column-count:2;column-gap:28px;';
-      let html = '<div style="column-span:all;color:#ff9d9d;letter-spacing:.28em;' +
-        'font-size:11px;margin-bottom:12px">ПЕРЕЧЕНЬ ДУШ · 349</div>';
-      SOULS_ROLL.names.forEach((nm, i) => {
-        html += '<div>' + String(i + 1).padStart(3, '\u2007') + '. ' + nm + '</div>';
-      });
-      html += '<div style="column-span:all;margin-top:14px;color:#6a5844;' +
-        'font-style:italic">350. «и меня тоже» — почерк дрожит</div>';
-      sheet.innerHTML = html;
-      wrap.appendChild(sheet);
-      DOC.body.appendChild(wrap);
-      wrap.addEventListener('click', () => wrap.remove());
-    }, 800);
-  });
-})();
-
-
-// ═══════════ ЧАСТЬ p54 ═══════════
-// ═══════════ ЧАСТЬ p54 ═══════════
-// ═══════════════════════════════════════════════════════════════════
-//  КАРТА КОДА — индекс всех функций cine-блока (навигация)
-// ═══════════════════════════════════════════════════════════════════
-/*
-  p1  ЯДРО
-    cvsTex(w, h, draw) ............ канвас-текстура
-    rnd(a, b), clamp, lerp ........ математика
-    cine(a, b, t0, t1, t) ......... кинокривая quintInOut
-    TEX.{floor,brick,ceil,runes} .. базовые текстуры
-    grade(name) ................... цветокор (warm/cold/void/none)
-    cap(a, b) / capIntro / capOff . субтитры
-    speak(text, opts) / speechStop  речь
-    T, BLACKOUT, STATUE_AWAKE ...... глобальные состояния
-
-  p2  ЗАЛ
-    scene, cam, renderer .......... three.js
-    пол/свод/стены/колонны/арки
-    DUN = { flamesAll, statueEyes, embers, amb, moon, ... }
-    upDungeon(dt, wall) ........... факелы, угли, статуи
-
-  p2b ВОДА И КРУГ
-    ритуальный круг, ров, руны, соль
-    RIPPLES (спавн пузырей)
-
-  p3  БОСС v1
-    BOSS = { grp, eyes[7], hands, tendrils, matsList, jaw, hk }
-    upBoss(dt, wall) .............. дыхание, сканирование, поворот
-
-  p3b АПСИДА v1
-    BOSS_POS, подиум, витраж
-
-  p5  ШУМ + СВЕТ-ГЛУБИНА
-    NZ = { n1, n2, fbm } .......... value-noise
-    upLightDepth(dt, wall)
-
-  p6  ПОЛИШ v1
-    upPolish(dt, wall) ............ пыль, пепел, мерцание
-
-  p7  АУДИО v1
-    audioInit(), AU, tone(), aDrone, aWind, aWhisper
-    aHeartStart(bpm)/aHeartStop, aRiser, aSubDrop, aSputter
-    aHelloSting, pickVoices
-
-  p8  МУЗЫКА
-    musDronesStart(), musChoir(dur), musStop()
-
-  p9  ЭКСТРА v1
-    upExtras(dt, wall)
-
-  p11 КРИПТО-ДЕТАЛИ v1 (DUN2)
-    DUN2 = { rats, drips, chandelier, raven, gate, puffs }
-
-  p12 V2/V3
-    V6, upV2, V3, RIG (камера-риг: hand, roll, shakeAmp)
-    RIG.apply(cam, dt, wall)
-
-  p13 ИНСТРУМЕНТЫ
-    TOOLS: P/O/S/F1 — пауза, слоу, скрин, панель
-    post2D, FXPost, glitch
-
-  p14 ГЛАЗА-ФИКС ★ ГЛАВНОЕ
-    EYESFIX, eyesFixUpdate() ...... контр-вращение глаз
-    extinguishV2(i) ................ мягкое гашение
-    eyesFadeUpdate(dt)
-    eyeBeamsUpdate(dt, wall) ....... лучи при HELLO
-    BOSS.arms2 .................... вторая пара рук
-    upEyesFix(dt, wall)
-
-  p15 ГРОТ-ОЗЕРО
-    LAKE = { water, verts, base }
-    водопад, сталактиты, грибы, мостки
-    upLake(dt, wall)
-
-  p16 КРИПТА
-    CRYPT = { wisps[6], risingEyes }
-    саркофаги ×6, скелеты ×2
-    upCrypt(dt, wall)
-
-  p17 ЖИВНОСТЬ
-    FAUNA = { bats[9], moths[14], snakes[3] }
-    upFauna(dt, wall)
-
-  p18 КИНО v2
-    SHOTS2[5], CIN2, EZ.{sineInOut,quartInOut,cubicInOut}
-    upCineCam(dt, wall) → bool .... true = камера занята
-    dollyZoom(on) / dollyZoomUpdate(dt)
-    focalPull, shotInfo
-
-  p19 ЗВУК v3
-    SND3 = { river, riverGain, bell }, DUCK
-    riverStart(), bellToll(when, gain)
-    duckTo(v, time), finaleChord()
-    скрипы, шаги 13.6–16.4 c
-    upSound3(dt, wall)
-
-  p20 СВЕТ v2
-    LIGHT2 = { rays[4], swing[4], eyeProj, boltLight }
-    молния + гром, OVflashHook
-    upLight2(dt, wall)
-
-  p21 ДЕКОР v3
-    DECOR3 = { relic, spears, mosaic, dragonSkull, reliquaries }
-    Сфера Фантазии (2.9, 0, −12.4)
-    upDecor3(dt, wall)
-
-  p22 ТЮРЬМА ДУШ
-    SOULS = { cages[3], ghosts[3], hands[6], sealRune }
-    upSouls(dt, wall)
-
-  p23 ТАЙНАЯ РЕКА
-    RIVER = { surface, altar, glow }
-    upRiver(dt, wall)
-
-  p24 ЛОР
-    LORE = { tablets[3], journal, map, ledger, deskFlame }
-    upLore(dt, wall)
-
-  p25 БОСС v3
-    BOSS3 = { strands[12], plates, pupils, cracks, ashRing }
-    upBoss3(dt, wall)
-
-  p26 ОХОТНИК
-    HUNTER = { g, torch } .......... проход 8.2–11.0 c
-    upHunter(dt, wall)
-
-  p27 КАРТОЧКИ
-    CARDS.el, cardShow(text, dur), cardsUpdate(dt)
-    CREDITS.wrap/col, creditsShow(on)
-
-  p28 ТЕХ-АРХИВ (док-блок): таймлайн, реестр геометрии
-
-  p32 САМОтЕСТЫ
-    stCheck(name, fn), selftestRun()
-    ?debug=1 — панель на экране
-
-  p33 ДИЗАЙН-ДОК (док-блок)
-
-  p34 ПЛЁНКА v2
-    FILM2 = { grain, scratches, hairs, vign }
-    upFilm2(dt, wall)
-
-  p35 URL-ПРЕСЕТЫ
-    URLP = { shot, free, noLight, noMusic, lang }
-    urlpLateHooks()
-
-  p36 КОММЕНТАРИЙ РЕЖИССЁРА
-    DIR_TRACK[25], upDirector(wall), [K]
-
-  p37 ЭНЦИКЛОПЕДИЯ (док-блок)
-
-  p38 ЖУРНАЛ СБОРКИ (док-блок)
-
-  p40 CONFIG
-    CONFIG{cam,eyes,turn,snd,blackout,fauna,lake,notes,free,film,hello}
-    cfg(path, def)
-
-  p41 АРХИВ ТЕКСТОВ (док-блок)
-
-  p42 ЧЕКЛИСТ+СПРАВКА [H]
-    HELP.el
-
-  p44 ПАРТИТУРА СТРАХА (док-блок)
-
-  p45 СТАТИСТИКА
-    STATS, upStats(dt), statsSummary()
-
-  p46 АТРИБУЦИИ (док-блок)
-
-  p47 ДЕТАЛИ-80
-    D80.items, upD80(dt, wall)
-
-  p49 ДЕТАЛИ ГРОТА/КРИПТЫ
-    D81.items, upD81(dt, wall)
-
-  p50 БАННЕР консоли
-
-  p52 БРАУЗЕРНЫЕ ХУКИ
-    visibilitychange-пауза, beforeunload, resize
-
-  p53 ПЕРЕЧЕНЬ ДУШ
-    SOULS_ROLL.names[349], soulsReport()
-
-  p54 КАРТА КОДА (этот файл)
-
-  (p29 p30 p31 p39 p43 p48 p51 — вырезаны в v4.1 «чистое кино»)
-
-  p4  КУТ-СЦЕНА (ПОСЛЕДНИЙ)
-    CUES[44], runCues(), upCamera(dt, wall)
-    resetShow(), startShow(), upBlackout(dt)
-    loop() — главный цикл
-*/
-
-
-// ═══════════ ЧАСТЬ p55 ═══════════
-// ═══════════ ЧАСТЬ p55 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  ИНСТРУМЕНТ ПРОСМОТРА: таймкод-оверлей [T] + чит-состояния
 //  ?eyes   — мгновенно: тьма + все глаза + поворот
 //  ?hello  — мгновенно: HELLO-момент
 //  ?calm   — светлый зал без таймлайна (для скринов)
-// ═══════════════════════════════════════════════════════════════════
 const TC = { el: null, on: false };
 
 (function timecodeInit() {
@@ -8785,7 +7406,7 @@ const TC = { el: null, on: false };
     }
   });
 
-  // ── чит-состояния из URL ──
+  // -- чит-состояния из URL --
   const q = location.search;
   if (/[?&]eyes/.test(q)) {
     // мгновенная эпоха глаз
@@ -8844,13 +7465,9 @@ function upTimecode() {
 }
 
 
-// ═══════════ ЧАСТЬ p4 ═══════════
-// ═══════════ ЧАСТЬ p4 ═══════════
-// ═══════════════════════════════════════════════════════════════════
 //  КУТ-СЦЕНА v4 ФИНАЛЬНАЯ: кино-блок → СВЕТ ВЫКЛ → ГЛАЗА → ПОВОРОТ
 //  (тело поворачивается — глаза НЕ двигаются) → HELLO → тихая кода
 //  + свободная камера, записки, эпилог, мини-карта, фото-режим
-// ═══════════════════════════════════════════════════════════════════
 const barsT = DOC.getElementById('barT');
 const barsB = DOC.getElementById('barB');
 const startEl = DOC.getElementById('start');
@@ -8887,7 +7504,7 @@ const killTorch = (i, when) => {
 };
 
 CUES = [
-  // ── ПРОЛЁТ: всё ближе и ближе ──
+  // -- ПРОЛЁТ: всё ближе и ближе --
   { t: 0.00, fn: () => {
       OV.fadeT = 0;
       barsT.classList.add('on');
@@ -8919,7 +7536,7 @@ CUES = [
   { t: 15.00, fn: () => killTorch(8) },
   { t: 15.30, fn: () => killTorch(9) },
   { t: 14.60, fn: () => aRiser(1.6, 0.2) },
-  // ── СВЕТ ВЫКЛЮЧИЛСЯ ──
+  // -- СВЕТ ВЫКЛЮЧИЛСЯ --
   { t: 16.10, fn: () => {
       BLACKOUT.t = T.t;
       aSubDrop(0);
@@ -8929,7 +7546,7 @@ CUES = [
       RIG.hand = 0.15;
   } },
   // тишина и тьма…
-  // ── ГЛАЗА (загораются по одному) ──
+  // -- ГЛАЗА (загораются по одному) --
   { t: 17.60, fn: () => ignite(0) },
   { t: 17.76, fn: () => ignite(1) },
   { t: 17.92, fn: () => ignite(2) },
@@ -8938,9 +7555,9 @@ CUES = [
   { t: 18.40, fn: () => ignite(5) },
   { t: 18.56, fn: () => ignite(6) },
   { t: 18.80, fn: () => { aHeartStart(44); musChoir(2.6); } },
-  // ── ПОВОРАЧИВАЕТСЯ (глаза стоят на месте!) ──
+  // -- ПОВОРАЧИВАЕТСЯ (глаза стоят на месте!) --
   { t: 19.30, fn: () => { BOSS.turn = T.t; aWhisper(0, 2); } },
-  // ── HELLO! ──
+  // -- HELLO! --
   { t: 19.92, fn: () => { try { duckTo(0.12, 0.08); } catch (e) {} } },
   { t: 20.00, fn: () => {
       BOSS.lunge = T.t;          // МЕДЛЕННОЕ НАДВИГАНИЕ (не скример)
@@ -8973,7 +7590,7 @@ CUES = [
   { t: 22.60, fn: () => extinguishV2(1) },
   { t: 22.80, fn: () => { extinguishV2(0); musStop(); } },
   { t: 23.10, fn: () => { aHeartStop(); capOff(); OV.fadeT = 1; glitch = 0; } },
-  // ── КОНЕЦ (тихий аккорд, никакой вспышки) ──
+  // -- КОНЕЦ (тихий аккорд, никакой вспышки) --
   { t: 23.90, fn: () => {
       titleEl.classList.add('on');
       grade('none');
@@ -8999,7 +7616,7 @@ function runCues() {
   }
 }
 
-// ── камера кут-сцены (старый путь — кино-блок до 16.4 отдаёт ей) ──
+// -- камера кут-сцены (старый путь — кино-блок до 16.4 отдаёт ей) --
 function upCamera(dt, wall) {
   const t = T.t;
   if (t < 16.4) {
@@ -9036,7 +7653,7 @@ function upCamera(dt, wall) {
   cam.updateProjectionMatrix();
 }
 
-// ── сброс/старт ──
+// -- сброс/старт --
 function resetShow() {
   cueI = 0;
   T.t = 0;
@@ -9088,7 +7705,7 @@ function resetShow() {
   if (TOOLS.pauseTag) TOOLS.pauseTag.style.display = 'none';
   grade('none');
   cv.style.transform = 'none';
-  // ── сброс систем v4 ──
+  // -- сброс систем v4 --
   try { duckTo(1, 0.05); } catch (e) {}
   try { creditsShow(false); } catch (e) {}
   try { CARDS.el.style.opacity = '0'; CARDS.hideT = 0; } catch (e) {}
@@ -9118,7 +7735,6 @@ function upBlackout(dt) {
   if (DUN.moon) DUN.moon.intensity = 0.4 * (1 - k) + 0.02 * k;
 }
 
-// ═══ ГЛАВНЫЙ ЦИКЛ v4 ═══
 const clock = new THREE.Clock();
 const dW = DOC.getElementById('flashW');
 const dR = DOC.getElementById('flashR');
@@ -9144,10 +7760,10 @@ function loop() {
     cam.updateProjectionMatrix();
   }
   try {
-    // ── мир (старые системы) ──
+    // -- мир (старые системы) --
     upDungeon(dt, wall);
     upBoss(dt, wall);
-    // ── мир (v4: глаза-фиккс ПОСЛЕ анимации босса) ──
+    // -- мир (v4: глаза-фиккс ПОСЛЕ анимации босса) --
     upEyesFix(dt, wall);
     upBoss3(dt, wall);
     upLake(dt, wall);
@@ -9169,7 +7785,7 @@ function loop() {
     cardsUpdate(dt);
     dollyZoomUpdate(dt);
     upBlackout(dt);
-    // ── камера: кино-блок v4 имеет приоритет (до 16.4 с) ──
+    // -- камера: кино-блок v4 имеет приоритет (до 16.4 с) --
     if (T.phase === 'play') {
       const cineTook = upCineCam(dt, wall);
       if (!cineTook) upCamera(dt, wall);
@@ -9195,13 +7811,10 @@ function loop() {
 }
 loop();
 
-// ── отложенные хуки v4 ──
+// -- отложенные хуки v4 --
 setTimeout(() => {
   try { urlpLateHooks(); } catch (e) {}
 }, 1200);
-setTimeout(() => {
-  try { selftestRun(); } catch (e) { console.warn('selftest:', e); }
-}, 3200);
 })();
 
 
