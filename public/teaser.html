@@ -7276,7 +7276,7 @@ function upD81(dt, wall) {
     try {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       if (FILM2.grain) {
-        FILM2.grain.style.imageRendering = 'pixelated';
+        FILM2.grain.style.imageRendering = 'auto';
       }
       renderer.setPixelRatio(dpr);
     } catch (e) {}
@@ -8939,6 +8939,7 @@ dither.style.cssText =
   'mix-blend-mode:overlay;background-image:repeating-conic-gradient(' +
   '#000 0% 25%,#fff 0% 50%);background-size:3px 3px;';
 DOC.body.appendChild(dither);
+dither.style.display = 'none'; // дизер выключен
 
 let cueI = 0;
 let CUES = [
@@ -8953,11 +8954,10 @@ let CUES = [
       grade('void');
       BLACKOUT.t = 0;
       bossShroud(true, 0.3);
-      ps1Textures();
       try {
-        renderer.setPixelRatio(0.3);
-        cv.style.imageRendering = 'pixelated';
-        cv.style.filter = 'contrast(1.07) saturate(1.06)';
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        cv.style.imageRendering = 'auto';
+        cv.style.filter = '';
       } catch (e) {}
       for (let i = 0; i < DUN.flamesAll.length; i++) DUN.flamesAll[i].dieT = 0;
       if (DUN.amb) DUN.amb.intensity = 0;
@@ -8999,7 +8999,7 @@ let CUES = [
       } catch (e) {}
       bossShroud(false);
       BOSS.turn = T.t;
-      try { B4.reveal = T.t + 2.3; if (B4.hideTillTurn) B4.hideTillTurn.forEach((c) => { c.visible = true; }); } catch (e) {}
+      try { B4.reveal = T.t + 2.3; } catch (e) {} // тело остаётся скрытым: только глаза
       GLOW.material.opacity = 0.16;
       GLOWL.intensity = 0.07;
       // звук кресла: каменный скрежет + три скрипа
