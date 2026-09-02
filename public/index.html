@@ -19349,12 +19349,13 @@ function claimFPReward(r, isPlus, claimKey) {
 }
 </style>
 
-<!-- ========== FZ v3: спавн в облаках, портал у спавна, небо, мобилка ========== -->
+<!-- ========== FZ v4: небеса, лестница вниз, портал SOON, без НПС, мобилка ========== -->
 <style>
 body.game-active{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 #fzSkyHint{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:900;color:#dceaff;
   font:700 14px/1.3 Arial;letter-spacing:.08em;text-shadow:0 2px 8px #000;
   background:rgba(12,24,48,.6);border:1px solid rgba(140,180,255,.35);padding:10px 20px;border-radius:12px}
+#fzFade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:2147482000;transition:opacity .5s linear}
 body.game-active canvas{touch-action:none}
 #mobileTopBtns{flex-wrap:wrap!important;justify-content:center!important;max-width:72vw}
 @media(pointer:coarse){
@@ -19362,10 +19363,33 @@ body.game-active canvas{touch-action:none}
   body.game-active #joystickBase{width:150px!important;height:150px!important}
 }
 </style>
-<div id="fzSkyHint" style="display:none">☁️ Спуск в FANTAZIA RP…</div>
+<div id="fzSkyHint" style="display:none">☁️ Небеса — найди лестницу вниз</div>
+<div id="fzFade"></div>
 <script>
 (function () {
   var TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  var SX = 17, SZ = 27, SKY_Y = 112;       // платформа в небесах
+  var STX = 24, STZ = 21;                  // вход на лестницу
+  var LX = 18.5, LZ = 24.5;                // приземление у лестницы на земле
+
+  // ── НПС долой: глушим спавнеры и чистим выживших ──
+  try {
+    window.buildNPCPopulation = function () {};
+    window.spawnNPC = function () {};
+    window.spawnMallNPCs = function () {};
+  } catch (e) {}
+  function npcSweep() {
+    try {
+      if (typeof npcs !== 'undefined' && npcs && npcs.length) {
+        npcs.forEach(function (n) {
+          if (!n) return;
+          if (n.mesh && window.scene) scene.remove(n.mesh);
+          else if (window.scene) scene.remove(n);
+        });
+        npcs.length = 0;
+      }
+    } catch (e) {}
+  }
 
   // ── тизер при первом старте аккаунта ──
   window.addEventListener('load', function () {
@@ -19384,7 +19408,6 @@ body.game-active canvas{touch-action:none}
       if (typeof realStart === 'function') realStart.apply(this, arguments);
     };
   });
-  // возврат из тизера — сразу в игру
   if (/[?&]fromTeaser=1/.test(location.search || '')) {
     window.addEventListener('load', function () {
       setTimeout(function () {
@@ -19400,26 +19423,21 @@ body.game-active canvas{touch-action:none}
     });
   }
 
-  var SX = 17, SZ = 27, START_Y = 118;
-
-  // ── НЕБО: градиентный купол, солнце, дрейфующие облака ──
+  // ── НЕБО: купол, солнце, облака ──
   var skyBuilt = false, dome = null, sun2 = null, clouds = [];
   function buildSky() {
     if (skyBuilt || !window.scene || !window.THREE) return;
     skyBuilt = true;
     var T = THREE;
-    // купол
     var c = document.createElement('canvas'); c.width = 16; c.height = 256;
     var q = c.getContext('2d');
     var gr = q.createLinearGradient(0, 0, 0, 256);
     gr.addColorStop(0, '#12306e'); gr.addColorStop(0.42, '#3f74c4');
     gr.addColorStop(0.72, '#8fb4e2'); gr.addColorStop(1, '#d8e6f4');
     q.fillStyle = gr; q.fillRect(0, 0, 16, 256);
-    var tex = new T.CanvasTexture(c);
     dome = new T.Mesh(new T.SphereGeometry(760, 24, 12),
-      new T.MeshBasicMaterial({ map: tex, side: T.BackSide, fog: false }));
+      new T.MeshBasicMaterial({ map: new T.CanvasTexture(c), side: T.BackSide, fog: false }));
     scene.add(dome);
-    // солнце
     var s2 = document.createElement('canvas'); s2.width = s2.height = 128;
     var q2 = s2.getContext('2d');
     var g2 = q2.createRadialGradient(64, 64, 4, 64, 64, 64);
@@ -19433,7 +19451,6 @@ body.game-active canvas{touch-action:none}
     sun2.scale.setScalar(150);
     sun2.position.set(360, 420, -520);
     scene.add(sun2);
-    // облака
     var c3 = document.createElement('canvas'); c3.width = 256; c3.height = 128;
     var q3 = c3.getContext('2d');
     for (var b = 0; b < 22; b++) {
@@ -19454,27 +19471,16 @@ body.game-active canvas{touch-action:none}
       scene.add(sp);
       clouds.push(sp);
     }
-    // облачная платформа в точке спавна
-    for (i = 0; i < 8; i++) {
-      var sp2 = new T.Sprite(new T.SpriteMaterial({
-        map: cTex, transparent: true, opacity: 0.9, depthWrite: false, fog: false
-      }));
-      sp2.scale.set(50 + Math.random() * 60, 26 + Math.random() * 26, 1);
-      sp2.position.set(SX + (Math.random() - 0.5) * 14, START_Y - 2 + Math.random() * 6, SZ + (Math.random() - 0.5) * 14);
-      sp2.userData.v = 0.4;
-      sp2.userData.fade = true;
-      scene.add(sp2);
-      clouds.push(sp2);
-    }
+    window._fzCloudTex = cTex;
   }
 
-  // ── ПОРТАЛ РЯДОМ СО СПАВНОМ ──
-  var portalBuilt = false, portalBits = {}, lastNtf = 0;
+  // ── ПОРТАЛ SOON (стоит в небесах на платформе) ──
+  var portalBuilt = false, portalBits = {}, portalHinted = false;
   window.fzBuildPortal = function () {
     if (portalBuilt || !window.scene || !window.THREE) return;
     portalBuilt = true;
     var T = THREE, P = new T.Group();
-    P.position.set(24, 0, 15);
+    P.position.set(27, SKY_Y, 27);
     scene.add(P);
     var ring = new T.Mesh(new T.TorusGeometry(2.6, 0.22, 10, 26),
       new T.MeshLambertMaterial({ color: 0x241a44, emissive: 0x1a0e3c, emissiveIntensity: 1 }));
@@ -19486,8 +19492,8 @@ body.game-active canvas{touch-action:none}
     var sw2 = sw1.clone(); sw2.material = sw1.material.clone(); sw2.material.color.setHex(0xb03060); sw2.material.opacity = 0.22;
     P.add(sw1); P.add(sw2);
     var st1 = new T.Mesh(new T.BoxGeometry(7, 0.3, 3), new T.MeshLambertMaterial({ color: 0x2a2438 }));
-    st1.position.set(0, 0.15, 0); P.add(st1);
-    var li = new T.PointLight(0x8a4bff, 1.1, 16, 1.8);
+    st1.position.set(0, 0.16, 0); P.add(st1);
+    var li = new T.PointLight(0x8a4bff, 1.1, 18, 1.8);
     li.position.set(0, 3.4, 1.2); P.add(li);
     var cnv = document.createElement('canvas'); cnv.width = 640; cnv.height = 320;
     var q4 = cnv.getContext('2d');
@@ -19516,42 +19522,98 @@ body.game-active canvas{touch-action:none}
       P.add(sp3); parts.push(sp3);
     }
     portalBits = { P: P, sw1: sw1, sw2: sw2, li: li, sign: sign, parts: parts };
-    // подсказка при подходе
-    setInterval(function () {
-      try {
-        var lp = window.localPlayer;
-        if (!lp || !lp.position) return;
-        var dx = lp.position.x - 24, dz = lp.position.z - 15;
-        if (dx * dx + dz * dz < 90 && Date.now() - lastNtf > 16000) {
-          lastNtf = Date.now();
-          if (typeof showNotification === 'function') showNotification('🌀 Портал — SOON…', 'info');
-        }
-      } catch (e) {}
-    }, 1000);
   };
 
-  // ── СПАВН В ОБЛАКАХ: появляемся высоко и плавно спускаемся ──
-  var diving = false, landed = false, diveY = 0;
-  try { landed = sessionStorage.getItem('fzLanded') === '1'; } catch (e) {}
-  var hint = document.getElementById('fzSkyHint');
+  // ── НЕБЕСА: платформа, лестница вниз, лестница на земле ──
+  var heavenBuilt = false;
+  var stairSteps = [];
+  function buildHeaven() {
+    if (heavenBuilt || !window.scene || !window.THREE || !window._fzCloudTex) return;
+    heavenBuilt = true;
+    var T = THREE;
+    // твёрдый диск платформы
+    var disc = new T.Mesh(new T.CircleGeometry(11, 26),
+      new T.MeshBasicMaterial({ color: 0xe9eff9, transparent: true, opacity: 0.96, fog: false }));
+    disc.rotation.x = -Math.PI / 2;
+    disc.position.set(SX, SKY_Y - 0.12, SZ);
+    scene.add(disc);
+    var haloDisc = new T.Mesh(new T.CircleGeometry(13.5, 26),
+      new T.MeshBasicMaterial({ color: 0xdde8f6, transparent: true, opacity: 0.3, fog: false }));
+    haloDisc.rotation.x = -Math.PI / 2;
+    haloDisc.position.set(SX, SKY_Y - 0.16, SZ);
+    scene.add(haloDisc);
+    // пушистые облака по краю
+    for (var i = 0; i < 14; i++) {
+      var sp = new T.Sprite(new T.SpriteMaterial({ map: window._fzCloudTex, transparent: true, opacity: 0.9, depthWrite: false, fog: false }));
+      sp.scale.set(46 + Math.random() * 55, 24 + Math.random() * 24, 1);
+      var a = (i / 14) * Math.PI * 2;
+      sp.position.set(SX + Math.cos(a) * 11.5, SKY_Y - 1.4 + Math.random() * 2, SZ + Math.sin(a) * 11.5);
+      sp.userData.v = 0.3;
+      sp.userData.plat = true;
+      scene.add(sp);
+      clouds.push(sp);
+    }
+    // лестница вниз: ступени уходят в облачное море
+    var stepM = new T.MeshLambertMaterial({ color: 0xdfe8f4, emissive: 0x30363f, emissiveIntensity: 0.5, fog: false });
+    var N = 34;
+    for (var s = 0; s < N; s++) {
+      var k = s / (N - 1);
+      var st = new T.Mesh(new T.BoxGeometry(2.4, 0.22, 0.85), stepM);
+      st.position.set(
+        STX + k * 7,
+        SKY_Y - 0.35 - k * 22,
+        STZ - k * 13
+      );
+      st.rotation.y = Math.atan2(-7, 13) + Math.PI;
+      scene.add(st);
+      stairSteps.push(st);
+    }
+    // облачное море под лестницей
+    for (i = 0; i < 10; i++) {
+      var sp2 = new T.Sprite(new T.SpriteMaterial({ map: window._fzCloudTex, transparent: true, opacity: 0.75, depthWrite: false, fog: false }));
+      sp2.scale.set(80 + Math.random() * 90, 40 + Math.random() * 40, 1);
+      sp2.position.set(STX + 3 + (Math.random() - 0.5) * 26, SKY_Y - 24 - Math.random() * 6, STZ - 6 + (Math.random() - 0.5) * 26);
+      sp2.userData.v = 0.5;
+      scene.add(sp2);
+      clouds.push(sp2);
+    }
+    // лестница на земле (место приземления)
+    var gm = new T.MeshLambertMaterial({ color: 0x8b8f9c });
+    for (s = 0; s < 6; s++) {
+      var gs = new T.Mesh(new T.BoxGeometry(2.6, 0.32, 0.6), gm);
+      gs.position.set(20, 0.16 + s * 0.32, 23 - s * 0.62);
+      scene.add(gs);
+    }
+    var glowS = new T.Sprite(new T.SpriteMaterial({ map: window._fzCloudTex, transparent: true, opacity: 0.28, depthWrite: false, fog: false }));
+    glowS.scale.set(9, 4, 1);
+    glowS.position.set(20, 1.6, 21.5);
+    scene.add(glowS);
+    window._fzGroundStairs = { x: 20, z: 22 };
+  }
 
+  // ── запуск: ждём старта игры ──
+  var inHeaven = false, walking = false, walkT = 0, landed2 = false;
+  try { landed2 = sessionStorage.getItem('fzLanded') === '1'; } catch (e) {}
+  var hint = document.getElementById('fzSkyHint');
+  var fade = document.getElementById('fzFade');
   var t0 = Date.now();
   var waitTimer = setInterval(function () {
-    if (diving || landed) { if (!portalBuilt) fzBuildPortal(); return; }
     if (Date.now() - t0 > 180000) { clearInterval(waitTimer); return; }
-    if (window.localPlayer && window.localPlayer.mesh && document.body.classList.contains('game-active')) {
-      clearInterval(waitTimer);
-      buildSky();
+    if (!window.localPlayer || !window.localPlayer.mesh || !document.body.classList.contains('game-active')) return;
+    clearInterval(waitTimer);
+    buildSky();
+    npcSweep();
+    if (!landed2) {
+      buildHeaven();
       fzBuildPortal();
       try { sessionStorage.setItem('fzLanded', '1'); } catch (e) {}
-      diving = true;
-      diveY = START_Y;
-      window.localPlayer.mesh.position.set(SX, START_Y, SZ);
+      inHeaven = true;
+      window.localPlayer.mesh.position.set(SX, SKY_Y, SZ);
       if (hint) hint.style.display = 'block';
     }
   }, 350);
 
-  // ── мобилка: страховка джойстика и кнопок ──
+  // ── мобилка: страховка джойстика ──
   if (TOUCH) {
     window.addEventListener('load', function () {
       setTimeout(function () {
@@ -19559,7 +19621,7 @@ body.game-active canvas{touch-action:none}
         var knob = document.getElementById('joystickKnob');
         if (!base || !knob || base.dataset.fzJoy) return;
         base.dataset.fzJoy = '1';
-        var tid = null, ox = 0, oy = 0;
+        var tid = null;
         function apply(x, y) {
           var r = base.getBoundingClientRect();
           var dx = (x - (r.left + r.width / 2)) / (r.width / 2);
@@ -19596,7 +19658,7 @@ body.game-active canvas{touch-action:none}
     });
   }
 
-  // ── доп. кнопки для телефона: чат, авто, карта, камера, настройки... ──
+  // ── доп. кнопки для телефона ──
   if (TOUCH) {
     window.addEventListener('load', function () {
       setTimeout(function () {
@@ -19640,32 +19702,55 @@ body.game-active canvas{touch-action:none}
     });
   }
 
-  // ── общий цикл: спуск, облака, портал, небо ──
+  // ── общий цикл ──
   var lastT = performance.now();
+  function easeIO(k) { return k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; }
   function loop(now) {
     var dt = Math.min((now - lastT) / 1000, 0.05);
     lastT = now;
     var tm = now / 1000;
-    // спуск
-    if (diving && window.localPlayer && window.localPlayer.mesh) {
-      var p = window.localPlayer.mesh.position;
-      if (diveY > 0.12) {
-        var sp5 = Math.max(3.2, diveY * 0.1);
-        diveY -= sp5 * dt;
-        p.y = Math.max(diveY, 0);
-      } else {
-        diving = false;
-        p.y = 0;
-        if (hint) { hint.style.display = 'none'; }
+    npcSweep();
+    var p = (window.localPlayer && window.localPlayer.mesh) ? window.localPlayer.mesh.position : null;
+    if (p && inHeaven && !walking) {
+      // держим на платформе
+      p.y = SKY_Y;
+      var ddx = p.x - SX, ddz = p.z - SZ;
+      var dd = Math.sqrt(ddx * ddx + ddz * ddz);
+      if (dd > 10.4) { p.x = SX + (ddx / dd) * 10.4; p.z = SZ + (ddz / dd) * 10.4; }
+      // вход на лестницу
+      var ds = Math.sqrt((p.x - STX) * (p.x - STX) + (p.z - (STZ + 1.6)) * (p.z - (STZ + 1.6)));
+      if (ds < 2.3) {
+        walking = true; walkT = 0;
+        if (hint) hint.style.display = 'none';
+      }
+      // подсказка у портала
+      if (!portalHinted && portalBits.P) {
+        var dp = Math.sqrt((p.x - 27) * (p.x - 27) + (p.z - 27) * (p.z - 27));
+        if (dp < 5.5) {
+          portalHinted = true;
+          if (typeof showNotification === 'function') showNotification('🌀 Портал — SOON…', 'info');
+        }
+      }
+    } else if (p && walking) {
+      // спуск по лестнице: путь в облачное море, затем затемнение
+      walkT += dt / 8;
+      var k = easeIO(Math.min(1, walkT));
+      p.x = STX + k * 7.5;
+      p.y = SKY_Y - k * 24;
+      p.z = STZ + 1.6 - k * 14.5;
+      if (fade) fade.style.opacity = walkT > 0.55 ? String(Math.min(1, (walkT - 0.55) / 0.3)) : '0';
+      if (walkT >= 1) {
+        walking = false; inHeaven = false;
+        p.set(LX, 0, LZ);
+        if (fade) setTimeout(function () { if (fade) fade.style.opacity = '0'; }, 250);
         if (typeof showNotification === 'function') showNotification('🌆 Добро пожаловать в FANTAZIA RP!', 'success');
       }
     }
-    // облака дрейфуют, платформа спавна тает
+    // облака дрейфуют
     for (var i = 0; i < clouds.length; i++) {
       var sp6 = clouds[i];
-      sp6.position.x += sp6.userData.v * dt * (sp6.userData.fade ? 3 : 1);
-      if (sp6.userData.fade && sp6.material.opacity > 0) sp6.material.opacity -= dt * 0.08;
-      if (sp6.position.x > 420) sp6.position.x = -420;
+      sp6.position.x += sp6.userData.v * dt;
+      if (sp6.position.x > (sp6.userData.plat ? SX + 16 : 420)) sp6.position.x = (sp6.userData.plat ? SX - 16 : -420);
     }
     // портал живёт
     if (portalBits.P) {
@@ -19673,20 +19758,20 @@ body.game-active canvas{touch-action:none}
       portalBits.sw2.rotation.z = -tm * 0.5;
       portalBits.li.intensity = 0.95 + Math.sin(tm * 2.2) * 0.25;
       portalBits.sign.position.y = 6.9 + Math.sin(tm * 0.9) * 0.16;
-      if (window.camera) portalBits.sign.lookAt(camera.position.x, 7, camera.position.z);
-      for (var k = 0; k < portalBits.parts.length; k++) {
-        var u = portalBits.parts[k].userData;
+      if (window.camera) portalBits.sign.lookAt(camera.position.x, portalBits.sign.getWorldPosition(new THREE.Vector3()).y, camera.position.z);
+      for (var k2 = 0; k2 < portalBits.parts.length; k2++) {
+        var u = portalBits.parts[k2].userData;
         u.t += u.sp4 * dt * 3; if (u.t > 1) u.t -= 1;
-        portalBits.parts[k].position.set(Math.cos(u.a + u.t * 4) * u.r, 0.6 + u.t * 5.2, Math.sin(u.a + u.t * 4) * u.r);
-        portalBits.parts[k].material.opacity = Math.sin(u.t * Math.PI) * 0.8;
+        portalBits.parts[k2].position.set(Math.cos(u.a + u.t * 4) * u.r, 0.6 + u.t * 5.2, Math.sin(u.a + u.t * 4) * u.r);
+        portalBits.parts[k2].material.opacity = Math.sin(u.t * Math.PI) * 0.8;
       }
     }
-    // небо дышит вместе с днём/ночью
+    // небо дышит
     if (dome && window.sunLight) {
       var day2 = Math.max(0, Math.min(1, (window.sunLight.intensity - 0.3) / 0.7));
       var b2 = 0.24 + 0.76 * day2;
       dome.material.color.setScalar(b2);
-      if (sun2) { sun2.material.opacity = 0.35 + 0.65 * day2; }
+      if (sun2) sun2.material.opacity = 0.35 + 0.65 * day2;
       for (i = 0; i < clouds.length; i++) clouds[i].material.color.setScalar(0.45 + 0.55 * day2);
     }
     requestAnimationFrame(loop);
