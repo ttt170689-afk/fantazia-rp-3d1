@@ -7662,7 +7662,7 @@ cracksTop.forEach((c) => {
 });
 
 // тлеющий свет на морду — единственный в полной темноте
-const faceLight = new THREE.PointLight(0x9c3018, 0.03, 3.6, 1.7);
+const faceLight = new THREE.PointLight(0x9c3018, 0.3, 3.6, 1.7);
 faceLight.position.set(0, 0.12, 1.15);
 head.add(faceLight);
 B4.faceLight = faceLight;
@@ -8962,7 +8962,7 @@ let CUES = [
         cv.style.filter = '';
       } catch (e) {}
       for (let i = 0; i < DUN.flamesAll.length; i++) DUN.flamesAll[i].dieT = 0;
-      if (DUN.amb) DUN.amb.intensity = 0.045;
+      if (DUN.amb) DUN.amb.intensity = 0.09;
       if (DUN.moon) DUN.moon.intensity = 0.02;
       try { scene.fog = new THREE.Fog(0x000000, 1.4, 8.5); scene.background = new THREE.Color(0x000000); } catch (e) {}
       GLOW.material.opacity = 0;
@@ -9185,6 +9185,13 @@ function upBlackout(dt) {
         if (!under(o)) o.visible = false;
       }
     });
+    // холодный контур за боссом + тёплый снизу: силуэт читается в сумраке
+    const rim = new THREE.PointLight(0x4a5c92, 0.6, 16, 1.7);
+    rim.position.set(2.5, 7.5, BOSS_POS.z - 5.5);
+    scene.add(rim);
+    const under2 = new THREE.PointLight(0x3a2a24, 0.3, 12, 1.8);
+    under2.position.set(0, 1.2, BOSS_POS.z + 3.5);
+    scene.add(under2);
   } catch (e) {}
 })();
 
