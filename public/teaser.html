@@ -7471,12 +7471,12 @@ const M = {
   pit:   new THREE.MeshBasicMaterial({ color: 0x000000 }),
   gum:   new THREE.MeshLambertMaterial({ color: 0x2a0d12, emissive: 0x20050a, emissiveIntensity: 0.4 }),
   // плоть демона
-  hide:  new THREE.MeshLambertMaterial({ color: 0x4d2a24, emissive: 0x210a07, emissiveIntensity: 0.55 }),
-  hide2: new THREE.MeshLambertMaterial({ color: 0x3a1f1b, emissive: 0x180605, emissiveIntensity: 0.5 }),
-  hide3: new THREE.MeshLambertMaterial({ color: 0x2c1512, emissive: 0x100403, emissiveIntensity: 0.4 }),
+  hide:  new THREE.MeshLambertMaterial({ color: 0x4d2a24, emissive: 0x180705, emissiveIntensity: 0.3 }),
+  hide2: new THREE.MeshLambertMaterial({ color: 0x3a1f1b, emissive: 0x100403, emissiveIntensity: 0.26 }),
+  hide3: new THREE.MeshLambertMaterial({ color: 0x2c1512, emissive: 0x0a0302, emissiveIntensity: 0.2 }),
   ember: new THREE.MeshBasicMaterial({ color: 0xff5a1e }),
-  hornD: new THREE.MeshLambertMaterial({ color: 0x211720, emissive: 0x0e0710, emissiveIntensity: 0.4 }),
-  tusk:  new THREE.MeshLambertMaterial({ color: 0xc7b485, emissive: 0x282012, emissiveIntensity: 0.4 })
+  hornD: new THREE.MeshLambertMaterial({ color: 0x211720, emissive: 0x080510, emissiveIntensity: 0.22 }),
+  tusk:  new THREE.MeshLambertMaterial({ color: 0xc7b485, emissive: 0x1a160c, emissiveIntensity: 0.25 })
 };
 
 // скрыть старую оболочку — оставляем только глаза и их гало
@@ -7660,7 +7660,7 @@ cracksTop.forEach((c) => {
 });
 
 // тлеющий свет на морду — единственный в полной темноте
-const faceLight = new THREE.PointLight(0x9c3018, 0.1, 3.6, 1.7);
+const faceLight = new THREE.PointLight(0x9c3018, 0.05, 3.6, 1.7);
 faceLight.position.set(0, 0.12, 1.15);
 head.add(faceLight);
 B4.faceLight = faceLight;
@@ -7866,7 +7866,7 @@ const RIB_K = [
 RIB_K.forEach((rk, i) => {
   [-1, 1].forEach((sx) => {
     const rib = new THREE.Mesh(
-      new THREE.TorusGeometry(rk[1], 0.026, 5, 10, Math.PI * 0.85), M.bone);
+      new THREE.TorusGeometry(rk[1], 0.026, 5, 10, Math.PI * 0.85), M.hide2);
     rib.rotation.set(Math.PI / 2, 0, sx > 0 ? -0.25 : 0.25 + Math.PI);
     rib.position.set(sx * rk[0] * 0.28, 0.42 - i * 0.21, rk[2]);
     rib.scale.set(1, 1, 0.8);
@@ -7876,7 +7876,7 @@ RIB_K.forEach((rk, i) => {
 });
 
 // грудина
-const sternum = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.6, 0.05), M.bone);
+const sternum = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.6, 0.05), M.hide2);
 sternum.position.set(0, 0.18, 0.16);
 torso.add(sternum);
 B4.sternum = sternum;
@@ -7945,7 +7945,7 @@ for (let i = 0; i < COLLAR_N; i++) {
   const a = (i / COLLAR_N) * Math.PI * 2;
   const big = i % 3 === 0;
   const spike = new THREE.Mesh(
-    new THREE.ConeGeometry(big ? 0.05 : 0.032, big ? 0.42 : 0.24, 5), M.bone);
+    new THREE.ConeGeometry(big ? 0.05 : 0.032, big ? 0.42 : 0.24, 5), M.hornD);
   spike.position.set(Math.cos(a) * 0.52, 3.05 + (big ? 0.1 : 0), Math.sin(a) * 0.5);
   spike.rotation.z = -Math.cos(a) * 0.85;
   spike.rotation.x = Math.sin(a) * 0.85;
@@ -7965,7 +7965,7 @@ G.add(collarBase);
   pad.add(shell);
   // три шипа на плече
   for (let k = 0; k < 3; k++) {
-    const sp = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.2 + k * 0.06, 5), M.bone);
+    const sp = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.2 + k * 0.06, 5), M.hornD);
     sp.position.set(-0.12 + k * 0.12, 0.16, -0.08 + k * 0.1);
     sp.rotation.z = sx * (0.4 - k * 0.35);
     pad.add(sp);
@@ -8050,7 +8050,7 @@ function buildArm(sx) {
   hand.add(palm);
   // костяшки-шипы на костяшках
   for (let f = 0; f < 4; f++) {
-    const kn = new THREE.Mesh(new THREE.ConeGeometry(0.014, 0.04, 4), M.bone);
+    const kn = new THREE.Mesh(new THREE.ConeGeometry(0.014, 0.04, 4), M.hornD);
     kn.position.set(-0.06 + f * 0.04, -0.14, 0.05);
     kn.rotation.x = 1.2;
     hand.add(kn);
@@ -8624,14 +8624,14 @@ scene.add(win);
 // стекло-свет
 const winGlow = new THREE.Mesh(
   new THREE.PlaneGeometry(1.9, 3.0),
-  new THREE.MeshBasicMaterial({ color: 0x4a5468, fog: false })
+  new THREE.MeshBasicMaterial({ color: 0x353d4c, fog: false })
 );
 winGlow.position.y = 4.6;
 win.add(winGlow);
 // арка сверху
 const winArch = new THREE.Mesh(
   new THREE.CircleGeometry(0.95, 12, 0, Math.PI),
-  new THREE.MeshBasicMaterial({ color: 0x4a5468, fog: false })
+  new THREE.MeshBasicMaterial({ color: 0x353d4c, fog: false })
 );
 winArch.position.y = 6.1;
 win.add(winArch);
@@ -8708,8 +8708,8 @@ window.upBoss4 = function (dt, wall) {
   // луна за облаками: окно дышит
   const wm = 0.75 + 0.25 * Math.sin(wall * 0.5) * Math.sin(wall * 0.13 + 1);
   if (B4.win) {
-    B4.win.halo.material.opacity = 0.04 + 0.025 * wm;
-    B4.win.glow.material.color.setRGB(0.2 + 0.05 * wm, 0.22 + 0.05 * wm, 0.27 + 0.04 * wm);
+    B4.win.halo.material.opacity = 0.022 + 0.015 * wm;
+    B4.win.glow.material.color.setRGB(0.13 + 0.03 * wm, 0.15 + 0.03 * wm, 0.19 + 0.03 * wm);
   }
 
   // дыхание: грудная клетка и плечи
@@ -8830,7 +8830,7 @@ window.upBoss4 = function (dt, wall) {
   (B4.candles || []).forEach((c) => {
     const on = turnK * (0.6 + Math.sin(wall * 9 + c.ph) * 0.25);
     c.fl.material.opacity = Math.max(0, on);
-    c.li.intensity = Math.max(0, on) * 0.22;
+    c.li.intensity = Math.max(0, on) * 0.12;
     c.fl.scale.setScalar(0.18 + Math.sin(wall * 8 + c.ph) * 0.04);
   });
 
@@ -9000,7 +9000,7 @@ let CUES = [
       BOSS.turn = T.t;
       try { B4.reveal = T.t + 2.3; if (B4.hideTillTurn) B4.hideTillTurn.forEach((c) => { c.visible = true; }); } catch (e) {}
       GLOW.material.opacity = 0.16;
-      GLOWL.intensity = 0.26;
+      GLOWL.intensity = 0.14;
       // звук кресла: каменный скрежет + три скрипа
       noiseBurst(2.3, 190, 55, 0.8, 0.13, 0);
       tone(46, 30, 2.3, 'sine', 0.1, 0);
