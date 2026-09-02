@@ -2345,7 +2345,7 @@ button:active { transform: scale(.95); }
   <div class="ls-user-bar">
     <span id="loggedInUser"></span>
     <button onclick="logoutUser()">Выйти</button>
-    <button id="changelogBtn" onclick="(function(){var m=document.getElementById('changelogModal');m.style.display='flex';m.classList.add('show');})()">📋 Что нового</button>
+    <button id="changelogBtn" onclick="fzOpenNews()">✨ Новости</button>
   </div>
 
   <!-- ══════════ HERO ══════════ -->
@@ -2876,7 +2876,7 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
       <div class="side-btn" onclick="openRewardModal()" title="Ежедневная награда" id="rewardBtn" style="position:relative">🎁<span id="rewardDot" style="position:absolute;top:4px;right:4px;width:8px;height:8px;background:#e74c3c;border-radius:50%;display:none"></span></div>
       <div class="side-btn" onclick="openQuestsPanel()" title="Задания ивента Jason Day" style="position:relative;">📋<span id="questsDot" style="position:absolute;top:4px;right:4px;width:8px;height:8px;background:#ff9800;border-radius:50%;display:none;"></span></div>
       <div class="side-btn" onclick="openGuidePanel()" title="Путеводитель [G]">🧭</div>
-      <div class="side-btn" onclick="var m=document.getElementById('changelogModal');m.style.display='flex';m.classList.add('show');document.exitPointerLock()" title="Обновления игры">📰</div>
+      <div class="side-btn" onclick="fzOpenNews();document.exitPointerLock&&document.exitPointerLock()" title="Новости">✨</div>
       <div class="side-btn" onclick="loadSettingsUI();document.getElementById('settingsModal').classList.add('show');document.exitPointerLock()" title="Настройки">⚙️</div>
       <div class="side-btn" onclick="openPauseMenu()" title="Пауза [ESC]">⏸</div>
     </div>
@@ -19692,9 +19692,11 @@ body.game-active canvas{touch-action:none}
           var m = document.getElementById('settingsModal');
           if (m) m.classList.add('show');
         });
-        btn('📰', 'Что нового', function () {
-          var m = document.getElementById('changelogModal');
-          if (m) { m.style.display = 'flex'; m.classList.add('show'); }
+        btn('📰', 'Новости', function () {
+          if (typeof fzOpenNews === 'function') fzOpenNews();
+        });
+        btn('🛡', 'Админка', function () {
+          if (typeof fzA !== 'undefined' && fzA.open) fzA.open();
         });
         btn('🎁', 'Награда', function () { openRewardModal(); });
         btn('👗', 'Скин [B]', function () { openSkinEditor(); });
@@ -19944,6 +19946,204 @@ body.game-active canvas{touch-action:none}
     box.remove();
   }
   goBtn.addEventListener('click', closeIntro);
+})();
+</script>
+
+<script src="city2.js?v=1"></script>
+<!-- ========== FZ: админ-панель + новости (новые) ========== -->
+<style>
+#fzNews{position:fixed;inset:0;background:rgba(5,8,18,.82);display:none;align-items:center;justify-content:center;z-index:9500;backdrop-filter:blur(8px)}
+#fzNews .fzn-box{width:min(560px,92vw);max-height:82vh;overflow-y:auto;background:linear-gradient(180deg,#141a2e,#0c0f1c);
+  border:2px solid #3f8fff;border-radius:20px;padding:26px 24px;box-shadow:0 24px 80px rgba(20,60,160,.45)}
+#fzNews h2{margin:0 0 4px;color:#9fc6ff;font:800 22px/1.2 Arial;letter-spacing:.06em}
+#fzNews .fzn-ver{color:#6f86b8;font:12px/1.4 monospace;margin-bottom:16px}
+#fzNews .fzn-item{border-left:3px solid #3f8fff;background:rgba(63,143,255,.07);border-radius:0 12px 12px 0;
+  padding:10px 14px;margin:8px 0;color:#cfe0ff;font:14px/1.45 Arial}
+#fzNews .fzn-item b{color:#fff}
+#fzNews .fzn-item.new{border-color:#ffd040;background:rgba(255,208,64,.07)}
+#fzNews .fzn-item.new b{color:#ffe289}
+#fzNews .fzn-close{display:block;margin:18px auto 0;background:rgba(63,143,255,.2);border:1.5px solid #3f8fff;
+  color:#fff;font:700 15px Arial;padding:11px 38px;border-radius:12px;cursor:pointer}
+#fzAdmin{position:fixed;inset:0;background:rgba(10,5,5,.82);display:none;align-items:center;justify-content:center;z-index:9600;backdrop-filter:blur(8px)}
+#fzAdmin .fza-box{width:min(520px,92vw);background:linear-gradient(180deg,#241214,#140a0c);
+  border:2px solid #ff9f43;border-radius:20px;padding:24px;box-shadow:0 24px 80px rgba(255,120,40,.35)}
+#fzAdmin h2{margin:0 0 2px;color:#ffcf9f;font:800 21px/1.2 Arial;letter-spacing:.05em}
+#fzAdmin .fza-st{color:#b98a6a;font:12px/1.4 monospace;margin-bottom:14px;min-height:16px}
+#fzAdmin .fza-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+#fzAdmin button{background:rgba(255,159,67,.14);border:1.5px solid #b96a2a;color:#ffe3c8;
+  font:700 14px/1.3 Arial;padding:12px 8px;border-radius:12px;cursor:pointer}
+#fzAdmin button:hover{background:rgba(255,159,67,.3);box-shadow:0 0 14px rgba(255,150,60,.3)}
+#fzAdmin button.warn{border-color:#8a2a2a;color:#ffb9b9}
+#fzAdmin .fza-close{display:block;margin:16px auto 0;width:auto;padding:10px 34px}
+</style>
+<div id="fzNews" onclick="if(event.target===this)this.style.display='none'">
+  <div class="fzn-box">
+    <h2>✨ НОВОСТИ FANTAZIA RP</h2>
+    <div class="fzn-ver">v4.0 «НЕБЕСА И ГОРОД» · сервер онлайн</div>
+    <div class="fzn-item new"><b>🏙 НОВЫЙ РАЙОН «ОБЛАЧНЫЙ»:</b> дороги с разметкой и зебрами, 8 магазинов с неоном, 3 кафешки с столиками и зонтами, 19 домов, NEO MALL с парковкой, площадь с фонтаном и клумбами. Заходи с северо-запада!</div>
+    <div class="fzn-item new"><b>☁️ СПАВН В НЕБЕСАХ:</b> облачная платформа, портал SOON и лестница из 34 ступеней — идёшь вниз, экран чернеет, и ты в городе</div>
+    <div class="fzn-item new"><b>🛡 АДМИН-ПАНЕЛЬ:</b> для владельцев аккаунтов — телепорты, деньги, погода, объявления</div>
+    <div class="fzn-item"><b>👹 ТИЗЕР:</b> демон АПОГЕЙ в упор — полная тьма, светятся только глаза, он хихикает после оборота</div>
+    <div class="fzn-item"><b>📜 Записки:</b> чип открывает журнал — перечитывай собранные страницы</div>
+    <div class="fzn-item"><b>📱 Мобилка:</b> 12 кнопок управления, джойстик-страховка, всё быстрое и чёткое</div>
+    <button class="fzn-close" onclick="document.getElementById('fzNews').style.display='none'">Закрыть</button>
+  </div>
+</div>
+<div id="fzAdmin">
+  <div class="fza-box">
+    <h2>🛡 АДМИН-ПАНЕЛЬ</h2>
+    <div class="fza-st" id="fzaSt">режим администратора</div>
+    <div class="fza-grid">
+      <button onclick="fzA.money()">💰 +100 000$</button>
+      <button onclick="fzA.heal()">❤️ Восстановить HP</button>
+      <button onclick="fzA.tp(17,21)">📍 Спавн</button>
+      <button onclick="fzA.tp(85,-70)">🏬 GRAND MALL</button>
+      <button onclick="fzA.tp(-62,88)">🏙 NEO MALL</button>
+      <button onclick="fzA.tp(-100,100)">⛲ Фонтан</button>
+      <button onclick="fzA.weather('sunny')">☀️ Ясно</button>
+      <button onclick="fzA.weather('storm')">🌩 Гроза</button>
+      <button onclick="fzA.weather('snow')">❄️ Снег</button>
+      <button onclick="fzA.cast()">📢 Объявление всем</button>
+      <button onclick="fzA.accounts()">👥 Аккаунты</button>
+      <button class="warn" onclick="fzA.exit()">🔓 Выйти из админки</button>
+    </div>
+    <button class="fza-close" onclick="document.getElementById('fzAdmin').style.display='none'">Закрыть</button>
+  </div>
+</div>
+<script>
+(function () {
+  // ── новости ──
+  window.fzOpenNews = function () {
+    document.getElementById('fzNews').style.display = 'flex';
+  };
+
+  // ── админка ──
+  var KEY = 'fzAdminPwd';
+  function pwd() { try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
+  function st(t) { var el = document.getElementById('fzaSt'); if (el) el.textContent = t; }
+
+  function api(method, path, body) {
+    return fetch(path, {
+      method: method,
+      headers: { 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined
+    }).then(function (r) { return r.json(); });
+  }
+
+  function myName() {
+    var n = '';
+    try {
+      if (typeof currentUser !== 'undefined' && currentUser)
+        n = currentUser.displayName || currentUser.username || '';
+      if (!n && window.localPlayer) n = localPlayer.name || '';
+      if (!n) n = localStorage.getItem('fzLastName') || '';
+    } catch (e) {}
+    return n;
+  }
+
+  window.fzA = {
+    money: function () {
+      var amt = 100000;
+      st('начисляем...');
+      api('POST', '/api/admin/givemoney', {
+        playerName: myName(), amount: amt, adminPassword: pwd()
+      }).then(function (r) {
+        st(r && r.ok ? '💰 +' + amt + '$ выдано (' + myName() + ')' : 'сервер недоступен — начислил локально');
+      }).catch(function () { st('офлайн — деньги только у тебя'); });
+      try {
+        if (window.localPlayer) {
+          localPlayer.money = (localPlayer.money || 0) + amt;
+          if (typeof updateMoneyDisplay === 'function') updateMoneyDisplay();
+          else { var md = document.getElementById('moneyDisplay'); if (md) md.textContent = localPlayer.money; }
+        }
+      } catch (e) {}
+    },
+    heal: function () {
+      try {
+        localPlayer.health = 100;
+        var hb = document.getElementById('healthFill');
+        if (hb) hb.style.width = '100%';
+      } catch (e) {}
+      st('❤️ HP восстановлено');
+    },
+    tp: function (x, z) {
+      try {
+        localPlayer.mesh.position.set(x, 0.5, z);
+        localPlayer.position.x = x; localPlayer.position.z = z;
+      } catch (e) {}
+      st('📍 телепорт: ' + x + ', ' + z);
+    },
+    weather: function (w) {
+      try { if (window.FZG && FZG.setWeather) FZG.setWeather(w); } catch (e) {}
+      st('погода: ' + w);
+    },
+    cast: function () {
+      var m = prompt('Текст объявления для всех игроков:');
+      if (!m) return;
+      api('POST', '/api/admin/broadcast', { message: m, adminPassword: pwd() })
+        .then(function (r) { st(r && r.ok ? '📢 отправлено' : 'не вышло'); })
+        .catch(function () { st('сервер недоступен'); });
+      if (typeof showNotification === 'function') showNotification('📢 ' + m, 'info');
+    },
+    accounts: function () {
+      st('запрашиваем...');
+      api('GET', '/api/admin/accounts?adminPassword=' + encodeURIComponent(pwd()))
+        .then(function (r) {
+          if (r && r.ok) {
+            var names = (r.accounts || []).slice(0, 6).map(function (a) { return a.username; }).join(', ');
+            st('👥 ' + r.total + ' аккаунтов: ' + names);
+          } else st('нет доступа');
+        }).catch(function () { st('сервер недоступен'); });
+    },
+    exit: function () {
+      try { localStorage.removeItem(KEY); } catch (e) {}
+      location.reload();
+    },
+    open: function () {
+      if (!pwd()) {
+        var p = prompt('🛡 Пароль администратора:');
+        if (!p) return;
+        api('GET', '/api/admin/accounts?adminPassword=' + encodeURIComponent(p))
+          .then(function (r) {
+            if (r && r.ok) {
+              try { localStorage.setItem(KEY, p); } catch (e) {}
+              document.getElementById('fzAdmin').style.display = 'flex';
+              st('доступ разрешён');
+            } else alert('Неверный пароль');
+          }).catch(function () { alert('Сервер недоступен'); });
+        return;
+      }
+      document.getElementById('fzAdmin').style.display = 'flex';
+      st('админ: ' + myName());
+    }
+  };
+
+  // кнопки: 🛡 в HUD и на лендинге, 📰 на лендинге
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      try {
+        var side = document.querySelector('.side-btn');
+        if (side && side.parentElement && !document.getElementById('fzAdminBtn')) {
+          var b = document.createElement('div');
+          b.className = 'side-btn'; b.id = 'fzAdminBtn';
+          b.title = 'Админ-панель';
+          b.textContent = '🛡';
+          b.onclick = function () { fzA.open(); };
+          side.parentElement.appendChild(b);
+        }
+      } catch (e) {}
+      try {
+        var bar = document.getElementById('loggedInUser');
+        if (bar && bar.parentElement && !document.getElementById('fzNewsBtn')) {
+          var nb = document.createElement('button');
+          nb.id = 'fzNewsBtn';
+          nb.textContent = '✨ Новости';
+          nb.onclick = function () { fzOpenNews(); };
+          bar.parentElement.insertBefore(nb, bar.nextSibling);
+        }
+      } catch (e) {}
+    }, 1200);
+  });
 })();
 </script>
 
