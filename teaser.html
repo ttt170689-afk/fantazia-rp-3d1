@@ -1829,11 +1829,12 @@ function upBoss(dt, wall) {
     const age = wall - e.userData.tOn;
     const dimF = (typeof EYESFIX !== 'undefined' && EYESFIX.dim && EYESFIX.dim[i] !== undefined)
       ? EYESFIX.dim[i] : 1;
-    e.material.opacity = Math.min(1, age * 1.6) * dimF * 0.5;
+    e.material.opacity = Math.min(1, age * 1.6) * dimF * 0.68;
     e.material.color.setHex(0xa81c10);
     const er = e.userData.base;
-    e.scale.set(er * 7, er * 9 * (0.7 + dimF * 0.3), er * 5.5);
-    e.userData.halo.material.opacity = Math.min(0.26, age * 0.4) * dimF;
+    // реалистично: узкие кошачьи глаза-точки, не гигантские щели
+    e.scale.set(er * 2.6, er * 4.4 * (0.7 + dimF * 0.3), er * 2.0);
+    e.userData.halo.material.opacity = Math.min(0.22, age * 0.4) * dimF;
   });
   if (BOSS.shadowPool) {
     BOSS.shadowPool.position.z = g.position.z;
@@ -8691,9 +8692,10 @@ B4.shafts = [];
 });
 B4.win = { glow: winGlow, halo: winHalo };
 
-// тело скрыто НАВСЕГДА: видна только ГОЛОВА (+ глаза из старой оболочки)
-B4.hideTillTurn = G.children.filter((c) => preG.indexOf(c) < 0 && c !== head);
+// ВСЁ скрыто навсегда, и голова тоже: в темноте только ГЛАЗА (реализм)
+B4.hideTillTurn = G.children.filter((c) => preG.indexOf(c) < 0);
 B4.hideTillTurn.forEach((c) => { c.visible = false; });
+head.visible = false; // глаза висят в пустоте — тварь невидима
 
 // ═══ АНИМАЦИИ ═══
 window.upBoss4 = function (dt, wall) {
