@@ -51,6 +51,22 @@
     font:800 19px 'Segoe UI';letter-spacing:.1em;cursor:pointer;
     box-shadow:0 0 44px rgba(255,50,60,.26);transition:transform .15s,box-shadow .2s;}
   #start button:hover,#end button:hover{box-shadow:0 0 70px rgba(255,60,70,.55);transform:scale(1.05);}
+#end .fzWrap{display:flex;flex-direction:column;align-items:center;gap:12px;}
+#fzName{position:relative;color:#fff;font:900 clamp(30px,7vmin,64px) 'Segoe UI';
+  letter-spacing:.14em;text-shadow:0 0 26px rgba(255,255,255,.35);}
+#fzName.blink{animation:fzBlink .3s steps(1) infinite;}
+@keyframes fzBlink{0%{opacity:1}50%{opacity:.06}100%{opacity:1}}
+#fzName::after{content:'';position:absolute;left:-3%;top:54%;height:.085em;width:0;
+  background:#ff2f3f;box-shadow:0 0 22px #ff2f3f,0 0 60px rgba(255,47,63,.6);
+  transform:rotate(-3.5deg);transition:width .35s cubic-bezier(.7,0,.3,1);}
+#fzName.struck::after{width:106%;}
+#fzGms{color:#ff9d9d;font:800 clamp(16px,3.4vmin,30px) 'Segoe UI';letter-spacing:.5em;
+  opacity:0;transform:translateY(8px);transition:all .5s ease;text-shadow:0 0 18px rgba(255,60,70,.5);}
+#fzGms.on{opacity:1;transform:none;}
+#fzSoon{color:#8a7a7a;font:700 clamp(11px,2vmin,16px) 'Segoe UI';letter-spacing:.9em;
+  opacity:0;transition:opacity .6s ease;}
+#fzSoon.on{opacity:.95;animation:fzSoonPulse 2.2s ease-in-out infinite;}
+@keyframes fzSoonPulse{0%,100%{opacity:.95}50%{opacity:.45}}
   #hint{position:fixed;left:14px;bottom:calc(11vh + 8px);z-index:12;color:rgba(200,160,160,.35);
     font:600 10px/1 monospace;letter-spacing:.18em;pointer-events:none;}
 </style>
@@ -73,7 +89,11 @@
   <button id="play">▶ СМОТРЕТЬ</button>
 </div>
 <div id="end">
-  
+  <div class="fzWrap">
+    <div id="fzName">FANTAZIA RP</div>
+    <div id="fzGms">GRAND MALL SECRET</div>
+    <div id="fzSoon">SOON</div>
+  </div>
   <button id="replay">↻ ЕЩЁ РАЗ</button>
 </div>
 <div id="hint">LAIR OF THE KEEPER · FANTAZIA RP 3D</div>
@@ -8950,35 +8970,33 @@ let CUES = [
       barsT.classList.add('on');
       barsB.classList.add('on');
       // ЗВУК: полная тишина — только динамическое сердце (heartDyn)
-      grade('void');
-      BLACKOUT.t = 0;
+      // СТАРАЯ ЛОКАЦИЯ: зал горит как раньше — факелы, свет, окно
       bossShroud(true, 0.3);
       try {
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         cv.style.imageRendering = 'auto';
         cv.style.filter = '';
       } catch (e) {}
-      for (let i = 0; i < DUN.flamesAll.length; i++) DUN.flamesAll[i].dieT = 0;
-      if (DUN.amb) DUN.amb.intensity = 0.09;
-      if (DUN.moon) DUN.moon.intensity = 0.02;
-      try { scene.fog = new THREE.Fog(0x000000, 1.4, 8.5); scene.background = new THREE.Color(0x000000); } catch (e) {}
       GLOW.material.opacity = 0;
       try { GLOWL.intensity = 0.02; } catch (e) {}
       RIG.hand = 0.25;
   } },
   { t: 18.00, fn: () => { GLOW.material.opacity = 0.1; } },
 
-  // 15.5: свет в окне вырубается — полная тьма на 3 секунды
+  // 15.5: РУБИЛЬНИК — вся локация вырубается разом, мгновенная тьма
   { t: 15.50, fn: () => {
       try {
-        if (B4.win) {
-          B4.win.glow.visible = false;
-          B4.win.halo.visible = false;
-        }
-        if (B4.rim) B4.rim.intensity = 0;
-        if (B4.backLamp) B4.backLamp.intensity = 0;
-        if (DUN.amb) DUN.amb.intensity = 0;
-        if (DUN.moon) DUN.moon.intensity = 0;
+        BLACKOUT.t = T.t;
+        for (let i = 0; i < DUN.flamesAll.length; i++) DUN.flamesAll[i].dieT = T.t;
+        const under = (o) => { while (o) { if (o === BOSS.grp) return true; o = o.parent; } return false; };
+        B4.roomHidden = [];
+        scene.traverse((o) => {
+          if (o.isLight) { o.userData._int = o.intensity; o.intensity = 0; return; }
+          if ((o.isMesh || o.isSprite || o.isPoints || o.isLine) && !under(o) && o.visible) {
+            B4.roomHidden.push(o);
+            o.visible = false;
+          }
+        });
       } catch (e) {}
   } },
 
@@ -9039,6 +9057,17 @@ let CUES = [
       barsB.classList.remove('on');
       endEl.classList.add('on');
       T.phase = 'end';
+      // титры: FANTAZIA RP мигает -> перечёркивается -> GRAND MALL SECRET -> SOON
+      try {
+        const fnm = DOC.getElementById('fzName');
+        const fg = DOC.getElementById('fzGms');
+        const fs = DOC.getElementById('fzSoon');
+        fnm.classList.add('blink');
+        setTimeout(() => fnm.classList.add('struck'), 1400);
+        setTimeout(() => fg.classList.add('on'), 2000);
+        setTimeout(() => fnm.classList.remove('blink'), 2600);
+        setTimeout(() => fs.classList.add('on'), 2700);
+      } catch (e) {}
       if (URLP.auto && !DOC.getElementById('goGame')) {
         const back = URLP.back === 'game' ? 'index.html?fromTeaser=1' : 'index.html?shownews=1';
         const gb = DOC.createElement('button');
@@ -9124,6 +9153,9 @@ function resetShow() {
   if (DUN.moon) DUN.moon.intensity = 0.26;
   BOSS.turn = -1;
   try { if (window.B4) { B4.reveal = -1; if (B4.hideTillTurn) B4.hideTillTurn.forEach((c) => { c.visible = false; }); } } catch (e) {}
+  // старая локация: снять рубильник — зал и свет возвращаются
+  try { if (window.B4 && B4.roomHidden) { B4.roomHidden.forEach((o) => { o.visible = true; }); B4.roomHidden = null; } } catch (e) {}
+  try { scene.traverse((o) => { if (o.isLight && o.userData && o.userData._int !== undefined) { o.intensity = o.userData._int; delete o.userData._int; } }); } catch (e) {}
   BOSS.lunge = 0;
   BOSS.grp.rotation.y = Math.PI;
   BOSS.grp.position.set(BOSS_POS.x, 0, BOSS_POS.z);
@@ -9150,6 +9182,12 @@ function resetShow() {
   capOff();
   titleEl.classList.remove('on');
   endEl.classList.remove('on');
+  try {
+    const fn0 = DOC.getElementById('fzName');
+    if (fn0) fn0.classList.remove('blink', 'struck');
+    const fg0 = DOC.getElementById('fzGms'); if (fg0) fg0.classList.remove('on');
+    const fs0 = DOC.getElementById('fzSoon'); if (fs0) fs0.classList.remove('on');
+  } catch (e) {}
   T.speed = 1;
   RIG.hand = 1;
   RIG.roll = 0;
@@ -9197,12 +9235,8 @@ function upBlackout(dt) {
 // ── СУМРАК: виден только босс (силуэт в темноте), комната скрыта ──
 (function gloomMode() {
   try {
-    const under = (o) => { while (o) { if (o === BOSS.grp) return true; o = o.parent; } return false; };
-    scene.traverse((o) => {
-      if (o.isMesh || o.isSprite || o.isPoints || o.isLine) {
-        if (!under(o)) o.visible = false;
-      }
-    });
+    // СТАРАЯ ЛОКАЦИЯ ВЕРНУЛАСЬ: зал видим целиком с первого кадра.
+    // Тьма теперь только по рубильнику (15.5с). Босс невидим — только глаза.
     // холодный контур за боссом + тёплый снизу: силуэт читается в сумраке
     const rim = new THREE.PointLight(0x4a5c92, 0.6, 16, 1.7);
     rim.position.set(2.5, 7.5, BOSS_POS.z - 5.5);
