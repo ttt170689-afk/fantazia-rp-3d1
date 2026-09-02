@@ -6021,7 +6021,32 @@ function buildFantaziaCityV3() {
 }
 
 function buildCity() {
-  // мир v2: старый город удалён, новый строит city3.js (FANTAZIA CITY)
+  // ═══ ИСХОДНЫЙ ГОРОД (вернул как было изначально) ═══
+  buildRoads();
+  buildCentralPlaza();
+  buildShoppingDistrict();
+  buildResidentialArea();
+  buildEntertainmentDistrict();
+  buildBusinessDistrict();
+  buildPark();
+  buildNorthernDistrict();
+  buildSouthernIndustrialZone();
+  buildEasternDistrict();
+  buildWesternVillage();
+  buildCityExpansion();   // расширение города (v2.15)
+  // --- НОВЫЕ ЗОНЫ ---
+  buildMegaSkyscraperDistrict();
+  buildDesert();
+  buildCaves();
+  buildBridges();
+  buildFarNorthCity();
+  buildFarEastCity();
+  buildFarWestCity();
+  buildFarSouthCity();
+  buildNPCPopulation();
+  addStreetLights();
+  addTrees();
+  addDecorations();
 }
 
 function createBuilding(x, z, w, h, d, color, name, type) {
@@ -19940,7 +19965,7 @@ body.game-active canvas{touch-action:none}
 })();
 </script>
 
-<script src="city3.js?v=1"></script>
+<script src="city2.js?v=1"></script>
 <!-- ========== FZ: админ-панель + новости (новые) ========== -->
 <style>
 #fzNews{position:fixed;inset:0;background:rgba(5,8,18,.82);display:none;align-items:center;justify-content:center;z-index:9500;backdrop-filter:blur(8px)}
@@ -25424,12 +25449,12 @@ document.addEventListener('selectstart', function(e) {
   const _init = FZN.init;
   FZN.init = function () {
     try { _init(); } catch (e) {}
-    /* трафик выключен: город v2 */
+    try { FZN.trafficInit(); } catch (e) {}
   };
   const _upd = FZN.update;
   FZN.update = function (dt) {
     try { _upd(dt); } catch (e) {}
-    /* трафик выключен: город v2 */
+    try { FZN.trafficUpdate(dt); } catch (e) {}
   };
 })();
 
