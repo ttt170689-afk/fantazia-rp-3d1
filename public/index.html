@@ -6021,32 +6021,7 @@ function buildFantaziaCityV3() {
 }
 
 function buildCity() {
-  // ═══ ИСХОДНЫЙ ГОРОД (вернул как было изначально) ═══
-  buildRoads();
-  buildCentralPlaza();
-  buildShoppingDistrict();
-  buildResidentialArea();
-  buildEntertainmentDistrict();
-  buildBusinessDistrict();
-  buildPark();
-  buildNorthernDistrict();
-  buildSouthernIndustrialZone();
-  buildEasternDistrict();
-  buildWesternVillage();
-  buildCityExpansion();   // расширение города (v2.15)
-  // --- НОВЫЕ ЗОНЫ ---
-  buildMegaSkyscraperDistrict();
-  buildDesert();
-  buildCaves();
-  buildBridges();
-  buildFarNorthCity();
-  buildFarEastCity();
-  buildFarWestCity();
-  buildFarSouthCity();
-  buildNPCPopulation();
-  addStreetLights();
-  addTrees();
-  addDecorations();
+  // мир v2: старый город удалён, новый строит city3.js (FANTAZIA CITY)
 }
 
 function createBuilding(x, z, w, h, d, color, name, type) {
@@ -13890,6 +13865,22 @@ function handleInteraction() {
   if (inter.type === 'quest_axe') { fzPickAxe(); return; }
   if (inter.type === 'quest_boards') { fzTryBreakBoards(); return; }
   if (inter.type === 'quest_bossdoor') { fzEnterBossArena(); return; }
+  if (String(inter.type).indexOf('city3_') === 0) {
+    const msgs = {
+      city3_shop: '🏪 Добро пожаловать! Товары скоро.',
+      city3_food: '🍽 Заказ принят! Готовим...',
+      city3_mall: '🏬 GRAND PLAZA MALL — заходи, внутри кино и фудкорт!',
+      city3_cinema: '🎬 Ближайший сеанс: КОСМОС 3000 — зал 1',
+      city3_popcorn: '🍿 Попкорн с карамелью — вкусно!',
+      city3_tickets: '🎟 Два билета на ДРАКОН ГОРОДА, пожалуйста',
+      city3_house: '🏠 Уютно...',
+      city3_cafe: '☕ Латте с корицей — отлично!',
+      city3_park: '🌳 Парк Фантазии: пруд, мостик, качели',
+      city3_kiosk: '🥤 Газировка и снеки!'
+    };
+    showNotification(msgs[inter.type] || 'Скоро!', 'info');
+    return;
+  }
   if (window.fzBOSS && window.fzBOSS.phase === 'fight') { fzBossHit(); return; }
 
   // Обычные здания — вход
@@ -19949,7 +19940,7 @@ body.game-active canvas{touch-action:none}
 })();
 </script>
 
-<script src="city2.js?v=1"></script>
+<script src="city3.js?v=1"></script>
 <!-- ========== FZ: админ-панель + новости (новые) ========== -->
 <style>
 #fzNews{position:fixed;inset:0;background:rgba(5,8,18,.82);display:none;align-items:center;justify-content:center;z-index:9500;backdrop-filter:blur(8px)}
@@ -25433,12 +25424,12 @@ document.addEventListener('selectstart', function(e) {
   const _init = FZN.init;
   FZN.init = function () {
     try { _init(); } catch (e) {}
-    try { FZN.trafficInit(); } catch (e) {}
+    /* трафик выключен: город v2 */
   };
   const _upd = FZN.update;
   FZN.update = function (dt) {
     try { _upd(dt); } catch (e) {}
-    try { FZN.trafficUpdate(dt); } catch (e) {}
+    /* трафик выключен: город v2 */
   };
 })();
 
