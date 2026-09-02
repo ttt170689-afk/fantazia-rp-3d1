@@ -19388,14 +19388,16 @@ body.game-active canvas{touch-action:none}
   var STX = 24, STZ = 21;                  // вход на лестницу
   var LX = 18.5, LZ = 24.5;                // приземление у лестницы на земле
 
-  // ── НПС долой: глушим спавнеры и чистим выживших ──
+  // ── НПС ДОЛОЙ НАВСЕГДА: толпа FZN, интерьерные, старые ──
   try {
     window.buildNPCPopulation = function () {};
     window.spawnNPC = function () {};
     window.spawnMallNPCs = function () {};
+    window.spawnInteriorNPC = function () {};
   } catch (e) {}
   function npcSweep() {
     try {
+      // старые + интерьерные
       if (typeof npcs !== 'undefined' && npcs && npcs.length) {
         npcs.forEach(function (n) {
           if (!n) return;
@@ -19404,8 +19406,31 @@ body.game-active canvas{touch-action:none}
         });
         npcs.length = 0;
       }
+      // толпа FZN
+      if (window.FZN) {
+        FZN.count = 0;
+        if (FZI && FZI.settings) { FZI.settings.npcCount = 0; }
+        if (FZN.list && FZN.list.length) {
+          FZN.list.forEach(function (n) {
+            if (n && n.g && window.scene) { scene.remove(n.g); n.g.visible = false; }
+          });
+          FZN.list.length = 0;
+        }
+        FZN.init = function () { FZN.count = 0; };
+        FZN.setCount = function () { FZN.count = 0; };
+        FZN.trafficInit = function () {};
+        FZN.trafficUpdate = function () {};
+      }
+      // их точки разговора
+      if (typeof interactables !== 'undefined' && interactables && interactables.length) {
+        for (var q2 = interactables.length - 1; q2 >= 0; q2--) {
+          if (interactables[q2] && interactables[q2].type === 'npc') interactables.splice(q2, 1);
+        }
+      }
     } catch (e) {}
   }
+  // перекрываем спавн толпы, кто бы его ни звал
+  setInterval(npcSweep, 300);
 
   // ── тизер при первом старте аккаунта ──
   window.addEventListener('load', function () {
