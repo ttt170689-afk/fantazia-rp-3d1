@@ -1829,11 +1829,11 @@ function upBoss(dt, wall) {
     const age = wall - e.userData.tOn;
     const dimF = (typeof EYESFIX !== 'undefined' && EYESFIX.dim && EYESFIX.dim[i] !== undefined)
       ? EYESFIX.dim[i] : 1;
-    e.material.opacity = Math.min(1, age * 1.6) * dimF;
-    e.material.color.setHex(0xff2818);
+    e.material.opacity = Math.min(1, age * 1.6) * dimF * 0.5;
+    e.material.color.setHex(0xa81c10);
     const er = e.userData.base;
-    e.scale.set(er * 10, er * 13 * (0.7 + dimF * 0.3), er * 7.5);
-    e.userData.halo.material.opacity = Math.min(0.6, age * 0.9) * dimF;
+    e.scale.set(er * 7, er * 9 * (0.7 + dimF * 0.3), er * 5.5);
+    e.userData.halo.material.opacity = Math.min(0.26, age * 0.4) * dimF;
   });
   if (BOSS.shadowPool) {
     BOSS.shadowPool.position.z = g.position.z;
@@ -8962,9 +8962,9 @@ let CUES = [
         cv.style.filter = '';
       } catch (e) {}
       for (let i = 0; i < DUN.flamesAll.length; i++) DUN.flamesAll[i].dieT = 0;
-      if (DUN.amb) DUN.amb.intensity = 0;
-      if (DUN.moon) DUN.moon.intensity = 0;
-      try { scene.fog = new THREE.Fog(0x000000, 0.9, 4.6); scene.background = new THREE.Color(0x000000); } catch (e) {}
+      if (DUN.amb) DUN.amb.intensity = 0.045;
+      if (DUN.moon) DUN.moon.intensity = 0.02;
+      try { scene.fog = new THREE.Fog(0x000000, 1.4, 8.5); scene.background = new THREE.Color(0x000000); } catch (e) {}
       GLOW.material.opacity = 0;
       try { GLOWL.intensity = 0.02; } catch (e) {}
       aHeartStart(52);
@@ -9001,7 +9001,7 @@ let CUES = [
       } catch (e) {}
       bossShroud(false);
       BOSS.turn = T.t;
-      try { B4.reveal = T.t + 2.3; } catch (e) {} // тело остаётся скрытым: только глаза
+      try { B4.reveal = T.t + 2.3; if (B4.hideTillTurn) B4.hideTillTurn.forEach((c) => { c.visible = true; }); } catch (e) {}
       GLOW.material.opacity = 0.16;
       GLOWL.intensity = 0.07;
       // звук кресла: каменный скрежет + три скрипа
@@ -9176,16 +9176,13 @@ function upBlackout(dt) {
   if (DUN.moon) DUN.moon.intensity = 0.26 * (1 - k) + 0.015 * k;
 }
 
-// ── ТОЛЬКО ГЛАЗА: прячем всю сцену, кроме глаз босса ──
-(function onlyEyes() {
+// ── СУМРАК: виден только босс (силуэт в темноте), комната скрыта ──
+(function gloomMode() {
   try {
-    const keep = new Set();
-    BOSS.eyes.forEach((e) => keep.add(e));
-    BOSS.halos.forEach((h) => keep.add(h));
-    if (window.BOSS3 && BOSS3.pupils) BOSS3.pupils.forEach((p) => keep.add(p));
+    const under = (o) => { while (o) { if (o === BOSS.grp) return true; o = o.parent; } return false; };
     scene.traverse((o) => {
       if (o.isMesh || o.isSprite || o.isPoints || o.isLine) {
-        if (!keep.has(o)) o.visible = false;
+        if (!under(o)) o.visible = false;
       }
     });
   } catch (e) {}
