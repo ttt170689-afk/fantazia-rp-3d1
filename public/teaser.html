@@ -8622,19 +8622,18 @@ for (let i = 0; i < 26; i++) {
 // ── ОКНО ЗА ТРОНОМ: холодный свет в полной темноте ──
 const win = new THREE.Group();
 win.position.set(0, 0, -24.6);
-win.visible = false; // полная тьма: окно скрыто
 scene.add(win);
 // стекло-свет
 const winGlow = new THREE.Mesh(
   new THREE.PlaneGeometry(1.9, 3.0),
-  new THREE.MeshBasicMaterial({ color: 0x353d4c, fog: false })
+  new THREE.MeshBasicMaterial({ color: 0x7d8ba0, fog: false })
 );
 winGlow.position.y = 4.6;
 win.add(winGlow);
 // арка сверху
 const winArch = new THREE.Mesh(
   new THREE.CircleGeometry(0.95, 12, 0, Math.PI),
-  new THREE.MeshBasicMaterial({ color: 0x353d4c, fog: false })
+  new THREE.MeshBasicMaterial({ color: 0x7d8ba0, fog: false })
 );
 winArch.position.y = 6.1;
 win.add(winArch);
@@ -8711,8 +8710,8 @@ window.upBoss4 = function (dt, wall) {
   // луна за облаками: окно дышит
   const wm = 0.75 + 0.25 * Math.sin(wall * 0.5) * Math.sin(wall * 0.13 + 1);
   if (B4.win) {
-    B4.win.halo.material.opacity = 0;
-    B4.win.glow.material.color.setRGB(0, 0, 0);
+    B4.win.halo.material.opacity = 0.16 + 0.07 * wm;
+    B4.win.glow.material.color.setRGB(0.55 + 0.12 * wm, 0.6 + 0.11 * wm, 0.7 + 0.09 * wm);
   }
 
   // дыхание: грудная клетка и плечи
@@ -8977,6 +8976,19 @@ let CUES = [
   { t: 17.90, fn: () => aHeartStop() },
   { t: 18.00, fn: () => { GLOW.material.opacity = 0.1; } },
 
+  // 15.5: свет в окне вырубается — полная тьма на 3 секунды
+  { t: 15.50, fn: () => {
+      try {
+        if (B4.win) {
+          B4.win.glow.visible = false;
+          B4.win.halo.visible = false;
+        }
+        if (B4.rim) B4.rim.intensity = 0;
+        if (DUN.amb) DUN.amb.intensity = 0;
+        if (DUN.moon) DUN.moon.intensity = 0;
+      } catch (e) {}
+  } },
+
   // 18.05: ВСЁ ГЛЮЧИТ
   { t: 18.05, fn: () => {
       glitch = 0.55;
@@ -9004,6 +9016,7 @@ let CUES = [
       try { B4.reveal = T.t + 2.3; if (B4.hideTillTurn) B4.hideTillTurn.forEach((c) => { c.visible = true; }); } catch (e) {}
       GLOW.material.opacity = 0.16;
       GLOWL.intensity = 0.07;
+      try { if (B4.rim) B4.rim.intensity = 0.35; if (DUN.amb) DUN.amb.intensity = 0.07; } catch (e) {}
       // звук кресла: каменный скрежет + три скрипа
       noiseBurst(2.3, 190, 55, 0.8, 0.13, 0);
       tone(46, 30, 2.3, 'sine', 0.1, 0);
@@ -9189,6 +9202,14 @@ function upBlackout(dt) {
     const rim = new THREE.PointLight(0x4a5c92, 0.6, 16, 1.7);
     rim.position.set(2.5, 7.5, BOSS_POS.z - 5.5);
     scene.add(rim);
+    B4.rim = rim;
+    // ковёр: дорожка через зал к трону
+    const carpet = new THREE.Mesh(
+      new THREE.PlaneGeometry(3.2, 48),
+      new THREE.MeshLambertMaterial({ color: 0x4a1218, emissive: 0x12040a, emissiveIntensity: 0.5 }));
+    carpet.rotation.x = -Math.PI / 2;
+    carpet.position.set(0, 0.05, BOSS_POS.z + 21);
+    scene.add(carpet);
     const under2 = new THREE.PointLight(0x3a2a24, 0.3, 12, 1.8);
     under2.position.set(0, 1.2, BOSS_POS.z + 3.5);
     scene.add(under2);
