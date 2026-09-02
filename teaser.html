@@ -8691,9 +8691,8 @@ B4.shafts = [];
 });
 B4.win = { glow: winGlow, halo: winHalo };
 
-// до поворота трона тьма полная: не видно вообще ничего, только глаза
-// (глаза висят в BOSS.grp с старых версий — их не трогаем)
-B4.hideTillTurn = G.children.filter((c) => preG.indexOf(c) < 0);
+// тело скрыто НАВСЕГДА: видна только ГОЛОВА (+ глаза из старой оболочки)
+B4.hideTillTurn = G.children.filter((c) => preG.indexOf(c) < 0 && c !== head);
 B4.hideTillTurn.forEach((c) => { c.visible = false; });
 
 // ═══ АНИМАЦИИ ═══
@@ -8948,10 +8947,7 @@ let CUES = [
       OV.fadeT = 0;
       barsT.classList.add('on');
       barsB.classList.add('on');
-      aDrone();
-      aWind(5, 0.1);
-      musDronesStart();
-      tone(28, 22, 6, 'sine', 0.12, 0);   // под-пол
+      // ЗВУК: полная тишина — только динамическое сердце (heartDyn)
       grade('void');
       BLACKOUT.t = 0;
       bossShroud(true, 0.3);
@@ -8966,14 +8962,8 @@ let CUES = [
       try { scene.fog = new THREE.Fog(0x000000, 1.4, 8.5); scene.background = new THREE.Color(0x000000); } catch (e) {}
       GLOW.material.opacity = 0;
       try { GLOWL.intensity = 0.02; } catch (e) {}
-      aHeartStart(52);
       RIG.hand = 0.25;
   } },
-  { t: 4.00, fn: () => aWhisper(0, 3) },
-  { t: 9.50, fn: () => aWhisper(0, 2) },
-  { t: 12.00, fn: () => { aHeartStop(); aHeartStart(46); } },
-  { t: 16.40, fn: () => aRiser(1.5, 0.16) },
-  { t: 17.90, fn: () => aHeartStop() },
   { t: 18.00, fn: () => { GLOW.material.opacity = 0.1; } },
 
   // 15.5: свет в окне вырубается — полная тьма на 3 секунды
@@ -8984,6 +8974,7 @@ let CUES = [
           B4.win.halo.visible = false;
         }
         if (B4.rim) B4.rim.intensity = 0;
+        if (B4.backLamp) B4.backLamp.intensity = 0;
         if (DUN.amb) DUN.amb.intensity = 0;
         if (DUN.moon) DUN.moon.intensity = 0;
       } catch (e) {}
@@ -8994,9 +8985,9 @@ let CUES = [
       glitch = 0.55;
       T.shake = 0.3;
       OV.flashR = 0.06;
-      aSubDrop(0);
+      aHeartStop();
       noiseBurst(0.28, 2400, 180, 0.4, 0.12, 0);
-      tone(52, 24, 0.5, 'square', 0.08, 0);
+      noiseBurst(0.12, 3200, 900, 2, 0.08, 0.18);
   } },
   { t: 18.17, fn: () => { glitch = 0.18; } },
   { t: 18.50, fn: () => { glitch = 0; } },
@@ -9013,36 +9004,32 @@ let CUES = [
       } catch (e) {}
       bossShroud(false);
       BOSS.turn = T.t;
-      try { B4.reveal = T.t + 2.3; if (B4.hideTillTurn) B4.hideTillTurn.forEach((c) => { c.visible = true; }); } catch (e) {}
+      // тело скрыто навсегда — только голова
+      try { B4.reveal = T.t + 2.3; } catch (e) {}
       GLOW.material.opacity = 0.16;
       GLOWL.intensity = 0.07;
-      try { if (B4.rim) B4.rim.intensity = 0.35; if (DUN.amb) DUN.amb.intensity = 0.07; } catch (e) {}
-      // звук кресла: каменный скрежет + три скрипа
-      noiseBurst(2.3, 190, 55, 0.8, 0.13, 0);
-      tone(46, 30, 2.3, 'sine', 0.1, 0);
-      tone(430, 130, 0.5, 'sawtooth', 0.045, 0.15);
-      tone(360, 110, 0.55, 'sawtooth', 0.04, 0.9);
-      tone(300, 95, 0.6, 'sawtooth', 0.045, 1.65);
-      // хи-хи-хи: тихий мёртвый смешок в темноте
-      tone(830, 660, 0.10, 'triangle', 0.05, 1.25);
-      tone(770, 600, 0.10, 'triangle', 0.05, 1.42);
-      tone(710, 540, 0.12, 'triangle', 0.045, 1.60);
-      tone(620, 470, 0.14, 'triangle', 0.04, 2.15);
+      try { if (B4.rim) B4.rim.intensity = 0.35; if (B4.backLamp) B4.backLamp.intensity = 2.2; if (DUN.amb) DUN.amb.intensity = 0.07; } catch (e) {}
+      // ХА-ХА-ХА: громкий мёртвый хохот — и всё
+      (function haHa() {
+        let hf = 215;
+        for (let i = 0; i < 8; i++) {
+          const w = 0.1 + i * 0.2;
+          tone(hf, hf * 0.7, 0.15, 'sawtooth', 0.12, w);
+          tone(hf * 0.52, hf * 0.36, 0.13, 'square', 0.05, w);
+          hf *= 0.925;
+        }
+      })();
   } },
 
   // кресло доехало: ГРОХОТ + глаза
   { t: 20.85, fn: () => {
-      tone(44, 19, 0.9, 'sine', 0.3, 0);
-      noiseBurst(0.35, 480, 70, 0.6, 0.13, 0);
       T.shake = 0.14;
       ignite(0);
   } },
   { t: 21.15, fn: () => ignite(1) },
-  { t: 21.40, fn: () => { aHeartStart(40); musChoir(2.2); } },
-  { t: 21.60, fn: () => { try { bellToll(T.t + 0.1, 0.5); } catch (e) {} } },
 
-  // 23.9: в темноту
-  { t: 23.90, fn: () => { aHeartStop(); OV.fadeT = 1; } },
+  // 23.9: в темноту, тишина
+  { t: 23.90, fn: () => { OV.fadeT = 1; } },
 
   // 24.8: конец
   { t: 24.80, fn: () => {
@@ -9100,6 +9087,21 @@ function upCamera(dt, wall) {
   cam.updateProjectionMatrix();
 }
 
+// -- СЕРДЦЕ: чем ближе камера к нему — тем быстрее и громче стук --
+let hbNext = 0.6;
+function heartDyn(dt) {
+  if (T.t > 18.05) return; // после глюка — мёртвая тишина
+  const dist = Math.max(0, cam.position.z - (BOSS_POS.z + 5.1));
+  const k = clamp(1 - dist / 25, 0, 1);
+  const bpm = 44 + k * 118;
+  if (T.t >= hbNext) {
+    const vol = 0.18 + k * 0.24;
+    tone(54, 40, 0.16, 'sine', vol, 0);
+    tone(50, 36, 0.14, 'sine', vol * 0.72, 60 / bpm * 0.28);
+    hbNext = T.t + 60 / bpm;
+  }
+}
+
 // -- сброс/старт --
 function resetShow() {
   cueI = 0;
@@ -9141,6 +9143,7 @@ function resetShow() {
   if (DUN2.puffs) DUN2.puffs.forEach((p) => { p.userData.t = -1; p.material.opacity = 0; });
   speechStop();
   aHeartStop();
+  try { hbNext = 0.6; } catch (e) {}
   musStop();
   capOff();
   titleEl.classList.remove('on');
@@ -9213,6 +9216,11 @@ function upBlackout(dt) {
     const under2 = new THREE.PointLight(0x3a2a24, 0.3, 12, 1.8);
     under2.position.set(0, 1.2, BOSS_POS.z + 3.5);
     scene.add(under2);
+    // холодная лампа со стороны камеры: в пролёте читается затылок головы
+    const backLamp = new THREE.PointLight(0x46527a, 3.5, 16, 1.7);
+    backLamp.position.set(0, 4.6, BOSS_POS.z + 6.5);
+    scene.add(backLamp);
+    B4.backLamp = backLamp;
   } catch (e) {}
 })();
 
@@ -9251,7 +9259,7 @@ function loop() {
     upLake(dt, wall);
     upCrypt(dt, wall);
     upFauna(dt, wall);
-    upSound3(dt, wall);
+    try { duckUpdate(dt); } catch (e) {} // скрипы/шаги вырублены: полная тишина
     upLight2(dt, wall);
     upDecor3(dt, wall);
     upSouls(dt, wall);
@@ -9267,7 +9275,7 @@ function loop() {
     dollyZoomUpdate(dt);
     upBlackout(dt);
     // -- камера: кино-блок v4 имеет приоритет (до 16.4 с) --
-    if (T.phase === 'play') upCamera(dt, wall);
+    if (T.phase === 'play') { upCamera(dt, wall); heartDyn(dt); }
     RIG.apply(cam, dt, wall);
     if (T.shake > 0.001) {
       cam.position.x += rnd(-1, 1) * T.shake * 0.42;
