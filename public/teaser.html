@@ -87,8 +87,10 @@
 
 
 
+
 </script>
 <script id="cine">
+
 
 
 (function(){
@@ -9174,6 +9176,21 @@ function upBlackout(dt) {
   if (DUN.moon) DUN.moon.intensity = 0.26 * (1 - k) + 0.015 * k;
 }
 
+// ── ТОЛЬКО ГЛАЗА: прячем всю сцену, кроме глаз босса ──
+(function onlyEyes() {
+  try {
+    const keep = new Set();
+    BOSS.eyes.forEach((e) => keep.add(e));
+    BOSS.halos.forEach((h) => keep.add(h));
+    if (window.BOSS3 && BOSS3.pupils) BOSS3.pupils.forEach((p) => keep.add(p));
+    scene.traverse((o) => {
+      if (o.isMesh || o.isSprite || o.isPoints || o.isLine) {
+        if (!keep.has(o)) o.visible = false;
+      }
+    });
+  } catch (e) {}
+})();
+
 const clock = new THREE.Clock();
 const dW = DOC.getElementById('flashW');
 const dR = DOC.getElementById('flashR');
@@ -9252,6 +9269,7 @@ setTimeout(() => {
   try { urlpLateHooks(); } catch (e) {}
 }, 1200);
 })();
+
 
 
 
