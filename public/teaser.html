@@ -94,7 +94,6 @@
     <div id="fzGms">GRAND MALL SECRET</div>
     <div id="fzSoon">SOON</div>
   </div>
-  <button id="replay">↻ ЕЩЁ РАЗ</button>
 </div>
 <div id="hint">LAIR OF THE KEEPER · FANTAZIA RP 3D</div>
 <script>
@@ -8970,8 +8969,12 @@ let CUES = [
       barsT.classList.add('on');
       barsB.classList.add('on');
       // ЗВУК: полная тишина — только динамическое сердце (heartDyn)
-      // СТАРАЯ ЛОКАЦИЯ: зал горит как раньше — факелы, свет, окно
+      // ТЁМНЫЙ ЗАЛ: факелы мертвы, света нет — единственный свет ИЗ ОКНА
       bossShroud(true, 0.3);
+      for (let i = 0; i < DUN.flamesAll.length; i++) DUN.flamesAll[i].dieT = 0;
+      if (DUN.amb) DUN.amb.intensity = 0.06;
+      if (DUN.moon) DUN.moon.intensity = 0;
+      try { scene.fog = new THREE.Fog(0x000000, 1.2, 9); scene.background = new THREE.Color(0x000000); } catch (e) {}
       try {
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         cv.style.imageRendering = 'auto';
@@ -9028,7 +9031,7 @@ let CUES = [
       try { B4.reveal = T.t + 2.3; } catch (e) {}
       GLOW.material.opacity = 0.16;
       GLOWL.intensity = 0.07;
-      try { if (B4.rim) B4.rim.intensity = 0.35; if (B4.backLamp) B4.backLamp.intensity = 2.2; if (DUN.amb) DUN.amb.intensity = 0.07; } catch (e) {}
+      // тьма остаётся: только глаза в пустоте
       // ХА-ХА-ХА: громкий мёртвый хохот — и всё
       (function haHa() {
         let hf = 215;
@@ -9063,10 +9066,10 @@ let CUES = [
         const fg = DOC.getElementById('fzGms');
         const fs = DOC.getElementById('fzSoon');
         fnm.classList.add('blink');
-        setTimeout(() => fnm.classList.add('struck'), 1400);
-        setTimeout(() => fg.classList.add('on'), 2000);
-        setTimeout(() => fnm.classList.remove('blink'), 2600);
-        setTimeout(() => fs.classList.add('on'), 2700);
+        setTimeout(() => fnm.classList.add('struck'), 3400);
+        setTimeout(() => fnm.classList.remove('blink'), 4100);
+        setTimeout(() => fg.classList.add('on'), 5000);
+        setTimeout(() => fs.classList.add('on'), 7200);
       } catch (e) {}
       if (URLP.auto && !DOC.getElementById('goGame')) {
         const back = URLP.back === 'game' ? 'index.html?fromTeaser=1' : 'index.html?shownews=1';
@@ -9078,7 +9081,7 @@ let CUES = [
         // трейлер закрывается сам
         setTimeout(function () {
           if (T.phase === 'end') location.href = back;
-        }, 4200);
+        }, 11500);
       }
   } }
 ];
@@ -9219,10 +9222,6 @@ function startShow() {
   startEl.style.display = 'none';
 }
 DOC.getElementById('play').addEventListener('click', startShow);
-DOC.getElementById('replay').addEventListener('click', () => {
-  resetShow();
-  setTimeout(startShow, 450);
-});
 
 // затухание окружения при блэкауте
 function upBlackout(dt) {
@@ -9235,12 +9234,15 @@ function upBlackout(dt) {
 // ── СУМРАК: виден только босс (силуэт в темноте), комната скрыта ──
 (function gloomMode() {
   try {
-    // СТАРАЯ ЛОКАЦИЯ ВЕРНУЛАСЬ: зал видим целиком с первого кадра.
-    // Тьма теперь только по рубильнику (15.5с). Босс невидим — только глаза.
-    // холодный контур за боссом + тёплый снизу: силуэт читается в сумраке
-    const rim = new THREE.PointLight(0x4a5c92, 0.6, 16, 1.7);
+    // ЛОКАЦИЯ ВИДНА, но зал ТЁМНЫЙ: геометрия читается едва-едва,
+    // единственный источник света — ОКНО в конце зала
+    const rim = new THREE.PointLight(0x4a5c92, 0, 16, 1.7);
     rim.position.set(2.5, 7.5, BOSS_POS.z - 5.5);
     scene.add(rim);
+    // свет выбивается из окна: холодный, стоит прямо в раме
+    const winLight = new THREE.PointLight(0x8fa8c8, 1.35, 16, 1.6);
+    try { winLight.position.copy(B4.win.glow.position); } catch (e) { winLight.position.set(0, 5.4, BOSS_POS.z - 4.2); }
+    scene.add(winLight);
     B4.rim = rim;
     // ковёр: дорожка через зал к трону
     const carpet = new THREE.Mesh(
@@ -9249,11 +9251,11 @@ function upBlackout(dt) {
     carpet.rotation.x = -Math.PI / 2;
     carpet.position.set(0, 0.05, BOSS_POS.z + 21);
     scene.add(carpet);
-    const under2 = new THREE.PointLight(0x3a2a24, 0.3, 12, 1.8);
+    const under2 = new THREE.PointLight(0x3a2a24, 0, 12, 1.8); // выкл: только окно
     under2.position.set(0, 1.2, BOSS_POS.z + 3.5);
     scene.add(under2);
-    // холодная лампа со стороны камеры: в пролёте читается затылок головы
-    const backLamp = new THREE.PointLight(0x46527a, 3.5, 16, 1.7);
+    // лампа со стороны камеры ВЫКЛЮЧЕНА: единственный свет — окно
+    const backLamp = new THREE.PointLight(0x46527a, 0, 16, 1.7);
     backLamp.position.set(0, 4.6, BOSS_POS.z + 6.5);
     scene.add(backLamp);
     B4.backLamp = backLamp;
