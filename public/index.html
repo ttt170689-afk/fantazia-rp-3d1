@@ -9073,24 +9073,40 @@ function playElevatorBeep() {
 let elevatorMusicInterval = null;
 function playElevatorMoving(progress) {
   if (progress < 0.02) {
-    // Start looping jazz-like elevator music
+    // 🎵 НОВАЯ супер-песня лифта: фанк-рифф + ходячий бас + джазовые аккорды
+    // Cmaj7 → Am7 → Fmaj7 → G6, 8-сек луп, повторяется пока едет лифт
     if (!elevatorMusicInterval) {
-      const melody = [392,440,494,523,494,440,392,370];
-      let beat = 0;
-      elevatorMusicInterval = setInterval(() => {
+      const MELODY = [329.63,392,440,523.25,587.33,523.25,440,392, 329.63,440,523.25,659.26,587.33,523.25,440,329.63, 349.23,440,523.25,698.46,659.26,587.33,523.25,440, 392,493.88,587.33,783.99,659.26,587.33,493.88,392];
+      const BASS = [130.81,null,146.83,null,164.81,null,196,null, 110,null,123.47,null,130.81,null,164.81,null, 87.31,null,98,null,110,null,130.81,null, 98,null,110,null,123.47,null,146.83,null];
+      const CHORDS = [[130.81,164.81,196,246.94],[110,130.81,164.81,196],[87.31,110,130.81,164.81],[98,123.47,146.83,164.81]];
+      let step = 0;
+      const fzLiftNote = (freq, vol, dur, type) => {
         try {
           const ctx = getAudioCtx();
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.connect(gain); gain.connect(ctx.destination);
-          osc.frequency.value = melody[beat%melody.length];
-          osc.type = 'triangle';
-          gain.gain.setValueAtTime(0.06, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.22);
-          osc.start(ctx.currentTime); osc.stop(ctx.currentTime+0.25);
-          beat++;
+          osc.frequency.value = freq;
+          osc.type = type;
+          gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+          gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + 0.03);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+          osc.start(ctx.currentTime); osc.stop(ctx.currentTime + dur + 0.05);
         } catch(e) {}
-      }, 250);
+      };
+      const fzLiftTick = () => {
+        const i = step % 32;
+        const mf = MELODY[i];
+        if (mf) fzLiftNote(mf, 0.07, 0.22, 'triangle');  // главный рифф
+        const bf = BASS[i];
+        if (bf) fzLiftNote(bf, 0.055, 0.48, 'sine');     // ходячий бас
+        if (i % 8 === 0) {                               // аккорд на каждый такт
+          CHORDS[(i/8)|0].forEach(f => fzLiftNote(f, 0.014, 1.9, 'sine'));
+        }
+        step++;
+      };
+      fzLiftTick();
+      elevatorMusicInterval = setInterval(fzLiftTick, 250);
     }
   }
   if (progress >= 0.95 && elevatorMusicInterval) {
