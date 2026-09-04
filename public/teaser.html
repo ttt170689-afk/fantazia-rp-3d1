@@ -385,8 +385,8 @@ function aHeartStart(bpm) {
   aHeartStop();
   const period = 60 / (bpm || 62);
   heartTimer = setInterval(() => {
-    tone(54, 40, 0.16, 'sine', 0.3, 0);
-    tone(50, 36, 0.14, 'sine', 0.22, period * 0.28);
+    fzHB(0, 0.32);
+    fzHB(period * 0.28, 0.2);
   }, period * 1000);
 }
 function aHeartStop() { if (heartTimer) { clearInterval(heartTimer); heartTimer = null; } }
@@ -6838,7 +6838,7 @@ const URLP = {};
   URLP.shot = parseInt(q.get('shot') || '0', 10) || 0;
   URLP.noLight = q.get('light') === '0';
   URLP.noMusic = q.get('nomusic') === '1';
-  URLP.music = q.get('music') === '1';
+  URLP.music = q.get('music') || '';   // '1' — кино-файл, '2' — синтез
   URLP.lang = q.get('lang') === 'en' ? 'en' : 'ru';
   URLP.auto = q.get('auto') === '1';
   URLP.back = q.get('back') === 'game' ? 'game' : 'news';
@@ -9294,8 +9294,90 @@ function startFullOST() {
   DUCK(38.9, 0.9, 0.3);
 }
 
+// 🎼 КРАСИВАЯ МУЗЫКА ПОДХОДА (0–15.5): тёплые струнные-пэды + калимба,
+// гармония как в кино-саундтреке: Am(add9) → Fmaj7/A → Cmaj9/G → Em(add9)
+function padChord(freqs, when, dur, vol) {
+  try {
+    if (!AU) return;
+    const t0 = AU.currentTime + (when || 0);
+    freqs.forEach((fr) => {
+      [-7, 7].forEach((dt) => {
+        const o = AU.createOscillator();
+        o.type = 'sawtooth';
+        o.frequency.value = fr;
+        o.detune.value = dt;
+        const fl = AU.createBiquadFilter();
+        fl.type = 'lowpass';
+        fl.frequency.value = 680 + Math.random() * 120;
+        fl.Q.value = 0.6;
+        const g = AU.createGain();
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.linearRampToValueAtTime(vol, t0 + 1.8);
+        g.gain.setValueAtTime(vol, t0 + Math.max(1.8, dur - 1.6));
+        g.gain.linearRampToValueAtTime(0.0001, t0 + dur);
+        o.connect(fl); fl.connect(g); g.connect(MG);
+        AUDIO2.send(g, 0.55);
+        o.start(t0); o.stop(t0 + dur + 0.1);
+      });
+    });
+  } catch (e) {}
+}
+function kalimbaNote(f, when, vol, dur) {
+  try {
+    if (!AU) return;
+    const t0 = AU.currentTime + (when || 0);
+    [[1, 1], [2.01, 0.4], [3.0, 0.14]].forEach((pr) => {
+      const o = AU.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = f * pr[0];
+      const g = AU.createGain();
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(vol * pr[1], t0 + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + (dur || 1.2));
+      o.connect(g); g.connect(MG);
+      AUDIO2.send(g, 0.65);
+      o.start(t0); o.stop(t0 + (dur || 1.2) + 0.05);
+    });
+  } catch (e) {}
+}
+function startApproachScore() {
+  try {
+    if (!AU) return;
+    const D = 5.8;
+    padChord([220, 261.63, 329.63, 493.88, 587.33], 0.0, D, 0.010);
+    padChord([174.61, 220, 261.63, 329.63, 440], 3.9, D, 0.011);
+    padChord([196, 261.63, 329.63, 493.88, 587.33], 7.8, D, 0.011);
+    padChord([164.81, 246.94, 329.63, 369.99, 440], 11.6, D, 0.012);
+    tone(55, 54.8, 15.8, 'sine', 0.03, 0);        // педальный бас A
+    tone(110, 110, 15.4, 'sine', 0.012, 0);
+    tone(43.65, 43.5, 4.2, 'sine', 0.028, 3.9);   // F бас
+    tone(49, 48.8, 4.2, 'sine', 0.028, 7.8);      // G бас
+    tone(41.2, 41, 4.4, 'sine', 0.03, 11.6);      // E бас
+    [[0.9, 659.26], [2.7, 587.33], [4.5, 523.25], [6.2, 659.26],
+     [8.0, 587.33], [9.8, 493.88], [11.6, 523.25], [13.2, 587.33],
+     [13.95, 659.26], [10.4, 1318.5]].forEach((m) => {
+      kalimbaNote(m[1], m[0], m[1] > 1000 ? 0.02 : 0.05, 1.4);
+    });
+  } catch (e) {}
+}
+// 🎬 кино-саундтрек файлом (teaser.html?music=1)
+function startCineFile() {
+  try {
+    if (!AU) return;
+    window._fzCineFile = 1;
+    window._fzOst = 1;
+    const a = new Audio();
+    a.src = 'teaser-cinematic.mp3';
+    a.onerror = function () {
+      try { if (a.src.indexOf('/public/') < 0) { a.src = 'public/teaser-cinematic.mp3'; a.play().catch(() => {}); } } catch (e) {}
+    };
+    a.play().catch(() => {});
+    window._fzCine = a;
+  } catch (e) {}
+}
+
 function runCues() {
-  try { if (URLP.music === '1') startFullOST(); } catch (e) {}
+  try { if (URLP.music === '2') startFullOST(); } catch (e) {}
   while (cueI < CUES.length && T.t >= CUES[cueI].t) {
     try { CUES[cueI].fn(); } catch (e) {}
     cueI++;
@@ -9332,15 +9414,23 @@ function upCamera(dt, wall) {
 
 // -- СЕРДЦЕ: чем ближе камера к нему — тем быстрее и громче стук --
 let hbNext = 0.6;
+// 💓 реалистичное сердце: суб-свип 96→34 + шумовой щелчок (луб) и мягкий второй удар (дуб)
+function fzHB(when, vol) {
+  if (!AU) return;
+  tone(96, 34, 0.24, 'sine', vol, when);
+  tone(64, 44, 0.12, 'sine', vol * 0.5, (when || 0) + 0.02);
+  noiseBurst(0.035, 2600, 900, 5, vol * 0.4, when, 'bandpass');
+}
 function heartDyn(dt) {
   if (T.t > 18.05) return; // после глюка — мёртвая тишина
+  if (window._fzCineFile) return; // сердце уже звучит в кино-файле
   const dist = Math.max(0, cam.position.z - (BOSS_POS.z + 5.1));
   const k = clamp(1 - dist / 25, 0, 1);
   const bpm = 44 + k * 118;
   if (T.t >= hbNext) {
-    const vol = 0.18 + k * 0.24;
-    tone(54, 40, 0.16, 'sine', vol, 0);
-    tone(50, 36, 0.14, 'sine', vol * 0.72, 60 / bpm * 0.28);
+    const vol = 0.10 + k * 0.26;
+    fzHB(0, vol);
+    fzHB(0.26, vol * 0.6);
     hbNext = T.t + 60 / bpm;
   }
 }
@@ -9429,6 +9519,8 @@ function startShow() {
   pickVoices();
   resetShow();
   T.phase = 'play';
+  if (URLP.music === '1') { try { startCineFile(); } catch (e) {} }
+  else { try { startApproachScore(); } catch (e) {} }
   startEl.style.display = 'none';
 }
 DOC.getElementById('play').addEventListener('click', startShow);
