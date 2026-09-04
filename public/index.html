@@ -9073,12 +9073,11 @@ function playElevatorBeep() {
 let elevatorMusicInterval = null;
 function playElevatorMoving(progress) {
   if (progress < 0.02) {
-    // 🎵 НОВАЯ супер-песня лифта: фанк-рифф + ходячий бас + джазовые аккорды
-    // Cmaj7 → Am7 → Fmaj7 → G6, 8-сек луп, повторяется пока едет лифт
+    // 🎵 ИМБА-песня лифта v3: фанк-ритм + бас + мелодия + барабаны
     if (!elevatorMusicInterval) {
-      const MELODY = [329.63,392,440,523.25,587.33,523.25,440,392, 329.63,440,523.25,659.26,587.33,523.25,440,329.63, 349.23,440,523.25,698.46,659.26,587.33,523.25,440, 392,493.88,587.33,783.99,659.26,587.33,493.88,392];
-      const BASS = [130.81,null,146.83,null,164.81,null,196,null, 110,null,123.47,null,130.81,null,164.81,null, 87.31,null,98,null,110,null,130.81,null, 98,null,110,null,123.47,null,146.83,null];
-      const CHORDS = [[130.81,164.81,196,246.94],[110,130.81,164.81,196],[87.31,110,130.81,164.81],[98,123.47,146.83,164.81]];
+      const MELODY = [523.25,null,587.33,null,659.26,null,783.99,659.26, 587.33,523.25,null,587.33,659.26,587.33,523.25,440, 440,null,523.25,null,659.26,587.33,523.25,440, 523.25,null,587.33,null,659.26,523.25,440,392, 349.23,null,440,523.25,null,698.46,null,659.26, 587.33,523.25,null,587.33,659.26,587.33,523.25,440, 392,493.88,587.33,null,783.99,659.26,587.33,493.88, 523.25,659.26,783.99,880,987.77,880,783.99,659.26];
+      const BASS = [130.81,null,164.81,null,196,null,261.63,null, 196,null,164.81,null,146.83,null,123.47,null, 110,null,130.81,null,164.81,null,220,null, 196,null,164.81,null,146.83,null,130.81,null, 87.31,null,110,null,130.81,null,174.61,null, 130.81,null,146.83,null,174.61,null,196,null, 98,null,123.47,null,146.83,null,196,null, 130.81,null,146.83,null,164.81,null,196,null];
+      const CHORDS = [[261.63,329.63,392,493.88],[261.63,329.63,392,493.88],[220,261.63,329.63,392],[220,261.63,329.63,392],[220,261.63,329.63,349.23],[220,261.63,329.63,349.23],[246.94,293.66,349.23,392],[261.63,329.63,392,493.88]];
       let step = 0;
       const fzLiftNote = (freq, vol, dur, type) => {
         try {
@@ -9094,15 +9093,45 @@ function playElevatorMoving(progress) {
           osc.start(ctx.currentTime); osc.stop(ctx.currentTime + dur + 0.05);
         } catch(e) {}
       };
+      const fzLiftNoise = () => {
+        const ctx = getAudioCtx();
+        const dur = 0.06;
+        const buffer = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+        const d = buffer.getChannelData(0);
+        for (let j = 0; j < d.length; j++) d[j] = Math.random() * 2 - 1;
+        const src = ctx.createBufferSource(); src.buffer = buffer;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.16, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+        src.connect(g); g.connect(ctx.destination); src.start(ctx.currentTime);
+      };
+      const fzLiftKick = () => {
+        try {
+          const ctx = getAudioCtx();
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.connect(g); g.connect(ctx.destination);
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(160, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.12);
+          g.gain.setValueAtTime(0.34, ctx.currentTime);
+          g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+          osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.2);
+        } catch(e) {}
+      };
       const fzLiftTick = () => {
-        const i = step % 32;
+        const i = step % 64;
+        const bar = (i / 8) | 0, s8 = i % 8;
         const mf = MELODY[i];
-        if (mf) fzLiftNote(mf, 0.07, 0.22, 'triangle');  // главный рифф
+        if (mf) { fzLiftNote(mf, 0.075, 0.24, 'triangle'); fzLiftNote(mf / 2, 0.02, 0.24, 'sine'); }
         const bf = BASS[i];
-        if (bf) fzLiftNote(bf, 0.055, 0.48, 'sine');     // ходячий бас
-        if (i % 8 === 0) {                               // аккорд на каждый такт
-          CHORDS[(i/8)|0].forEach(f => fzLiftNote(f, 0.014, 1.9, 'sine'));
-        }
+        if (bf) fzLiftNote(bf, 0.062, 0.46, 'sine');
+        if (s8 % 2 === 1) CHORDS[bar].slice(1).forEach(f => fzLiftNote(f, 0.014, 0.17, 'triangle'));
+        const lastBar = bar === 7;
+        if (s8 === 0 || s8 === 4 || (bar === 3 && s8 === 3) || (lastBar && s8 === 3)) fzLiftKick(); // бочка
+        if (s8 === 2 || s8 === 6) fzLiftNoise(); // снейр
+        if (lastBar && s8 === 7) fzLiftNoise();  // крэш
+        if (!(lastBar && s8 === 7)) { fzLiftNote(9200, s8 % 2 ? 0.012 : 0.008, 0.03, 'square'); } // хэт
         step++;
       };
       fzLiftTick();
