@@ -9522,6 +9522,7 @@ function startShow() {
   T.phase = 'play';
   if (URLP.music === '1') { try { startCineFile('teaser-cinematic.mp3'); } catch (e) {} }
   else if (URLP.music === '3') { try { startCineFile('teaser-cinematic2.mp3'); } catch (e) {} }
+  else if (URLP.music === '4') { try { startCineFile('teaser-gloomy.mp3'); } catch (e) {} }
   else { try { startApproachScore(); } catch (e) {} }
   startEl.style.display = 'none';
 }
