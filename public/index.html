@@ -9073,11 +9073,14 @@ function playElevatorBeep() {
 let elevatorMusicInterval = null;
 function playElevatorMoving(progress) {
   if (progress < 0.02) {
-    // 🎵 ИМБА-песня лифта v3: фанк-ритм + бас + мелодия + барабаны
+    // 👼 АНГЕЛЬСКАЯ ИМБА-песня лифта v4: фанк-ритм + бас + мелодия + ХОР «АААА»
     if (!elevatorMusicInterval) {
-      const MELODY = [523.25,null,587.33,null,659.26,null,783.99,659.26, 587.33,523.25,null,587.33,659.26,587.33,523.25,440, 440,null,523.25,null,659.26,587.33,523.25,440, 523.25,null,587.33,null,659.26,523.25,440,392, 349.23,null,440,523.25,null,698.46,null,659.26, 587.33,523.25,null,587.33,659.26,587.33,523.25,440, 392,493.88,587.33,null,783.99,659.26,587.33,493.88, 523.25,659.26,783.99,880,987.77,880,783.99,659.26];
+      const MELODY = [523.25,null,587.33,null,659.26,null,783.99,659.26, 587.33,523.25,null,587.33,659.26,587.33,523.25,440, 440,null,523.25,null,659.26,587.33,523.25,440, 523.25,null,587.33,null,659.26,523.25,440,392, 349.23,null,440,523.25,null,698.46,null,659.26, 587.33,523.25,null,587.33,659.26,587.33,523.25,440, 392,493.88,587.33,698.46,880,698.46,587.33,493.88, null,null,null,null,null,null,null,null];
+      const BELLS7 = [1046.5,null,null,null,987.77,null,1046.5,null];
       const BASS = [130.81,null,164.81,null,196,null,261.63,null, 196,null,164.81,null,146.83,null,123.47,null, 110,null,130.81,null,164.81,null,220,null, 196,null,164.81,null,146.83,null,130.81,null, 87.31,null,110,null,130.81,null,174.61,null, 130.81,null,146.83,null,174.61,null,196,null, 98,null,123.47,null,146.83,null,196,null, 130.81,null,146.83,null,164.81,null,196,null];
-      const CHORDS = [[261.63,329.63,392,493.88],[261.63,329.63,392,493.88],[220,261.63,329.63,392],[220,261.63,329.63,392],[220,261.63,329.63,349.23],[220,261.63,329.63,349.23],[246.94,293.66,349.23,392],[261.63,329.63,392,493.88]];
+      const CHORDS = [[261.63,329.63,392,493.88],[261.63,329.63,392,493.88],[220,261.63,329.63,392],[220,261.63,329.63,392],[220,261.63,329.63,349.23],[220,261.63,329.63,349.23],[196,246.94,293.66,349.23],[261.63,329.63,392,493.88]];
+      const CHOIR = [[261.63,329.63,392,493.88],[220,261.63,329.63,392],[220,261.63,329.63,349.23],[196,246.94,293.66,349.23]];
+      const CLIMAX = [523.25,659.26,783.99,1046.5];
       let step = 0;
       const fzLiftNote = (freq, vol, dur, type) => {
         try {
@@ -9119,19 +9122,57 @@ function playElevatorMoving(progress) {
           osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.2);
         } catch(e) {}
       };
+      // 👼 хоровое «АААА»: 2 расстроенных голоса (±7 центов) + вибрато 5.2 Гц
+      const fzLiftChoir = (freqs, vol, dur) => {
+        try {
+          const ctx = getAudioCtx();
+          const t0 = ctx.currentTime;
+          freqs.forEach(f => {
+            [-7, 7].forEach(dt => {
+              const osc = ctx.createOscillator();
+              const g = ctx.createGain();
+              osc.type = 'triangle';
+              osc.frequency.value = f;
+              osc.detune.value = dt;
+              const lfo = ctx.createOscillator();
+              const lg = ctx.createGain();
+              lfo.type = 'sine'; lfo.frequency.value = 5.2;
+              lg.gain.value = 3.4;
+              lfo.connect(lg); lg.connect(osc.frequency);
+              osc.connect(g); g.connect(ctx.destination);
+              g.gain.setValueAtTime(0.0001, t0);
+              g.gain.linearRampToValueAtTime(vol, t0 + 0.5);
+              g.gain.setValueAtTime(vol, t0 + Math.max(0.5, dur - 0.6));
+              g.gain.exponentialRampToValueAtTime(0.001, t0 + dur + 0.15);
+              osc.start(t0); lfo.start(t0);
+              osc.stop(t0 + dur + 0.3); lfo.stop(t0 + dur + 0.3);
+            });
+          });
+        } catch(e) {}
+      };
       const fzLiftTick = () => {
         const i = step % 64;
         const bar = (i / 8) | 0, s8 = i % 8;
         const mf = MELODY[i];
         if (mf) { fzLiftNote(mf, 0.075, 0.24, 'triangle'); fzLiftNote(mf / 2, 0.02, 0.24, 'sine'); }
+        if (bar === 7 && BELLS7[s8]) fzLiftNote(BELLS7[s8], 0.05, 0.35, 'sine'); // небесный колокольчик
         const bf = BASS[i];
         if (bf) fzLiftNote(bf, 0.062, 0.46, 'sine');
-        if (s8 % 2 === 1) CHORDS[bar].slice(1).forEach(f => fzLiftNote(f, 0.014, 0.17, 'triangle'));
+        if (s8 % 2 === 1) CHORDS[bar].slice(1).forEach(f => fzLiftNote(f, 0.014, 0.17, 'triangle')); // стаббы
         const lastBar = bar === 7;
-        if (s8 === 0 || s8 === 4 || (bar === 3 && s8 === 3) || (lastBar && s8 === 3)) fzLiftKick(); // бочка
+        if (s8 === 0 || s8 === 4 || (bar === 3 && s8 === 3)) fzLiftKick(); // бочка
         if (s8 === 2 || s8 === 6) fzLiftNoise(); // снейр
+        if (bar === 3 && s8 === 7) fzLiftNoise(); // раскачка
         if (lastBar && s8 === 7) fzLiftNoise();  // крэш
         if (!(lastBar && s8 === 7)) { fzLiftNote(9200, s8 % 2 ? 0.012 : 0.008, 0.03, 'square'); } // хэт
+        // 👼 хор поёт аккорд каждые 2 такта (4 секунды) + верхние сопрано на октаву выше
+        if (bar % 2 === 0 && s8 === 0) {
+          const ch = CHOIR[(bar / 2) | 0];
+          fzLiftChoir(ch, 0.025, 3.8);
+          fzLiftChoir([ch[2] * 2, ch[3] * 2], 0.007, 3.8);
+        }
+        // 👼👼👼 ФИНАЛ: большой аккорд C5–C6 — «ААААА!»
+        if (lastBar && s8 === 0) fzLiftChoir(CLIMAX, 0.04, 2.2);
         step++;
       };
       fzLiftTick();
