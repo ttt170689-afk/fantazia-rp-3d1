@@ -9361,15 +9361,16 @@ function startApproachScore() {
   } catch (e) {}
 }
 // 🎬 кино-саундтрек файлом (teaser.html?music=1)
-function startCineFile() {
+function startCineFile(fname) {
   try {
     if (!AU) return;
     window._fzCineFile = 1;
     window._fzOst = 1;
+    const f = fname || 'teaser-cinematic.mp3';
     const a = new Audio();
-    a.src = 'teaser-cinematic.mp3';
+    a.src = f;
     a.onerror = function () {
-      try { if (a.src.indexOf('/public/') < 0) { a.src = 'public/teaser-cinematic.mp3'; a.play().catch(() => {}); } } catch (e) {}
+      try { if (f.indexOf('/public/') < 0) { a.src = 'public/' + f; a.play().catch(() => {}); } } catch (e) {}
     };
     a.play().catch(() => {});
     window._fzCine = a;
@@ -9519,7 +9520,8 @@ function startShow() {
   pickVoices();
   resetShow();
   T.phase = 'play';
-  if (URLP.music === '1') { try { startCineFile(); } catch (e) {} }
+  if (URLP.music === '1') { try { startCineFile('teaser-cinematic.mp3'); } catch (e) {} }
+  else if (URLP.music === '3') { try { startCineFile('teaser-cinematic2.mp3'); } catch (e) {} }
   else { try { startApproachScore(); } catch (e) {} }
   startEl.style.display = 'none';
 }
