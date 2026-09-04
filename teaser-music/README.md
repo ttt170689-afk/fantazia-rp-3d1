@@ -75,3 +75,7 @@
 - `boss-cackle-imba.mp3/.wav` — жуткое хихиканье босса (5 хохотков, нисходящие визги + хрип)
 - `boss-scene-imba.mp3/.wav` — вся сцена: сердце → тишина → хихиканье → глаза (9.5с)
 - генератор: `make_imba_sfx.py`
+
+## 🏆 ФИНАЛЬНАЯ ВЕРСИЯ — `trailer-final.mp3/.wav` (36.6с)
+Единый саундтрек, изучен весь таймлайн teaser.html. Включить: `teaser.html?music=6`
+(или `?music=final`). Файлы продублированы в корень и public/ как teaser-final.mp3/.wav.
