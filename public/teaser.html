@@ -355,6 +355,87 @@ function noiseBurst(dur, f0, f1, q, gain, when, type) {
   AUDIO2.send(g, 0.3);
   src.start(t0); src.stop(t0 + dur + 0.05);
 }
+// ── v10 ИМБА-звук: модальный металл, саб-просадки, FM-колокол, мотор лифта ──
+function metalHit(partials, dur, gain, when, bright) {
+  if (!AU) return;
+  const t0 = AU.currentTime + (when || 0);
+  partials.forEach(([f, a, d], i) => {
+    const o = AU.createOscillator(), g = AU.createGain();
+    o.type = (i % 3 === 2) ? 'triangle' : 'sine';
+    o.frequency.value = f * (1 + (Math.random() - 0.5) * 0.004);
+    const dd = dur * (d || 1);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, gain * a), t0 + 0.004 + i * 0.002);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dd);
+    o.connect(g); g.connect(MG); AUDIO2.send(g, 0.5);
+    o.start(t0); o.stop(t0 + dd + 0.05);
+  });
+  noiseBurst(0.05, bright ? 6500 : 4200, 1800, 1.2, gain * 0.5, when || 0, 'highpass');
+}
+function subDrop(f0, f1, dur, gain, when) {
+  if (!AU) return;
+  tone(f0, f1, dur, 'sine', gain, when || 0);
+  noiseBurst(Math.min(0.3, dur * 0.3), 3000, 300, 1, gain * 0.35, when || 0, 'lowpass');
+}
+function fmBell(f, dur, gain, when) {
+  if (!AU) return;
+  const t0 = AU.currentTime + (when || 0);
+  const car = AU.createOscillator(), mod = AU.createOscillator();
+  const mg = AU.createGain(), g = AU.createGain();
+  car.type = 'sine'; car.frequency.value = f;
+  mod.type = 'sine'; mod.frequency.value = f * 3.01;
+  mg.gain.setValueAtTime(f * 2.2, t0);
+  mg.gain.exponentialRampToValueAtTime(Math.max(1, f * 0.02), t0 + dur * 0.7);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(gain, t0 + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  mod.connect(mg); mg.connect(car.frequency);
+  car.connect(g); g.connect(MG); AUDIO2.send(g, 0.65);
+  car.start(t0); car.stop(t0 + dur + 0.05);
+  mod.start(t0); mod.stop(t0 + dur + 0.05);
+}
+const motorN = { on: false, nodes: [], gain: null };
+function motorStart() {
+  if (!AU || motorN.on) return;
+  motorN.on = true;
+  try {
+    const t0 = AU.currentTime;
+    const g = AU.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.55, t0 + 1.4);
+    g.connect(MG); AUDIO2.send(g, 0.2);
+    const sub = AU.createOscillator(); sub.type = 'sine'; sub.frequency.value = 36;
+    const subG = AU.createGain(); subG.gain.value = 0.5;
+    const s1 = AU.createOscillator(); s1.type = 'sawtooth'; s1.frequency.value = 72;
+    const s2 = AU.createOscillator(); s2.type = 'sawtooth'; s2.frequency.value = 72.8;
+    const lp = AU.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 170; lp.Q.value = 2.5;
+    const lfo = AU.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 6.3;
+    const lg = AU.createGain(); lg.gain.value = 55;
+    lfo.connect(lg); lg.connect(lp.frequency);
+    const sg = AU.createGain(); sg.gain.value = 0.10;
+    const nz = AU.createBufferSource(); nz.buffer = getNoise(); nz.loop = true;
+    const bp = AU.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 250; bp.Q.value = 0.7;
+    const ng = AU.createGain(); ng.gain.value = 0.16;
+    sub.connect(subG); subG.connect(g);
+    s1.connect(lp); s2.connect(lp); lp.connect(sg); sg.connect(g);
+    nz.connect(bp); bp.connect(ng); ng.connect(g);
+    [sub, s1, s2, lfo, nz].forEach(n => n.start(t0));
+    motorN.nodes = [sub, s1, s2, lfo, nz]; motorN.gain = g;
+  } catch (e) { motorN.on = false; }
+}
+function motorStop(fast) {
+  if (!AU || !motorN.on) return;
+  motorN.on = false;
+  try {
+    const t0 = AU.currentTime, g = motorN.gain, ns = motorN.nodes;
+    const dur = fast ? 0.2 : 0.7;
+    g.gain.cancelScheduledValues(t0);
+    g.gain.setValueAtTime(Math.max(0.0002, g.gain.value), t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    ns.forEach(n => { try { if (n.frequency && n.type !== 'sine') n.frequency.exponentialRampToValueAtTime(Math.max(20, n.frequency.value * 0.6), t0 + dur); } catch (e2) {} });
+    setTimeout(() => { ns.forEach(n => { try { n.stop(); } catch (e2) {} }); try { g.disconnect(); } catch (e2) {} }, dur * 1000 + 120);
+  } catch (e) {}
+}
 function makeDist(amount) {
   const n = 1024, c = new Float32Array(n);
   for (let i = 0; i < n; i++) {
@@ -10016,7 +10097,7 @@ setTimeout(() => {
       b.cap.position.x = b.baseX + 0.014;
       setTimeout(() => { try { b.cap.position.x = b.baseX; } catch (e) {} }, 180);
       api.liftBtnSet(idx, true);
-      if (AU) { tone(2100, 1600, 0.07, 'square', 0.05, 0); tone(880, 880, 0.12, 'sine', 0.04, 0.05); }
+      if (AU) { noiseBurst(0.03, 4500, 2000, 2, 0.06, 0, 'highpass'); tone(880, 660, 0.14, 'triangle', 0.05, 0.03); metalHit([[2400, 0.25, 0.25]], 0.1, 0.03, 0, 1); }
     } catch (e) {}
   };
   // табло над дверью внутри кабины
@@ -11237,31 +11318,34 @@ setTimeout(() => {
 
   // ─────────────────────────── СФЕРА: ЗВУК ─────────────────────────────
   const SFX = {
-    drip() { if (!AU) return; tone(1700 + Math.random() * 500, 700, 0.09, 'sine', 0.02, 0); },
-    step() { if (!AU) return; tone(80, 40, 0.16, 'sine', 0.07, 0); noiseBurst(0.08, 900, 300, 2, 0.02, 0); },
-    doorOpen() { if (!AU) return; noiseBurst(1.3, 2800, 260, 0.6, 0.05, 0, 'bandpass'); tone(120, 46, 1.1, 'sawtooth', 0.028, 0); },
-    doorClose() { if (!AU) return; noiseBurst(0.5, 2000, 500, 1.2, 0.05, 0, 'bandpass'); tone(300, 70, 0.35, 'square', 0.09, 0.15); },
-    clank() { if (!AU) return; tone(420, 90, 0.3, 'square', 0.1, 0); noiseBurst(0.25, 2600, 700, 1.6, 0.08, 0); },
-    jolt() { if (!AU) return; tone(95, 26, 0.6, 'sine', 0.3, 0); noiseBurst(0.5, 600, 100, 0.8, 0.1, 0, 'lowpass'); noiseBurst(0.3, 3200, 500, 1.4, 0.05, 0.05, 'bandpass'); },
-    squeak() { if (!AU) return; tone(700 + Math.random() * 300, 300, 0.5, 'sawtooth', 0.012, 0); },
+    drip() { if (!AU) return; const f = 1700 + Math.random() * 500; tone(f, f * 0.42, 0.09, 'sine', 0.02, 0); tone(f * 1.5, f * 0.6, 0.07, 'sine', 0.008, 0.09); },
+    step() { if (!AU) return; subDrop(90, 45, 0.14, 0.09, 0); noiseBurst(0.07, 800, 250, 2, 0.03, 0); },
+    doorOpen() { if (!AU) return; noiseBurst(1.1, 2400, 300, 0.7, 0.06, 0, 'bandpass'); tone(150, 60, 0.9, 'triangle', 0.035, 0); metalHit([[210, 0.5, 1], [347, 0.3, 0.8], [522, 0.2, 0.6]], 0.5, 0.05, 0.95, 0); },
+    doorClose() { if (!AU) return; noiseBurst(0.4, 1800, 400, 1, 0.06, 0, 'bandpass'); tone(220, 70, 0.3, 'triangle', 0.05, 0); subDrop(120, 32, 0.5, 0.22, 0.28); metalHit([[140, 0.6, 1], [233, 0.35, 0.7], [391, 0.2, 0.5]], 0.6, 0.09, 0.28, 0); },
+    clank() { if (!AU) return; metalHit([[420, 0.5, 1], [673, 0.35, 0.8], [1089, 0.25, 0.6], [1720, 0.12, 0.4]], 0.45, 0.12, 0, 1); subDrop(150, 50, 0.25, 0.1, 0); },
+    jolt() { if (!AU) return; subDrop(95, 24, 0.7, 0.35, 0); noiseBurst(0.5, 600, 100, 0.8, 0.12, 0, 'lowpass'); metalHit([[98, 0.5, 1], [164, 0.3, 0.7]], 0.7, 0.08, 0.02, 0); },
+    squeak() { if (!AU) return; tone(900 + Math.random() * 400, 500, 0.18, 'triangle', 0.012, 0); noiseBurst(0.12, 3200, 1800, 6, 0.008, 0.02, 'bandpass'); },
     motorTick() { if (!AU) return; tone(46 + Math.random() * 6, 42, 0.45, 'sawtooth', 0.016, 0); },
     whir() { if (!AU) return; noiseBurst(0.9, 900, 1400, 1.6, 0.016, 0, 'bandpass'); },
-    ding() { if (!AU) return; tone(1318, 1318, 0.5, 'sine', 0.04, 0); tone(1760, 1760, 0.55, 'sine', 0.03, 0.1); },
-    arrive() { if (!AU) return; tone(150, 30, 1.6, 'sine', 0.35, 0); tone(65, 30, 1.4, 'sine', 0.2, 0.1); },
-    thunk() { if (!AU) return; tone(60, 24, 0.9, 'sine', 0.4, 0); },
-    doorBig() { if (!AU) return; noiseBurst(1.7, 500, 90, 0.5, 0.05, 0, 'lowpass'); tone(70, 26, 1.6, 'sawtooth', 0.04, 0); },
-    wind() { if (!AU) return; noiseBurst(2.2, 400, 140, 0.5, 0.02, 0, 'lowpass'); },
-    buzz() { if (!AU) return; tone(130, 96, 0.2, 'square', 0.008, 0); }
+    ding() { if (!AU) return; fmBell(1318.5, 1.2, 0.1, 0); fmBell(2637, 0.8, 0.03, 0.02); },
+    arrive() { if (!AU) return; subDrop(140, 28, 1.4, 0.3, 0); metalHit([[70, 0.6, 1], [117, 0.4, 0.8], [196, 0.25, 0.6]], 1.2, 0.1, 0.05, 0); tone(1400, 900, 0.4, 'triangle', 0.015, 0.1); },
+    thunk() { if (!AU) return; subDrop(65, 24, 0.9, 0.4, 0); noiseBurst(0.3, 400, 80, 1, 0.1, 0, 'lowpass'); },
+    doorBig() { if (!AU) return; subDrop(70, 26, 1.6, 0.3, 0); metalHit([[55, 0.7, 1], [82, 0.5, 0.9], [123, 0.35, 0.7], [233, 0.2, 0.5]], 1.8, 0.12, 0.1, 0); noiseBurst(1.5, 500, 120, 0.6, 0.07, 0, 'lowpass'); noiseBurst(1.2, 900, 300, 3, 0.04, 0.15, 'bandpass'); },
+    wind() { if (!AU) return; noiseBurst(2.2, 400, 140, 0.5, 0.025, 0, 'lowpass'); tone(55, 48, 2.2, 'sine', 0.015, 0); },
+    buzz() { if (!AU) return; tone(120, 110, 0.2, 'triangle', 0.008, 0); tone(240, 235, 0.15, 'sine', 0.005, 0); },
+    riser() { if (!AU) return; noiseBurst(1.6, 280, 5200, 1.1, 0.07, 0); tone(55, 220, 1.6, 'triangle', 0.05, 0); },
+    flashHit() { if (!AU) return; subDrop(120, 24, 1.0, 0.4, 0); noiseBurst(0.5, 5000, 1000, 1, 0.15, 0, 'highpass'); metalHit([[1500, 0.3, 0.5], [2300, 0.2, 0.4], [3400, 0.15, 0.3]], 0.7, 0.06, 0, 1); },
+    bedD() { if (!AU) return; tone(46, 45, 24, 'sine', 0.025, 0); tone(92, 91, 24, 'triangle', 0.008, 0); noiseBurst(24, 110, 70, 0.5, 0.035, 0, 'lowpass'); }
   };
   api.sfx = SFX;
 
 
   // ──────────────────────────── ТАЙМЛАЙН ───────────────────────────────
-  // P: 0 старт · 8.2 двери лифта · 11.4 вход · 13.4 двери закрыты ·
-  // 14.6 СПУСК · 21.4 стоп · 22.6 двери открыты · 24.6 нижний коридор ·
-  // 29.2 дверь SECRET · 30.2 вспышка · 31 fade · 32.2 → зал босса
+  // P: 0 старт · 5.8 двери лифта · 8.0 вход · 9.7 двери закрыты ·
+  // 11.4 СПУСК · 15.3 стоп · 16.1 двери открыты · 17.9 нижний коридор ·
+  // 21.1 дверь SECRET · 21.8 вспышка · 22.1 fade · 22.7 → зал босса
   let P = { t: 0, begun: false, done: false, speed: 1, startFadeIn: false, cutStage: 0 };
-  const T1 = 8.2, T2 = 11.4, T3 = 13.6, T4 = 21.2, T5 = 22.8, T6 = 24.8, T7 = 29.0, T8 = 30.4;
+  const T1 = 5.8, T2 = 8.0, T3 = 9.7, T4 = 15.3, T5 = 16.6, T6 = 17.9, T7 = 21.1, T8 = 22.3;
 
   // управление дверьми
   function doorsAnim(x) { // x: 0=закрыто (x=±0.9), 1=открыто (x=±2.05)
@@ -11286,7 +11370,8 @@ setTimeout(() => {
     try { api.arrGlow.material.opacity = 0; api.arrL.intensity = 0; } catch (e) {}
     try { shaftG.position.y = 0; } catch (e) {}
     try { G.shaft.visible = false; api.shHouse.visible = false; } catch (e) {}
-    P._btn = 0; P._upoff = 0; P._desc = 0;
+    try { motorStop(true); } catch (e) {}
+    P._btn = 0; P._upoff = 0; P._desc = 0; P._j1 = 0; P._j2 = 0; P._arr = 0; P._dopen = 0; P._doorCrack = 0; P._flash = 0; P._endGo = 0; P._big = 0;
   }
 
   // запуск
@@ -11304,7 +11389,7 @@ setTimeout(() => {
   // ============================================================================
   // РЕЖИССЁР v6: улица → GRAND MALL → лестница → подвал B1 → лифт → B5 → босс
   // ============================================================================
-  const TW_ = { EXT: 9.6, MALL: 21.4, D0: 26.6 };
+  const TW_ = { EXT: 6.9, MALL: 16.8, D0: 21.2 };
   const CX = {
     m: 0, s: 0, d: 0,
     f1: 0, f2: 0, f3: 0, f4: 0, f5: 0, f6: 0, f7: 0, f8: 0,
@@ -11314,20 +11399,20 @@ setTimeout(() => {
 
   // ── новые звуки (в дополнение к SFX) ──
   const SFX2 = {
-    rain() { if (!AU) return; noiseBurst(0.55, 2600, 500, 2.2, 0.011, 0, 'bandpass'); },
-    thunder() { if (!AU) return; noiseBurst(2.6, 130, 42, 0.7, 0.09, 0, 'lowpass'); tone(46, 30, 2.6, 'sine', 0.07, 0); },
-    doorSlide() { if (!AU) return; noiseBurst(0.9, 2200, 300, 0.8, 0.04, 0, 'bandpass'); tone(180, 70, 0.7, 'triangle', 0.02, 0); },
-    humMall() { if (!AU) return; tone(70, 69.6, 2.6, 'sine', 0.008, 0); noiseBurst(0.8, 300, 90, 0.6, 0.008, 0, 'lowpass'); },
-    stepDown() { if (!AU) return; tone(110, 48, 0.12, 'sine', 0.06, 0); noiseBurst(0.05, 700, 250, 2, 0.02, 0); },
-    creak() { if (!AU) return; tone(420, 190, 0.6, 'sawtooth', 0.012, 0); },
-    hiss() { if (!AU) return; noiseBurst(1.6, 3000, 500, 0.7, 0.03, 0, 'bandpass'); },
-    doorBurst() { if (!AU) return; noiseBurst(0.5, 3500, 200, 0.7, 0.14, 0, 'bandpass'); tone(140, 40, 0.7, 'sawtooth', 0.06, 0); tone(1200, 300, 0.2, 'square', 0.03, 0); },
-    glitchHit() { if (!AU) return; noiseBurst(0.18, 6000, 800, 2.5, 0.1, 0, 'highpass'); tone(2000, 150, 0.22, 'square', 0.035, 0); },
-    doorBoom() { if (!AU) return; tone(70, 26, 1.1, 'sine', 0.3, 0); noiseBurst(0.4, 500, 80, 0.8, 0.08, 0, 'lowpass'); },
-    svcBoom() { if (!AU) return; tone(60, 24, 1.2, 'sine', 0.32, 0); noiseBurst(0.5, 2500, 150, 0.8, 0.12, 0, 'bandpass'); noiseBurst(0.9, 300, 60, 0.7, 0.09, 0.05, 'lowpass'); },
-    freightDing() { if (!AU) return; tone(880, 880, 0.4, 'sine', 0.05, 0); tone(1174, 1174, 0.5, 'sine', 0.04, 0.12); },
-    sparkSfx() { if (!AU) return; noiseBurst(0.07, 5200, 900, 7, 0.045, 0); },
-    boomD() { if (!AU) return; tone(52, 24, 1.9, 'sine', 0.3, 0); noiseBurst(1.2, 240, 50, 0.7, 0.07, 0, 'lowpass'); }
+    rain() { if (!AU) return; noiseBurst(0.5, 2800, 600, 2, 0.012, 0, 'bandpass'); noiseBurst(0.4, 7000, 4000, 1.5, 0.004, 0.05, 'highpass'); },
+    thunder() { if (!AU) return; subDrop(55, 24, 3.0, 0.3, 0); noiseBurst(2.8, 150, 40, 0.6, 0.14, 0, 'lowpass'); noiseBurst(1.8, 120, 50, 0.7, 0.08, 0.5, 'lowpass'); },
+    doorSlide() { if (!AU) return; noiseBurst(0.8, 2000, 350, 0.8, 0.05, 0, 'bandpass'); tone(160, 70, 0.7, 'triangle', 0.03, 0); metalHit([[300, 0.4, 0.6], [510, 0.25, 0.5]], 0.4, 0.04, 0.65, 0); },
+    humMall() { if (!AU) return; tone(70, 69.5, 2.6, 'sine', 0.01, 0); tone(140, 139, 2.6, 'triangle', 0.005, 0); noiseBurst(0.8, 300, 90, 0.6, 0.008, 0, 'lowpass'); },
+    stepDown() { if (!AU) return; subDrop(110, 50, 0.13, 0.08, 0); noiseBurst(0.06, 700, 250, 2, 0.025, 0); },
+    creak() { if (!AU) return; for (let i = 0; i < 3; i++) noiseBurst(0.09, 1400 + i * 300, 900, 8, 0.02, i * 0.14); tone(420, 190, 0.5, 'triangle', 0.014, 0); },
+    hiss() { if (!AU) return; noiseBurst(1.6, 3200, 600, 0.7, 0.035, 0, 'bandpass'); noiseBurst(1.2, 6000, 2000, 1, 0.015, 0.1, 'highpass'); },
+    doorBurst() { if (!AU) return; subDrop(130, 30, 0.8, 0.3, 0); noiseBurst(0.5, 3500, 200, 0.7, 0.16, 0, 'bandpass'); metalHit([[180, 0.5, 0.8], [320, 0.35, 0.6], [540, 0.25, 0.5], [1240, 0.15, 0.35]], 0.6, 0.1, 0.02, 1); metalHit([[2500, 0.2, 0.3], [3600, 0.15, 0.25]], 0.4, 0.04, 0.05, 1); },
+    glitchHit() { if (!AU) return; noiseBurst(0.16, 6500, 900, 2.5, 0.12, 0, 'highpass'); fmBell(2093, 0.3, 0.05, 0); tone(180, 60, 0.2, 'triangle', 0.06, 0); },
+    doorBoom() { if (!AU) return; subDrop(70, 26, 1.2, 0.35, 0); metalHit([[90, 0.6, 1], [150, 0.4, 0.8], [248, 0.25, 0.6]], 1.0, 0.1, 0.02, 0); noiseBurst(0.4, 500, 80, 0.8, 0.09, 0, 'lowpass'); },
+    svcBoom() { if (!AU) return; subDrop(60, 24, 1.3, 0.38, 0); metalHit([[65, 0.7, 1], [108, 0.5, 0.9], [180, 0.3, 0.7], [320, 0.18, 0.5]], 1.2, 0.12, 0.02, 0); noiseBurst(0.5, 2500, 150, 0.8, 0.13, 0, 'bandpass'); noiseBurst(0.9, 300, 60, 0.7, 0.1, 0.05, 'lowpass'); },
+    freightDing() { if (!AU) return; fmBell(880, 0.8, 0.07, 0); fmBell(1174.7, 0.9, 0.06, 0.14); },
+    sparkSfx() { if (!AU) return; noiseBurst(0.07, 5200, 900, 7, 0.05, 0); metalHit([[3200, 0.3, 0.2]], 0.12, 0.03, 0, 1); },
+    boomD() { if (!AU) return; subDrop(52, 24, 2.0, 0.35, 0); noiseBurst(1.2, 240, 50, 0.7, 0.08, 0, 'lowpass'); metalHit([[48, 0.6, 1], [80, 0.4, 0.8]], 1.6, 0.08, 0.05, 0); }
   };
 
   function hideProScenes() {
@@ -11392,23 +11477,23 @@ setTimeout(() => {
     cam.fov = 60; cam.updateProjectionMatrix();
     setTimeout(() => { try { SFX2.boomD(); } catch (e) {} }, 250);
     setTimeout(() => { try { caption('ПОДВАЛ B1 · СЛУЖЕБНЫЙ КОРИДОР', 2.8, 13); } catch (e) {} }, 1000);
-    if (AU) { tone(40, 39.4, 8, 'sine', 0.022, 0); }
+    try { SFX.bedD(); } catch (e) {}
   }
 
   // ── АКТ 1: улица ──
   function updEXT(t, dt) {
     if (CX.m) return;
     const lt = t - CX.t0e;
-    const k = easeInOut(Math.max(0, Math.min(1, (lt - 0.5) / 6.5)));
+    const k = easeInOut(Math.max(0, Math.min(1, (lt - 0.4) / 4.9)));
     const z = 46 - 43.6 * k;
     cam.position.set(Math.sin(lt * 0.6) * 0.2, 1.75 + Math.sin(lt * 0.42) * 0.02, z);
     cam.lookAt(Math.sin(lt * 0.5) * 0.3, 1.85, -4);
     // ── ИМБА-ВХОД: двери РАСПАХИВАЮТСЯ резким рывком + ПОМЕХИ ──
     let dk = 0;
-    if (lt > 4.5) {
-      const raw = Math.min(1, (lt - 4.5) / 1.1);
+    if (lt > 3.2) {
+      const raw = Math.min(1, (lt - 3.2) / 0.9);
       dk = raw < 1 ? (1 - Math.pow(1 - raw, 3)) * 1.06 : 1;
-      if (raw >= 1) dk = 1 + Math.sin((lt - 5.6) * 9) * 0.02 * Math.max(0, 1 - (lt - 5.6));
+      if (raw >= 1) dk = 1 + Math.sin((lt - 4.1) * 9) * 0.02 * Math.max(0, 1 - (lt - 4.1));
     }
     extDoorsAnim(dk);
     if (dk > 0.04 && !CX.f1) {
@@ -11430,7 +11515,7 @@ setTimeout(() => {
       try { caption('1 ЭТАЖ · МОДА · ФУДКОРТ', 2.2, 12); } catch (e) {}
     }
     // фликер неона и зала во время распахивания (помехи в свете)
-    if (lt > 4.4 && lt < 6.8) {
+    if (lt > 3.1 && lt < 5.1) {
       const fl = Math.random();
       if (GX.sgn) GX.sgn.visible = fl > 0.12;
       if (GX.sgnEnter) GX.sgnEnter.visible = fl > 0.2;
@@ -11460,8 +11545,8 @@ setTimeout(() => {
       GX.rainPts.geometry.attributes.position.needsUpdate = true;
     }
     // фейд → атриум
-    if (lt > 7.5) OV.fadeT = 1;
-    if (OV.fade > 0.96 && lt > 7.6 && !CX.m) enterMALL();
+    if (lt > 5.7) OV.fadeT = 1;
+    if (OV.fade > 0.96 && lt > 5.8 && !CX.m) enterMALL();
   }
 
   // ── АКТ 2: СВЕТЛЫЙ GRAND MALL — вход → мимо карусели и фонтана → служебный вход B1 ──
@@ -11471,7 +11556,7 @@ setTimeout(() => {
   let mallPitch = Math.atan2(1.75 - 1.63, Math.hypot(0.5, 14 - 1.7));
   function updMALL(t, dt) {
     if (CX.s) return;
-    const lt = t - CX.t0m - 0.5;
+    const lt = (t - CX.t0m - 0.5) * 1.25; // v10: молл ×1.25 — короче, в тон тизеру
     if (lt < 0) return;
     // карусель медленно вращается
     if (GM.caru) GM.caru.rotation.y += dt * 0.22;
@@ -11645,7 +11730,7 @@ setTimeout(() => {
     const lt = t - CX.t0s - 0.5;
     if (lt < 0) return;
     const total = 13.4;
-    const prog = easeInOut(Math.max(0, Math.min(1, lt / 4.6)));
+    const prog = easeInOut(Math.max(0, Math.min(1, lt / 3.8)));
     const dist = prog * total;
     const z = -0.25 - dist;
     // высота глаза над ступенями (12 шагов, подъём 0.27)
@@ -11746,10 +11831,10 @@ setTimeout(() => {
       // нарастание скорости прокрутки шахты
       let spd = 0;
       if (k > 0.3) {
-        if (!P._desc) { P._desc = 1; lastBand = 0; }
+        if (!P._desc) { P._desc = 1; lastBand = 0; try { motorStart(); } catch (e) {} }
         const kk = (k - 0.3) / 0.7;
-        spd = 3.9 * easeInOut(Math.min(1, kk * 1.35));
-        if (k > 0.55) spd = 3.9 * (1 - Math.max(0, (k - 0.88) / 0.3)); // замедление к концу
+        spd = 5.3 * easeInOut(Math.min(1, kk * 1.35));
+        if (k > 0.55) spd = 5.3 * (1 - Math.max(0, (k - 0.88) / 0.3)); // замедление к концу
       }
       F.spd = spd;
       shaftG.position.y += spd * dt;   // без зацикливания: едем B1→B5 один раз
@@ -11757,12 +11842,10 @@ setTimeout(() => {
       const vib = spd > 0.3 ? 0.012 + spd * 0.02 : 0.004;
       F.shakeAmt = vib;
       // рывки
-      if (p > 15.4 && p < 15.7 && !P._j1) { P._j1 = 1; F.shakeAmt = 0.1; SFX.jolt(); }
-      if (p > 18.3 && p < 18.6 && !P._j2) { P._j2 = 1; F.shakeAmt = 0.09; SFX.jolt(); }
+      if (k > 0.24 && !P._j1) { P._j1 = 1; F.shakeAmt = 0.1; SFX.jolt(); }
+      if (k > 0.62 && !P._j2) { P._j2 = 1; F.shakeAmt = 0.09; SFX.jolt(); }
       // двигатель/скрипы
-      if (spd > 0.5 && Math.random() < dt * 6) SFX.motorTick();
-      if (spd > 0.4 && Math.random() < dt * 1.6) SFX.whir();
-      if (Math.random() < dt * 1.2) SFX.squeak();
+      if (Math.random() < dt * 0.7) SFX.squeak(); // мотор теперь живой луп (motorStart), сверху редкие скрипы
       // мерцание плафона при движении
       cabLamp.intensity = 1.0 - Math.abs(Math.sin(wall * 7.3)) * 0.25 - (Math.random() < dt * 2 ? 0.35 : 0);
       // этажи: табличка в окне → звонок + табло + кнопка этажа вспыхивает
@@ -11786,13 +11869,15 @@ setTimeout(() => {
           if (p > T3 + 1.2) caption('ЭТАЖ B' + floorCount, 0.9, 13);
         }
       }
-      // камера в кабине: сначала панель кнопок, затем разворот к дверям
+      // камера в кабине: жмём кнопку — и сразу смотрим на ВЫХОД (двери + табло), а не в стену
       cam.position.set(-0.2 + Math.sin(wall * 5.1) * vib * 9, 1.62 + Math.sin(wall * 6.3) * vib * 5, 9.55);
-      const turn = Math.max(0, Math.min(1, (k - 0.25) / 0.25));
+      const turn = Math.max(0, Math.min(1, (k - 0.02) / 0.13));
       const te = turn * turn * (3 - 2 * turn);
-      const lx4 = 1.33 + (0 - 1.33) * te + Math.sin(wall * 4.2) * 0.1 * te;
-      const ly4 = 1.35 + (1.7 - 1.35) * te + Math.sin(wall * 4.8) * 0.08 * te;
-      const lz4 = 10.4 + (16 - 10.4) * te;
+      const swayX = Math.sin(wall * 0.9) * 0.05 * te;
+      const swayY = Math.sin(wall * 1.23 + 1) * 0.04 * te;
+      const lx4 = 1.33 * (1 - te) + (-0.05 + swayX) * te + Math.sin(wall * 4.2) * 0.02 * te;
+      const ly4 = 1.35 * (1 - te) + (1.95 + swayY) * te + Math.sin(wall * 4.8) * 0.02 * te;
+      const lz4 = 10.4 * (1 - te) + 13.2 * te;
       cam.lookAt(lx4, ly4, lz4);
       cam.fov = 58 + Math.sin(wall * 5.6) * 1.2; cam.updateProjectionMatrix();
       // лёгкое смещение кабины (имитация хода)
@@ -11803,7 +11888,7 @@ setTimeout(() => {
       const k = (p - T4) / (T6 - T4);
       if (k < 0.12) {
         F.spd = 0;
-        if (!P._arr) { P._arr = 1; SFX.arrive(); SFX.ding(); setTimeout(() => SFX.doorOpen(), 700); cabLamp.intensity = 1; try { api.liftBtnSet(4, false); } catch (e) {} try { api.liftIndIn.set('B5', ''); } catch (e) {} try { api.liftIndOut.set('B5', ''); } catch (e) {} }
+        if (!P._arr) { P._arr = 1; try { motorStop(); } catch (e) {} F.shakeAmt = 0; SFX.arrive(); SFX.ding(); setTimeout(() => SFX.doorOpen(), 450); cabLamp.intensity = 1; try { api.liftBtnSet(4, false); } catch (e) {} try { api.liftIndIn.set('B5', ''); } catch (e) {} try { api.liftIndOut.set('B5', ''); } catch (e) {} }
         // скрежет остановки
         if (Math.random() < dt * 3) SFX.squeak();
       }
@@ -11859,6 +11944,7 @@ setTimeout(() => {
         P._doorCrack = 1;
         SFX.doorBig();
         SFX.wind();
+        SFX.riser();
       }
       // дверь чуть приоткрывается (щит в стороны)
       const cr = Math.min(0.16, Math.max(0, (k - 0.25) * 0.5));
@@ -11870,6 +11956,7 @@ setTimeout(() => {
       if (k > 0.62 && !P._flash) {
         P._flash = 1;
         OV.flashW = 0.95;
+        SFX.flashHit();
         setTimeout(() => { OV.fadeT = 1; }, 260);
       }
       if (Math.random() < dt * 3) SFX.drip();
@@ -11923,7 +12010,7 @@ setTimeout(() => {
     }
     // B5: круги на воде, капли, искры, дым
     const fx = LW.fx;
-    if (fx && p > 24.6 && p < 31.2) {
+    if (fx && p > T6 - 0.2 && p < T8 + 1) {
       // круги
       fx.rings.forEach((rng) => {
         const u = rng.userData;
@@ -11938,7 +12025,7 @@ setTimeout(() => {
         if (fx.dpos3[i * 3 + 1] < 0.06) {
           fx.dpos3[i * 3 + 1] = 2.0 + Math.random() * 1.2;
           fx.dpos3[i * 3 + 2] = -8 + (Math.random() - 0.5) * 2.2;
-          if (Math.random() < 0.25 && p < 30) { try { SFX.drip(); } catch (e) {} }
+          if (Math.random() < 0.25 && p < T8 - 0.4) { try { SFX.drip(); } catch (e) {} }
         }
       }
       fx.dpPts.geometry.attributes.position.needsUpdate = true;
@@ -11960,7 +12047,7 @@ setTimeout(() => {
       fx.spkS.material.opacity = fx.spkL.intensity > 0.1 ? 0.9 : 0.25;
       fx.sparkT = (fx.sparkT !== undefined) ? fx.sparkT : 0;
       fx.sparkT -= dt;
-      if (fx.sparkT <= 0 && p < 30.2) {
+      if (fx.sparkT <= 0 && p < T8 - 0.2) {
         if (Math.random() < 0.6) {
           fx.sparkT = 0.8 + Math.random() * 2.2;
           fx.spkL.intensity = 1.4 + Math.random() * 0.9;
@@ -12008,6 +12095,7 @@ setTimeout(() => {
   function toBossHall() {
     if (P.done) return;
     P.done = true;
+    try { motorStop(true); } catch (e) {}
     try { api._log.push([+P.t.toFixed(2), 'BOSS']); } catch (e) {}
     T.phase = 'play';
     try { beginBossAct(); } catch (e) {
@@ -12029,8 +12117,10 @@ setTimeout(() => {
     if (t < TW_.EXT) {
       updEXT(t, dt);
     } else if (t < TW_.MALL) {
+      if (!CX.m) enterMALL();
       updMALL(t, dt);
     } else if (t < TW_.D0) {
+      if (!CX.s) enterSTAIR();
       updSTAIR(t, dt);
     } else {
       // подвал: время p от входа в коридор (enterD вызывается при чёрном фейде)
