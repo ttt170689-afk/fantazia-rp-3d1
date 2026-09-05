@@ -11272,15 +11272,26 @@ setTimeout(() => {
     // ── пол: мраморная плитка (canvas 8×8, повтор 6×5) ──
     const ftex = (function () {
       try {
-        const cv = DOC.createElement('canvas'); cv.width = 256; cv.height = 256;
+        const cv = DOC.createElement('canvas'); cv.width = 512; cv.height = 512;
         const g = cv.getContext('2d');
-        for (let x = 0; x < 8; x++) for (let y = 0; y < 8; y++) {
-          g.fillStyle = (x + y) % 2 ? '#f4f1ea' : '#e6dfd2';
-          g.fillRect(x * 32, y * 32, 32, 32);
+        for (let x = 0; x < 4; x++) for (let y = 0; y < 4; y++) {
+          const v = (x + y) % 2 ? 245 : 229;
+          g.fillStyle = 'rgb(' + v + ',' + (v - 5) + ',' + (v - 16) + ')';
+          g.fillRect(x * 128, y * 128, 128, 128);
         }
-        g.strokeStyle = 'rgba(120,110,95,0.35)'; g.lineWidth = 2;
-        for (let x = 0; x <= 8; x++) { g.beginPath(); g.moveTo(x * 32, 0); g.lineTo(x * 32, 256); g.stroke(); }
-        for (let y = 0; y <= 8; y++) { g.beginPath(); g.moveTo(0, y * 32); g.lineTo(256, y * 32); g.stroke(); }
+        // прожилки мрамора
+        for (let i = 0; i < 30; i++) {
+          g.strokeStyle = 'rgba(' + (Math.random() < 0.5 ? '255,255,255' : '150,130,100') + ',' + (0.08 + Math.random() * 0.12).toFixed(2) + ')';
+          g.lineWidth = 1 + Math.random() * 1.8;
+          g.beginPath();
+          let vx = Math.random() * 512, vy = Math.random() * 512;
+          g.moveTo(vx, vy);
+          for (let st = 0; st < 5; st++) { vx += (Math.random() - 0.5) * 150; vy += (Math.random() - 0.5) * 150; g.lineTo(vx, vy); }
+          g.stroke();
+        }
+        g.strokeStyle = 'rgba(110,100,85,0.45)'; g.lineWidth = 2;
+        for (let x = 0; x <= 4; x++) { g.beginPath(); g.moveTo(x * 128, 0); g.lineTo(x * 128, 512); g.stroke(); }
+        for (let y = 0; y <= 4; y++) { g.beginPath(); g.moveTo(0, y * 128); g.lineTo(512, y * 128); g.stroke(); }
         const t2 = new THREE.CanvasTexture(cv);
         t2.wrapS = t2.wrapT = THREE.RepeatWrapping; t2.repeat.set(6, 5);
         return t2;
@@ -11296,9 +11307,54 @@ setTimeout(() => {
       const seam = new THREE.Mesh(new THREE.PlaneGeometry(44, 0.06), new THREE.MeshBasicMaterial({ color: 0xbfb8a8, transparent: true, opacity: 0.5 }));
       seam.rotation.x = -Math.PI / 2; seam.position.set(0, 0.04, z + 0.1); B.add(seam);
     }
+    // ── панели стен (canvas: тёплый мрамор + швы панелей) — «пять звёзд» ──
+    const wallTex = (function () {
+      try {
+        const cv = DOC.createElement('canvas'); cv.width = 256; cv.height = 256;
+        const g = cv.getContext('2d');
+        g.fillStyle = '#f3ecdd'; g.fillRect(0, 0, 256, 256);
+        for (let i = 0; i < 700; i++) {
+          g.fillStyle = Math.random() < 0.5 ? 'rgba(120,100,70,0.05)' : 'rgba(255,255,255,0.05)';
+          g.fillRect(Math.random() * 256, Math.random() * 256, 2, 2);
+        }
+        for (let v = 0; v < 4; v++) {
+          const gr = g.createLinearGradient(v * 64, 0, v * 64 + 64, 0);
+          gr.addColorStop(0, 'rgba(140,120,90,0.30)');
+          gr.addColorStop(0.5, 'rgba(140,120,90,0.04)');
+          gr.addColorStop(1, 'rgba(140,120,90,0.30)');
+          g.fillStyle = gr; g.fillRect(v * 64, 0, 64, 256);
+        }
+        g.fillStyle = 'rgba(150,130,95,0.5)';
+        g.fillRect(0, 244, 256, 3);  // цоколь
+        g.fillRect(0, 6, 256, 2);    // карниз
+        const t3 = new THREE.CanvasTexture(cv);
+        t3.wrapS = THREE.RepeatWrapping; t3.repeat.set(6, 1);
+        return t3;
+      } catch (e) { return null; }
+    })();
+    // ── потолок: кессонная сетка под плитами ──
+    const ceilTex = (function () {
+      try {
+        const cv = DOC.createElement('canvas'); cv.width = 256; cv.height = 256;
+        const g = cv.getContext('2d');
+        g.fillStyle = '#f8f5ee'; g.fillRect(0, 0, 256, 256);
+        for (let i = 0; i < 350; i++) { g.fillStyle = 'rgba(160,150,130,0.05)'; g.fillRect(Math.random() * 256, Math.random() * 256, 2, 2); }
+        g.strokeStyle = 'rgba(150,140,120,0.4)'; g.lineWidth = 2;
+        for (let i = 0; i <= 4; i++) {
+          g.beginPath(); g.moveTo(i * 64, 0); g.lineTo(i * 64, 256); g.stroke();
+          g.beginPath(); g.moveTo(0, i * 64); g.lineTo(256, i * 64); g.stroke();
+        }
+        const t4 = new THREE.CanvasTexture(cv);
+        t4.wrapS = t4.wrapT = THREE.RepeatWrapping; t4.repeat.set(4, 4);
+        return t4;
+      } catch (e) { return null; }
+    })();
+    const ceilM = ceilTex ? new THREE.MeshLambertMaterial({ map: ceilTex }) : null;
+    const goldM = new THREE.MeshBasicMaterial({ color: 0xd4af37 });
+    const goldStrip = (w, d, x, y, z) => B.add(box(w, 0.05, d, goldM, x, y, z));
     // ── цветовые палитры молла (как в игре) ──
     const MM = {
-      beige: new THREE.MeshLambertMaterial({ color: 0xf0ebe0 }),
+      beige: wallTex ? new THREE.MeshLambertMaterial({ map: wallTex }) : new THREE.MeshLambertMaterial({ color: 0xf0ebe0 }),
       beige2: new THREE.MeshLambertMaterial({ color: 0xece7dc }),
       dark: new THREE.MeshLambertMaterial({ color: 0x3a3f4a }),
       metal: new THREE.MeshLambertMaterial({ color: 0x8a8f98 }),
@@ -11348,18 +11404,64 @@ setTimeout(() => {
         }
       });
     };
-    slabPut(5.5);                      // пол 1 (снизу — белый)
-    slabPut(11.0, MM.marble);          // пол 2
+    slabPut(5.5, MM.marble, ceilM);    // пол 1 (снизу — кессонный потолок)
+    slabPut(11.0, MM.marble, ceilM);   // пол 2
     // потолок здания (невидимый фон) над полом 2
     const roof2 = new THREE.Mesh(new THREE.BoxGeometry(44, 0.5, 36), new THREE.MeshLambertMaterial({ color: 0xded8cc }));
     roof2.position.set(0, 16.55, -22); B.add(roof2);
     // световые кольца (как в игре) на потолке 1 и 2 этажей
-    [[5.15, -14, -8], [5.15, 14, -8], [5.15, -14, -36], [5.15, 14, -36]].forEach(([y2, lx, lz]) => {
+    [[5.15, -14, -8], [5.15, 14, -8], [5.15, -14, -26], [5.15, 14, -26], [5.15, -14, -36], [5.15, 14, -36]].forEach(([y2, lx, lz]) => {
       const ring = new THREE.Mesh(new THREE.TorusGeometry(1.4, 0.09, 8, 26), new THREE.MeshBasicMaterial({ color: 0xfff2c0 }));
       ring.rotation.x = Math.PI / 2; ring.position.set(lx, y2, lz); B.add(ring);
-      const pl = new THREE.PointLight(0xFFF6E0, 0.5, 16);
+      const pl = new THREE.PointLight(0xFFF6E0, 0.7, 16);
       pl.position.set(lx, y2 - 0.4, lz); B.add(pl);
     });
+    // ── люстра атриума (видна с пола 0 через проём) ──
+    (function atriumChandelier() {
+      const cx = -13, cz = -17;
+      const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.6, 6), new THREE.MeshLambertMaterial({ color: 0x3a3f4a }));
+      rod.position.set(cx, 11 - 1.3, cz); B.add(rod);
+      const r1 = new THREE.Mesh(new THREE.TorusGeometry(1.7, 0.09, 8, 28), new THREE.MeshBasicMaterial({ color: 0xfff0c0 }));
+      r1.rotation.x = Math.PI / 2; r1.position.set(cx, 9.7, cz); B.add(r1);
+      const r2 = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.07, 8, 24), new THREE.MeshBasicMaterial({ color: 0xfff6d8 }));
+      r2.rotation.x = Math.PI / 2; r2.position.set(cx, 9.35, cz); B.add(r2);
+      for (let i = 0; i < 8; i++) {
+        const a = i / 8 * 6.283;
+        B.add(sph(0.09, new THREE.MeshBasicMaterial({ color: 0xffe8b0 }), cx + Math.cos(a) * 1.7, 9.7, cz + Math.sin(a) * 1.7));
+      }
+      const al = new THREE.PointLight(0xfff2dd, 1.15, 24, 1.6);
+      al.position.set(cx, 9.4, cz); B.add(al);
+    })();
+    // ── подвесные светильники центрального зала + тёплый свет у входа ──
+    (function hallPendants() {
+      const bodyM = new THREE.MeshLambertMaterial({ color: 0x3a3f4a });
+      const glowM = new THREE.MeshBasicMaterial({ color: 0xfff0c8 });
+      [[-6, -18, 3.6], [2, -18, 3.4], [10, -18, 3.6], [7.5, -26, 4.3]].forEach(([px, pz, py]) => {
+        const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 5.5 - py, 5), bodyM);
+        rod.position.set(px, (5.5 + py) / 2, pz); B.add(rod);
+        const sh = new THREE.Mesh(new THREE.ConeGeometry(0.55, 0.42, 12, 1, true), bodyM);
+        sh.position.set(px, py, pz); B.add(sh);
+        B.add(sph(0.15, glowM, px, py - 0.14, pz));
+      });
+      const p1 = new THREE.PointLight(0xfff0d0, 0.75, 15, 1.6); p1.position.set(-2, 3.1, -18); B.add(p1);
+      const p2 = new THREE.PointLight(0xfff0d0, 0.6, 13, 1.6); p2.position.set(9, 3.1, -22); B.add(p2);
+      const eL = new THREE.PointLight(0xffd9a0, 0.9, 16, 1.6); eL.position.set(0, 4.4, -7); B.add(eL);
+    })();
+    // ── золотая отделка: кромки стен, кромка атриума, рамки пола ──
+    goldStrip(44, 0.05, 0, 5.2, -39.85);
+    goldStrip(0.05, 36, -21.95, 5.2, -22);
+    goldStrip(0.05, 36, 21.95, 5.2, -22);
+    goldStrip(6.6, 0.05, -13, 5.28, -23.1);
+    goldStrip(6.6, 0.05, -13, 5.28, -10.9);
+    goldStrip(0.05, 12.4, -16.25, 5.28, -17);
+    goldStrip(0.05, 12.4, -9.75, 5.28, -17);
+    goldStrip(43, 0.07, 0, 0.05, -5.2);
+    goldStrip(43, 0.07, 0, 0.05, -38.8);
+    goldStrip(0.07, 33.6, -21.2, 0.05, -22);
+    goldStrip(0.07, 33.6, 21.2, 0.05, -22);
+    // ── интерьерная вывеска GRAND MALL над бутиками ──
+    const sgnGM = tMesh('★ GRAND MALL ★', 8.5, 1.05, '#fff6dc', '#ff9a3c', 92, 1100, 160);
+    if (sgnGM) { sgnGM.position.set(0, 5.35, -39.15); B.add(sgnGM); }
     // ── стеклянные перила атриума на полах 1-2 (голубое стекло + поручень) ──
     const railSegs = [
       // вокруг проёма: проём x∈[-16,-10] (ширина 6), z∈[-23,-11] (глубина 12)
@@ -11439,11 +11541,11 @@ setTimeout(() => {
         B.add(box(0.6, 0.06, 0.6, MM.metal, sx, 0.03, -38.2));   // подиум
         B.add(box(0.45, 0.75, 0.45, new THREE.MeshLambertMaterial({ color: c }), sx, 0.45, -38.2));
         const sgnB = tMesh(n, 2.6, 0.5, glow, null, 60, 700, 140);
-        if (sgnB) { sgnB.position.set(sx, 3.9, -39.3); sgnB.rotation.y = Math.PI; B.add(sgnB); }
+        if (sgnB) { sgnB.position.set(sx, 3.9, -39.3); B.add(sgnB); }
       });
     // подпись «1 ЭТАЖ · МОДА» над бутиками
     const sgnF1 = tMesh('1 ЭТАЖ · МОДА', 7, 0.7, '#8a6f3f', '#d4af37', 56, 1100, 180);
-    if (sgnF1) { sgnF1.position.set(-0, 5.0, -39.3); sgnF1.rotation.y = Math.PI; B.add(sgnF1); }
+    if (sgnF1) { sgnF1.position.set(-0, 4.55, -39.3); B.add(sgnF1); }
     // ── ВИТРИНЫ западной/восточной стен (наполнение) ──
     [[-21.7, -30, 1], [21.7, -30, -1], [21.7, -7, -1]].forEach(([wx, wz, dirx]) => {
       const pane = box(1.9, 3.0, 0.14, new THREE.MeshLambertMaterial({ color: 0x111820, emissive: 0x1a2430, emissiveIntensity: 0.4 }), wx, 1.7, wz);
@@ -11457,7 +11559,7 @@ setTimeout(() => {
     const dr = box(1.25, 2.6, 0.14, new THREE.MeshLambertMaterial({ color: 0xb8b8c0 }), 16.7, 1.3, -32.2);
     B.add(dl); B.add(dr);
     const sgnL = tMesh('ЛИФТ', 1.6, 0.4, '#5a4a3a', '#c8a060', 52, 500, 120);
-    if (sgnL) { sgnL.position.set(16, 5.1, -32.1); sgnL.rotation.y = Math.PI; B.add(sgnL); }
+    if (sgnL) { sgnL.position.set(16, 5.1, -32.1); B.add(sgnL); }
     B.add(sph(0.06, new THREE.MeshBasicMaterial({ color: 0xff5533 }), 15.4, 2.6, -32.05)); // кнопка
     // ── ФОНТАН (как в игре: x=7.5, z=-26) ──
     B.add(cyl(2.6, 2.9, 0.55, 20, new THREE.MeshLambertMaterial({ color: 0x8fa8b2 }), 7.5, 0.28, -26));
@@ -11479,8 +11581,8 @@ setTimeout(() => {
     const spPts = new THREE.Points(spGeo, new THREE.PointsMaterial({ color: 0x9adfff, size: 0.05, transparent: true, opacity: 0.5 }));
     B.add(spPts);
     mallSpr.pts = spPts; mallSpr.pos = spos; mallSpr.ph = sph2; mallSpr.n = spN;
-    const sgnF = tMesh('ФОНТАН', 2.4, 0.5, '#3a6a8a', '#35c4f0', 54, 700, 140);
-    if (sgnF) { sgnF.position.set(7.5, 4.2, -26); sgnF.rotation.y = Math.PI; B.add(sgnF); }
+    const sgnF = tMesh('ФОНТАН', 2.9, 0.62, '#eaffff', '#35c4f0', 74, 900, 180);
+    if (sgnF) { sgnF.position.set(7.5, 4.25, -26); B.add(sgnF); }
     // ── КАРУСЕЛЬ (как в игре: x=7.5, z=-18) — медленно вращается ──
     const caru = new THREE.Group(); caru.position.set(7.5, 0, -18); B.add(caru);
     caru.add(cyl(2.7, 2.7, 0.35, 18, new THREE.MeshLambertMaterial({ color: 0xd4a05a }), 0, 0.18, 0));
@@ -11503,7 +11605,7 @@ setTimeout(() => {
     const roofK = new THREE.Mesh(new THREE.ConeGeometry(1.9, 1.1, 10), new THREE.MeshLambertMaterial({ color: 0xe17055 }));
     roofK.position.set(-16, 3.6, -8); B.add(roofK);
     const sgnK = tMesh('МОРОЖЕНОЕ', 1.6, 0.4, '#5a2a10', '#ffb060', 40, 700, 160);
-    if (sgnK) { sgnK.position.set(-16, 2.2, -8); sgnK.rotation.y = Math.PI; B.add(sgnK); }
+    if (sgnK) { sgnK.position.set(-16, 2.2, -8); B.add(sgnK); }
     // ── скамейки и растения (как в игре) ──
     [[-7.5, -13], [7.5, -13], [-7.5, -31], [7.5, -31]].forEach(([bx2, bz2]) => {
       B.add(box(2.6, 0.14, 0.7, new THREE.MeshLambertMaterial({ color: 0x8a6a4a }), bx2, 0.5, bz2));
@@ -11683,7 +11785,7 @@ setTimeout(() => {
       B.add(box(2.6, 1.6, 0.14, new THREE.MeshLambertMaterial({ color: 0x101014, emissive: c, emissiveIntensity: 0.5 }), -17 + i * 3.2, 8.6, -39.6));
     }
     const sgnE2 = tMesh('2 ЭТАЖ · ЭЛЕКТРОНИКА + ИГРЫ', 8, 0.6, '#9fdcff', '#2a7ab0', 44, 1300, 170);
-    if (sgnE2) { sgnE2.position.set(0, 10.2, -39.5); sgnE2.rotation.y = Math.PI; B.add(sgnE2); }
+    if (sgnE2) { sgnE2.position.set(0, 10.2, -39.5); B.add(sgnE2); }
     // 3 этаж: фудкорт-панель у северо-востока (видна сквозь атриум)
     const sgnE3 = tMesh('3 ЭТАЖ · ФУДКОРТ + КИНО', 9, 0.65, '#ffd9a0', '#ff9a3c', 44, 1400, 180);
     if (sgnE3) { sgnE3.position.set(10, 15.6, -35); sgnE3.rotation.y = 0.6; B.add(sgnE3); }
@@ -12110,7 +12212,7 @@ setTimeout(() => {
     try { api._log.push([+P.t.toFixed(2), 'MALL']); } catch (e) {}
     hideProScenes();
     GX.visible = false; GM.visible = true;
-    ambL.intensity = 0.7;    // светлый молл
+    ambL.intensity = 0.85;   // светлый молл (v16: ярче — как в пятизвёздочном отеле)
     S.background.setHex(0x11131c); S.fog = fogMall;
     OV.fade = 1; OV.fadeT = 0;
     cam.position.set(0.5, 1.63, -1.7);
@@ -12372,6 +12474,11 @@ setTimeout(() => {
     }
     // финальная доводка к проёму (после остановки)
     if (k3 > 0) { x += 0.82 * k3; z += 0.36 * k3; }
+    // плавный старт с обзорной позы входа (без рывка на первом кадре акта)
+    const uIn = Math.max(0, Math.min(1, (t - TW_.EXT) / 0.8));   // TW_.EXT = 9.6с — старт акта молла
+    const uInE = uIn * uIn * (3 - 2 * uIn);
+    x = 0.5 + (x - 0.5) * uInE;
+    z = -1.7 + (z + 1.7) * uInE;
     cam.position.set(x, 1.63 + Math.sin(lt * 2.7) * 0.016, z);
     // ── точка взгляда: «по ходу» — 2.7 м впереди по направлению движения.
     //    Направление = единичный вектор скорости маршрута (при остановках
@@ -12573,11 +12680,11 @@ setTimeout(() => {
       // ── ПОХОДКА: топаем ногами, а не летим ──
       const stepPh = wall * Math.PI * 2 * 1.1;
       const moveEnv = Math.max(0, Math.min(1, Math.min(k, 1 - k) / 0.06));
-      const bobY = Math.abs(Math.sin(stepPh)) * 0.055 * moveEnv;
-      const swayX = Math.sin(stepPh) * 0.07 * moveEnv;
-      cam.position.set(Math.sin(wall * 0.6) * 0.14 + swayX, 1.62 + Math.sin(wall * 0.9) * 0.03 - bobY, z);
+      const bobY = Math.abs(Math.sin(stepPh)) * 0.045 * moveEnv;
+      const swayX = Math.sin(stepPh) * 0.055 * moveEnv;
+      cam.position.set(Math.sin(wall * 0.6) * 0.12 + swayX, 1.62 + Math.sin(wall * 0.9) * 0.025 - bobY, z);
       cam.lookAt(Math.sin(wall * 0.5) * 0.2, 1.72, z - 10);
-      cam.rotation.z += Math.sin(stepPh) * 0.007 * moveEnv;
+      cam.rotation.z += Math.sin(stepPh) * 0.004 * moveEnv;
       cam.fov = 60 - k * 6; cam.updateProjectionMatrix();
       dustPts.position.set(0, 1.8, z + 6); // пыль следует за камерой
       // шаги в такт походке
@@ -12649,12 +12756,12 @@ setTimeout(() => {
       }
       F.spd = spd;
       shaftG.position.y += spd * dt;   // без зацикливания: едем B1→B5 один раз
-      // дрожь кабины
+      // плавное покачивание кабины (без «электрошокера»)
       const vib = spd > 0.3 ? 0.012 + spd * 0.02 : 0.004;
-      F.shakeAmt = vib;
-      // рывки
-      if (k > 0.24 && !P._j1) { P._j1 = 1; F.shakeAmt = 0.1; SFX.jolt(); }
-      if (k > 0.62 && !P._j2) { P._j2 = 1; F.shakeAmt = 0.09; SFX.jolt(); }
+      F.shakeAmt = Math.max(0, F.shakeAmt - dt * 0.22);   // затухание рывка
+      // рывки: короткий затухающий импульс
+      if (k > 0.24 && !P._j1) { P._j1 = 1; F.shakeAmt = 0.16; SFX.jolt(); }
+      if (k > 0.62 && !P._j2) { P._j2 = 1; F.shakeAmt = 0.14; SFX.jolt(); }
       // двигатель/скрипы
       if (Math.random() < dt * 0.7) SFX.squeak(); // мотор теперь живой луп (motorStart), сверху редкие скрипы
       // мерцание плафона при движении
@@ -12680,14 +12787,16 @@ setTimeout(() => {
           if (p > T3 + 1.2) caption('ЭТАЖ B' + floorCount, 0.9, 13);
         }
       }
-      // камера в кабине: смотрим на ТАБЛО этажей (двери внизу кадра), лёгкое покачивание
-      cam.position.set(-0.2 + Math.sin(wall * 5.1) * vib * 9, 1.62 + Math.sin(wall * 6.3) * vib * 5, 9.2);
-      const swayX = Math.sin(wall * 0.9) * 0.05 + Math.sin(wall * 4.2) * 0.02;
-      const swayY = Math.sin(wall * 1.23 + 1) * 0.04 + Math.sin(wall * 4.8) * 0.02;
+      // камера в кабине: медленное покачивание + короткий рывок с затуханием
+      const jx = F.shakeAmt * Math.sin(wall * 34) * 0.35;
+      const jy = F.shakeAmt * Math.sin(wall * 29 + 1.3) * 0.3;
+      cam.position.set(-0.2 + Math.sin(wall * 1.7) * vib * 0.9 + jx, 1.62 + Math.sin(wall * 2.1 + 0.8) * vib * 0.55 + jy, 9.2);
+      const swayX = Math.sin(wall * 0.9) * 0.04 + Math.sin(wall * 4.2) * 0.01;
+      const swayY = Math.sin(wall * 1.23 + 1) * 0.035 + Math.sin(wall * 4.8) * 0.01;
       cam.lookAt(-0.02 + swayX, 2.5 + swayY, 11.9);
-      cam.fov = 64 + Math.sin(wall * 5.6) * 1.2; cam.updateProjectionMatrix();
+      cam.fov = 64 + Math.sin(wall * 1.3) * 0.5; cam.updateProjectionMatrix();
       // лёгкое смещение кабины (имитация хода)
-      cab.position.y = -Math.sin(wall * 5.0) * vib * 1.2;
+      cab.position.y = -Math.sin(wall * 1.9) * vib * 0.8;
     }
     // ---- фаза 5: стоп, двери открываются ----
     else if (p < T6) {
@@ -12699,7 +12808,10 @@ setTimeout(() => {
         if (Math.random() < dt * 3) SFX.squeak();
       }
       cam.position.set(-0.2 + Math.sin(wall * 2.4) * 0.01, 1.62, 9.2);
-      cam.lookAt(0, 1.7, 20);
+      // взгляд плавно переводится с табло на дверь (первые 0.4 с фазы)
+      const gE0 = Math.max(0, Math.min(1, k / 0.4));
+      const gE1 = gE0 * gE0 * (3 - 2 * gE0);
+      cam.lookAt(-0.02 + 0.02 * gE1, 2.5 - 0.8 * gE1, 11.9 + 8.1 * gE1);
       cam.fov = 64 - k * 4; cam.updateProjectionMatrix();
       if (k > 0.1 && k < 0.42) {
         const kk = (k - 0.1) / 0.32;
@@ -12731,9 +12843,9 @@ setTimeout(() => {
       // походка и тут
       const stepPh6 = wall * Math.PI * 2 * 1.1;
       const moveEnv6 = Math.max(0, Math.min(1, Math.min(k, 1 - k) / 0.06));
-      cam.position.set(Math.sin(wall * 0.7) * 0.18 + Math.sin(stepPh6) * 0.07 * moveEnv6, 1.6 + Math.sin(wall * 0.5) * 0.04 - Math.abs(Math.sin(stepPh6)) * 0.055 * moveEnv6, z);
+      cam.position.set(Math.sin(wall * 0.7) * 0.14 + Math.sin(stepPh6) * 0.055 * moveEnv6, 1.6 + Math.sin(wall * 0.5) * 0.03 - Math.abs(Math.sin(stepPh6)) * 0.045 * moveEnv6, z);
       cam.lookAt(Math.sin(wall * 0.6) * 0.25, 1.75, z - 12);
-      cam.rotation.z += Math.sin(stepPh6) * 0.007 * moveEnv6;
+      cam.rotation.z += Math.sin(stepPh6) * 0.004 * moveEnv6;
       cam.fov = 60 - k * 4; cam.updateProjectionMatrix();
       nextDrip -= dt;
       if (nextDrip <= 0) { nextDrip = 1.0 + Math.random() * 2.2; SFX.drip(); }
@@ -12750,7 +12862,7 @@ setTimeout(() => {
     else if (p < T8) {
       const k = (p - T7) / (T8 - T7);
       const z = -29.2;
-      cam.position.set(0, 1.62, z + 1.2 - k * 0.3);
+      cam.position.set(0, 1.62, z + 0.2 - k * 0.3);   // старт z=-29.0 = конец фазы 6 (без рывка)
       cam.lookAt(0, 1.85, z - 6);
       if (!P._doorCrack && k > 0.12) {
         P._doorCrack = 1;
@@ -12785,8 +12897,8 @@ setTimeout(() => {
     // ── хвост: лампы, пыль, вода, искры ──
     G.flick.forEach((f) => {
       if (!f.l) return;
-      let flicker = (Math.sin(wall * 9 + f.ph) > 0.995) ? 0.12 : 1.0;
-      if (f.hard && Math.sin(wall * 13.7 + f.ph * 2.0) > 0.55) flicker = 0.25;
+      let flicker = (Math.sin(wall * 9 + f.ph) > 0.997) ? 0.2 : 1.0;
+      if (f.hard && Math.sin(wall * 2.4 + f.ph * 2.0) > 0.99) flicker = 0.5;
       try { f.l.intensity = f.base * flicker * (0.92 + 0.08 * Math.sin(wall * 2.1 + f.ph)); } catch (e) {}
     });
     // пыль в коридорах
