@@ -10536,13 +10536,17 @@ setTimeout(() => {
     GX.sgn = sgn; GX.sgn2 = sgn2;
     // фонари улицы
     for (let z = 8; z <= 30; z += 11) {
-      [-8, 8].forEach((x) => {
+      [-6.2, 6.2].forEach((x) => {
         GX.add(cyl(0.09, 0.11, 6.4, 6, NM.steel, x, 3.2, z));
         GX.add(cyl(0.05, 0.05, 1.6, 6, NM.steel, x + (x > 0 ? -1 : 1) * 0.6, 6.0, z, -Math.PI / 2));
         const hx = x + (x > 0 ? -1 : 1) * 1.15;
         GX.add(sph(0.12, NM.warm, hx, 5.92, z));
         const pl = new THREE.PointLight(0xffd9a6, 0.55, 17, 1.6);
         pl.position.set(hx, 5.8, z); GX.add(pl);
+        const halo0 = mkHalo(TEX.warm, 0xffffff, 2.6, 2.6, 0.55);
+        halo0.position.set(hx, 5.92, z); GX.add(halo0);
+        const pool0 = new THREE.Mesh(new THREE.PlaneGeometry(7, 7), new THREE.MeshBasicMaterial({ map: TEX.warm, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false }));
+        pool0.rotation.x = -Math.PI / 2; pool0.position.set(hx, 0.02, z); GX.add(pool0);
       });
     }
     // кусты вдоль тротуара
@@ -10556,8 +10560,8 @@ setTimeout(() => {
     }
     // припаркованные машины (силуэты)
     const carCols = [0x171b22, 0x1c2027, 0x14171d];
-    [-22, -9, 6, 17, 28].forEach((z, idx) => {
-      const x = (idx % 2 ? -1 : 1) * (5.6 + (idx % 3) * 0.9);
+    [-22, -9, 11, 17, 28].forEach((z, idx) => {
+      const x = (idx % 2 ? -1 : 1) * 4.4;
       const body = box(1.9, 0.62, 4.4, new THREE.MeshLambertMaterial({ color: carCols[idx % 3] }), x, 0.55, z);
       GX.add(body);
       const cab2 = box(1.7, 0.55, 2.3, NM.glassD, x, 1.08, z - 0.2);
@@ -10569,7 +10573,7 @@ setTimeout(() => {
       GX.add(sph(0.07, NM.warmDim, x + 0.85, 0.55, z - 2.2));
     });
     // гидрант
-    const hyd = new THREE.Group(); hyd.position.set(4.6, 0, 4.5); GX.add(hyd);
+    const hyd = new THREE.Group(); hyd.position.set(6.0, 0, 4.0); GX.add(hyd);
     hyd.add(cyl(0.16, 0.16, 0.75, 8, NM.redGlow, 0, 0.37, 0));
     hyd.add(box(0.1, 0.1, 0.6, NM.steel, 0.16, 0.55, 0));
     // мокрый асфальт — светлые пятна отражений
@@ -10579,6 +10583,190 @@ setTimeout(() => {
       p.rotation.x = -Math.PI / 2;
       p.position.set((Math.random() - 0.5) * 30, 0.02, 4 + Math.random() * 40);
       GX.add(p);
+    }
+    // ═══ v12 НОРМ-УЛИЦА: дома, витрины, неон, переход, светофор, машина, пар ═══
+    function mkHalo(tex, color, sx, sy, opacity) {
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, color: color, transparent: true, opacity: opacity, blending: THREE.AdditiveBlending, depthWrite: false }));
+      s.scale.set(sx, sy, 1);
+      return s;
+    }
+    // ── тротуары вдоль улицы ──
+    GX.add(box(2.6, 0.14, 44, NM.conc, -6.9, 0, 28));
+    GX.add(box(2.6, 0.14, 44, NM.conc, 6.9, 0, 28));
+    // ── дома с окнами ──
+    const winWarm = new THREE.MeshBasicMaterial({ color: 0xffd9a0 });
+    const winCool = new THREE.MeshBasicMaterial({ color: 0x9fd8ff });
+    const winDark = new THREE.MeshBasicMaterial({ color: 0x0b0e14 });
+    function houseBlock(x, z, w, h, d, seed) {
+      GX.add(box(w, h, d, NM.wallDark, x, h / 2 - 0.1, z));
+      GX.add(box(w + 0.4, 0.5, d + 0.4, NM.conc2, x, h + 0.15, z)); // парапет
+      const sd = x > 0 ? -1 : 1;
+      const fx = x + sd * (w / 2 + 0.03);
+      let s = seed;
+      const rnd = () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+      for (let wy = 3.4; wy < h - 1.2; wy += 2.3) {
+        for (let wz = z - d / 2 + 1.6; wz < z + d / 2 - 1.2; wz += 2.0) {
+          const r = rnd();
+          const wm = r < 0.3 ? winWarm : (r < 0.45 ? winCool : winDark);
+          const win = new THREE.Mesh(new THREE.PlaneGeometry(0.85, 1.1), wm);
+          win.rotation.y = sd > 0 ? Math.PI / 2 : -Math.PI / 2;
+          win.position.set(fx, wy, wz);
+          GX.add(win);
+        }
+      }
+    }
+    houseBlock(-11.5, 9, 7, 13, 13, 11);
+    houseBlock(-12.5, 24, 8, 16, 14, 23);
+    houseBlock(-11.5, 40, 7, 11, 15, 37);
+    houseBlock(11.5, 8, 7, 14, 12, 51);
+    houseBlock(12.5, 23, 8, 12, 13, 67);
+    houseBlock(11.5, 39, 7, 15, 15, 83);
+    // ── дальний ряд (силуэты в тумане) ──
+    [[-21, 14, 10, 22, 18], [-22, 36, 12, 26, 20], [21, 12, 10, 20, 16], [22, 34, 12, 28, 22]].forEach(([bx, bz, bw, bh, bd]) => {
+      GX.add(box(bw, bh, bd, NM.wallDark, bx, bh / 2 - 0.1, bz));
+    });
+    // ── крыши: водонапорка, антенна ──
+    GX.add(cyl(1.1, 1.2, 2.2, 8, NM.conc2, -12.5, 17.5, 22));
+    GX.add(cyl(0.05, 1.15, 1.0, 8, NM.wallDark, -12.5, 19.1, 22));
+    GX.add(cyl(0.04, 0.04, 3.4, 4, NM.steel, 11.5, 15.7, 39));
+    // ── витрины с неоном ──
+    function shopFront(x, z, w, name, fg, bg, glowC) {
+      const sd = x > 0 ? -1 : 1;
+      const fx = x + sd * 0.06;
+      const gl = new THREE.Mesh(new THREE.PlaneGeometry(w, 2.3),
+        new THREE.MeshBasicMaterial({ color: 0xffd9a8, transparent: true, opacity: 0.85 }));
+      gl.rotation.y = sd > 0 ? Math.PI / 2 : -Math.PI / 2;
+      gl.position.set(fx, 1.35, z);
+      GX.add(gl);
+      for (let i = 0; i < 3; i++) {
+        const sh = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.24, 1.5),
+          new THREE.MeshBasicMaterial({ color: 0x1a1410 }));
+        sh.rotation.y = gl.rotation.y;
+        sh.position.set(fx + sd * 0.02, 1.2, z - w * 0.3 + i * w * 0.3);
+        GX.add(sh);
+      }
+      const sg = tMesh(name, w * 0.95, 0.62, fg, bg, 52, 800, 120);
+      if (sg) {
+        sg.rotation.y = gl.rotation.y;
+        sg.position.set(fx + sd * 0.05, 2.95, z);
+        GX.add(sg);
+        const halo = mkHalo(TEX.white, glowC, 4.5, 2.6, 0.5);
+        halo.position.set(fx + sd * 0.4, 2.95, z);
+        GX.add(halo);
+      }
+      const spill2 = new THREE.Mesh(new THREE.PlaneGeometry(3.4, w + 1),
+        new THREE.MeshBasicMaterial({ map: TEX.white, color: glowC, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false }));
+      spill2.rotation.x = -Math.PI / 2;
+      spill2.position.set(x + sd * 2.2, 0.03, z);
+      GX.add(spill2);
+      const streak = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 4.2),
+        new THREE.MeshBasicMaterial({ map: TEX.white, color: glowC, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false }));
+      streak.rotation.x = -Math.PI / 2;
+      streak.position.set(x + sd * 4.6, 0.035, z + 1.2);
+      GX.add(streak);
+    }
+    shopFront(-8.0, 9, 5.5, 'КАФЕ · 24 ЧАСА', '#ffe0b0', '#a34a10', 0xff9a3c);
+    shopFront(-8.5, 24, 4.6, 'АПТЕКА', '#d0ffe0', '#0a6a3a', 0x36ff8e);
+    shopFront(8.0, 12, 5.0, 'БАР «НЕОН»', '#ffd0f0', '#8a1060', 0xff4ad0);
+    shopFront(8.0, 33, 5.5, 'ПРОДУКТЫ', '#e0f0ff', '#1a4a8a', 0x4aa8ff);
+    // ── дальние фонари (без реальных ламп) ──
+    [-6.2, 6.2].forEach((x) => {
+      const z = 41;
+      GX.add(cyl(0.09, 0.11, 6.4, 6, NM.steel, x, 3.2, z));
+      GX.add(cyl(0.05, 0.05, 1.6, 6, NM.steel, x + (x > 0 ? -1 : 1) * 0.6, 6.0, z, -Math.PI / 2));
+      const hx = x + (x > 0 ? -1 : 1) * 1.15;
+      GX.add(sph(0.12, NM.warm, hx, 5.92, z));
+      const fh = mkHalo(TEX.warm, 0xffffff, 2.6, 2.6, 0.5);
+      fh.position.set(hx, 5.92, z); GX.add(fh);
+      const fp = new THREE.Mesh(new THREE.PlaneGeometry(7, 7), new THREE.MeshBasicMaterial({ map: TEX.warm, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false }));
+      fp.rotation.x = -Math.PI / 2; fp.position.set(hx, 0.02, z); GX.add(fp);
+    });
+    // ── разметка, переход, люк, светофор ──
+    const lineM = new THREE.MeshBasicMaterial({ color: 0xc8b060, transparent: true, opacity: 0.55 });
+    for (let z = 6; z < 50; z += 4) {
+      const dash = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 1.8), lineM);
+      dash.rotation.x = -Math.PI / 2; dash.position.set(0, 0.012, z); GX.add(dash);
+    }
+    const crossM = new THREE.MeshBasicMaterial({ color: 0xd8d8d8, transparent: true, opacity: 0.5 });
+    for (let i = 0; i < 6; i++) {
+      const st = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 3.6), crossM);
+      st.rotation.x = -Math.PI / 2; st.position.set(-3.1 + i * 1.25, 0.012, 20); GX.add(st);
+    }
+    const mh = new THREE.Mesh(new THREE.CircleGeometry(0.55, 16),
+      new THREE.MeshBasicMaterial({ color: 0x14161c }));
+    mh.rotation.x = -Math.PI / 2; mh.position.set(3.4, 0.012, 25); GX.add(mh);
+    GX.add(cyl(0.07, 0.09, 3.6, 6, NM.steel, 5.2, 1.8, 14));
+    GX.add(box(0.34, 0.9, 0.34, NM.wallDark, 5.2, 3.9, 14));
+    GX.add(sph(0.09, NM.redGlow, 5.2, 4.12, 14.18));
+    const tlh = mkHalo(TEX.red, 0xffffff, 1.2, 1.2, 0.6);
+    tlh.position.set(5.2, 4.12, 14.3); GX.add(tlh);
+    // ── остановка с лайтбоксом ──
+    const bus = new THREE.Group(); bus.position.set(-6.5, 0, 33.5); GX.add(bus);
+    bus.add(box(3.4, 0.12, 1.6, NM.steel, 0, 2.5, 0));
+    bus.add(box(0.1, 2.5, 0.1, NM.steel, -1.6, 1.25, -0.7));
+    bus.add(box(0.1, 2.5, 0.1, NM.steel, 1.6, 1.25, -0.7));
+    const busGlass = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.8, 0.06),
+      new THREE.MeshPhongMaterial({ color: 0x6f94b4, specular: 0xb0d0e8, shininess: 100, transparent: true, opacity: 0.3 }));
+    busGlass.position.set(0, 1.4, -0.72); bus.add(busGlass);
+    bus.add(box(2.6, 0.08, 0.45, NM.conc2, 0, 0.62, -0.4));
+    const ad = tMesh('FANTAZIA', 1.3, 0.5, '#cfe8ff', '#123a6a', 52, 700, 200);
+    if (ad) { ad.position.set(1.85, 1.5, -0.3); ad.rotation.y = Math.PI / 2; bus.add(ad); }
+    const adGlow = mkHalo(TEX.white, 0x4a9adf, 2.4, 2.4, 0.4);
+    adGlow.position.set(2.1, 1.5, -0.3); bus.add(adGlow);
+    // ── провода через улицу ──
+    [18, 32].forEach((wz) => {
+      GX.add(box(4.6, 0.035, 0.035, NM.wallDark, -6.7, 7.0, wz));
+      GX.add(box(9.2, 0.035, 0.035, NM.wallDark, 0, 6.55, wz));
+      GX.add(box(4.6, 0.035, 0.035, NM.wallDark, 6.7, 7.0, wz));
+    });
+    GX.add(cyl(0.09, 0.11, 7.6, 6, NM.conc2, -7.6, 3.8, 18));
+    GX.add(cyl(0.09, 0.11, 7.6, 6, NM.conc2, 7.4, 3.8, 32));
+    // ── мусор у фасадов ──
+    [[-7.6, 5.5], [-7.8, 27.5], [7.7, 6.5], [7.8, 28.5]].forEach(([tx, tz], i) => {
+      const bag = sph(0.42, NM.wallDark, tx, 0.3, tz);
+      bag.scale.y = 0.75; GX.add(bag);
+      if (i % 2 === 0) GX.add(cyl(0.3, 0.26, 0.75, 8, NM.steel, tx + 0.8 * (tx > 0 ? 1 : -1), 0.38, tz + 0.7));
+    });
+    // ── большие лужи (почти зеркала) ──
+    const pudM = new THREE.MeshPhongMaterial({ color: 0x2a3a55, specular: 0xaaccee, shininess: 90, transparent: true, opacity: 0.5 });
+    [[-2.5, 12, 2.2], [2.8, 27, 2.8], [-1.5, 36, 1.8], [1.8, 6, 1.5]].forEach(([px, pz, pr]) => {
+      const pd = new THREE.Mesh(new THREE.CircleGeometry(pr, 18), pudM);
+      pd.rotation.x = -Math.PI / 2; pd.position.set(px, 0.018, pz); GX.add(pd);
+    });
+    // ── красная дорожка + свет из-под козырька ──
+    const carp = new THREE.Mesh(new THREE.PlaneGeometry(3, 6.5),
+      new THREE.MeshLambertMaterial({ color: 0x6a1420 }));
+    carp.rotation.x = -Math.PI / 2; carp.position.set(0, 0.15, 2.4); GX.add(carp);
+    const canFlat = new THREE.Mesh(new THREE.PlaneGeometry(10, 5), new THREE.MeshBasicMaterial({ map: TEX.warm, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false }));
+    canFlat.rotation.x = -Math.PI / 2; canFlat.position.set(0, 0.16, 0.5); GX.add(canFlat);
+    // ── проезжающая машина (анимация в updEXT) ──
+    const pcar = new THREE.Group(); pcar.position.set(26, 0, 21.5); pcar.visible = false; GX.add(pcar);
+    GX.pcar = pcar;
+    pcar.add(box(4.2, 0.6, 1.85, new THREE.MeshLambertMaterial({ color: 0x232a33 }), 0, 0.55, 0));
+    pcar.add(box(2.2, 0.5, 1.65, NM.glassD, 0.2, 1.05, 0));
+    [[-1.4, -0.95], [1.4, -0.95], [-1.4, 0.95], [1.4, 0.95]].forEach(([wx, wz2]) => {
+      pcar.add(cyl(0.32, 0.32, 0.24, 10, NM.wallDark, wx, 0.32, wz2, Math.PI / 2));
+    });
+    [[-2.12, -0.6], [-2.12, 0.6]].forEach(([hx2, hz2]) => {
+      pcar.add(sph(0.11, new THREE.MeshBasicMaterial({ color: 0xfff2cc }), hx2, 0.55, hz2));
+    });
+    const beam = new THREE.Mesh(new THREE.PlaneGeometry(5.5, 1.8),
+      new THREE.MeshBasicMaterial({ map: TEX.white, color: 0xffedb8, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+    beam.position.set(-4.9, 0.55, 0); pcar.add(beam);
+    const beamG = new THREE.Mesh(new THREE.PlaneGeometry(5.5, 1.9),
+      new THREE.MeshBasicMaterial({ map: TEX.white, color: 0xffedb8, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false }));
+    beamG.rotation.x = -Math.PI / 2; beamG.position.set(-4.9, 0.04, 0); pcar.add(beamG);
+    [[2.12, -0.6], [2.12, 0.6]].forEach(([tx2, tz2]) => {
+      pcar.add(sph(0.09, new THREE.MeshBasicMaterial({ color: 0xff2020 }), tx2, 0.6, tz2));
+    });
+    const tailGlow = mkHalo(TEX.red, 0xffffff, 1.6, 1.2, 0.5);
+    tailGlow.position.set(2.5, 0.6, 0); pcar.add(tailGlow);
+    // ── пар из люка ──
+    GX.steam = [];
+    for (let i = 0; i < 3; i++) {
+      const sm = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.white, color: 0x8a94a8, transparent: true, opacity: 0, depthWrite: false }));
+      sm.position.set(3.4, 0.5, 25); GX.add(sm);
+      GX.steam.push({ m: sm, sp: 0.22 + i * 0.05, off: i / 3, h: 2.6 });
     }
     // ДОЖДЬ (точки)
     const rainN = 1300;
@@ -11374,17 +11562,18 @@ setTimeout(() => {
     buzz() { if (!AU) return; tone(120, 110, 0.2, 'triangle', 0.008, 0); tone(240, 235, 0.15, 'sine', 0.005, 0); },
     riser() { if (!AU) return; noiseBurst(1.6, 280, 5200, 1.1, 0.07, 0); tone(55, 220, 1.6, 'triangle', 0.05, 0); },
     flashHit() { if (!AU) return; subDrop(120, 24, 1.0, 0.4, 0); noiseBurst(0.5, 5000, 1000, 1, 0.15, 0, 'highpass'); metalHit([[1500, 0.3, 0.5], [2300, 0.2, 0.4], [3400, 0.15, 0.3]], 0.7, 0.06, 0, 1); },
-    bedD() { if (!AU) return; tone(46, 45, 24, 'sine', 0.025, 0); tone(92, 91, 24, 'triangle', 0.008, 0); noiseBurst(24, 110, 70, 0.5, 0.035, 0, 'lowpass'); }
+    bedD() { if (!AU) return; tone(46, 45, 24, 'sine', 0.025, 0); tone(92, 91, 24, 'triangle', 0.008, 0); noiseBurst(24, 110, 70, 0.5, 0.035, 0, 'lowpass'); },
+    bedCity() { if (!AU) return; noiseBurst(9.5, 170, 90, 0.5, 0.03, 0, 'lowpass'); tone(55, 53, 9.5, 'sine', 0.016, 0); tone(110, 108, 9.5, 'triangle', 0.006, 0); },
   };
   api.sfx = SFX;
 
 
   // ──────────────────────────── ТАЙМЛАЙН ───────────────────────────────
-  // P: 0 старт · 8.2 двери лифта · 11.4 вход · 13.4 двери закрыты ·
-  // 14.6 СПУСК · 21.4 стоп · 22.6 двери открыты · 24.6 нижний коридор ·
-  // 29.2 дверь SECRET · 30.2 вспышка · 31 fade · 32.2 → зал босса
+  // P: 0 старт · 9.4 двери лифта · 12.6 вход · 14.8 двери закрыты ·
+  // 17.1 СПУСК · 22.4 стоп · 23.9 двери открыты · 26.0 нижний коридор ·
+  // 30.2 дверь SECRET · 31.1 вспышка · 31.4 fade · 31.9 → зал босса
   let P = { t: 0, begun: false, done: false, speed: 1, startFadeIn: false, cutStage: 0 };
-  const T1 = 8.2, T2 = 11.4, T3 = 13.6, T4 = 21.2, T5 = 22.8, T6 = 24.8, T7 = 29.0, T8 = 30.4;
+  const T1 = 9.4, T2 = 12.6, T3 = 14.8, T4 = 22.4, T5 = 24.0, T6 = 26.0, T7 = 30.2, T8 = 31.6;
 
   // управление дверьми
   function doorsAnim(x) { // x: 0=закрыто (x=±0.9), 1=открыто (x=±2.05)
@@ -11438,6 +11627,7 @@ setTimeout(() => {
 
   // ── новые звуки (в дополнение к SFX) ──
   const SFX2 = {
+    carPass() { if (!AU) return; noiseBurst(0.55, 300, 1900, 1.6, 0.09, 0, 'bandpass'); noiseBurst(0.7, 1900, 280, 1.6, 0.09, 0.55, 'bandpass'); noiseBurst(1.2, 220, 120, 0.8, 0.05, 0, 'lowpass'); },
     rain() { if (!AU) return; noiseBurst(0.5, 2800, 600, 2, 0.012, 0, 'bandpass'); noiseBurst(0.4, 7000, 4000, 1.5, 0.004, 0.05, 'highpass'); },
     thunder() { if (!AU) return; subDrop(55, 24, 3.0, 0.3, 0); noiseBurst(2.8, 150, 40, 0.6, 0.14, 0, 'lowpass'); noiseBurst(1.8, 120, 50, 0.7, 0.08, 0.5, 'lowpass'); },
     doorSlide() { if (!AU) return; noiseBurst(0.8, 2000, 350, 0.8, 0.05, 0, 'bandpass'); tone(160, 70, 0.7, 'triangle', 0.03, 0); metalHit([[300, 0.4, 0.6], [510, 0.25, 0.5]], 0.4, 0.04, 0.65, 0); },
@@ -11510,7 +11700,7 @@ setTimeout(() => {
     cabLamp.intensity = 1.0;
     G.flick.forEach((f) => { try { f.l.intensity = f.base; } catch (e) {} });
     setDoorLight(0);
-    floorCount = 2; lastBand = -1; nextDrip = 1.2; nextBuzz = 3; motorOn = false;
+    floorCount = 2; lastBand = -1; nextDrip = 1.2; nextBuzz = 3; motorOn = false; CX.lastStep = -1;
     F.doorOpen = 0; F.doorCls = 0; F.spd = 0;
     P.cutStage = 0;
     cam.position.set(0, 1.62, 62);
@@ -11572,7 +11762,7 @@ setTimeout(() => {
     CX.rainT -= dt;
     if (CX.rainT <= 0) { CX.rainT = 0.3 + Math.random() * 0.28; try { SFX2.rain(); } catch (e) {} }
     CX.thunT -= dt;
-    if (CX.thunT <= 0) { CX.thunT = 7 + Math.random() * 6; try { SFX2.thunder(); } catch (e) {} }
+    if (CX.thunT <= 0) { CX.thunT = 7 + Math.random() * 6; try { SFX2.thunder(); } catch (e) {} try { OV.flashW = Math.max(OV.flashW, 0.4); } catch (e) {} }
     // дождь: точки
     if (GX.rainPts) {
       const rp = GX.rpos, rv = GX.rvel;
@@ -11584,6 +11774,25 @@ setTimeout(() => {
         }
       }
       GX.rainPts.geometry.attributes.position.needsUpdate = true;
+    }
+    // проезжающая машина
+    if (GX.pcar) {
+      const ck = (lt - 1.2) / 4.5;
+      if (ck >= 0 && ck <= 1) {
+        GX.pcar.visible = true;
+        GX.pcar.position.x = 26 - 52 * ck;
+        if (!CX.fcar && ck > 0.44 && ck < 0.56) { CX.fcar = 1; try { SFX2.carPass(); } catch (e) {} }
+      } else GX.pcar.visible = false;
+    }
+    // пар из люка
+    if (GX.steam) {
+      GX.steam.forEach((s) => {
+        const u = (((lt * s.sp + s.off) % 1) + 1) % 1;
+        s.m.position.y = 0.3 + u * s.h;
+        s.m.material.opacity = 0.2 * (1 - u) * Math.min(1, u * 5);
+        const sc = 0.7 + u * 1.7;
+        s.m.scale.set(sc, sc, 1);
+      });
     }
     // фейд → атриум
     if (lt > 7.5) OV.fadeT = 1;
@@ -11816,14 +12025,22 @@ setTimeout(() => {
     if (p < T1) {
       const k = easeInOut(Math.max(0, (p - 0.8) / (T1 - 0.8)));
       const z = 62 - (62 - 13.6) * k;
-      cam.position.set(Math.sin(wall * 0.6) * 0.14, 1.62 + Math.sin(wall * 0.9) * 0.03, z);
+      // ── ПОХОДКА: топаем ногами, а не летим ──
+      const stepPh = wall * Math.PI * 2 * 1.1;
+      const moveEnv = Math.max(0, Math.min(1, Math.min(k, 1 - k) / 0.06));
+      const bobY = Math.abs(Math.sin(stepPh)) * 0.055 * moveEnv;
+      const swayX = Math.sin(stepPh) * 0.07 * moveEnv;
+      cam.position.set(Math.sin(wall * 0.6) * 0.14 + swayX, 1.62 + Math.sin(wall * 0.9) * 0.03 - bobY, z);
       cam.lookAt(Math.sin(wall * 0.5) * 0.2, 1.72, z - 10);
+      cam.rotation.z += Math.sin(stepPh) * 0.007 * moveEnv;
       cam.fov = 60 - k * 6; cam.updateProjectionMatrix();
       dustPts.position.set(0, 1.8, z + 6); // пыль следует за камерой
-      // случайные капли и шаги
+      // шаги в такт походке
+      const stepIdx = Math.floor(wall * 2.2);
+      if (stepIdx !== CX.lastStep && k > 0.03 && k < 0.97) { CX.lastStep = stepIdx; try { SFX.step(); } catch (e) {} }
+      // случайные капли
       nextDrip -= dt;
       if (nextDrip <= 0) { nextDrip = 1.4 + Math.random() * 2.4; SFX.drip(); }
-      if (p > 2 && Math.random() < dt * 0.4) SFX.step();
       if (Math.random() < dt * 0.6) SFX.buzz();
     }
     // ---- фаза 2: перед дверьми, двери открываются ----
@@ -11839,7 +12056,7 @@ setTimeout(() => {
     else if (p < T3) {
       const k = (p - T2) / (T3 - T2);
       const zz = 12.2 - k * 2.65;
-      cam.position.set(-0.2 * k, 1.62, zz);
+      cam.position.set(-0.2 * k, 1.62 - Math.abs(Math.sin(wall * 6.91)) * 0.03, zz);
       // взгляд: порог кабины → быстрый взгляд на панель → разворот к дверям (в стену не пялимся!)
       const sstep = (a, b, x) => { const u = Math.max(0, Math.min(1, (x - a) / (b - a))); return u * u * (3 - 2 * u); };
       const g1 = sstep(0.22, 0.48, k);
@@ -11856,6 +12073,8 @@ setTimeout(() => {
         try { caption('B5 · ВНИЗ', 1.4, 14); } catch (e) {}
       }
       if (!motorOn && k > 0.3) { motorOn = true; }
+      const stepIdx3 = Math.floor(wall * 2.2);
+      if (stepIdx3 !== CX.lastStep) { CX.lastStep = stepIdx3; try { SFX.step(); } catch (e) {} }
       if (Math.random() < dt * 0.8) SFX.squeak();
     }
     // ---- фаза 4: двери закрываются, дрожь, СПУСК ----
@@ -11962,12 +12181,17 @@ setTimeout(() => {
     else if (p < T7) {
       const k = easeInOut(Math.max(0, (p - T6) / (T7 - T6)));
       const z = 1.5 - (1.5 + 29.0) * k;
-      cam.position.set(Math.sin(wall * 0.7) * 0.18, 1.6 + Math.sin(wall * 0.5) * 0.04, z);
+      // походка и тут
+      const stepPh6 = wall * Math.PI * 2 * 1.1;
+      const moveEnv6 = Math.max(0, Math.min(1, Math.min(k, 1 - k) / 0.06));
+      cam.position.set(Math.sin(wall * 0.7) * 0.18 + Math.sin(stepPh6) * 0.07 * moveEnv6, 1.6 + Math.sin(wall * 0.5) * 0.04 - Math.abs(Math.sin(stepPh6)) * 0.055 * moveEnv6, z);
       cam.lookAt(Math.sin(wall * 0.6) * 0.25, 1.75, z - 12);
+      cam.rotation.z += Math.sin(stepPh6) * 0.007 * moveEnv6;
       cam.fov = 60 - k * 4; cam.updateProjectionMatrix();
       nextDrip -= dt;
       if (nextDrip <= 0) { nextDrip = 1.0 + Math.random() * 2.2; SFX.drip(); }
-      if (Math.random() < dt * 0.5) SFX.step();
+      const stepIdx6 = Math.floor(wall * 2.2);
+      if (stepIdx6 !== CX.lastStep && k > 0.03 && k < 0.97) { CX.lastStep = stepIdx6; try { SFX.step(); } catch (e) {} }
       if (Math.random() < dt * 0.8) SFX.buzz();
       dustPts.position.set(0, 1.8, z + 6); // пыль следует за камерой
       // дверь вдали — свет нарастает к подходу
@@ -12113,9 +12337,9 @@ setTimeout(() => {
     cabLamp.intensity = 1.0;
     G.flick.forEach((f) => { try { f.l.intensity = f.base; } catch (e) {} });
     setDoorLight(0);
-    floorCount = 2; lastBand = -1; nextDrip = 1.2; nextBuzz = 3; motorOn = false;
+    floorCount = 2; lastBand = -1; nextDrip = 1.2; nextBuzz = 3; motorOn = false; CX.lastStep = -1;
     F.doorOpen = 0; F.doorCls = 0; F.spd = 0; F.shakeAmt = 0;
-    CX.m = 0; CX.s = 0; CX.d = 0; CX.f1 = 0; CX.f2 = 0; CX.f3 = 0; CX.f4 = 0; CX.f5 = 0; CX.f6 = 0; CX.f7 = 0; CX.f8 = 0;
+    CX.m = 0; CX.s = 0; CX.d = 0; CX.f1 = 0; CX.f2 = 0; CX.f3 = 0; CX.f4 = 0; CX.f5 = 0; CX.f6 = 0; CX.f7 = 0; CX.f8 = 0; CX.fcar = 0;
     CX.t0e = 0; CX.t0m = 0; CX.t0s = 0; CX.t0d = 0; CX.rainT = 0.4; CX.thunT = 1.4; CX.mallT = 1.0; CX.lastIdx = -1;
     hideProScenes();
     GX.visible = true;
@@ -12129,6 +12353,7 @@ setTimeout(() => {
     if (capDiv) { try { capDiv.remove(); } catch (e) {} capDiv = null; }
     if (flDiv) { try { flDiv.remove(); } catch (e) {} flDiv = null; }
     setTimeout(() => { try { caption('НОЧЬ · ДОЖДЬ', 1.8, 13); } catch (e) {} }, 1200);
+    setTimeout(() => { try { SFX.bedCity(); } catch (e) {} }, 300);
     setTimeout(() => { try { SFX2.thunder(); } catch (e) {} }, 600);
     api.begun = true;
   };
