@@ -9991,28 +9991,44 @@ setTimeout(() => {
   // решётчатые двери (две половинки, в проёме z=11.9)
   const doors = { l: new THREE.Group(), r: new THREE.Group() };
   // v8: грузовые створки — сталь + большое стекло с решёткой (видно шахту!)
+  // v18: створки ПОЛНОРАЗМЕРНЫЕ — по 1.52 м каждая, вместе полностью
+  // перекрывают проём 3.0×3.1 (раньше были 0.86 → по бокам зияли дыры,
+  // сквозь которые светила шахта — «обрывистые двери»).
+  const DOORW = 1.52, DOORH = 3.08;
   (function buildFreightLeaves() {
     const steelL = new THREE.MeshLambertMaterial({ color: 0x4a5058 });
     const darkL = new THREE.MeshLambertMaterial({ color: 0x23272c });
-    const glassL = new THREE.MeshBasicMaterial({ color: 0x9fc4d8, transparent: true, opacity: 0.26 });
+    const glassL = new THREE.MeshBasicMaterial({ color: 0x9fc4d8, transparent: true, opacity: 0.22 });
     const hzD = hazardTex();
     const hzDM = hzD ? new THREE.MeshBasicMaterial({ map: hzD }) : new THREE.MeshBasicMaterial({ color: 0xc8a020 });
     [[doors.l, 1], [doors.r, -1]].forEach(([leaf, inner]) => {
-      leaf.add(box(0.86, 1.3, 0.1, steelL, 0, 0.75, 0));       // стальной низ
-      leaf.add(box(0.86, 0.12, 0.12, darkL, 0, 1.45, 0));      // пояс
-      const gl = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.0, 0.05), glassL);
-      gl.position.set(0, 2.0, 0); leaf.add(gl);                 // стекло
-      leaf.add(box(0.06, 1.0, 0.07, darkL, -0.18, 2.0, 0));    // решётка
-      leaf.add(box(0.06, 1.0, 0.07, darkL, 0.18, 2.0, 0));
-      leaf.add(box(0.7, 0.06, 0.07, darkL, 0, 2.0, 0));
-      leaf.add(box(0.86, 0.15, 0.12, darkL, 0, 2.6, 0));       // верх
-      const hz = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.25), hzDM);
-      hz.position.set(0, 0.32, -0.056); hz.rotation.y = Math.PI; leaf.add(hz);
-      leaf.add(box(0.08, 0.6, 0.08, darkL, inner * 0.32, 1.1, -0.08)); // ручка
+      // сплошное полотно на всю высоту — базовая «непрозрачная» плита
+      leaf.add(box(DOORW, DOORH, 0.11, steelL, 0, DOORH / 2, 0));
+      // нижняя глухая панель с расшивкой
+      leaf.add(box(DOORW - 0.1, 1.34, 0.06, darkL, 0, 0.72, -0.06));
+      leaf.add(box(DOORW, 0.1, 0.14, darkL, 0, 1.44, 0));       // пояс-отбойник
+      // смотровое окно (в полотне, не на всю створку)
+      const gl = new THREE.Mesh(new THREE.BoxGeometry(DOORW - 0.44, 0.92, 0.04), glassL);
+      gl.position.set(0, 2.16, -0.05); leaf.add(gl);
+      leaf.add(box(0.06, 0.92, 0.08, darkL, -0.3, 2.16, -0.06)); // решётка окна
+      leaf.add(box(0.06, 0.92, 0.08, darkL, 0.3, 2.16, -0.06));
+      leaf.add(box(DOORW - 0.44, 0.06, 0.08, darkL, 0, 2.16, -0.06));
+      // рамка окна
+      leaf.add(box(DOORW - 0.32, 0.09, 0.1, darkL, 0, 2.68, -0.05));
+      leaf.add(box(DOORW - 0.32, 0.09, 0.1, darkL, 0, 1.66, -0.05));
+      // верхняя кромка
+      leaf.add(box(DOORW, 0.12, 0.14, darkL, 0, DOORH - 0.06, 0));
+      // hazard-лента внизу (со стороны коридора)
+      const hz = new THREE.Mesh(new THREE.PlaneGeometry(DOORW - 0.12, 0.26), hzDM);
+      hz.position.set(0, 0.3, 0.058); leaf.add(hz);
+      // ручка у стыка створок
+      leaf.add(box(0.09, 0.62, 0.09, darkL, inner * (DOORW / 2 - 0.16), 1.15, 0.09));
+      // вертикальный нащельник, перекрывающий стык (чтобы не было световой щели)
+      leaf.add(box(0.1, DOORH, 0.06, darkL, inner * (DOORW / 2 - 0.03), DOORH / 2, -0.08));
     });
   })();
-  doors.l.position.set(-0.9, 0, 11.85);
-  doors.r.position.set(0.9, 0, 11.85);
+  doors.l.position.set(-DOORW / 2, 0, 11.85);
+  doors.r.position.set(DOORW / 2, 0, 11.85);
   LF.add(doors.l); LF.add(doors.r);
   api.doors = doors;
   // направляющие рельсы шахты
@@ -10033,11 +10049,17 @@ setTimeout(() => {
   api.callBtnMat = new THREE.MeshBasicMaterial({ color: 0x1a3a22 });
   const callBtn = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.05, 12), api.callBtnMat);
   callBtn.rotation.x = Math.PI / 2; callBtn.position.set(1.75, 1.52, 12.68); LF.add(callBtn);
-  const arrGlow = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 2.8),
-    new THREE.MeshBasicMaterial({ color: 0xbfe0ff, transparent: true, opacity: 0 }));
-  arrGlow.position.set(0, 1.5, 12.5); arrGlow.rotation.y = Math.PI; LF.add(arrGlow);
+  // v18: раньше здесь был непрозрачный плейн 2.0×2.8 прямо перед камерой —
+  // при прибытии он превращался в «молочный экран» на пол-кадра.
+  // Теперь это аддитивный мягкий халор ЗА проёмом + точечный свет.
+  const arrGlow = new THREE.Mesh(new THREE.PlaneGeometry(2.9, 3.1),
+    new THREE.MeshBasicMaterial({
+      color: 0x9fc8e8, transparent: true, opacity: 0,
+      blending: THREE.AdditiveBlending, depthWrite: false, depthTest: true
+    }));
+  arrGlow.position.set(0, 1.55, 13.6); arrGlow.rotation.y = Math.PI; LF.add(arrGlow);
   const arrL = new THREE.PointLight(0xbfe0ff, 0, 10, 1.7);
-  arrL.position.set(0, 2.0, 12.0); LF.add(arrL);
+  arrL.position.set(0, 2.0, 13.0); LF.add(arrL);
   api.arrGlow = arrGlow; api.arrL = arrL;
 
   // КАБИНА (визуальный корпус, спускается вниз — группа liftCab)
@@ -10167,10 +10189,10 @@ setTimeout(() => {
   shHouse.visible = false;
   const stripM = new THREE.MeshBasicMaterial({ color: 0x3a4a44 });
   for (let y = -13; y < 8; y += 1.6) shaftG.add(box(4.0, 0.1, 0.15, stripM, 0, y, 13.2));
-  // таблички этажей (пересекают окно дверей y≈1.9 синхронно с динь!)
-  [['B2', -1.3], ['B3', -4.5], ['B4', -7.7], ['B5', -10.9]].forEach(([txt, yy]) => {
-    shaftG.add(box(2.0, 1.0, 0.1, new THREE.MeshLambertMaterial({ color: 0x10141a }), 0, yy, 13.1));
-    const pl = tMesh(txt, 1.6, 0.8, '#7fd0ff', '#1a5a8a', 90, 400, 200);
+  // таблички этажей (пересекают окно створок y≈2.16 синхронно с динь!)
+  [['B2', -1.05], ['B3', -4.25], ['B4', -7.45], ['B5', -10.65]].forEach(([txt, yy]) => {
+    shaftG.add(box(1.7, 0.85, 0.1, new THREE.MeshLambertMaterial({ color: 0x10141a }), 0, yy, 13.1));
+    const pl = tMesh(txt, 1.35, 0.7, '#7fd0ff', '#1a5a8a', 90, 400, 200);
     if (pl) { pl.position.set(0, yy, 13.0); pl.rotation.y = Math.PI; shaftG.add(pl); }
   });
   // хомуты троса проносятся мимо
@@ -12383,9 +12405,14 @@ setTimeout(() => {
   const T1 = 9.4, T2 = 12.6, T3 = 14.8, T4 = 22.4, T5 = 24.0, T6 = 26.0, T7 = 30.2, T8 = 31.6;
 
   // управление дверьми
-  function doorsAnim(x) { // x: 0=закрыто (x=±0.9), 1=открыто (x=±2.05)
-    doors.l.position.x = -(0.9 + 1.15 * x);
-    doors.r.position.x = (0.9 + 1.15 * x);
+  function doorsAnim(x) {
+    // v18: 0 = полностью закрыто (створки сомкнуты по центру),
+    //      1 = полностью открыто (уехали за косяки, полотно не видно в проёме).
+    const k = Math.max(0, Math.min(1, x));
+    const e = k * k * (3 - 2 * k);          // сглаживание хода (без рывков)
+    const off = DOORW / 2 + 1.48 * e;
+    doors.l.position.x = -off;
+    doors.r.position.x = off;
   }
   api.doorsAnim = doorsAnim;
   doorsAnim(0);
@@ -13148,7 +13175,7 @@ setTimeout(() => {
         api.doorsAnim(kk);
         if (kk > 0.05 && !P._dopen) { P._dopen = 1; caption('УРОВЕНЬ B5 · СЛУЖЕБНЫЙ', 2.4, 15); try { api.liftDoorM.open.color.setHex(0x36ff5e); api.liftDoorM.close.color.setHex(0x1a2a1a); } catch (e) {} }
         const ag = Math.max(0, Math.min(1, kk));
-        try { api.arrGlow.material.opacity = 0.85 * ag; api.arrL.intensity = 1.3 * ag; } catch (e) {}
+        try { api.arrGlow.material.opacity = 0.3 * ag; api.arrL.intensity = 1.1 * ag; } catch (e) {}
       }
       // тёмный проём за дверью: свет из нижнего коридора вкатывается
       if (k > 0.3) setDoorLight(Math.min(1.2, (k - 0.3) / 0.2) * 1.2);
