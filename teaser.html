@@ -351,6 +351,133 @@ function noiseBurst(dur, f0, f1, q, gain, when, type) {
   AUDIO2.send(g, 0.3);
   src.start(t0); src.stop(t0 + dur + 0.05);
 }
+// ══════════════════════════════════════════════════════════════════════════
+// v23: НАСТОЯЩИЙ СМЕХ (формантный вокальный синтез, а не 8-битные пилы)
+// Голос = источник (голосовые связки: пила с джиттером + придыхание-шум),
+// пропущенный через 4 резонансных форманты (F1..F4). Каждый слог «ХА» —
+// это огибающая гортани + резкий выдох. Так звучит живой голос, а не чип.
+// ══════════════════════════════════════════════════════════════════════════
+function voiceLaugh(opt) {
+  if (!AU) return;
+  const o = opt || {};
+  const when = o.when || 0;
+  const t0 = AU.currentTime + when;
+  const base = o.pitch || 118;          // основной тон голоса, Гц
+  const syl = o.syllables || 7;         // сколько «ХА»
+  const gain = o.gain || 0.5;
+  const dark = o.dark === undefined ? 1 : o.dark;   // 0 = обычный, 1 = мёртвый/низкий
+
+  // общая шина смеха: компрессия «в глотке» + лёгкий хрип
+  const bus = AU.createGain();
+  bus.gain.value = gain;
+  const shaper = AU.createWaveShaper();
+  const cur = new Float32Array(1024);
+  for (let i = 0; i < 1024; i++) {
+    const x = (i / 1023) * 2 - 1;
+    // мягкое насыщение — придаёт голосу «тело» и хрипотцу
+    cur[i] = Math.tanh(x * (1.8 + dark * 1.6)) * 0.86;
+  }
+  shaper.curve = cur; shaper.oversample = '4x';
+  bus.connect(shaper); shaper.connect(MG);
+  try { AUDIO2.send(shaper, 0.42); } catch (e) {}
+
+  // форманты гласной «А» (мужской голос), слегка опущенные для мрачности
+  const F = [
+    { f: 720 - dark * 110, q: 9, a: 1.0 },
+    { f: 1180 - dark * 180, q: 11, a: 0.72 },
+    { f: 2560 - dark * 320, q: 13, a: 0.32 },
+    { f: 3400 - dark * 400, q: 15, a: 0.16 }
+  ];
+
+  let tt = 0;
+  for (let i = 0; i < syl; i++) {
+    // слоги ускоряются и слабеют — как настоящий приступ смеха
+    const rate = 0.30 - i * 0.012;
+    const dur = 0.15 + Math.random() * 0.05;
+    const st = t0 + tt;
+    tt += Math.max(0.14, rate);
+
+    // высота: каждый следующий «ХА» чуть ниже, с падением внутри слога
+    const p0 = base * (1 - i * 0.028) * (1 + (Math.random() - 0.5) * 0.06);
+    const p1 = p0 * 0.82;
+    const amp = (1 - i / (syl + 2)) * (0.85 + Math.random() * 0.3);
+
+    // ── источник 1: голосовые связки (пила + вибрато + джиттер) ──
+    const osc = AU.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(p0 * 1.06, st);
+    osc.frequency.exponentialRampToValueAtTime(p0, st + 0.03);
+    osc.frequency.exponentialRampToValueAtTime(p1, st + dur);
+    // вибрато — живой голос никогда не держит ровную ноту
+    const vib = AU.createOscillator(), vibG = AU.createGain();
+    vib.frequency.value = 5.2 + Math.random() * 2.4;
+    vibG.gain.value = p0 * 0.022;
+    vib.connect(vibG); vibG.connect(osc.frequency);
+    vib.start(st); vib.stop(st + dur + 0.1);
+
+    // субгармоника — грудной резонанс, делает голос большим
+    const sub = AU.createOscillator();
+    sub.type = 'triangle';
+    sub.frequency.setValueAtTime(p0 * 0.5, st);
+    sub.frequency.exponentialRampToValueAtTime(p1 * 0.5, st + dur);
+
+    // ── источник 2: придыхание (шум выдоха) ──
+    const br = AU.createBufferSource();
+    br.buffer = getNoise(); br.loop = true;
+    const brF = AU.createBiquadFilter();
+    brF.type = 'bandpass'; brF.frequency.value = 1500; brF.Q.value = 0.7;
+    const brG = AU.createGain();
+    brG.gain.setValueAtTime(0.0001, st);
+    brG.gain.linearRampToValueAtTime(0.14 * amp, st + 0.012);   // резкий «Х»
+    brG.gain.exponentialRampToValueAtTime(0.0001, st + dur * 0.75);
+    br.connect(brF); brF.connect(brG); brG.connect(bus);
+    br.start(st); br.stop(st + dur + 0.08);
+
+    // ── огибающая гортани: быстрый удар, мягкий спад ──
+    const env = AU.createGain();
+    env.gain.setValueAtTime(0.0001, st);
+    env.gain.exponentialRampToValueAtTime(amp, st + 0.018);
+    env.gain.exponentialRampToValueAtTime(amp * 0.45, st + dur * 0.45);
+    env.gain.exponentialRampToValueAtTime(0.0001, st + dur);
+    osc.connect(env); sub.connect(env);
+
+    // ── формантный фильтр-банк ──
+    F.forEach((fm) => {
+      const bp = AU.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.setValueAtTime(fm.f * (0.97 + Math.random() * 0.06), st);
+      bp.Q.value = fm.q;
+      const fg = AU.createGain();
+      fg.gain.value = fm.a;
+      env.connect(bp); bp.connect(fg); fg.connect(bus);
+    });
+    // немного «сухого» сигнала, чтобы голос не звучал телефонно
+    const dry = AU.createGain(); dry.gain.value = 0.18;
+    env.connect(dry); dry.connect(bus);
+
+    osc.start(st); osc.stop(st + dur + 0.06);
+    sub.start(st); sub.stop(st + dur + 0.06);
+  }
+
+  // финальный вдох — воздух втягивается, смех «выдыхается»
+  const inh = AU.createBufferSource();
+  inh.buffer = getNoise(); inh.loop = true;
+  const inhF = AU.createBiquadFilter();
+  inhF.type = 'bandpass'; inhF.Q.value = 1.4;
+  const ti = t0 + tt + 0.04;
+  inhF.frequency.setValueAtTime(420, ti);
+  inhF.frequency.exponentialRampToValueAtTime(1700, ti + 0.42);
+  const inhG = AU.createGain();
+  inhG.gain.setValueAtTime(0.0001, ti);
+  inhG.gain.linearRampToValueAtTime(0.1 * gain, ti + 0.18);
+  inhG.gain.exponentialRampToValueAtTime(0.0001, ti + 0.5);
+  inh.connect(inhF); inhF.connect(inhG); inhG.connect(MG);
+  try { AUDIO2.send(inhG, 0.5); } catch (e) {}
+  inh.start(ti); inh.stop(ti + 0.56);
+
+  return tt;
+}
+
 // ── v10 ИМБА-звук: модальный металл, саб-просадки, FM-колокол, мотор лифта ──
 function metalHit(partials, dur, gain, when, bright) {
   if (!AU) return;
@@ -8863,6 +8990,14 @@ window.upBoss4 = function (dt, wall) {
     if (g > 0) {
       const cyc = g % 7;
       if (cyc < 1.6) gEnv = Math.sin(cyc / 1.6 * Math.PI);
+      // v23: озвучиваем каждый приступ настоящим голосом (раньше он был немой)
+      const gi = Math.floor(g / 7);
+      if (cyc < 0.12 && B4._gig !== gi) {
+        B4._gig = gi;
+        try {
+          voiceLaugh({ pitch: 104 - (gi % 3) * 5, syllables: 5, gain: 0.3, dark: 1 });
+        } catch (e) {}
+      }
     }
   }
   B4.gig = gEnv;
@@ -9138,15 +9273,13 @@ let CUES = [
       GLOWL.intensity = 0.07;
       // тьма остаётся: только глаза в пустоте
       // ХА-ХА-ХА: громкий мёртвый хохот — и всё
-      (function haHa() {
-        let hf = 215;
-        for (let i = 0; i < 8; i++) {
-          const w = 0.1 + i * 0.2;
-          tone(hf, hf * 0.7, 0.15, 'sawtooth', 0.12, w);
-          tone(hf * 0.52, hf * 0.36, 0.13, 'square', 0.05, w);
-          hf *= 0.925;
-        }
-      })();
+      // v23: НАСТОЯЩИЙ хохот вместо 8-битных пил — формантный голос.
+      // Два слоя: основной низкий голос + подголосок октавой ниже с
+      // задержкой, чтобы смех звучал нечеловечески «двойным».
+      voiceLaugh({ pitch: 116, syllables: 8, gain: 0.62, dark: 1, when: 0.08 });
+      voiceLaugh({ pitch: 74, syllables: 7, gain: 0.34, dark: 1, when: 0.14 });
+      // подрык на выдохе — грудной резонанс
+      noiseBurst(1.6, 190, 90, 3.2, 0.05, 0.1, 'lowpass');
   } },
 
   // кресло доехало: ГРОХОТ + глаза
@@ -11136,7 +11269,11 @@ setTimeout(() => {
       const ROADW = 15;            // ширина проезжей части
       const PAVEW = 5.5;           // ширина тротуара
       const KERBH = 0.22;          // высота бордюра
-      const crossZ = [-46, -12, 26, 64, 104];   // поперечные улицы
+      // v23: молл стоит в мировых z −32…+4 (фасад на z=+4). Группа города
+      // сдвинута на +12, значит фасад = локальный z −8. Проезжая часть
+      // ОБЯЗАНА кончиться до него, иначе машины въезжают в здание.
+      const ZEND = 6;                            // локальный z: край асфальта
+      const crossZ = [26, 64, 104, 150];         // поперечные улицы (все за ZEND)
       const avenueX = [0];                       // проспекты вдоль Z
 
       // общая «земля» — тёмный грунт под всем
@@ -11155,7 +11292,8 @@ setTimeout(() => {
         return m;
       }
       // проспект вдоль Z
-      avenueX.forEach((ax) => roadStrip(ax, 20, ROADW, 400, true));
+      // проспект: от площади (ZEND) и вдаль от камеры
+      avenueX.forEach((ax) => roadStrip(ax, ZEND + 200, ROADW, 400, true));
       // поперечные улицы
       crossZ.forEach((cz) => roadStrip(0, cz, 400, ROADW * 0.8, false));
 
@@ -11164,12 +11302,12 @@ setTimeout(() => {
         // xEdge — внешний край проезжей части; side: +1 (справа) / -1 (слева)
         const px = xEdge + side * (PAVEW / 2);
         const pv = new THREE.Mesh(new THREE.BoxGeometry(PAVEW, KERBH, 400), M.pave);
-        pv.position.set(px, KERBH / 2, 20); addC(pv);
+        pv.position.set(px, KERBH / 2, ZEND + 200); addC(pv);
         // бордюрный камень
         const kb = new THREE.Mesh(new THREE.BoxGeometry(0.34, KERBH + 0.06, 400), M.kerb);
-        kb.position.set(xEdge + side * 0.17, (KERBH + 0.06) / 2, 20); addC(kb);
+        kb.position.set(xEdge + side * 0.17, (KERBH + 0.06) / 2, ZEND + 200); addC(kb);
         // белая кромка на бордюре (стёртая краска)
-        for (let z = -180; z < 220; z += 12) {
+        for (let z = ZEND; z < 220; z += 12) {
           if (R() < 0.45) continue;
           const pm = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 7), M.paint);
           pm.rotation.x = -Math.PI / 2;
@@ -11182,19 +11320,19 @@ setTimeout(() => {
       sidewalkZ(-ROADW / 2, -1);
 
       // разметка проспекта: осевая прерывистая + сплошные по краям
-      for (let z = -190; z < 230; z += 7) {
+      for (let z = ZEND + 4; z < 230; z += 7) {
         const d = new THREE.Mesh(new THREE.PlaneGeometry(0.28, 3.6), M.paint);
         d.rotation.x = -Math.PI / 2; d.position.set(0, 0.02, z); addC(d);
       }
       [-ROADW / 2 + 0.55, ROADW / 2 - 0.55].forEach((lx) => {
         const s = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 400), M.paint);
-        s.rotation.x = -Math.PI / 2; s.position.set(lx, 0.02, 20);
+        s.rotation.x = -Math.PI / 2; s.position.set(lx, 0.02, ZEND + 200);
         s.material = new THREE.MeshBasicMaterial({ color: 0xd8d3c4, transparent: true, opacity: 0.42 });
         addC(s);
       });
       // полосы движения (пунктир по 1/4 ширины)
       [-ROADW / 4, ROADW / 4].forEach((lx) => {
-        for (let z = -190; z < 230; z += 9) {
+        for (let z = ZEND + 4; z < 230; z += 9) {
           const d = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 3.0), M.paint);
           d.rotation.x = -Math.PI / 2; d.position.set(lx, 0.018, z + 2);
           d.material = new THREE.MeshBasicMaterial({ color: 0xcac4b4, transparent: true, opacity: 0.3 });
@@ -11227,7 +11365,7 @@ setTimeout(() => {
 
       // люки и ливнёвки
       for (let i = 0; i < 22; i++) {
-        const z = RR(-170, 210);
+        const z = RR(ZEND + 6, 210);
         const x = RR(-ROADW / 2 + 1.5, ROADW / 2 - 1.5);
         const mh = new THREE.Mesh(new THREE.CircleGeometry(0.42, 14),
           new THREE.MeshPhongMaterial({ color: 0x2c3036, specular: 0x6a7787, shininess: 70 }));
@@ -11237,7 +11375,7 @@ setTimeout(() => {
         rim.rotation.x = -Math.PI / 2; rim.position.set(x, 0.023, z); addC(rim);
       }
       // ливнёвые решётки у бордюра
-      for (let z = -160; z < 210; z += 26) {
+      for (let z = ZEND + 8; z < 210; z += 26) {
         [-1, 1].forEach((sd) => {
           const gr = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.05, 1.4),
             new THREE.MeshPhongMaterial({ color: 0x14181e, specular: 0x556070, shininess: 50 }));
@@ -11248,7 +11386,7 @@ setTimeout(() => {
       // лужи-«зеркала» на дороге — светлые полупрозрачные пятна
       const puddles = [];
       for (let i = 0; i < 26; i++) {
-        const z = RR(-140, 220);
+        const z = RR(ZEND + 4, 220);
         const x = RR(-ROADW / 2 + 1, ROADW / 2 - 1);
         const w0 = RR(1.6, 5.2), d0 = RR(1.4, 4.4);
         const pm = new THREE.Mesh(new THREE.PlaneGeometry(w0, d0),
@@ -11267,10 +11405,72 @@ setTimeout(() => {
             color: 0x1c2632, specular: 0x9ab8d8, shininess: 220, transparent: true, opacity: 0.45
           }));
         pm.rotation.x = -Math.PI / 2;
-        pm.position.set(sd * (ROADW / 2 + RR(0.6, PAVEW - 0.6)), KERBH + 0.012, RR(-120, 200));
+        pm.position.set(sd * (ROADW / 2 + RR(0.6, PAVEW - 0.6)), KERBH + 0.012, RR(ZEND, 200));
         addC(pm); puddles.push(pm);
       }
       GX.cityPuddles = puddles;
+
+      // ── ПЛОЩАДЬ ПЕРЕД GRAND MALL (v23) ──
+      // Там, где кончается проезжая часть, начинается пешеходная зона:
+      // машинам сюда нельзя, она физически отделена столбиками и клумбами.
+      (function plaza() {
+        // мощение площади
+        const pz = new THREE.Mesh(new THREE.PlaneGeometry(ROADW + PAVEW * 2 + 8, 26), M.pave);
+        pz.rotation.x = -Math.PI / 2;
+        pz.position.set(0, KERBH * 0.5, ZEND - 13); addC(pz);
+        // приподнятый край площади — «ступень» вместо бордюра
+        const st = new THREE.Mesh(new THREE.BoxGeometry(ROADW + PAVEW * 2 + 8, KERBH, 0.6), M.kerb);
+        st.position.set(0, KERBH / 2, ZEND); addC(st);
+        // антипарковочные столбики поперёк въезда — видно, что машины не проедут
+        for (let x = -(ROADW / 2 - 0.6); x <= ROADW / 2 - 0.6; x += 1.7) {
+          const b = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 1.0, 8), M.steelDark);
+          b.position.set(x, KERBH + 0.5, ZEND - 0.9); addC(b);
+          const r = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.09, 8), glowM(0xd8d0b8));
+          r.position.set(x, KERBH + 0.86, ZEND - 0.9); addC(r);
+        }
+        // знак «кирпич» — движение запрещено
+        const sg = new THREE.Group(); sg.position.set(ROADW / 2 + 1.0, 0, ZEND + 1.4);
+        const sp0 = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.6, 8), M.steel);
+        sp0.position.y = 1.3; sg.add(sp0);
+        const disc = new THREE.Mesh(new THREE.CircleGeometry(0.42, 20),
+          new THREE.MeshBasicMaterial({ color: 0xb01c18, side: THREE.DoubleSide }));
+        disc.position.y = 2.5; sg.add(disc);
+        const bar = new THREE.Mesh(new THREE.PlaneGeometry(0.56, 0.16),
+          new THREE.MeshBasicMaterial({ color: 0xf0ece0, side: THREE.DoubleSide }));
+        bar.position.set(0, 2.5, 0.01); sg.add(bar);
+        addC(sg);
+        // клумбы-кашпо по краям площади
+        [-1, 1].forEach((sd) => {
+          for (let i = 0; i < 3; i++) {
+            const zz = ZEND - 4 - i * 6;
+            const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.7, 0.8, 12), M.conc);
+            pot.position.set(sd * (ROADW / 2 + 1.6), KERBH + 0.4, zz); addC(pot);
+            const bush = new THREE.Mesh(new THREE.SphereGeometry(0.8, 8, 6), M.leaf);
+            bush.scale.y = 0.7;
+            bush.position.set(sd * (ROADW / 2 + 1.6), KERBH + 1.1, zz); addC(bush);
+          }
+        });
+        // фонари-торшеры на площади (ниже уличных, теплее)
+        [-1, 1].forEach((sd) => {
+          for (let i = 0; i < 3; i++) {
+            const zz = ZEND - 3 - i * 8;
+            const px = sd * (ROADW / 2 + 4.2);
+            const pl = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 4.2, 8), M.steel);
+            pl.position.set(px, KERBH + 2.1, zz); addC(pl);
+            const gl = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 8), glowM(0xffdcae));
+            gl.position.set(px, KERBH + 4.4, zz); addC(gl);
+            const hl = halo(TEX.warm, 0xffc98a, 4.2, 0.4);
+            hl.position.set(px, KERBH + 4.4, zz); addC(hl);
+            const pool = new THREE.Mesh(new THREE.CircleGeometry(3.2, 16),
+              new THREE.MeshBasicMaterial({
+                map: TEX.warm, color: 0xffb877, transparent: true, opacity: 0.2,
+                blending: THREE.AdditiveBlending, depthWrite: false
+              }));
+            pool.rotation.x = -Math.PI / 2;
+            pool.position.set(px, KERBH + 0.03, zz); addC(pool);
+          }
+        });
+      })();
 
       // ─────────────────────────────────────────────────────────────────────
       // 4. ЗДАНИЯ
@@ -11449,14 +11649,14 @@ setTimeout(() => {
 
       function blockRow(side) {
         // side = +1 (правая сторона) / -1 (левая)
-        let z = -170;
+        let z = ZEND + 10;
         while (z < 210) {
           // пропускаем перекрёстки
           let atCross = false;
           crossZ.forEach((cz) => { if (Math.abs(z - cz) < ROADW * 0.8) atCross = true; });
           if (atCross) { z += ROADW * 0.9; continue; }
-          // не строим прямо перед входом в молл (там своя сцена)
-          if (z > -34 && z < 14) { z += 8; continue; }
+          // молл занимает центр кадра — оставляем его фасад чистым
+          if (z < ZEND + 8) { z += 8; continue; }
 
           const d0 = RR(12, 26);
           const w0 = RR(12, 24);
@@ -11569,7 +11769,7 @@ setTimeout(() => {
         }
         addC(G0);
       }
-      for (let z = -150; z < 220; z += 22) {
+      for (let z = ZEND + 4; z < 220; z += 22) {
         streetLamp(ROADW / 2 + 1.4, z, 1);
         streetLamp(-(ROADW / 2 + 1.4), z + 11, -1);
       }
@@ -11711,7 +11911,7 @@ setTimeout(() => {
         addC(G0);
       }
       // расставляем мебель по тротуарам
-      for (let z = -150; z < 215; z += 13) {
+      for (let z = ZEND + 6; z < 215; z += 13) {
         [-1, 1].forEach((sd) => {
           const px = sd * (ROADW / 2 + RR(1.2, PAVEW - 1.0));
           const r0 = R();
@@ -11724,7 +11924,7 @@ setTimeout(() => {
       }
       // остановки
       busStop(ROADW / 2 + PAVEW / 2 + 0.4, 42, 1);
-      busStop(-(ROADW / 2 + PAVEW / 2 + 0.4), -60, -1);
+      busStop(-(ROADW / 2 + PAVEW / 2 + 0.4), 128, -1);
 
       // билборд над кварталом
       function billboard(x, z, w, h, y, rotY, col) {
@@ -11752,11 +11952,11 @@ setTimeout(() => {
       }
       billboard(ROADW / 2 + PAVEW + 14, 86, 12, 6, 15, -Math.PI / 2, 0xff5a7a);
       billboard(-(ROADW / 2 + PAVEW + 16), 34, 11, 5.5, 13, Math.PI / 2, 0x50c8ff);
-      billboard(ROADW / 2 + PAVEW + 18, -74, 13, 6.5, 17, -Math.PI / 2, 0xffc040);
+      billboard(ROADW / 2 + PAVEW + 18, 172, 13, 6.5, 17, -Math.PI / 2, 0xffc040);
 
       // провода поперёк улицы (силуэт, добавляет глубины)
       for (let i = 0; i < 7; i++) {
-        const z = -140 + i * 46 + RR(-8, 8);
+        const z = ZEND + 20 + i * 46 + RR(-8, 8);
         const y = RR(9, 13);
         const pts = [];
         for (let k = 0; k <= 12; k++) {
@@ -11848,7 +12048,7 @@ setTimeout(() => {
         const ln = lanes[i % lanes.length];
         const kind = R() < 0.16 ? 'van' : (R() < 0.35 ? 'suv' : 'sedan');
         const car = makeCar(pick(carBodyCols), kind);
-        car.position.set(ln.x + RR(-0.3, 0.3), 0, RR(-190, 220));
+        car.position.set(ln.x + RR(-0.3, 0.3), 0, RR(ZEND + 12, 220));
         car.rotation.y = ln.dir > 0 ? 0 : Math.PI;
         addC(car);
         traffic.push({ g: car, dir: ln.dir, sp: RR(16, 30), lane: ln.x });
@@ -11856,8 +12056,7 @@ setTimeout(() => {
       // припаркованные вдоль бордюра
       for (let i = 0; i < 22; i++) {
         const sd = R() < 0.5 ? 1 : -1;
-        const z = RR(-160, 210);
-        if (z > -36 && z < 16) continue;
+        const z = RR(ZEND + 10, 210);
         const car = makeCar(pick(carBodyCols), R() < 0.25 ? 'suv' : 'sedan');
         car.position.set(sd * (ROADW / 2 - 1.5), 0, z);
         car.rotation.y = sd > 0 ? Math.PI : 0;
@@ -11911,7 +12110,7 @@ setTimeout(() => {
         const sd = R() < 0.5 ? 1 : -1;
         const p = makePerson();
         const px = sd * (ROADW / 2 + RR(1.4, PAVEW - 1.0));
-        p.g.position.set(px, KERBH, RR(-130, 200));
+        p.g.position.set(px, KERBH, RR(ZEND + 4, 200));
         addC(p.g);
         walkers.push({
           g: p.g, legs: p.legs, um: p.um,
@@ -13630,8 +13829,9 @@ setTimeout(() => {
     // трафик по полосам проспекта
     if (GX.cityTraffic) GX.cityTraffic.forEach((c) => {
       c.g.position.z += c.sp * c.dir * dt;
-      if (c.g.position.z > 230) c.g.position.z = -200;
-      if (c.g.position.z < -200) c.g.position.z = 230;
+      // v23: коридор движения ограничен площадью — в здание молла не въезжаем
+      if (c.g.position.z > 230) c.g.position.z = 18;
+      if (c.g.position.z < 18) c.g.position.z = 230;
       // лёгкое покачивание кузова на неровностях
       c.g.position.y = Math.sin(lt * 9 + c.lane) * 0.012;
       c.g.rotation.z = Math.sin(lt * 7.3 + c.lane) * 0.004;
@@ -13669,8 +13869,9 @@ setTimeout(() => {
     // прохожие под зонтами: идут по тротуару, зонт покачивается
     if (GX.cityWalkers) GX.cityWalkers.forEach((w0) => {
       w0.g.position.z += w0.sp * dt;
-      if (w0.g.position.z > 205) w0.g.position.z = -135;
-      if (w0.g.position.z < -135) w0.g.position.z = 205;
+      // прохожие ходят по тротуару вдоль проспекта, не сквозь фасад
+      if (w0.g.position.z > 205) w0.g.position.z = 10;
+      if (w0.g.position.z < 10) w0.g.position.z = 205;
       w0.g.rotation.y = w0.sp > 0 ? 0 : Math.PI;
       const st = Math.sin(lt * 6.2 * Math.abs(w0.sp) + w0.ph);
       w0.legs[0].rotation.x = st * 0.55;
