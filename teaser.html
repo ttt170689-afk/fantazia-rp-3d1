@@ -392,10 +392,10 @@ function voiceLaugh(opt) {
   let tt = 0;
   for (let i = 0; i < syl; i++) {
     // слоги ускоряются и слабеют — как настоящий приступ смеха
-    const rate = 0.30 - i * 0.012;
-    const dur = 0.15 + Math.random() * 0.05;
+    const rate = 0.34 - i * 0.012;
+    const dur = 0.17 + Math.random() * 0.05;
     const st = t0 + tt;
-    tt += Math.max(0.14, rate);
+    tt += Math.max(0.17, rate);
 
     // высота: каждый следующий «ХА» чуть ниже, с падением внутри слога
     const p0 = base * (1 - i * 0.028) * (1 + (Math.random() - 0.5) * 0.06);
@@ -406,39 +406,64 @@ function voiceLaugh(opt) {
     const osc = AU.createOscillator();
     osc.type = 'sawtooth';
     osc.frequency.setValueAtTime(p0 * 1.06, st);
-    osc.frequency.exponentialRampToValueAtTime(p0, st + 0.03);
-    osc.frequency.exponentialRampToValueAtTime(p1, st + dur);
+    osc.frequency.exponentialRampToValueAtTime(p0, st + 0.055 + 0.03);
+    osc.frequency.exponentialRampToValueAtTime(p1, st + 0.055 + dur);
     // вибрато — живой голос никогда не держит ровную ноту
     const vib = AU.createOscillator(), vibG = AU.createGain();
     vib.frequency.value = 5.2 + Math.random() * 2.4;
     vibG.gain.value = p0 * 0.022;
     vib.connect(vibG); vibG.connect(osc.frequency);
-    vib.start(st); vib.stop(st + dur + 0.1);
+    vib.start(st); vib.stop(st + 0.055 + dur + 0.1);
 
     // субгармоника — грудной резонанс, делает голос большим
     const sub = AU.createOscillator();
     sub.type = 'triangle';
     sub.frequency.setValueAtTime(p0 * 0.5, st);
-    sub.frequency.exponentialRampToValueAtTime(p1 * 0.5, st + dur);
+    sub.frequency.exponentialRampToValueAtTime(p1 * 0.5, st + 0.055 + dur);
 
-    // ── источник 2: придыхание (шум выдоха) ──
+    // ── СОГЛАСНЫЙ «Х» (v24) ──
+    // Русское «х» — глухой велярный фрикатив: турбулентный шум в горле
+    // ПЕРЕД гласной, 55 мс, с энергией в 1.2–4 кГц. Раньше он тонул под
+    // гласной, потому что звучал одновременно с ней. Теперь он отдельный.
+    const HDUR = 0.055;
+    const hs = AU.createBufferSource();
+    hs.buffer = getNoise(); hs.loop = true;
+    // велярное сужение = широкая полоса + горловой резонанс
+    const hf1 = AU.createBiquadFilter();
+    hf1.type = 'bandpass'; hf1.frequency.value = 1650 + Math.random() * 350; hf1.Q.value = 1.1;
+    const hf2 = AU.createBiquadFilter();
+    hf2.type = 'peaking'; hf2.frequency.value = 2900; hf2.Q.value = 2.2; hf2.gain.value = 9;
+    const hf3 = AU.createBiquadFilter();
+    hf3.type = 'highpass'; hf3.frequency.value = 700;   // убрать бубнёж
+    const hg = AU.createGain();
+    hg.gain.setValueAtTime(0.0001, st);
+    hg.gain.linearRampToValueAtTime(0.5 * amp, st + 0.014);   // резкий выхлоп
+    hg.gain.linearRampToValueAtTime(0.22 * amp, st + HDUR * 0.7);
+    hg.gain.exponentialRampToValueAtTime(0.0001, st + HDUR + 0.02);
+    hs.connect(hf3); hf3.connect(hf1); hf1.connect(hf2); hf2.connect(hg); hg.connect(bus);
+    hs.start(st); hs.stop(st + HDUR + 0.06);
+
+    // ── придыхание, тянущееся сквозь гласную ──
     const br = AU.createBufferSource();
     br.buffer = getNoise(); br.loop = true;
     const brF = AU.createBiquadFilter();
     brF.type = 'bandpass'; brF.frequency.value = 1500; brF.Q.value = 0.7;
     const brG = AU.createGain();
-    brG.gain.setValueAtTime(0.0001, st);
-    brG.gain.linearRampToValueAtTime(0.14 * amp, st + 0.012);   // резкий «Х»
-    brG.gain.exponentialRampToValueAtTime(0.0001, st + dur * 0.75);
+    brG.gain.setValueAtTime(0.0001, st + HDUR);
+    brG.gain.linearRampToValueAtTime(0.1 * amp, st + HDUR + 0.02);
+    brG.gain.exponentialRampToValueAtTime(0.0001, st + dur * 0.8);
     br.connect(brF); brF.connect(brG); brG.connect(bus);
     br.start(st); br.stop(st + dur + 0.08);
 
     // ── огибающая гортани: быстрый удар, мягкий спад ──
+    // гласная «А» вступает ПОСЛЕ «Х» — так слышно «ХА», а не «АХ»
+    const vs = st + HDUR;
     const env = AU.createGain();
     env.gain.setValueAtTime(0.0001, st);
-    env.gain.exponentialRampToValueAtTime(amp, st + 0.018);
-    env.gain.exponentialRampToValueAtTime(amp * 0.45, st + dur * 0.45);
-    env.gain.exponentialRampToValueAtTime(0.0001, st + dur);
+    env.gain.setValueAtTime(0.0001, vs);          // молчим, пока звучит «Х»
+    env.gain.exponentialRampToValueAtTime(amp, vs + 0.016);
+    env.gain.exponentialRampToValueAtTime(amp * 0.42, vs + dur * 0.45);
+    env.gain.exponentialRampToValueAtTime(0.0001, vs + dur);
     osc.connect(env); sub.connect(env);
 
     // ── формантный фильтр-банк ──
@@ -455,8 +480,8 @@ function voiceLaugh(opt) {
     const dry = AU.createGain(); dry.gain.value = 0.18;
     env.connect(dry); dry.connect(bus);
 
-    osc.start(st); osc.stop(st + dur + 0.06);
-    sub.start(st); sub.stop(st + dur + 0.06);
+    osc.start(st); osc.stop(st + HDUR + dur + 0.06);
+    sub.start(st); sub.stop(st + HDUR + dur + 0.06);
   }
 
   // финальный вдох — воздух втягивается, смех «выдыхается»
