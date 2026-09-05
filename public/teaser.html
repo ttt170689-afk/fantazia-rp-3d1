@@ -394,6 +394,42 @@ function fmBell(f, dur, gain, when) {
   car.start(t0); car.stop(t0 + dur + 0.05);
   mod.start(t0); mod.stop(t0 + dur + 0.05);
 }
+// ── v11: музыкальная шкатулка молла (вальс, играет пока мы в GRAND MALL) ──
+const mallMusN = { nodes: [] };
+function mallMusicStart() {
+  if (!AU) return;
+  mallMusicStop();
+  try {
+    const t0 = AU.currentTime + 0.1;
+    const beat = 0.42;
+    const mel = [659.25, 783.99, 1046.5, 987.77, 880, 783.99, 880, 1046.5, 1174.7, 1046.5, 880, 783.99,
+                 880, 698.46, 587.33, 659.25, 783.99, 987.77, 1046.5, 987.77, 880, 783.99, 659.25, 523.25];
+    const bass = [130.81, 98, 174.61, 130.81, 174.61, 196, 196, 130.81];
+    const note = (f, t, dur, g) => {
+      const o1 = AU.createOscillator(), o2 = AU.createOscillator(), gn = AU.createGain();
+      const g2 = AU.createGain(); g2.gain.value = 0.18;
+      o1.type = 'sine'; o1.frequency.value = f;
+      o2.type = 'sine'; o2.frequency.value = f * 3.98;
+      gn.gain.setValueAtTime(0.0001, t);
+      gn.gain.exponentialRampToValueAtTime(g, t + 0.01);
+      gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o1.connect(gn); o2.connect(g2); g2.connect(gn); gn.connect(MG); AUDIO2.send(gn, 0.5);
+      o1.start(t); o1.stop(t + dur + 0.05); o2.start(t); o2.stop(t + dur + 0.05);
+      mallMusN.nodes.push(o1, o2);
+    };
+    mel.forEach((f, i) => note(f, t0 + i * beat, 1.3, 0.055));
+    bass.forEach((f, b) => {
+      const t = t0 + b * 3 * beat;
+      note(f, t, 0.6, 0.04);
+      note(f * 4, t + beat, 0.18, 0.008);
+      note(f * 4, t + beat * 2, 0.18, 0.008);
+    });
+  } catch (e) {}
+}
+function mallMusicStop() {
+  try { mallMusN.nodes.forEach(n => { try { n.stop(); } catch (e) {} }); } catch (e) {}
+  mallMusN.nodes = [];
+}
 const motorN = { on: false, nodes: [], gain: null };
 function motorStart() {
   if (!AU || motorN.on) return;
@@ -11096,27 +11132,28 @@ setTimeout(() => {
     // объём: ширина x ±1.75, спуск по -z
     const W = 3.6;
     // стены (на всю высоту от нижнего пола)
-    GS.add(box(0.4, 5.6, 14, NM.conc, -2.0, 0.2, -6.6));
-    GS.add(box(0.4, 5.6, 14, NM.conc, 2.0, 0.2, -6.6));
+    GS.add(box(0.4, 6.4, 14, NM.conc, -2.0, -0.1, -6.6));
+    GS.add(box(0.4, 6.4, 14, NM.conc, 2.0, -0.1, -6.6));
     // потолок
     GS.add(box(W + 0.8, 0.6, 14, NM.wall2, 0, 2.9, -6.6));
     // пол нижней площадки
-    GS.add(box(W, 0.6, 3.6, NM.conc, 0, -3.0, -11.4));
-    // ступени (12 шт., вверх к z=0)
+    GS.add(box(W, 0.6, 1.5, NM.conc, 0, -0.3, 0.75)); // пол верхней площадки (верх y=0)
+    GS.add(box(W, 0.6, 4.4, NM.conc, 0, -3.54, -11.0)); // пол нижней площадки (верх y=-3.24)
+    // ступени (12 шт., СПУСК к -z: верх 0 → -3.24)
     for (let i = 0; i < GS.stepN; i++) {
-      const y = GS.stepRise * (i + 1);
+      const y = -(i + 1) * GS.stepRise;
       const z = -(i * GS.stepRun + GS.stepRun / 2);
-      GS.add(box(W, GS.stepRise + 0.02, GS.stepRun, NM.conc2, 0, y - 0.15, z));
+      GS.add(box(W, 0.5, GS.stepRun + 0.02, NM.conc2, 0, y - 0.25, z));
       // светлая кромка
       GS.add(box(W - 0.24, 0.02, GS.stepRun * 0.92, NM.steel, 0, y + 0.01, z));
     }
     // поручень (по левой стене), наклонный
     const railH = 0.95;
     for (let i = 0; i <= GS.stepN; i++) {
-      const y = GS.stepRise * i;
+      const y = -(i * GS.stepRise);
       const z = -(i * GS.stepRun);
       GS.add(box(0.08, 0.08, 0.5, NM.steelGloss, -1.62, y + railH, z - 0.12));
-      GS.add(box(0.1, y + railH, 0.1, NM.steel, -1.66, (y + railH) / 2, z));
+      GS.add(box(0.1, railH, 0.1, NM.steel, -1.66, y + railH / 2, z));
     }
     // лампа на верхней площадке (за спиной входа) + нижние
     [(-0.6), (-4.5), (-8.2)].forEach((z, i) => {
@@ -11126,34 +11163,35 @@ setTimeout(() => {
       pl.position.set(0, 1.8, z); GS.add(pl);
     });
     // красная лампа аварийного выхода (внизу)
-    GS.add(box(0.9, 0.4, 0.12, NM.redGlow, -1.35, 1.5, -12.9));
+    GS.add(box(0.9, 0.4, 0.12, NM.redGlow, -1.35, -0.3, -12.9));
     // нижняя дверь «ПОДВАЛ B1» (z = -13.4, открывается вверх/в стороны)
-    const dg = new THREE.Group(); dg.position.set(0, 0, -13.55); GS.add(dg);
+    const dg = new THREE.Group(); dg.position.set(0, -2.19, -13.55); GS.add(dg);
     stairDoor.g = dg;
-    dg.add(box(3.0, 0.5, 0.5, NM.steel, 0, 2.9, 0));    // верхняя перемычка
-    dg.add(box(3.0, 0.4, 0.5, NM.conc2, 0, -2.9, 0));   // пол
-    dg.add(box(0.45, 5.6, 0.5, NM.steel, -1.55, 0, 0));
-    dg.add(box(0.45, 5.6, 0.5, NM.steel, 1.55, 0, 0));
+    dg.add(box(3.0, 0.5, 0.5, NM.steel, 0, 1.6, 0));    // верхняя перемычка
+    dg.add(box(3.0, 0.4, 0.5, NM.conc2, 0, -1.25, 0));   // пол
+    dg.add(box(0.45, 2.9, 0.5, NM.steel, -1.55, 0.15, 0));
+    dg.add(box(0.45, 2.9, 0.5, NM.steel, 1.55, 0.15, 0));
     // створки (раздвигаются)
     const dr = { l: null, r: null };
-    dr.l = box(1.45, 2.4, 0.18, NM.doorM, -0.78, 0.15, 0.05);
-    dr.r = box(1.45, 2.4, 0.18, NM.doorM, 0.78, 0.15, 0.05);
+    dr.l = box(1.45, 2.4, 0.18, NM.doorM, -0.78, 0.15, 0.35);
+    dr.r = box(1.45, 2.4, 0.18, NM.doorM, 0.78, 0.15, 0.35);
     dg.add(dr.l); dg.add(dr.r);
     stairDoor.l = dr.l; stairDoor.r = dr.r;
     // окошко в двери
-    const wnd = box(0.6, 0.5, 0.2, NM.glassD, 0, 0.3, 0.12);
+    const wnd = box(0.6, 0.5, 0.2, NM.glassD, 0, 0.3, 0.46);
+    stairDoor.w = wnd;
     dg.add(wnd);
     const sgn5 = tMesh('ПОДВАЛ · B1', 3.4, 0.6, '#ffc9a0', '#ff7a2a', 56, 1000, 170);
     if (sgn5) { sgn5.position.set(0, 2.15, 0.02); dg.add(sgn5); }
     // свет из-под двери (тёплый-жёлтый, как из подвала)
     const underGlow = new THREE.PointLight(0xffcf8e, 0.35, 5, 1.7);
-    underGlow.position.set(0, -0.6, 0.6); GS.add(underGlow);
+    underGlow.position.set(0, -2.9, -12.8); GS.add(underGlow);
     // пыль в луче (мелкие точки)
     const sN = 80;
     const spos2 = new Float32Array(sN * 3);
     for (let i = 0; i < sN; i++) {
       spos2[i * 3] = (Math.random() - 0.5) * 1.6;
-      spos2[i * 3 + 1] = Math.random() * 1.6 - 0.6;
+      spos2[i * 3 + 1] = Math.random() * 1.6 - 2.9;
       spos2[i * 3 + 2] = -13 + Math.random() * 2.4;
     }
     const sg = new THREE.BufferGeometry();
@@ -11168,6 +11206,7 @@ setTimeout(() => {
     if (!stairDoor.l) return;
     stairDoor.l.position.x = -0.78 - 1.7 * k;
     stairDoor.r.position.x = 0.78 + 1.7 * k;
+    if (stairDoor.w) stairDoor.w.visible = k < 0.5;
   }
 
   // ============================================================================
@@ -11341,11 +11380,11 @@ setTimeout(() => {
 
 
   // ──────────────────────────── ТАЙМЛАЙН ───────────────────────────────
-  // P: 0 старт · 5.8 двери лифта · 8.0 вход · 9.7 двери закрыты ·
-  // 11.4 СПУСК · 15.3 стоп · 16.1 двери открыты · 17.9 нижний коридор ·
-  // 21.1 дверь SECRET · 21.8 вспышка · 22.1 fade · 22.7 → зал босса
+  // P: 0 старт · 8.2 двери лифта · 11.4 вход · 13.4 двери закрыты ·
+  // 14.6 СПУСК · 21.4 стоп · 22.6 двери открыты · 24.6 нижний коридор ·
+  // 29.2 дверь SECRET · 30.2 вспышка · 31 fade · 32.2 → зал босса
   let P = { t: 0, begun: false, done: false, speed: 1, startFadeIn: false, cutStage: 0 };
-  const T1 = 5.8, T2 = 8.0, T3 = 9.7, T4 = 15.3, T5 = 16.6, T6 = 17.9, T7 = 21.1, T8 = 22.3;
+  const T1 = 8.2, T2 = 11.4, T3 = 13.6, T4 = 21.2, T5 = 22.8, T6 = 24.8, T7 = 29.0, T8 = 30.4;
 
   // управление дверьми
   function doorsAnim(x) { // x: 0=закрыто (x=±0.9), 1=открыто (x=±2.05)
@@ -11389,7 +11428,7 @@ setTimeout(() => {
   // ============================================================================
   // РЕЖИССЁР v6: улица → GRAND MALL → лестница → подвал B1 → лифт → B5 → босс
   // ============================================================================
-  const TW_ = { EXT: 6.9, MALL: 16.8, D0: 21.2 };
+  const TW_ = { EXT: 9.6, MALL: 21.4, D0: 26.6 };
   const CX = {
     m: 0, s: 0, d: 0,
     f1: 0, f2: 0, f3: 0, f4: 0, f5: 0, f6: 0, f7: 0, f8: 0,
@@ -11433,12 +11472,14 @@ setTimeout(() => {
     cam.lookAt(0.5, 1.75, -14);
     cam.fov = 62; cam.updateProjectionMatrix();
     setTimeout(() => { try { caption('GRAND MALL', 2.2, 15); } catch (e) {} }, 550);
+    try { mallMusicStart(); } catch (e) {} // вальс-шкатулка на весь молл
     setTimeout(() => { try { caption('АТРИУМ · ЦЕНТРАЛЬНЫЙ ЗАЛ', 2.4, 13); } catch (e) {} }, 3300);
     if (AU) tone(300, 300, 0.3, 'sine', 0.02, 0);
   }
 
   function enterSTAIR() {
     CX.s = 1; CX.t0s = P.t; CX.lastIdx = -1;
+    try { mallMusicStop(); } catch (e) {} // шкатулка глохнет за служебной дверью
     try { api._log.push([+P.t.toFixed(2), 'STAIR']); } catch (e) {}
     hideProScenes();
     GM.visible = false; GS.visible = true;
@@ -11484,16 +11525,16 @@ setTimeout(() => {
   function updEXT(t, dt) {
     if (CX.m) return;
     const lt = t - CX.t0e;
-    const k = easeInOut(Math.max(0, Math.min(1, (lt - 0.4) / 4.9)));
+    const k = easeInOut(Math.max(0, Math.min(1, (lt - 0.5) / 6.5)));
     const z = 46 - 43.6 * k;
     cam.position.set(Math.sin(lt * 0.6) * 0.2, 1.75 + Math.sin(lt * 0.42) * 0.02, z);
     cam.lookAt(Math.sin(lt * 0.5) * 0.3, 1.85, -4);
     // ── ИМБА-ВХОД: двери РАСПАХИВАЮТСЯ резким рывком + ПОМЕХИ ──
     let dk = 0;
-    if (lt > 3.2) {
-      const raw = Math.min(1, (lt - 3.2) / 0.9);
+    if (lt > 4.5) {
+      const raw = Math.min(1, (lt - 4.5) / 1.1);
       dk = raw < 1 ? (1 - Math.pow(1 - raw, 3)) * 1.06 : 1;
-      if (raw >= 1) dk = 1 + Math.sin((lt - 4.1) * 9) * 0.02 * Math.max(0, 1 - (lt - 4.1));
+      if (raw >= 1) dk = 1 + Math.sin((lt - 5.6) * 9) * 0.02 * Math.max(0, 1 - (lt - 5.6));
     }
     extDoorsAnim(dk);
     if (dk > 0.04 && !CX.f1) {
@@ -11515,7 +11556,7 @@ setTimeout(() => {
       try { caption('1 ЭТАЖ · МОДА · ФУДКОРТ', 2.2, 12); } catch (e) {}
     }
     // фликер неона и зала во время распахивания (помехи в свете)
-    if (lt > 3.1 && lt < 5.1) {
+    if (lt > 4.4 && lt < 6.8) {
       const fl = Math.random();
       if (GX.sgn) GX.sgn.visible = fl > 0.12;
       if (GX.sgnEnter) GX.sgnEnter.visible = fl > 0.2;
@@ -11545,8 +11586,8 @@ setTimeout(() => {
       GX.rainPts.geometry.attributes.position.needsUpdate = true;
     }
     // фейд → атриум
-    if (lt > 5.7) OV.fadeT = 1;
-    if (OV.fade > 0.96 && lt > 5.8 && !CX.m) enterMALL();
+    if (lt > 7.5) OV.fadeT = 1;
+    if (OV.fade > 0.96 && lt > 7.6 && !CX.m) enterMALL();
   }
 
   // ── АКТ 2: СВЕТЛЫЙ GRAND MALL — вход → мимо карусели и фонтана → служебный вход B1 ──
@@ -11556,7 +11597,7 @@ setTimeout(() => {
   let mallPitch = Math.atan2(1.75 - 1.63, Math.hypot(0.5, 14 - 1.7));
   function updMALL(t, dt) {
     if (CX.s) return;
-    const lt = (t - CX.t0m - 0.5) * 1.25; // v10: молл ×1.25 — короче, в тон тизеру
+    const lt = t - CX.t0m - 0.5;
     if (lt < 0) return;
     // карусель медленно вращается
     if (GM.caru) GM.caru.rotation.y += dt * 0.22;
@@ -11730,11 +11771,13 @@ setTimeout(() => {
     const lt = t - CX.t0s - 0.5;
     if (lt < 0) return;
     const total = 13.4;
-    const prog = easeInOut(Math.max(0, Math.min(1, lt / 3.8)));
+    const prog = easeInOut(Math.max(0, Math.min(1, lt / 4.6)));
     const dist = prog * total;
     const z = -0.25 - dist;
-    // высота глаза над ступенями (12 шагов, подъём 0.27)
-    const yBase = 1.5 - 3.24 * prog;
+    // высота глаза: спуск 3.14 по ступеням (прог 0.02–0.644), дальше ровно по площадке
+    const dropU = Math.max(0, Math.min(1, (prog - 0.02) / 0.624));
+    const dropSm = dropU * dropU * (3 - 2 * dropU);
+    const yBase = 1.5 - 3.14 * dropSm;
     const phase = dist / 0.74;
     const bob = (1 - Math.cos(phase * Math.PI * 2)) * 0.055;
     cam.position.set(Math.sin(lt * 1.1) * 0.06, yBase - bob, z);
@@ -11752,7 +11795,7 @@ setTimeout(() => {
       const sp = GS.spos2;
       for (let i = 0; i < 80; i++) {
         sp[i * 3 + 1] += (Math.sin(lt * 2 + i) * 0.02 + 0.03) * dt * 3;
-        if (sp[i * 3 + 1] > 1.6) sp[i * 3 + 1] = -0.6;
+        if (sp[i * 3 + 1] > -1.0) sp[i * 3 + 1] = -2.9;
       }
       GS.spts.geometry.attributes.position.needsUpdate = true;
     }
@@ -11792,18 +11835,21 @@ setTimeout(() => {
       if (F.doorOpen) { api.doorsAnim(Math.min(1, (p - T1 - 0.2) / 1.6)); }
       if (Math.abs(k - 0.5) < 0.01) caption('СЛУЖЕБНЫЙ ЛИФТ · B1', 2.2, 15);
     }
-    // ---- фаза 3 (v8): входим в кабину, подходим к панели, жмём B5 ----
+    // ---- фаза 3 (v11): входим, взгляд на панель (жмём B5!) — и сразу разворот к выходу ----
     else if (p < T3) {
       const k = (p - T2) / (T3 - T2);
       const zz = 12.2 - k * 2.65;
       cam.position.set(-0.2 * k, 1.62, zz);
-      // взгляд: вглубь кабины → на панель кнопок
-      const lx3 = 1.33 * k * k;
-      const ly3 = 1.62 + (1.35 - 1.62) * k;
-      const lz3 = 7 + (10.4 - 7) * k * k;
+      // взгляд: порог кабины → быстрый взгляд на панель → разворот к дверям (в стену не пялимся!)
+      const sstep = (a, b, x) => { const u = Math.max(0, Math.min(1, (x - a) / (b - a))); return u * u * (3 - 2 * u); };
+      const g1 = sstep(0.22, 0.48, k);
+      const g2 = sstep(0.55, 0.88, k);
+      const lx3 = 0.05 * (1 - g1) + 1.31 * g1 * (1 - g2) + (-0.05) * g2;
+      const ly3 = 1.5 * (1 - g1) + 1.55 * g1 * (1 - g2) + 1.95 * g2;
+      const lz3 = 8.3 * (1 - g1) + 10.35 * g1 * (1 - g2) + 13.2 * g2;
       cam.lookAt(lx3, ly3, lz3);
       // жмём B5!
-      if (k > 0.75 && !P._btn) {
+      if (k > 0.45 && !P._btn) {
         P._btn = 1;
         try { api.liftBtnPress(4); } catch (e) {}
         try { api.liftDoorM.close.color.setHex(0x36ff5e); } catch (e) {}
@@ -11833,8 +11879,8 @@ setTimeout(() => {
       if (k > 0.3) {
         if (!P._desc) { P._desc = 1; lastBand = 0; try { motorStart(); } catch (e) {} }
         const kk = (k - 0.3) / 0.7;
-        spd = 5.3 * easeInOut(Math.min(1, kk * 1.35));
-        if (k > 0.55) spd = 5.3 * (1 - Math.max(0, (k - 0.88) / 0.3)); // замедление к концу
+        spd = 3.9 * easeInOut(Math.min(1, kk * 1.35));
+        if (k > 0.55) spd = 3.9 * (1 - Math.max(0, (k - 0.88) / 0.3)); // замедление к концу
       }
       F.spd = spd;
       shaftG.position.y += spd * dt;   // без зацикливания: едем B1→B5 один раз
@@ -11869,16 +11915,11 @@ setTimeout(() => {
           if (p > T3 + 1.2) caption('ЭТАЖ B' + floorCount, 0.9, 13);
         }
       }
-      // камера в кабине: жмём кнопку — и сразу смотрим на ВЫХОД (двери + табло), а не в стену
+      // камера в кабине: стоим лицом к ВЫХОДУ (двери + табло), лёгкое покачивание
       cam.position.set(-0.2 + Math.sin(wall * 5.1) * vib * 9, 1.62 + Math.sin(wall * 6.3) * vib * 5, 9.55);
-      const turn = Math.max(0, Math.min(1, (k - 0.02) / 0.13));
-      const te = turn * turn * (3 - 2 * turn);
-      const swayX = Math.sin(wall * 0.9) * 0.05 * te;
-      const swayY = Math.sin(wall * 1.23 + 1) * 0.04 * te;
-      const lx4 = 1.33 * (1 - te) + (-0.05 + swayX) * te + Math.sin(wall * 4.2) * 0.02 * te;
-      const ly4 = 1.35 * (1 - te) + (1.95 + swayY) * te + Math.sin(wall * 4.8) * 0.02 * te;
-      const lz4 = 10.4 * (1 - te) + 13.2 * te;
-      cam.lookAt(lx4, ly4, lz4);
+      const swayX = Math.sin(wall * 0.9) * 0.05 + Math.sin(wall * 4.2) * 0.02;
+      const swayY = Math.sin(wall * 1.23 + 1) * 0.04 + Math.sin(wall * 4.8) * 0.02;
+      cam.lookAt(-0.05 + swayX, 1.95 + swayY, 13.2);
       cam.fov = 58 + Math.sin(wall * 5.6) * 1.2; cam.updateProjectionMatrix();
       // лёгкое смещение кабины (имитация хода)
       cab.position.y = -Math.sin(wall * 5.0) * vib * 1.2;
@@ -12066,6 +12107,7 @@ setTimeout(() => {
     api.doorsAnim(0); stairDoors(0); mallStairDoors(0); extDoorsAnim(0);
     try { resetLift(); } catch (e) {}
     try { mallReset(); } catch (e) {}
+    try { mallMusicStop(); } catch (e) {}
     shaftG.position.y = 0;
     cab.position.set(0, 0, 9.2);
     cabLamp.intensity = 1.0;
