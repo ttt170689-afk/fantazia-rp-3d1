@@ -10137,8 +10137,8 @@ setTimeout(() => {
     } catch (e) {}
   };
   // табло над дверью внутри кабины
-  api.liftIndIn = makeFloorInd(1.1, 0.34);
-  cab.add(box(1.3, 0.45, 0.12, new THREE.MeshLambertMaterial({ color: 0x0c0e12 }), 0, 2.78, 2.56));
+  api.liftIndIn = makeFloorInd(1.25, 0.4);
+  cab.add(box(1.45, 0.52, 0.12, new THREE.MeshLambertMaterial({ color: 0x0c0e12 }), 0, 2.78, 2.56));
   cab.add(cyl(0.02, 0.02, 0.3, 4, CM.metalD, -0.5, 3.0, 2.56));
   cab.add(cyl(0.02, 0.02, 0.3, 4, CM.metalD, 0.5, 3.0, 2.56));
   api.liftIndIn.mesh.position.set(0, 2.78, 2.49);
@@ -10380,16 +10380,148 @@ setTimeout(() => {
   GX.extDoors = extDoors;
 
   function buildEXT() {
+    // ── ТЕКСТУРЫ ГОРОДА (canvas) ──
+    function lcg(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
+    function paintFacade(seed, base) {
+      const W = 256, H = 256;
+      const map = cvsTex(W, H, (g) => {
+        const rnd = lcg(seed);
+        g.fillStyle = base; g.fillRect(0, 0, W, H);
+        g.strokeStyle = 'rgba(0,0,0,0.28)'; g.lineWidth = 1;
+        for (let y = 0; y < H; y += 6) { g.beginPath(); g.moveTo(0, y + 0.5); g.lineTo(W, y + 0.5); g.stroke(); }
+        g.strokeStyle = 'rgba(0,0,0,0.18)';
+        for (let y = 0, row = 0; y < H; y += 6, row++) {
+          const off = (row % 2) * 11;
+          for (let x = off; x < W; x += 22) { g.beginPath(); g.moveTo(x + 0.5, y); g.lineTo(x + 0.5, y + 6); g.stroke(); }
+        }
+        for (let i = 0; i < 1400; i++) {
+          g.fillStyle = rnd() < 0.5 ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.045)';
+          g.fillRect(rnd() * W, rnd() * H, 1.6, 1.6);
+        }
+        for (let i = 0; i < 7; i++) {
+          const px = rnd() * W, py = rnd() * H, pr = 20 + rnd() * 46;
+          const gr = g.createRadialGradient(px, py, 2, px, py, pr);
+          gr.addColorStop(0, 'rgba(0,0,0,0.20)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+          g.fillStyle = gr; g.fillRect(px - pr, py - pr, pr * 2, pr * 2);
+        }
+        const cols = 5, rows = 6, mx = 12, top = 10, gwH = 196;
+        const cw = (W - mx * 2) / cols, ch = gwH / rows;
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const x0 = mx + c * cw, y0 = top + r * ch;
+            g.fillStyle = '#0a0a0c'; g.fillRect(x0 + 6, y0 + 4, cw - 12, ch - 8);
+            g.fillStyle = '#141a24'; g.fillRect(x0 + 8, y0 + 6, cw - 16, ch - 12);
+            g.fillStyle = 'rgba(255,255,255,0.10)'; g.fillRect(x0 + 8, y0 + 6, cw - 16, 2);
+          }
+        }
+        g.fillStyle = '#100e10'; g.fillRect(0, H - 46, W, 46);
+        g.fillStyle = 'rgba(255,255,255,0.06)'; g.fillRect(0, H - 46, W, 2);
+        for (let c = 0; c < 3; c++) {
+          const dx = 20 + c * 78 + rnd() * 20;
+          g.fillStyle = '#060608'; g.fillRect(dx, H - 38, 26, 38);
+        }
+      });
+      const emis = cvsTex(W, H, (g) => {
+        const rnd = lcg(seed + 7);
+        g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+        const cols = 5, rows = 6, mx = 12, top = 10, gwH = 196;
+        const cw = (W - mx * 2) / cols, ch = gwH / rows;
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            if (rnd() > 0.38) continue;
+            const x0 = mx + c * cw + 8, y0 = top + r * ch + 6, ww = cw - 16, hh = ch - 12;
+            const warm = rnd() < 0.68;
+            const li = 0.75 + rnd() * 0.25;
+            g.fillStyle = warm ? `rgb(${Math.floor(255 * li)},${Math.floor(165 * li)},${Math.floor(90 * li)})` : `rgb(${Math.floor(150 * li)},${Math.floor(195 * li)},${Math.floor(255 * li)})`;
+            g.fillRect(x0, y0, ww, hh);
+            g.fillStyle = 'rgba(0,0,0,0.45)'; g.fillRect(x0, y0, ww, 4);
+            g.fillStyle = 'rgba(0,0,0,0.85)';
+            g.fillRect(x0 + ww / 2 - 1, y0, 2, hh);
+            g.fillRect(x0, y0 + hh / 2 - 1, ww, 2);
+          }
+        }
+        const rnd2 = lcg(seed + 31);
+        for (let c = 0; c < 2; c++) {
+          if (rnd2() < 0.5) continue;
+          g.fillStyle = 'rgba(255,190,120,0.8)';
+          g.fillRect(30 + c * 120 + rnd2() * 30, H - 34, 52, 22);
+        }
+      });
+      return { map: map, emis: emis };
+    }
+    const facades = [paintFacade(101, '#2b2527'), paintFacade(202, '#252a31'), paintFacade(303, '#2e2620')];
+    const texRoad = cvsTex(256, 256, (g, W, H) => {
+      const rnd = lcg(55);
+      g.fillStyle = '#17181c'; g.fillRect(0, 0, W, H);
+      for (let i = 0; i < 2600; i++) {
+        g.fillStyle = rnd() < 0.55 ? 'rgba(0,0,0,0.10)' : 'rgba(200,210,225,0.06)';
+        g.fillRect(rnd() * W, rnd() * H, 1.5, 1.5);
+      }
+      for (let i = 0; i < 5; i++) {
+        g.fillStyle = 'rgba(0,0,0,0.18)';
+        g.fillRect(rnd() * W, rnd() * H, 30 + rnd() * 60, 20 + rnd() * 40);
+      }
+      g.strokeStyle = 'rgba(0,0,0,0.35)'; g.lineWidth = 1;
+      for (let i = 0; i < 4; i++) {
+        let x = rnd() * W, y = rnd() * H;
+        g.beginPath(); g.moveTo(x, y);
+        for (let k = 0; k < 6; k++) { x += (rnd() - 0.5) * 40; y += (rnd() - 0.5) * 40; g.lineTo(x, y); }
+        g.stroke();
+      }
+    }, 6, 12);
+    const roadMat = new THREE.MeshLambertMaterial({ map: texRoad });
+    const texPave = cvsTex(256, 256, (g, W, H) => {
+      const rnd = lcg(77);
+      g.fillStyle = '#232326'; g.fillRect(0, 0, W, H);
+      const n = 4, cw = W / n;
+      for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+        const v = 30 + rnd() * 14;
+        g.fillStyle = `rgb(${v | 0},${v | 0},${(v + 4) | 0})`;
+        g.fillRect(c * cw + 2, r * cw + 2, cw - 4, cw - 4);
+      }
+      g.strokeStyle = 'rgba(0,0,0,0.5)'; g.lineWidth = 3;
+      for (let i = 0; i <= n; i++) {
+        g.beginPath(); g.moveTo(i * cw, 0); g.lineTo(i * cw, H); g.stroke();
+        g.beginPath(); g.moveTo(0, i * cw); g.lineTo(W, i * cw); g.stroke();
+      }
+      for (let i = 0; i < 700; i++) {
+        g.fillStyle = 'rgba(0,0,0,0.08)';
+        g.fillRect(rnd() * W, rnd() * H, 1.5, 1.5);
+      }
+    });
+    texPave.wrapS = texPave.wrapT = THREE.RepeatWrapping;
+    const texPave2 = texPave.clone(); texPave2.needsUpdate = true;
+    texPave.repeat.set(10, 2); texPave2.repeat.set(1, 14);
+    const paveMat = new THREE.MeshLambertMaterial({ map: texPave });
+    const paveMat2 = new THREE.MeshLambertMaterial({ map: texPave2 });
+    const texMall = cvsTex(256, 256, (g, W, H) => {
+      const rnd = lcg(99);
+      g.fillStyle = '#1e2026'; g.fillRect(0, 0, W, H);
+      for (let i = 0; i < 1500; i++) {
+        g.fillStyle = rnd() < 0.5 ? 'rgba(0,0,0,0.08)' : 'rgba(210,220,235,0.05)';
+        g.fillRect(rnd() * W, rnd() * H, 1.6, 1.6);
+      }
+      for (let i = 0; i < 8; i++) {
+        const px = rnd() * W, py = rnd() * H, pr = 24 + rnd() * 50;
+        const gr = g.createRadialGradient(px, py, 2, px, py, pr);
+        gr.addColorStop(0, 'rgba(0,0,0,0.22)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+        g.fillStyle = gr; g.fillRect(px - pr, py - pr, pr * 2, pr * 2);
+      }
+      g.strokeStyle = 'rgba(0,0,0,0.4)'; g.lineWidth = 2;
+      for (let y = 0; y < H; y += 64) { g.beginPath(); g.moveTo(0, y + 0.5); g.lineTo(W, y + 0.5); g.stroke(); }
+      for (let x = 0; x < W; x += 64) { g.beginPath(); g.moveTo(x + 0.5, 0); g.lineTo(x + 0.5, H); g.stroke(); }
+    }, 3, 2);
+    const mallWallMat = new THREE.MeshLambertMaterial({ map: texMall });
     // асфальт улицы
-    GX.add(box(52, 0.5, 110, NM.asphalt, 0, -0.28, 22));
+    GX.add(box(52, 0.5, 110, roadMat, 0, -0.28, 22));
     // тротуар перед фасадом
-    GX.add(box(34, 0.24, 6, NM.conc, 0, 0.02, 3));
+    GX.add(box(34, 0.24, 6, paveMat, 0, 0.02, 3));
     GX.add(box(34, 0.1, 0.2, NM.wallDark, 0, 0.16, 0.1)); // бордюр
     // здание: корпус (верхний объём)
-    GX.add(box(70, 20, 16, NM.wallDark, 0, 17, -8.5));
+    GX.add(box(70, 20, 16, mallWallMat, 0, 17, -8.5));
     // нижние крылья фасада (по бокам от вестибюля)
     [-1, 1].forEach((sd) => {
-      GX.add(box(29.5, 7.6, 16, NM.wallDark, sd * 24.9, 3.8, -8.5));
+      GX.add(box(29.5, 7.6, 16, mallWallMat, sd * 24.9, 3.8, -8.5));
     });
     // ── ВЕСТИБЮЛЬ-НИША (видны раздвижные двери и тёплый зал внутри) ──
     GX.add(box(10.5, 0.4, 16.4, NM.conc, 0, -0.21, -8.6));        // пол ниши
@@ -10591,8 +10723,8 @@ setTimeout(() => {
       return s;
     }
     // ── тротуары вдоль улицы ──
-    GX.add(box(2.6, 0.14, 44, NM.conc, -6.9, 0, 28));
-    GX.add(box(2.6, 0.14, 44, NM.conc, 6.9, 0, 28));
+    GX.add(box(2.6, 0.14, 44, paveMat2, -6.9, 0, 28));
+    GX.add(box(2.6, 0.14, 44, paveMat2, 6.9, 0, 28));
     // ── дома с окнами ──
     const winWarm = new THREE.MeshBasicMaterial({ color: 0xffd9a0 });
     const winCool = new THREE.MeshBasicMaterial({ color: 0x9fd8ff });
@@ -10600,20 +10732,15 @@ setTimeout(() => {
     function houseBlock(x, z, w, h, d, seed) {
       GX.add(box(w, h, d, NM.wallDark, x, h / 2 - 0.1, z));
       GX.add(box(w + 0.4, 0.5, d + 0.4, NM.conc2, x, h + 0.15, z)); // парапет
+      // текстурный фасад с окнами вместо сотни плейнов
       const sd = x > 0 ? -1 : 1;
-      const fx = x + sd * (w / 2 + 0.03);
-      let s = seed;
-      const rnd = () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
-      for (let wy = 3.4; wy < h - 1.2; wy += 2.3) {
-        for (let wz = z - d / 2 + 1.6; wz < z + d / 2 - 1.2; wz += 2.0) {
-          const r = rnd();
-          const wm = r < 0.3 ? winWarm : (r < 0.45 ? winCool : winDark);
-          const win = new THREE.Mesh(new THREE.PlaneGeometry(0.85, 1.1), wm);
-          win.rotation.y = sd > 0 ? Math.PI / 2 : -Math.PI / 2;
-          win.position.set(fx, wy, wz);
-          GX.add(win);
-        }
-      }
+      const F = facades[seed % facades.length];
+      const fmat = new THREE.MeshLambertMaterial({ map: F.map, emissiveMap: F.emis, emissive: 0xffffff });
+      fmat.color.setHex([0xffffff, 0xf5efe6, 0xe6ecf5][seed % 3]);
+      const fp = new THREE.Mesh(new THREE.PlaneGeometry(d - 0.6, h - 0.6), fmat);
+      fp.rotation.y = sd > 0 ? Math.PI / 2 : -Math.PI / 2;
+      fp.position.set(x + sd * (w / 2 + 0.03), 0.35 + (h - 0.6) / 2, z);
+      GX.add(fp);
     }
     houseBlock(-11.5, 9, 7, 13, 13, 11);
     houseBlock(-12.5, 24, 8, 16, 14, 23);
@@ -12299,19 +12426,20 @@ setTimeout(() => {
       if (F.doorOpen) { api.doorsAnim(Math.min(1, (p - T1 - 0.2) / 1.6)); }
       if (Math.abs(k - 0.5) < 0.01) caption('СЛУЖЕБНЫЙ ЛИФТ · B1', 2.2, 15);
     }
-    // ---- фаза 3 (v11): входим, взгляд на панель (жмём B5!) — и сразу разворот к выходу ----
+    // ---- фаза 3 (v14): входим, взгляд на панель (жмём B5!) — и взгляд на ТАБЛО ----
     else if (p < T3) {
       const k = (p - T2) / (T3 - T2);
-      const zz = 12.2 - k * 2.65;
+      const zz = 12.2 - k * 3.0;
       cam.position.set(-0.2 * k, 1.62 - Math.abs(Math.sin(wall * 6.91)) * 0.03, zz);
-      // взгляд: порог кабины → быстрый взгляд на панель → разворот к дверям (в стену не пялимся!)
+      // взгляд: порог → панель (жмём!) → табло этажей
       const sstep = (a, b, x) => { const u = Math.max(0, Math.min(1, (x - a) / (b - a))); return u * u * (3 - 2 * u); };
       const g1 = sstep(0.22, 0.48, k);
       const g2 = sstep(0.55, 0.88, k);
-      const lx3 = 0.05 * (1 - g1) + 1.31 * g1 * (1 - g2) + (-0.05) * g2;
-      const ly3 = 1.5 * (1 - g1) + 1.55 * g1 * (1 - g2) + 1.95 * g2;
-      const lz3 = 8.3 * (1 - g1) + 10.35 * g1 * (1 - g2) + 13.2 * g2;
+      const lx3 = 0.05 * (1 - g1) + 1.31 * g1 * (1 - g2) + (-0.02) * g2;
+      const ly3 = 1.5 * (1 - g1) + 1.55 * g1 * (1 - g2) + 2.5 * g2;
+      const lz3 = 8.3 * (1 - g1) + 10.35 * g1 * (1 - g2) + 11.9 * g2;
       cam.lookAt(lx3, ly3, lz3);
+      cam.fov = 54 + k * 10; cam.updateProjectionMatrix();
       // жмём B5!
       if (k > 0.45 && !P._btn) {
         P._btn = 1;
@@ -12381,12 +12509,12 @@ setTimeout(() => {
           if (p > T3 + 1.2) caption('ЭТАЖ B' + floorCount, 0.9, 13);
         }
       }
-      // камера в кабине: стоим лицом к ВЫХОДУ (двери + табло), лёгкое покачивание
-      cam.position.set(-0.2 + Math.sin(wall * 5.1) * vib * 9, 1.62 + Math.sin(wall * 6.3) * vib * 5, 9.55);
+      // камера в кабине: смотрим на ТАБЛО этажей (двери внизу кадра), лёгкое покачивание
+      cam.position.set(-0.2 + Math.sin(wall * 5.1) * vib * 9, 1.62 + Math.sin(wall * 6.3) * vib * 5, 9.2);
       const swayX = Math.sin(wall * 0.9) * 0.05 + Math.sin(wall * 4.2) * 0.02;
       const swayY = Math.sin(wall * 1.23 + 1) * 0.04 + Math.sin(wall * 4.8) * 0.02;
-      cam.lookAt(-0.05 + swayX, 1.95 + swayY, 13.2);
-      cam.fov = 58 + Math.sin(wall * 5.6) * 1.2; cam.updateProjectionMatrix();
+      cam.lookAt(-0.02 + swayX, 2.5 + swayY, 11.9);
+      cam.fov = 64 + Math.sin(wall * 5.6) * 1.2; cam.updateProjectionMatrix();
       // лёгкое смещение кабины (имитация хода)
       cab.position.y = -Math.sin(wall * 5.0) * vib * 1.2;
     }
@@ -12399,8 +12527,9 @@ setTimeout(() => {
         // скрежет остановки
         if (Math.random() < dt * 3) SFX.squeak();
       }
-      cam.position.set(-0.2 + Math.sin(wall * 2.4) * 0.01, 1.62, 9.55);
+      cam.position.set(-0.2 + Math.sin(wall * 2.4) * 0.01, 1.62, 9.2);
       cam.lookAt(0, 1.7, 20);
+      cam.fov = 64 - k * 4; cam.updateProjectionMatrix();
       if (k > 0.1 && k < 0.42) {
         const kk = (k - 0.1) / 0.32;
         api.doorsAnim(kk);
