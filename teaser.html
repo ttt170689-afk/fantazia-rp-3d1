@@ -9774,9 +9774,9 @@ setTimeout(() => {
 
   // ─────────────── вспомогательные материалы/примитивы ────────────────
   const CM = {
-    con1: new THREE.MeshLambertMaterial({ color: 0x232c28 }),
-    con2: new THREE.MeshLambertMaterial({ color: 0x1b2320 }),
-    con3: new THREE.MeshLambertMaterial({ color: 0x2c352f }),
+    con1: new THREE.MeshLambertMaterial({ color: 0x131a17 }),
+    con2: new THREE.MeshLambertMaterial({ color: 0x0e1512 }),
+    con3: new THREE.MeshLambertMaterial({ color: 0x18201b }),
     rust: new THREE.MeshLambertMaterial({ color: 0x3a2518 }),
     rust2: new THREE.MeshLambertMaterial({ color: 0x4a2c17 }),
     metal: new THREE.MeshLambertMaterial({ color: 0x3c4146 }),
@@ -9895,19 +9895,20 @@ setTimeout(() => {
       UP.add(cyl(0.02, 0.02, 0.7, 5, CM.metalD, x, 3.75, z));
       UP.add(cyl(0.3, 0.12, 0.22, 10, CM.metalD, x, 3.32, z));
       UP.add(sph(0.07, CM.bulb, x, 3.22, z));
-      const ls = new THREE.PointLight(warm ? 0xd8b06a : 0x9aa8a0, 0.95, 10, 1.6);
+      // v19: слабая лампочка светит НА СВОЙ пятачок, а не на весь коридор
+      const ls = new THREE.PointLight(warm ? 0xc09048 : 0x74827c, 0.34, 5.2, 2.2);
       ls.position.set(x, 3.1, z); UP.add(ls);
-      G.flick.push({ l: ls, base: 0.95, ph: Math.random() * 9, hard: !!hard });
+      G.flick.push({ l: ls, base: 0.34, ph: Math.random() * 9, hard: !!hard });
       return ls;
     }
-    [16, 24, 32, 40, 48, 56, 62].forEach((z, i) => {
-      hangLamp(i % 2 ? -0.9 : 0.9, z, i % 3 !== 1, i === 2 || i === 5);
+    [16, 27, 38, 49, 60].forEach((z, i) => {
+      hangLamp(i % 2 ? -0.9 : 0.9, z, i % 3 !== 1, i === 1 || i === 3);
     });
     // красная аварийка у лифта
     UP.add(box(0.5, 0.22, 0.22, new THREE.MeshBasicMaterial({ color: 0xff2a14 }), -1.8, 3.5, 14.5));
-    const emL = new THREE.PointLight(0xff2a14, 0.7, 9, 1.7);
+    const emL = new THREE.PointLight(0xff2a14, 0.3, 5.5, 2.2);
     emL.position.set(-1.6, 3.3, 14.5); UP.add(emL);
-    G.flick.push({ l: emL, base: 0.7, ph: 4.4 });
+    G.flick.push({ l: emL, base: 0.3, ph: 4.4 });
     // --- шкафы, пожарка, таблички ---
     [[-2.42, 20], [2.42, 36], [-2.42, 52]].forEach(([x, z]) => {
       UP.add(box(0.22, 1.6, 1.1, CM.metalD, x, 1.35, z));
@@ -10234,12 +10235,12 @@ setTimeout(() => {
   }
   // светильники нижние (тусклее)
   function lampL(x, z, dist) {
-    const ls = new THREE.PointLight(0x7f8f85, 0.55, dist || 8, 1.7);
+    const ls = new THREE.PointLight(0x66756e, 0.26, (dist || 8) * 0.62, 2.2);
     ls.position.set(x, 3.2, z);
     LW.add(ls);
     const m = sph(0.08, CM.bulb, x, 3.22, z);
     LW.add(m);
-    G.flick.push({ l: ls, base: 0.55, ph: Math.random() * 9 });
+    G.flick.push({ l: ls, base: 0.26, ph: Math.random() * 9 });
     return ls;
   }
   [-5, -13, -21, -28].forEach((z, i) => lampL(i % 2 ? 1.3 : -1.3, z, i === 3 ? 9 : 8));
@@ -10578,7 +10579,7 @@ setTimeout(() => {
     // надпись GRAND MALL
     const sgn = tMesh('GRAND MALL', 12, 2.1, '#ffe9c4', '#ff9a3c', 120, 1024, 180);
     if (sgn) { sgn.position.set(0, 11.2, -0.58); GX.add(sgn); }
-    const sgn2 = tMesh('★  GRAND MALL  ★', 4.4, 0.7, '#9fd8ff', '#4a9adf', 46, 700, 110);
+    const sgn2 = tMesh('ТОРГОВЫЙ ЦЕНТР · ВХОД', 4.4, 0.62, '#9fd8ff', '#4a9adf', 44, 900, 120);
     if (sgn2) { sgn2.position.set(0, 6.55, -0.58); GX.add(sgn2); }
     // ═══ ВХОД v7 «ИМБА»: распашные стеклянные двери + за ними виден 1 ЭТАЖ ═══
     GX.add(box(0.6, 4.9, 0.9, NM.steel, -3.0, 2.35, -1.6));
@@ -10640,12 +10641,12 @@ setTimeout(() => {
         const cv = DOC.createElement('canvas'); cv.width = 256; cv.height = 256;
         const g = cv.getContext('2d');
         for (let x = 0; x < 4; x++) for (let y = 0; y < 4; y++) {
-          const v = (x + y) % 2 ? 245 : 230;
-          g.fillStyle = 'rgb(' + v + ',' + (v - 5) + ',' + (v - 16) + ')';
+          const v = (x + y) % 2 ? 226 : 214;
+          g.fillStyle = 'rgb(' + v + ',' + (v + 2) + ',' + (v + 4) + ')';
           g.fillRect(x * 64, y * 64, 64, 64);
         }
-        for (let i = 0; i < 18; i++) {
-          g.strokeStyle = 'rgba(150,135,105,0.16)'; g.lineWidth = 1 + Math.random();
+        for (let i = 0; i < 10; i++) {
+          g.strokeStyle = 'rgba(120,125,132,0.10)'; g.lineWidth = 1 + Math.random();
           g.beginPath(); let vx = Math.random() * 256, vy = Math.random() * 256; g.moveTo(vx, vy);
           for (let st = 0; st < 4; st++) { vx += (Math.random() - 0.5) * 90; vy += (Math.random() - 0.5) * 90; g.lineTo(vx, vy); }
           g.stroke();
@@ -10660,37 +10661,43 @@ setTimeout(() => {
     const hFloor = new THREE.Mesh(new THREE.PlaneGeometry(9.6, 14),
       hMarbleTex ? new THREE.MeshLambertMaterial({ map: hMarbleTex }) : new THREE.MeshLambertMaterial({ color: 0xf2efe6 }));
     hFloor.rotation.x = -Math.PI / 2; hFloor.position.set(0, 0.02, -9); hall1.add(hFloor);
-    const hGold = new THREE.MeshBasicMaterial({ color: 0xd4af37 });
-    [-3.4, 3.4].forEach((gx) => hall1.add(box(0.07, 0.02, 13.6, hGold, gx, 0.04, -9)));
-    // стены-панели с карнизом (как внутри ТЦ)
-    hall1.add(box(9.6, 4.6, 0.4, new THREE.MeshLambertMaterial({ color: 0xf0ebe0 }), 0, 2.3, -15.9));
+    // v19: НЕ ОТЕЛЬ. Обычный вход торгового центра: белые стены, светящийся
+    // подвесной потолок с решёткой, турникет-рамка, банкомат, тележки, указатели.
+    const mallWhite = new THREE.MeshLambertMaterial({ color: 0xe9e6de });
+    const mallGrey = new THREE.MeshLambertMaterial({ color: 0xbfc2c6 });
+    hall1.add(box(9.6, 4.6, 0.4, mallWhite, 0, 2.3, -15.9));
     [-4.6, 4.6].forEach((wx) => {
-      hall1.add(box(0.35, 5.6, 14, new THREE.MeshLambertMaterial({ color: 0xece7dc }), wx, 2.8, -9));
-      hall1.add(box(0.1, 0.14, 14, hGold, wx + (wx < 0 ? 0.2 : -0.2), 4.3, -9));   // карниз
-      hall1.add(box(0.1, 0.1, 14, hGold, wx + (wx < 0 ? 0.2 : -0.2), 1.1, -9));    // плинтусный молдинг
+      hall1.add(box(0.35, 5.6, 14, mallWhite, wx, 2.8, -9));
+      hall1.add(box(0.12, 0.22, 14, mallGrey, wx + (wx < 0 ? 0.2 : -0.2), 0.2, -9));   // плинтус
     });
-    // кессонный потолок
-    hall1.add(box(9.6, 0.3, 14, new THREE.MeshLambertMaterial({ color: 0xf6f2e8 }), 0, 5.7, -9));
-    // мини-люстра вестибюля
-    (function hallChandelier() {
-      const rr = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.06, 8, 22), new THREE.MeshBasicMaterial({ color: 0xfff0c0 }));
-      rr.rotation.x = Math.PI / 2; rr.position.set(0, 4.5, -11.5); hall1.add(rr);
-      const rr2 = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.05, 8, 18), new THREE.MeshBasicMaterial({ color: 0xfff6d8 }));
-      rr2.rotation.x = Math.PI / 2; rr2.position.set(0, 4.2, -11.5); hall1.add(rr2);
-      hall1.add(cyl(0.02, 0.02, 1.2, 5, NM.steel, 0, 5.1, -11.5));
-      const cl = new THREE.PointLight(0xfff2dd, 0.8, 14, 1.6);
-      cl.position.set(0, 4.3, -11.5); hall1.add(cl);
-    })();
-    // ковровая дорожка (поверх мрамора, как в лобби отеля)
-    const hCarp = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 13),
-      new THREE.MeshLambertMaterial({ color: 0x8a1a22 }));
-    hCarp.rotation.x = -Math.PI / 2; hCarp.position.set(0, 0.05, -9); hall1.add(hCarp);
-    // пальмы в кадках + скамья (детали лобби)
-    [[-3.5, -6.5], [3.5, -6.5]].forEach(([px, pz]) => {
-      hall1.add(cyl(0.42, 0.34, 0.6, 10, new THREE.MeshLambertMaterial({ color: 0x33261a }), px, 0.3, pz));
-      const lf = new THREE.Mesh(new THREE.SphereGeometry(0.7, 8, 7), new THREE.MeshLambertMaterial({ color: 0x2d6b1e }));
-      lf.position.set(px, 1.1, pz); lf.scale.y = 1.35; hall1.add(lf);
+    // подвесной потолок «армстронг» + встроенные светопанели
+    hall1.add(box(9.6, 0.25, 14, new THREE.MeshLambertMaterial({ color: 0xd8d8d4 }), 0, 5.0, -9));
+    for (let z = -14; z <= -4; z += 2.5) {
+      hall1.add(box(3.4, 0.07, 0.85, new THREE.MeshBasicMaterial({ color: 0xf4faff }), 0, 4.84, z));
+    }
+    // грязезащитный ковролин на входе (тёмно-серый, как в ТЦ)
+    const hCarp = new THREE.Mesh(new THREE.PlaneGeometry(6.0, 3.2),
+      new THREE.MeshLambertMaterial({ color: 0x33383c }));
+    hCarp.rotation.x = -Math.PI / 2; hCarp.position.set(0, 0.05, -3.6); hall1.add(hCarp);
+    // рамка металлодетектора / противокражные ворота
+    [-1.5, 1.5].forEach((gx) => {
+      hall1.add(box(0.22, 2.0, 0.5, new THREE.MeshLambertMaterial({ color: 0x9aa3ab }), gx, 1.0, -5.6));
+      hall1.add(sph(0.05, new THREE.MeshBasicMaterial({ color: 0x36ff5e }), gx, 2.02, -5.6));
     });
+    // ряд тележек у стены
+    for (let i = 0; i < 4; i++) {
+      const tz = -7.4 - i * 0.55;
+      hall1.add(box(0.7, 0.55, 0.9, new THREE.MeshLambertMaterial({ color: 0x8f979e }), -3.7, 0.6, tz));
+      hall1.add(box(0.06, 0.5, 0.06, mallGrey, -3.7, 1.1, tz + 0.4));
+    }
+    // банкомат + инфостойка
+    hall1.add(box(0.7, 1.9, 0.8, new THREE.MeshLambertMaterial({ color: 0x1d2833 }), 3.9, 0.95, -8.2));
+    hall1.add(box(0.06, 0.5, 0.62, new THREE.MeshBasicMaterial({ color: 0x39d6ff }), 3.52, 1.35, -8.2));
+    hall1.add(box(1.6, 1.05, 0.6, new THREE.MeshLambertMaterial({ color: 0xd8dde2 }), -3.4, 0.52, -12.5));
+    // напольный указатель-стойка «ВЫХОД / ЭТАЖИ»
+    hall1.add(box(0.1, 2.1, 0.8, new THREE.MeshLambertMaterial({ color: 0x2b3138 }), 3.9, 1.05, -12.6));
+    const sgnFl = tMesh('1 · МОДА\n2 · ТЕХНИКА', 0.7, 0.62, '#dfe8f2', null, 34, 300, 260);
+    if (sgnFl) { sgnFl.position.set(3.83, 1.4, -12.6); sgnFl.rotation.y = Math.PI / 2; hall1.add(sgnFl); }
     const btqCols = [0xffd700, 0x00b4d8, 0xff6b9d, 0x2ecc71];
     const btqNames = ['LUXE', 'STREET', 'CHIC', 'URBAN'];
     btqCols.forEach((c, i) => {
@@ -10700,9 +10707,9 @@ setTimeout(() => {
       if (nm) { nm.position.set(bx, 2.95, -15.55); hall1.add(nm); }
     });
     // подвесная табличка «1 ЭТАЖ»
-    const sgnGMv = tMesh('★ GRAND MALL ★', 4.6, 0.6, '#fff6dc', '#ff9a3c', 72, 1000, 150);
-    if (sgnGMv) { sgnGMv.position.set(0, 4.05, -15.7); hall1.add(sgnGMv); }
-    const sgn1F = tMesh('1 ЭТАЖ · МОДА', 2.9, 0.55, '#8a6f3f', '#ffd76a', 58, 900, 150);
+    const sgnGMv = tMesh('GRAND MALL', 4.6, 0.62, '#ffffff', '#2f9ae0', 78, 1000, 150);
+    if (sgnGMv) { sgnGMv.position.set(0, 4.0, -15.7); hall1.add(sgnGMv); }
+    const sgn1F = tMesh('1 ЭТАЖ · МОДА', 2.9, 0.55, '#dfe8f2', '#2f9ae0', 58, 900, 150);
     if (sgn1F) { sgn1F.position.set(0, 3.6, -9.5); hall1.add(sgn1F); }
     GX.sgn1F = sgn1F;
     hall1.add(cyl(0.015, 0.015, 3.6, 4, NM.steel, -1.0, 5.7, -9.5));
@@ -10720,7 +10727,7 @@ setTimeout(() => {
     // силуэт фонтана в глубине (светится)
     hall1.add(cyl(1.1, 1.25, 0.5, 14, new THREE.MeshLambertMaterial({ color: 0x8fa8b2, emissive: 0x35c4f0, emissiveIntensity: 0.25 }), 0, 0.25, -14));
     // тёплый свет зала (разгорается с открытием дверей)
-    const hall1L = new THREE.PointLight(0xffe0b0, 0.25, 20, 1.5);
+    const hall1L = new THREE.PointLight(0xeaf2ff, 0.25, 20, 1.5);
     hall1L.position.set(0, 3.6, -10); GX.add(hall1L);
     GX.hall1L = hall1L;
     // световой шлейф из дверей на тротуар
@@ -10939,6 +10946,124 @@ setTimeout(() => {
       const adScr = tMesh('FANTAZIA RP', 5.2, 1.5, '#ffffff', '#ff2f5a', 96, 1000, 300);
       if (adScr) { adScr.position.set(9.6, 8.5, 46); adScr.rotation.y = -Math.PI / 2; GX.add(adScr); GX.cityAd = adScr; }
       const adL = new THREE.PointLight(0xff3355, 0.8, 18, 1.7); adL.position.set(8.6, 8.5, 46); GX.add(adL);
+    })();
+    // ═══ v19: ГОРОД, ПО КОТОРОМУ МЫ ИДЁМ КО ВХОДУ (ближняя зона, z 0..46) ═══
+    // камера движется по оси x≈0 от z=46 к z=2.4 — поэтому всё ставим ВДОЛЬ пути,
+    // близко к тротуарам, чтобы объекты реально проплывали мимо зрителя.
+    (function approachCity() {
+      let sc = 777001;
+      const R = () => { sc = (sc * 1103515245 + 12345) % 2147483648; return sc / 2147483648; };
+      const asf = new THREE.MeshLambertMaterial({ color: 0x14171d });
+      const pav = new THREE.MeshLambertMaterial({ color: 0x2a2f36 });
+      const kerb = new THREE.MeshLambertMaterial({ color: 0x3a4047 });
+      const stl = new THREE.MeshLambertMaterial({ color: 0x2c3138 });
+
+      // ── ПЛОЩАДЬ ПЕРЕД ВХОДОМ (z 2..12): плитка, клумбы, флагштоки ──
+      const plaza = new THREE.Mesh(new THREE.PlaneGeometry(26, 12),
+        new THREE.MeshLambertMaterial({ color: 0x333941 }));
+      plaza.rotation.x = -Math.PI / 2; plaza.position.set(0, 0.03, 7); GX.add(plaza);
+      for (let i = -3; i <= 3; i++) {
+        GX.add(box(0.08, 0.02, 12, new THREE.MeshLambertMaterial({ color: 0x434a54 }), i * 3.4, 0.05, 7));
+      }
+      // клумбы по краям площади
+      [[-8.2, 8], [8.2, 8], [-8.2, 12.5], [8.2, 12.5]].forEach(([px, pz]) => {
+        GX.add(box(2.4, 0.45, 2.4, kerb, px, 0.22, pz));
+        GX.add(box(2.1, 0.12, 2.1, new THREE.MeshLambertMaterial({ color: 0x1e2a18 }), px, 0.46, pz));
+        for (let b = 0; b < 3; b++) {
+          const bs = new THREE.Mesh(new THREE.SphereGeometry(0.42 + R() * 0.2, 7, 6),
+            new THREE.MeshLambertMaterial({ color: 0x24401f }));
+          bs.position.set(px + (R() - 0.5) * 1.2, 0.75, pz + (R() - 0.5) * 1.2);
+          GX.add(bs);
+        }
+      });
+      // флагштоки у входа
+      [-5.6, 5.6].forEach((fx, i) => {
+        GX.add(cyl(0.06, 0.07, 7.5, 8, new THREE.MeshLambertMaterial({ color: 0xb8bcc2 }), fx, 3.75, 5.5));
+        const flag = box(0.05, 0.9, 1.5, new THREE.MeshLambertMaterial({ color: i ? 0x2f9ae0 : 0xff5a3c }), fx + 0.05, 6.6, 6.3);
+        GX.add(flag);
+        (GX.flags = GX.flags || []).push({ m: flag, ph: R() * 6.28 });
+      });
+
+      // ── ПАРКОВКА СПРАВА (z 14..34) с машинами и разметкой ──
+      GX.add(box(15, 0.3, 22, asf, 14.5, -0.06, 24));
+      for (let i = 0; i < 7; i++) {
+        GX.add(box(0.12, 0.02, 4.6, new THREE.MeshBasicMaterial({ color: 0xb8b06a }), 9.4 + i * 1.75, 0.11, 18.5));
+      }
+      const carC = [0x8a2b2b, 0x24406b, 0x2c5a3a, 0xb0b4bb, 0x1d2126, 0x6b5a2a];
+      for (let i = 0; i < 6; i++) {
+        const cx2 = 10.3 + i * 1.75, cz2 = 18.4 + (i % 2) * 0.4;
+        if (i === 3) continue;               // пустое место
+        const car = new THREE.Group(); car.position.set(cx2, 0, cz2); GX.add(car);
+        car.add(box(1.5, 0.62, 3.5, new THREE.MeshLambertMaterial({ color: carC[i % 6] }), 0, 0.55, 0));
+        car.add(box(1.32, 0.5, 1.8, new THREE.MeshLambertMaterial({ color: 0x0f1319 }), 0, 1.05, -0.15));
+        [[-0.72, -1.2], [0.72, -1.2], [-0.72, 1.2], [0.72, 1.2]].forEach(([wx, wz]) => {
+          const wh = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.2, 9), new THREE.MeshLambertMaterial({ color: 0x0c0e12 }));
+          wh.rotation.z = Math.PI / 2; wh.position.set(wx, 0.3, wz); car.add(wh);
+        });
+        car.add(sph(0.09, new THREE.MeshBasicMaterial({ color: 0x551a12 }), -0.5, 0.62, 1.76));
+        car.add(sph(0.09, new THREE.MeshBasicMaterial({ color: 0x551a12 }), 0.5, 0.62, 1.76));
+      }
+      const parkSgn = tMesh('P · ПАРКОВКА', 2.2, 0.6, '#ffffff', '#2f6ae0', 70, 700, 180);
+      if (parkSgn) { parkSgn.position.set(8.9, 3.2, 22); parkSgn.rotation.y = -Math.PI / 2; GX.add(parkSgn); }
+      GX.add(cyl(0.07, 0.07, 3.2, 6, stl, 8.9, 1.6, 22));
+
+      // ── СКВЕР СЛЕВА (z 12..34): деревья, лавки, фонари, урны ──
+      GX.add(box(13, 0.28, 24, new THREE.MeshLambertMaterial({ color: 0x1c2a1a }), -14, -0.07, 24));
+      for (let i = 0; i < 9; i++) {
+        const tx = -9.5 - R() * 8, tz = 13 + i * 2.4 + R() * 1.2;
+        GX.add(cyl(0.17, 0.23, 3.2, 7, new THREE.MeshLambertMaterial({ color: 0x2e2318 }), tx, 1.6, tz));
+        const cr = new THREE.Mesh(new THREE.SphereGeometry(1.25 + R() * 0.5, 8, 7),
+          new THREE.MeshLambertMaterial({ color: 0x1d3a1a }));
+        cr.position.set(tx, 3.6, tz); cr.scale.y = 1.15; GX.add(cr);
+      }
+      [16, 23, 30].forEach((bz) => {
+        GX.add(box(1.9, 0.12, 0.6, new THREE.MeshLambertMaterial({ color: 0x6b5334 }), -8.6, 0.5, bz));
+        GX.add(box(1.9, 0.5, 0.1, new THREE.MeshLambertMaterial({ color: 0x6b5334 }), -8.6, 0.72, bz - 0.26));
+        GX.add(box(0.12, 0.45, 0.5, stl, -9.4, 0.24, bz));
+        GX.add(cyl(0.22, 0.18, 0.6, 8, stl, -7.4, 0.3, bz + 0.9));   // урна
+      });
+
+      // ── ПЕШЕХОДНЫЙ ПЕРЕХОД ПОПЕРЁК ПУТИ (z=36) ──
+      for (let i = -5; i <= 5; i++) {
+        GX.add(box(0.75, 0.02, 2.6, new THREE.MeshBasicMaterial({ color: 0xd8d8d0 }), i * 1.25, 0.06, 36));
+      }
+      // ── ОСЕВАЯ РАЗМЕТКА ДОРОГИ по пути камеры ──
+      for (let z = 40; z <= 88; z += 4) {
+        GX.add(box(0.16, 0.02, 2.2, new THREE.MeshBasicMaterial({ color: 0xc8c49a }), 0, 0.06, z));
+      }
+      // бордюры вдоль всего подхода
+      [-8.2, 8.2].forEach((bx) => GX.add(box(0.3, 0.28, 88, kerb, bx, 0.12, 44)));
+
+      // ── ЛЮДИ, ИДУЩИЕ КО ВХОДУ (силуэты, движутся вместе с нами) ──
+      const walkers = [];
+      const coatC = [0x2b3138, 0x40202a, 0x1d2a3a, 0x3a3020, 0x2a2a2a];
+      for (let i = 0; i < 7; i++) {
+        const w = new THREE.Group();
+        const c = coatC[i % coatC.length];
+        w.add(box(0.5, 0.95, 0.32, new THREE.MeshLambertMaterial({ color: c }), 0, 1.05, 0));
+        w.add(sph(0.16, new THREE.MeshLambertMaterial({ color: 0x6b5342 }), 0, 1.72, 0));
+        const legL = box(0.18, 0.75, 0.2, new THREE.MeshLambertMaterial({ color: 0x14181e }), -0.13, 0.38, 0);
+        const legR = box(0.18, 0.75, 0.2, new THREE.MeshLambertMaterial({ color: 0x14181e }), 0.13, 0.38, 0);
+        w.add(legL); w.add(legR);
+        w.position.set((R() - 0.5) * 9, 0, 8 + R() * 40);
+        w.rotation.y = Math.PI;               // идут ко входу (в -z)
+        GX.add(w);
+        walkers.push({ g: w, legL: legL, legR: legR, sp: 1.5 + R() * 1.1, ph: R() * 6.28 });
+      }
+      GX.walkers = walkers;
+
+      // ── КИОСКИ И ЛОТКИ ВДОЛЬ ПУТИ ──
+      [['ГАЗЕТЫ', -6.6, 20, 0xffb060], ['КОФЕ', 6.6, 27, 0xff7a3c], ['ЦВЕТЫ', -6.6, 33, 0xff4a80]].forEach(([nm, kx, kz, kc]) => {
+        const k = new THREE.Group(); k.position.set(kx, 0, kz); GX.add(k);
+        k.add(box(2.0, 2.4, 1.8, new THREE.MeshLambertMaterial({ color: 0x232a31 }), 0, 1.2, 0));
+        k.add(box(2.2, 0.16, 2.1, new THREE.MeshLambertMaterial({ color: 0x39424c }), 0, 2.5, 0));
+        const gl2 = box(0.06, 1.1, 1.5, new THREE.MeshBasicMaterial({ color: 0xffd9a0, transparent: true, opacity: 0.75 }),
+          kx > 0 ? -1.01 : 1.01, 1.4, 0);
+        k.add(gl2);
+        const kl = new THREE.PointLight(kc, 0.55, 8, 1.8); kl.position.set(kx > 0 ? -1.6 : 1.6, 2.1, 0); k.add(kl);
+        const ks = tMesh(nm, 1.5, 0.34, '#ffffff', '#' + kc.toString(16).padStart(6, '0'), 48, 500, 130);
+        if (ks) { ks.position.set(kx > 0 ? -1.06 : 1.06, 2.75, 0); ks.rotation.y = kx > 0 ? -Math.PI / 2 : Math.PI / 2; k.add(ks); }
+      });
     })();
     // ── крыши: водонапорка, антенна ──
     GX.add(cyl(1.1, 1.2, 2.2, 8, NM.conc2, -12.5, 17.5, 22));
@@ -12439,7 +12564,7 @@ setTimeout(() => {
   // запуск
 
   // ─────────────────────────── ОБНОВЛЕНИЕ ──────────────────────────────
-  let floorCount = 2;   // этажи, которые проезжаем (B2, B3...)
+  let floorCount = 1;   // v19: старт B1! (было 2 — из-за чего B2 «съедался» и шло B1→B3)
   let lastBand = -1;
   let nextDrip = 1.2, nextBuzz = 3;
   let motorOn = false;
@@ -12525,7 +12650,7 @@ setTimeout(() => {
     try { api._log.push([+P.t.toFixed(2), 'MALL']); } catch (e) {}
     hideProScenes();
     GX.visible = false; GM.visible = true;
-    ambL.intensity = 0.85;   // светлый молл (v16: ярче — как в пятизвёздочном отеле)
+    ambL.intensity = 0.72;   // v19: обычный светлый ТЦ (не «пятизвёздочный отель»)
     S.background.setHex(0x11131c); S.fog = fogMall;
     OV.fade = 1; OV.fadeT = 0;
     cam.position.set(0.5, 1.63, -1.7);
@@ -12561,8 +12686,8 @@ setTimeout(() => {
     try { api._log.push([+P.t.toFixed(2), 'D']); } catch (e) {}
     hideProScenes();
     G.up.visible = true; G.lift.visible = true; G.shaft.visible = false; G.low.visible = false;
-    ambL.intensity = 0.05;
-    S.background.setHex(0x040806); S.fog = new THREE.Fog(0x050b08, 2, 46);
+    ambL.intensity = 0.012;                                   // v19: почти нет заливки
+    S.background.setHex(0x010302); S.fog = new THREE.Fog(0x020504, 1.5, 26);
     OV.fade = 1; OV.fadeT = 0;
     // полный сброс состояния «подвала» (как старый begin)
     api.doorsAnim(0); stairDoors(0); mallStairDoors(0); extDoorsAnim(0);
@@ -12572,7 +12697,7 @@ setTimeout(() => {
     cabLamp.intensity = 1.0;
     G.flick.forEach((f) => { try { f.l.intensity = f.base; } catch (e) {} });
     setDoorLight(0);
-    floorCount = 2; lastBand = -1; nextDrip = 1.2; nextBuzz = 3; motorOn = false; CX.lastStep = -1;
+    floorCount = 1; lastBand = -1; nextDrip = 1.2; nextBuzz = 3; motorOn = false; CX.lastStep = -1;
     F.doorOpen = 0; F.doorCls = 0; F.spd = 0;
     P.cutStage = 0;
     cam.position.set(0, 1.62, 62);
@@ -12629,6 +12754,19 @@ setTimeout(() => {
       if (GX.sgn) GX.sgn.visible = true;
       if (GX.sgnEnter) GX.sgnEnter.visible = true;
     }
+    // v19: пешеходы идут ко входу, флаги колышутся
+    if (GX.walkers) GX.walkers.forEach((w) => {
+      w.g.position.z -= w.sp * dt;
+      if (w.g.position.z < 1.5) w.g.position.z = 46 + Math.random() * 8;
+      const sw = Math.sin(lt * w.sp * 3.4 + w.ph);
+      w.legL.position.z = sw * 0.26;
+      w.legR.position.z = -sw * 0.26;
+      w.g.position.y = Math.abs(sw) * 0.035;
+    });
+    if (GX.flags) GX.flags.forEach((f) => {
+      f.m.rotation.y = Math.sin(lt * 1.7 + f.ph) * 0.22;
+      f.m.scale.z = 1 + Math.sin(lt * 2.6 + f.ph) * 0.09;
+    });
     // v17: жизнь нового города — маяки, неон, поезд по эстакаде, рекламный экран
     if (GX.cityBeacons) GX.cityBeacons.forEach((b) => { b.m.visible = ((lt * 1.6 + b.ph) % 2) < 1.1; });
     if (GX.cityNeon) GX.cityNeon.forEach((n) => {
@@ -13124,10 +13262,13 @@ setTimeout(() => {
       // мерцание плафона при движении
       cabLamp.intensity = 1.0 - Math.abs(Math.sin(wall * 7.3)) * 0.25 - (Math.random() < dt * 2 ? 0.35 : 0);
       // этажи: табличка в окне → звонок + табло + кнопка этажа вспыхивает
+      // v19: строго последовательно B1→B2→B3→B4→B5, ни один этаж не пропускаем.
+      // Раньше при быстром спуске pass мог прыгнуть через число (0→2) и B2 «терялся».
       const pass = Math.floor(shaftG.position.y / 3.2);
       if (pass > 0 && pass !== lastBand) {
         lastBand = pass;
-        const fl2 = Math.min(5, 1 + pass);   // проезжаем B2..B5
+        const want = Math.min(5, 1 + pass);
+        const fl2 = Math.min(want, floorCount + 1);   // шаг ровно на один этаж
         if (fl2 !== floorCount) {
           floorCount = fl2;
           SFX.ding();
@@ -13142,6 +13283,7 @@ setTimeout(() => {
             }
           } catch (e) {}
           if (p > T3 + 1.2) caption('ЭТАЖ B' + floorCount, 0.9, 13);
+          if (floorCount < want) lastBand = -1;   // остались этажи — покажем их на след. кадрах
         }
       }
       // камера в кабине: медленное покачивание + короткий рывок с затуханием
@@ -13354,14 +13496,14 @@ setTimeout(() => {
     cabLamp.intensity = 1.0;
     G.flick.forEach((f) => { try { f.l.intensity = f.base; } catch (e) {} });
     setDoorLight(0);
-    floorCount = 2; lastBand = -1; nextDrip = 1.2; nextBuzz = 3; motorOn = false; CX.lastStep = -1;
+    floorCount = 1; lastBand = -1; nextDrip = 1.2; nextBuzz = 3; motorOn = false; CX.lastStep = -1;
     F.doorOpen = 0; F.doorCls = 0; F.spd = 0; F.shakeAmt = 0;
     try { CAMSH.reset(); } catch (e) {}
     CX.m = 0; CX.s = 0; CX.d = 0; CX._sh1 = 0; CX._sh2 = 0; CX.f1 = 0; CX.f2 = 0; CX.f3 = 0; CX.f4 = 0; CX.f5 = 0; CX.f6 = 0; CX.f7 = 0; CX.f8 = 0; CX.fcar = 0; CX.fcar2 = 0; CX.siren = 0; CX.flashT = 0;
     CX.t0e = 0; CX.t0m = 0; CX.t0s = 0; CX.t0d = 0; CX.rainT = 0.4; CX.thunT = 1.4; CX.mallT = 1.0; CX.lastIdx = -1;
     hideProScenes();
     GX.visible = true;
-    ambL.intensity = 0.14;
+    ambL.intensity = 0.03;
     S.background.setHex(0x0a0e1c); S.fog = fogExt;
     OV.fade = 1; OV.fadeT = 0; OV.flashW = 0; OV.flashR = 0;
     T.phase = 'pro';
