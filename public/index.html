@@ -9005,12 +9005,21 @@ function openElevatorModal() {
     btn.className = 'elevator-floor-btn' + (f===currentFloor?' current':'');
     btn.textContent = lbl(f);
     btn.dataset.floor = f;
+    // v26: подвалы закрыты, пока служебный вход заколочен
+    const locked = basement && !window.FZ_QUEST.boardsBroken;
     if (basement) {
-      btn.style.color = '#ff8a6a';
-      btn.style.borderColor = 'rgba(255,90,60,0.45)';
-      btn.title = 'Служебный подвальный уровень';
+      btn.style.color = locked ? '#6a6a72' : '#ff8a6a';
+      btn.style.borderColor = locked ? 'rgba(120,120,130,0.3)' : 'rgba(255,90,60,0.45)';
+      btn.title = locked ? 'Служебный вход заколочен' : 'Служебный подвальный уровень';
+      if (locked) { btn.textContent = '🔒'; btn.style.cursor = 'not-allowed'; }
     }
-    btn.onclick = () => { if(f!==currentFloor) startElevatorRide(f); };
+    btn.onclick = () => {
+      if (locked) {
+        showNotification('🔒 Служебный вход заколочен досками — нужен ТОПОР', 'error');
+        return;
+      }
+      if (f!==currentFloor) startElevatorRide(f);
+    };
     btns.appendChild(btn);
   });
   modal.style.display = 'block';
@@ -9019,6 +9028,94 @@ function openElevatorModal() {
 
 function closeElevatorModal() {
   document.getElementById('elevatorModal').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// v26: КИНЕМАТОГРАФИЧЕСКАЯ ПОЕЗДКА В ЛИФТЕ ОТ ПЕРВОГО ЛИЦА.
+// Камера перехватывается на всё время поездки и играет сцену:
+//   1) шаг внутрь кабины  2) разворот к дверям  3) двери закрываются
+//   4) движение с покачиванием и отсчётом этажей  5) двери открываются
+//   6) шаг наружу — управление возвращается игроку.
+// Использует тот же перехват window.fzTEASER, что и тизер.
+// ═══════════════════════════════════════════════════════════════════════════
+const LIFT_CAM = {
+  active: false, t: 0, dur: 0, phase: '',
+  pos: new THREE.Vector3(), look: new THREE.Vector3(),
+  doorX: 0, doorZ: 0, y0: 0, y1: 0
+};
+
+function fzLiftCamStart(fromY, toY) {
+  // геометрия лифта в интерьере ТЦ (см. buildMallInterior: liftX=16, liftZ=-8)
+  const bx = INTERIOR_BASE.x, bz = INTERIOR_BASE.z;
+  LIFT_CAM.doorX = bx + 16;
+  LIFT_CAM.doorZ = bz - 8 - 2.4;      // плоскость шахты
+  LIFT_CAM.y0 = fromY; LIFT_CAM.y1 = toY;
+  LIFT_CAM.active = true;
+  LIFT_CAM.t = 0;
+  window.fzTEASER = window.fzTEASER || {};
+  window.fzTEASER.active = true;
+  window.fzTEASER.camPos = LIFT_CAM.pos;
+  window.fzTEASER.look = LIFT_CAM.look;
+  if (localPlayer.mesh) localPlayer.mesh.visible = false;
+}
+
+function fzLiftCamEnd() {
+  LIFT_CAM.active = false;
+  if (window.fzTEASER) window.fzTEASER.active = false;
+  if (localPlayer.mesh && window.cameraMode !== 'first') localPlayer.mesh.visible = true;
+}
+
+// вызывается каждый кадр из основного цикла
+function fzLiftCamUpdate(dt) {
+  if (!LIFT_CAM.active) return;
+  LIFT_CAM.t += dt;
+  const L = LIFT_CAM;
+  const EYE = 1.62;
+  // z: снаружи кабины (перед дверьми) → внутри кабины
+  const zOut = L.doorZ + 2.6;     // стоим перед лифтом
+  const zIn  = L.doorZ - 1.5;     // внутри кабины
+  let camZ = zIn, camY = L.y0 + EYE, lookZ = L.doorZ, sway = 0, rollZ = 0;
+
+  if (L.phase === 'enter') {
+    // 0..1.1с — заходим внутрь, камера плавно вплывает в кабину
+    const k = Math.min(1, L.t / 1.1);
+    const e = k * k * (3 - 2 * k);
+    camZ = zOut + (zIn - zOut) * e;
+    camY = L.y0 + EYE + Math.abs(Math.sin(L.t * 7)) * 0.035;   // шаги
+    lookZ = L.doorZ - 3.0;        // смотрим вглубь кабины
+  } else if (L.phase === 'turn') {
+    // разворот лицом к дверям
+    const k = Math.min(1, L.t / 0.7);
+    const e = k * k * (3 - 2 * k);
+    camY = L.y0 + EYE;
+    lookZ = (L.doorZ - 3.0) + ((L.doorZ + 4.0) - (L.doorZ - 3.0)) * e;
+  } else if (L.phase === 'ride') {
+    // едем: лёгкий крен на старте, вибрация, просадка на торможении
+    const k = Math.min(1, L.t / Math.max(0.001, L.dur));
+    const e = k < 0.5 ? 2*k*k : -1 + (4 - 2*k)*k;
+    camY = L.y0 + (L.y1 - L.y0) * e + EYE;
+    // перегрузка: в начале проседаем, в конце подбрасывает
+    const g = Math.sin(k * Math.PI);
+    const dir = L.y1 > L.y0 ? 1 : -1;
+    camY += dir * (k < 0.5 ? -0.05 : 0.05) * g;
+    sway = Math.sin(L.t * 13) * 0.012 * g;      // вибрация кабины
+    rollZ = Math.sin(L.t * 9) * 0.004 * g;
+    lookZ = L.doorZ + 4.0;
+  } else if (L.phase === 'open') {
+    camY = L.y1 + EYE;
+    lookZ = L.doorZ + 4.0;
+  } else if (L.phase === 'exit') {
+    // выходим наружу
+    const k = Math.min(1, L.t / 1.2);
+    const e = k * k * (3 - 2 * k);
+    camZ = zIn + (zOut - zIn) * e;
+    camY = L.y1 + EYE + Math.abs(Math.sin(L.t * 7)) * 0.035;
+    lookZ = L.doorZ + 6.0;
+  }
+
+  L.pos.set(L.doorX + sway, camY, camZ);
+  L.look.set(L.doorX + sway * 2, camY - 0.06, lookZ);
+  camera.rotation.z = rollZ;
 }
 
 function startElevatorRide(targetFloor) {
@@ -9040,6 +9137,17 @@ function startElevatorRide(targetFloor) {
   const lbl2 = (f) => isMall2 ? floorLabelOf(f) : String(f + 1);
   const dirSign = targetFloor > currentFloor ? 1 : -1;
 
+  // v26: кинематографический вход в кабину перед закрытием дверей
+  const cine = isMall2;
+  if (cine) {
+    closeElevatorModal();
+    fzLiftCamStart(fromY, toY);
+    LIFT_CAM.phase = 'enter'; LIFT_CAM.t = 0;
+    document.getElementById('elevatorProgress').style.display='block';
+    document.getElementById('elevatorStatus').textContent = '🚶 Заходим в кабину...';
+  }
+
+  const afterEnter = () => {
   animateElevatorDoors('close', 0.8, () => {
     document.getElementById('elevatorStatus').textContent =
       `${dirSign > 0 ? '⬆️' : '⬇️'} Едем на этаж ${lbl2(targetFloor)}...`;
@@ -9047,6 +9155,7 @@ function startElevatorRide(targetFloor) {
     const startFloor = currentFloor;
     const span = Math.abs(targetFloor - startFloor);
     const rideDuration = span * 1.2 + 0.5;
+    if (cine) { LIFT_CAM.phase = 'ride'; LIFT_CAM.t = 0; LIFT_CAM.dur = rideDuration; }
     let elapsed = 0;
     const rideInterval = setInterval(() => {
       elapsed += 0.05;
@@ -9076,6 +9185,7 @@ function startElevatorRide(targetFloor) {
           : `🏬 Этаж ${currentFloor+1} / ${INTERIOR_CONFIGS[currentBuildingType]?.floors||1}`;
         try { drawMallLiftInd(lbl2(currentFloor), 0); } catch (e) {}
         document.getElementById('elevatorStatus').textContent = `🚪 Открываем двери...`;
+        if (cine) { LIFT_CAM.phase = 'open'; LIFT_CAM.t = 0; LIFT_CAM.y1 = toY; }
         // Open doors
         animateElevatorDoors('open', 0.8, () => {
           elevatorAnim.active = false;
@@ -9090,10 +9200,33 @@ function startElevatorRide(targetFloor) {
           } else {
             showNotification(`Этаж ${lbl2(targetFloor)}`, 'info');
           }
+          // v26: выходим из кабины, потом отдаём управление
+          if (cine) {
+            LIFT_CAM.phase = 'exit'; LIFT_CAM.t = 0;
+            document.getElementById('elevatorStatus').textContent = '🚶 Выходим...';
+            setTimeout(() => {
+              fzLiftCamEnd();
+              camera.rotation.z = 0;
+              // поставить игрока перед лифтом на новом этаже
+              const bx2 = INTERIOR_BASE.x, bz2 = INTERIOR_BASE.z;
+              if (localPlayer.mesh) localPlayer.mesh.position.set(bx2 + 16, toY, bz2 - 8 + 0.6);
+              document.getElementById('elevatorStatus').textContent = '';
+              document.getElementById('elevatorModal').style.display = 'none';
+            }, 1250);
+          }
         });
       }
     }, 50);
   });
+  };
+
+  // запуск: с кинематографией ждём, пока зайдём в кабину
+  if (cine) {
+    setTimeout(() => { LIFT_CAM.phase = 'turn'; LIFT_CAM.t = 0; }, 1100);
+    setTimeout(afterEnter, 1800);
+  } else {
+    afterEnter();
+  }
 }
 
 let elevatorDoorLeft = null, elevatorDoorRight = null;
@@ -13014,7 +13147,7 @@ function fzQuestChipUpdate() {
   if (window.FZ_QUEST.bossDead) { chip.style.display = 'none'; return; }
   chip.style.display = 'block';
   chip.textContent = done
-    ? '📜 ВСЕ 6/6 → ТОПОР НА 3 ЭТ. ТЦ'
+    ? (window.FZ_QUEST.axe ? '🪓 ТОПОР ЕСТЬ → СБЕЙ ДОСКИ У ЛИФТА' : '📜 ВСЕ 6/6 → ТОПОР В НИШЕ, 3 ЭТ.')
     : '📜 Записки: ' + n + '/6';
   chip.style.borderColor = done ? 'rgba(120,255,160,.6)' : 'rgba(255,215,120,.5)';
   chip.style.color = done ? '#c8ffd9' : '#ffe9b8';
@@ -13134,20 +13267,24 @@ function fzTryBreakBoards() {
     return;
   }
   if (!window.FZ_QUEST.axe) {
-    showNotification('🪵 Доски не поддаются. Нужен ТОПОР — он на 3 этаже', 'error');
+    showNotification('🪵 Доски не поддаются. Нужен ТОПОР — ниша на 3 этаже, за кинозалом', 'error');
     return;
   }
   window.FZ_QUEST.boardsBroken = true;
   fzQuestSave();
   fzSfx(90, 0.3, 'sawtooth', 0.3);
   setTimeout(() => fzSfx(70, 0.35, 'sawtooth', 0.3), 160);
-  (window._fzBoardMeshes || []).forEach(bd => { bd.userData.throwing = true; bd.userData.vy = 4 + Math.random() * 2; });
+  // разлетаются и доски у прохода, и доски со служебного лифта
+  [].concat(window._fzBoardMeshes || [], window._fzLiftBoards || [])
+    .forEach(bd => { bd.userData.throwing = true; bd.userData.vy = 4 + Math.random() * 2; });
   interactables = interactables.filter(i2 => i2.type !== 'quest_boards');
-  showNotification('💥 Доски разлетелись в щепки! За ними — тёмный спуск...', 'success');
+  showNotification('💥 Доски разлетелись в щепки! Служебный лифт разблокирован', 'success');
   setTimeout(() => {
     const bx = INTERIOR_BASE.x, bz = INTERIOR_BASE.z;
     interactables.push({ position: { x: bx + 17.7, y: 0, z: bz + 3 }, type: 'quest_bossdoor', name: '🕳 Тёмный проём: СПУСТИТЬСЯ', range: 2.6, interior: true });
-    showNotification('🕳 Проём открыт. Внутри что-то дышит...', 'info');
+    showNotification('🛗 Теперь лифт везёт до B5. Он ждёт внизу...', 'info');
+    // перестроить этаж, чтобы убрать коллайдер досок
+    try { buildInterior(currentBuildingType); } catch (e) {}
   }, 700);
 }
 
@@ -13167,6 +13304,26 @@ function fzBoardsAnim(dt) {
 
 function fzMallAxe(bx, bz, F, add, mat) {
   if (window.FZ_QUEST.axe || window.FZ_QUEST.bossDead) return;
+  // v26: ТОПОР — в тайнике за кинозалом. Пока не собраны все 6 страниц,
+  // ниша замурована фальшпанелью: смотритель спрятал его на совесть.
+  const secret = fzQuestNotesFound() >= 6;
+  if (!secret) {
+    // фальшпанель со следами вскрытия — намёк, что тут что-то есть
+    const panel = new THREE.Mesh(new THREE.BoxGeometry(0.22, 2.6, 2.2), mat(0x4a4038));
+    panel.position.set(bx - 8, F + 1.3, bz + 12); add(panel);
+    const scratch = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 2.2),
+      mat(0x2a221c, 0x3a1a10, 0.15));
+    scratch.position.set(bx - 8.12, F + 1.3, bz + 12);
+    scratch.rotation.y = Math.PI / 2; add(scratch);
+    interiorColliders.push({ minX: bx - 8.3, maxX: bx - 7.7, minZ: bz + 10.9, maxZ: bz + 13.1 });
+    addInteriorSign('🔒 НИША ЗАМУРОВАНА', bx - 8.5, F + 2.9, bz + 12, add);
+    interactables.push({ position: { x: bx - 7.3, y: F, z: bz + 12 },
+      type: 'quest_axe_locked', name: '🔒 Замурованная ниша', range: 2.8, interior: true });
+    return;
+  }
+  // ниша вскрыта: подсветка, пень и топор
+  const nicheL = new THREE.PointLight(0x9ad4ff, 0.9, 9);
+  nicheL.position.set(bx - 8, F + 1.8, bz + 12); add(nicheL);
   const stump = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.55, 0.5, 10), mat(0x5a3a1a));
   stump.position.set(bx - 8, F + 0.25, bz + 12); add(stump);
   const g = new THREE.Group();
@@ -13197,7 +13354,7 @@ function fzPickAxe() {
   if (window._fzAxeMesh) window._fzAxeMesh.visible = false;
   interactables = interactables.filter(i2 => i2.type !== 'quest_axe');
   fzSfxChord([220, 330, 440], 0.4);
-  showNotification('🪓 ТОПОР СМОТРИТЕЛЯ получен! Спускайся на 1 этаж — там заколоченный проход', 'success');
+  showNotification('🪓 ТОПОР СМОТРИТЕЛЯ получен! Спускайся на 1 этаж — служебный лифт заколочен', 'success');
 }
 
 // ═══ АРЕНА БОССА ═══
@@ -14023,6 +14180,10 @@ function handleInteraction() {
   }
   if (inter.type === 'quest_note') { fzPickNote(inter); return; }
   if (inter.type === 'quest_axe') { fzPickAxe(); return; }
+  if (inter.type === 'quest_axe_locked') {
+    showNotification('🔒 Ниша замурована. Страниц дневника: ' + fzQuestNotesFound() + '/6', 'error');
+    return;
+  }
   if (inter.type === 'quest_boards') { fzTryBreakBoards(); return; }
   if (inter.type === 'quest_bossdoor') { fzEnterBossArena(); return; }
   if (String(inter.type).indexOf('city3_') === 0) {
@@ -14632,6 +14793,44 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
   });
   addInteriorSign('🛗 ЛИФТ · B5…3', bx + liftX, F + FH - 0.4, bz + LWALLZ + 0.4, add);
   colp(liftX, LWALLZ, 4.8, 0.6);
+
+  // ═══════════════════════════════════════════════════════════════════
+  // v26: СЛУЖЕБНЫЙ ВХОД ЗАКОЛОЧЕН.
+  // Пока доски целы, лифт физически не может уехать в подвалы —
+  // створки перекрыты крест-накрест досками смотрителя.
+  // Сбить их можно только ТОПОРОМ и только собрав все 6 страниц.
+  // ═══════════════════════════════════════════════════════════════════
+  if (!bsm && sf === 0 && !window.FZ_QUEST.boardsBroken && !window.FZ_QUEST.bossDead) {
+    window._fzLiftBoards = [];
+    // крест-накрест + горизонтали поперёк проёма
+    [[-0.62, 0.62], [0.62, -0.62], [0, 0], [0, 0]].forEach(([rz], bi) => {
+      const horiz = bi >= 2;
+      const bd = new THREE.Mesh(
+        new THREE.BoxGeometry(horiz ? DOORW * 2 + 0.6 : 0.5, 0.42, 0.16),
+        mat(0x6b4a2a));
+      bd.position.set(bx + liftX, F + (horiz ? (bi === 2 ? 0.75 : 2.45) : 1.6),
+        bz + LWALLZ + 0.58);
+      if (!horiz) {
+        bd.scale.y = (DOORW * 2 + 0.9) / 0.42;
+        bd.rotation.z = rz;
+      }
+      bd.userData = { isBoard: true, vy: 0, vr: (Math.random() - 0.5) * 8, throwing: false };
+      add(bd); window._fzLiftBoards.push(bd);
+      // ржавые гвозди
+      for (let nl = -1; nl <= 1; nl += 2) {
+        const nail = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.1, 6), mat(0x2a2018));
+        nail.rotation.x = Math.PI / 2;
+        nail.position.set(bd.position.x + nl * (horiz ? 1.3 : 0.9),
+          bd.position.y + (horiz ? 0 : nl * 0.9), bz + LWALLZ + 0.68);
+        add(nail);
+      }
+    });
+    // предупреждение краской
+    addInteriorSign('⛔ СЛУЖЕБНЫЙ ВХОД ЗАКОЛОЧЕН', bx + liftX, F + DOORH + 1.5, bz + LWALLZ + 0.6, add);
+    colp(liftX, LWALLZ + 0.6, DOORW * 2 + 0.8, 0.5);
+    interactables.push({ position: { x: bx + liftX, y: F, z: bz + LWALLZ + 2.2 },
+      type: 'quest_boards', name: '🪵 Заколоченный служебный вход', range: 3.0, interior: true });
+  }
 
   // ═══ КОНТЕНТ (минимум, без хлама) ═══
   if (sf === 0) {
@@ -16693,10 +16892,15 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
     camera.lookAt(mesh.position.x, mesh.position.y + (mesh.userData.model ? 1.75 : 1.5), mesh.position.z);
   }
 
-  // --- V3.7: перехват камеры на время тизера ---
+  // --- v26: кинематографическая поездка в лифте (обновляем ДО перехвата) ---
+  try { fzLiftCamUpdate(delta); } catch (e) {}
+
+  // --- V3.7: перехват камеры на время тизера / лифта ---
   if (window.fzTEASER && window.fzTEASER.active) {
     camera.position.copy(window.fzTEASER.camPos);
     camera.lookAt(window.fzTEASER.look);
+    // крен кабины сохраняем (lookAt его сбрасывает)
+    if (LIFT_CAM.active) camera.rotation.z = camera.rotation.z || 0;
   }
 
   // --- Удалённые игроки: интерполяция ---
