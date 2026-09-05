@@ -84,9 +84,9 @@
 </div>
 <div id="start">
   <div class="logo">FANTAZIA RP 3D</div>
-  <div class="ttl">СЛУЖЕБНЫЙ ВХОД</div>
-  <div class="sub" style="margin-top:-6px">GRAND MALL · ПОДЗЕМЕЛЬЕ ХРАНИТЕЛЯ</div>
-  <div class="sub">КУТ-СЦЕНА · 40 СЕКУНД · СО ЗВУКОМ 🎧</div>
+  <div class="ttl">GRAND MALL</div>
+  <div class="sub" style="margin-top:-6px">СЛУЖЕБНЫЙ ВХОД · 1 ЭТАЖ · ПОДЗЕМЕЛЬЕ ХРАНИТЕЛЯ</div>
+  <div class="sub">КУТ-СЦЕНА · 60 СЕКУНД · СО ЗВУКОМ 🎧</div>
   <button id="play">▶ СМОТРЕТЬ</button>
 </div>
 <div id="end">
@@ -9277,7 +9277,7 @@ function upBlackout(dt) {
 //     → всё захлёбывается ПОМЕХАМИ → провал в подземелье
 // ═══════════════════════════════════════════════════════════════════
 const PRO = {
-  t: 0, dur: 15.4, scene: null, cam: null, on: false,
+  t: 0, dur: 34.5, scene: null, cam: null, on: false,
   doorL: null, doorR: null, srvDoor: null,
   lampFlick: null, panel: null, panelCtx: null, panelTex: null,
   mall: null, cabLight: null, mallLights: [], noiseAt: [], step: 0,
@@ -9548,97 +9548,413 @@ const PRO = {
   PRO.doorL = box(1.26, 3.2, 0.12, dMat, -0.63, 1.6, -13.0, S);
   PRO.doorR = box(1.26, 3.2, 0.12, dMat, 0.63, 1.6, -13.0, S);
 
-  // ── GRAND MALL, 1 ЭТАЖ (за кабиной, открывается на z = -17) ──
+  // ═══ GRAND MALL — 1 ЭТАЖ, БОЛЬШОЙ АТРИУМ (осматриваемся!) ═══
   const mall = new THREE.Group(); mall.position.set(0, 0, -17.2); S.add(mall);
   PRO.mall = mall;
-  const mFloor = new THREE.Mesh(new THREE.PlaneGeometry(36, 40),
-    new THREE.MeshPhongMaterial({ map: texTile, shininess: 70, specular: 0x555555 }));
-  mFloor.rotation.x = -Math.PI / 2; mFloor.position.set(0, 0.005, -16); mall.add(mFloor);
-  const mCeil = new THREE.Mesh(new THREE.PlaneGeometry(36, 40),
-    new THREE.MeshLambertMaterial({ color: 0x20242c, side: THREE.DoubleSide }));
-  mCeil.rotation.x = Math.PI / 2; mCeil.position.set(0, 8.4, -16); mall.add(mCeil);
-  const mWall = new THREE.MeshLambertMaterial({ color: 0xb9b4ad });
-  box(0.5, 8.4, 40, mWall, -12, 4.2, -16, mall);
-  box(0.5, 8.4, 40, mWall, 12, 4.2, -16, mall);
-  box(24, 8.4, 0.5, mWall, 0, 4.2, -35.6, mall);
+  const MW = 34, ML = 96;   // ширина / длина галереи
+  // глянцевый пол в шахматку + световая полоса-навигация
+  const texMTile = cvsTex(256, 256, (q, w, h) => {
+    const s2 = w / 2;
+    for (let y = 0; y < 2; y++) for (let x = 0; x < 2; x++) {
+      const lite = (x + y) % 2 === 0;
+      const g = lite ? 214 : 178;
+      q.fillStyle = 'rgb(' + g + ',' + (g - 6) + ',' + (g - 16) + ')';
+      q.fillRect(x * s2, y * s2, s2, s2);
+      for (let i = 0; i < 60; i++) {
+        const v = g + (rnd(-14, 14) | 0);
+        q.fillStyle = 'rgba(' + v + ',' + (v - 6) + ',' + (v - 14) + ',.35)';
+        q.fillRect(x * s2 + rnd(0, s2), y * s2 + rnd(0, s2), rnd(2, 12), rnd(2, 12));
+      }
+    }
+    q.strokeStyle = 'rgba(90,86,80,.6)'; q.lineWidth = 3;
+    q.strokeRect(0, 0, s2, s2); q.strokeRect(s2, s2, s2, s2);
+  }, 16, 44);
+  const mFloor = new THREE.Mesh(new THREE.PlaneGeometry(MW, ML),
+    new THREE.MeshPhongMaterial({ map: texMTile, shininess: 110, specular: 0x8a8a8a }));
+  mFloor.rotation.x = -Math.PI / 2; mFloor.position.set(0, 0.005, -ML / 2 + 2); mall.add(mFloor);
 
-  // витрины магазинов по бокам (светящиеся окна + вывески)
-  const shopNames = ['FASHION', 'TOYS', 'COFFEE', 'ELECTRO', 'SPORT', 'CANDY'];
-  const shopCols = [0xff5ea8, 0x5ed0ff, 0xffbf5e, 0x8affc0, 0xff7a5e, 0xc08aff];
-  PRO.shops = [];
-  for (let i = 0; i < 6; i++) {
-    const side = i % 2 ? 1 : -1;
-    const z = -6 - ((i / 2) | 0) * 8.5;
-    const glass = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 4.2),
-      new THREE.MeshBasicMaterial({ color: shopCols[i], transparent: true, opacity: 0.42 }));
-    glass.position.set(side * 11.6, 2.4, z);
-    glass.rotation.y = -side * Math.PI / 2;
-    mall.add(glass);
-    const sname = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 0.9),
-      new THREE.MeshBasicMaterial({ map: signTex(shopNames[i], '#ffffff'), transparent: true }));
-    sname.position.set(side * 11.5, 5.4, z);
-    sname.rotation.y = -side * Math.PI / 2;
-    mall.add(sname);
-    const sl = new THREE.PointLight(shopCols[i], 0.55, 16, 1.7);
-    sl.position.set(side * 9.5, 3.2, z); mall.add(sl);
-    PRO.mallLights.push(sl);
-    PRO.shops.push({ glass: glass, sign: sname, l: sl });
+  const mWall = new THREE.MeshLambertMaterial({ color: 0xb9b4ad });
+  box(0.6, 13, ML, mWall, -MW / 2, 6.5, -ML / 2 + 2, mall);
+  box(0.6, 13, ML, mWall, MW / 2, 6.5, -ML / 2 + 2, mall);
+  box(MW, 13, 0.6, mWall, 0, 6.5, -ML + 2, mall);
+
+  // ── СТЕКЛЯННЫЙ КУПОЛ-СВЕТОВОЙ ФОНАРЬ + балки ──
+  const ceilMat = new THREE.MeshLambertMaterial({ color: 0x22262e, side: THREE.DoubleSide });
+  const ceilL = new THREE.Mesh(new THREE.PlaneGeometry(11, ML), ceilMat);
+  ceilL.rotation.x = Math.PI / 2; ceilL.position.set(-11.5, 11.5, -ML / 2 + 2); mall.add(ceilL);
+  const ceilR = ceilL.clone(); ceilR.position.x = 11.5; mall.add(ceilR);
+  PRO.glassRoof = [];
+  for (let i = 0; i < 14; i++) {
+    const z = -3 - i * 6.5;
+    const gp = new THREE.Mesh(new THREE.PlaneGeometry(11.4, 6.2),
+      new THREE.MeshBasicMaterial({ color: 0x9fc0e8, transparent: true, opacity: 0.16,
+        side: THREE.DoubleSide, depthWrite: false }));
+    gp.rotation.x = Math.PI / 2; gp.position.set(0, 11.9, z); mall.add(gp);
+    PRO.glassRoof.push(gp);
+    // фермы
+    const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 12, 6),
+      new THREE.MeshLambertMaterial({ color: 0x555c66 }));
+    beam.rotation.z = Math.PI / 2; beam.position.set(0, 11.7, z - 3.1); mall.add(beam);
   }
 
-  // потолочные светильники атриума
-  for (let i = 0; i < 6; i++) {
-    const z = -4 - i * 5.5;
-    const pl = new THREE.Mesh(new THREE.PlaneGeometry(7, 1.1),
+  // ── ОБЩИЙ КОНСТРУКТОР МАГАЗИНА (витрина + интерьер + манекены/полки) ──
+  const shopDefs = [
+    { n: 'FASHION',  c: 0xff5ea8, kind: 'cloth' },
+    { n: 'TOY WORLD',c: 0x5ed0ff, kind: 'toy' },
+    { n: 'COFFEE',   c: 0xffbf5e, kind: 'cafe' },
+    { n: 'ELECTRO',  c: 0x8affc0, kind: 'tv' },
+    { n: 'SPORT',    c: 0xff7a5e, kind: 'shelf' },
+    { n: 'CANDY',    c: 0xff9ad5, kind: 'shelf' },
+    { n: 'BOOKS',    c: 0xc08aff, kind: 'shelf' },
+    { n: 'PHONES',   c: 0x7fe0ff, kind: 'tv' },
+    { n: 'SHOES',    c: 0xffe07a, kind: 'cloth' },
+    { n: 'JEWELRY',  c: 0xfff0a0, kind: 'shelf' }
+  ];
+  const shopSignTex = (txt, col) => cvsTex(512, 128, (q, w, h) => {
+    q.clearRect(0, 0, w, h);
+    q.shadowColor = col; q.shadowBlur = 26;
+    q.fillStyle = '#ffffff'; q.font = '900 62px Segoe UI, Arial'; q.textAlign = 'center';
+    q.fillText(txt, w / 2, h / 2 + 22);
+  });
+  PRO.shops = [];
+  PRO.tvScreens = [];
+  for (let i = 0; i < shopDefs.length; i++) {
+    const d = shopDefs[i];
+    const side = i % 2 ? 1 : -1;               // чередуем стороны
+    const z = -7 - ((i / 2) | 0) * 17;
+    const gx = side * (MW / 2 - 0.6);
+    const g = new THREE.Group(); g.position.set(gx, 0, z); mall.add(g);
+    g.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+
+    // ниша магазина (уходит В стену)
+    const inMat = new THREE.MeshLambertMaterial({ color: 0x2c3038 });
+    box(13, 6.2, 0.3, inMat, 0, 3.1, -5.4, g);       // задняя стенка
+    box(0.3, 6.2, 5.4, inMat, -6.5, 3.1, -2.7, g);
+    box(0.3, 6.2, 5.4, inMat, 6.5, 3.1, -2.7, g);
+    box(13, 0.3, 5.4, inMat, 0, 6.2, -2.7, g);
+    const inFloor = box(13, 0.08, 5.4, new THREE.MeshPhongMaterial({
+      color: 0xd8d2c8, shininess: 90 }), 0, 0.04, -2.7, g);
+
+    // витринное стекло (два стекла с зазором-входом)
+    const glassMat = new THREE.MeshPhongMaterial({ color: 0xbcd8f0, transparent: true,
+      opacity: 0.2, shininess: 200, specular: 0xffffff, side: THREE.DoubleSide });
+    box(4.6, 5, 0.08, glassMat, -4.1, 2.5, -0.05, g);
+    box(4.6, 5, 0.08, glassMat, 4.1, 2.5, -0.05, g);
+    // рамы
+    const frame = new THREE.MeshLambertMaterial({ color: 0x3b424b });
+    box(13, 0.28, 0.3, frame, 0, 5.1, -0.05, g);
+    box(0.28, 5.2, 0.3, frame, -6.4, 2.6, -0.05, g);
+    box(0.28, 5.2, 0.3, frame, 6.4, 2.6, -0.05, g);
+    box(0.28, 5.2, 0.3, frame, -1.8, 2.6, -0.05, g);
+    box(0.28, 5.2, 0.3, frame, 1.8, 2.6, -0.05, g);
+
+    // ВЫВЕСКА над витриной (неон)
+    const sm = new THREE.MeshBasicMaterial({
+      map: shopSignTex(d.n, '#' + d.c.toString(16).padStart(6, '0')), transparent: true });
+    const sname = new THREE.Mesh(new THREE.PlaneGeometry(7.4, 1.85), sm);
+    sname.position.set(0, 6.4, 0.1); g.add(sname);
+    // неоновая трубка-подчёркивание
+    const neon = new THREE.Mesh(new THREE.BoxGeometry(8.4, 0.11, 0.11),
+      new THREE.MeshBasicMaterial({ color: d.c }));
+    neon.position.set(0, 5.45, 0.15); g.add(neon);
+    const sl = new THREE.PointLight(d.c, 0.75, 18, 1.7);
+    sl.position.set(0, 3.4, -1.6); g.add(sl);
+    PRO.mallLights.push(sl);
+
+    // ── НАПОЛНЕНИЕ ──
+    if (d.kind === 'cloth') {
+      // манекены + стойки с одеждой
+      for (let k = 0; k < 4; k++) {
+        const mx = -4.5 + k * 3;
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.2, 1.15, 10),
+          new THREE.MeshLambertMaterial({ color: 0xd9cec0 }));
+        body.position.set(mx, 1.35, -1.4); g.add(body);
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.19, 10, 8),
+          new THREE.MeshLambertMaterial({ color: 0xd9cec0 }));
+        head.position.set(mx, 2.12, -1.4); g.add(head);
+        box(0.1, 0.75, 0.1, new THREE.MeshLambertMaterial({ color: 0x8b8b8b }), mx, 0.4, -1.4, g);
+        const cl = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.3, 0.8, 10),
+          new THREE.MeshLambertMaterial({ color: [0xd0405a, 0x3a6fd0, 0xd0a040, 0x40a06a][k] }));
+        cl.position.set(mx, 1.5, -1.4); g.add(cl);
+      }
+      box(6, 0.08, 0.08, new THREE.MeshLambertMaterial({ color: 0xa0a6ad }), 0, 2.4, -4.2, g);
+      for (let k = 0; k < 10; k++) {
+        box(0.45, 1.0, 0.16, new THREE.MeshLambertMaterial({
+          color: [0x9a3050, 0x2f5f8a, 0x8a6f2f, 0x3f7a55, 0x6a3f8a][k % 5] }),
+          -2.7 + k * 0.6, 1.85, -4.2, g);
+      }
+    } else if (d.kind === 'toy') {
+      for (let k = 0; k < 12; k++) {
+        const c2 = [0xff5b5b, 0x5bff9a, 0x5b9aff, 0xffd75b, 0xd75bff][k % 5];
+        const shape = k % 3 === 0
+          ? new THREE.SphereGeometry(0.3, 10, 8)
+          : (k % 3 === 1 ? new THREE.BoxGeometry(0.5, 0.5, 0.5) : new THREE.ConeGeometry(0.3, 0.6, 8));
+        const toy = new THREE.Mesh(shape, new THREE.MeshLambertMaterial({ color: c2 }));
+        toy.position.set(-5.2 + (k % 6) * 2.1, 0.9 + ((k / 6) | 0) * 1.25, -2 - ((k / 6) | 0) * 1.8);
+        g.add(toy);
+      }
+      for (let r = 0; r < 2; r++)
+        box(12, 0.12, 1.0, new THREE.MeshLambertMaterial({ color: 0xbfb6a6 }), 0, 0.6 + r * 1.25, -2 - r * 1.8, g);
+      // гигантский плюшевый медведь
+      const bear = new THREE.Group(); bear.position.set(4.6, 0, -1.2); g.add(bear);
+      const bm = new THREE.MeshLambertMaterial({ color: 0xa8763f });
+      const bb = new THREE.Mesh(new THREE.SphereGeometry(0.75, 12, 10), bm); bb.position.y = 0.85; bear.add(bb);
+      const bh = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 10), bm); bh.position.y = 1.85; bear.add(bh);
+      [-0.36, 0.36].forEach((ex) => {
+        const ear = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 6), bm);
+        ear.position.set(ex, 2.2, 0); bear.add(ear);
+      });
+    } else if (d.kind === 'cafe') {
+      // стойка, кофемашина, столики, зонт
+      box(6.4, 1.1, 0.9, new THREE.MeshLambertMaterial({ color: 0x5b3f2a }), -1.4, 0.55, -3.6, g);
+      box(1.0, 0.8, 0.6, new THREE.MeshLambertMaterial({ color: 0xb0b6bd }), 0.6, 1.5, -3.6, g);
+      for (let k = 0; k < 3; k++) {
+        const tx = -4.4 + k * 3.4;
+        const tt = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.08, 14),
+          new THREE.MeshLambertMaterial({ color: 0x6b4a30 }));
+        tt.position.set(tx, 0.78, -1.5); g.add(tt);
+        box(0.12, 0.78, 0.12, new THREE.MeshLambertMaterial({ color: 0x3a3a3a }), tx, 0.39, -1.5, g);
+        [-0.9, 0.9].forEach((cx) => {
+          const ch = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.24, 0.1, 10),
+            new THREE.MeshLambertMaterial({ color: 0x8a5f3c }));
+          ch.position.set(tx + cx, 0.5, -1.5); g.add(ch);
+          box(0.1, 0.5, 0.1, new THREE.MeshLambertMaterial({ color: 0x333 }), tx + cx, 0.25, -1.5, g);
+        });
+        // чашка (кто-то ушёл только что…)
+        if (k === 1) {
+          const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.08, 0.14, 10),
+            new THREE.MeshLambertMaterial({ color: 0xf0ece4 }));
+          cup.position.set(tx + 0.2, 0.89, -1.4); g.add(cup);
+        }
+      }
+      // меню-борд
+      const mb = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 1.6),
+        new THREE.MeshBasicMaterial({ map: signTex('MENU', '#ffd9a0'), transparent: true }));
+      mb.position.set(-1.4, 2.6, -5.2); g.add(mb);
+    } else if (d.kind === 'tv') {
+      // стена телевизоров — они и будут показывать помехи!
+      for (let k = 0; k < 8; k++) {
+        const sc = DOC.createElement('canvas'); sc.width = 96; sc.height = 64;
+        const sq = sc.getContext('2d');
+        const st = new THREE.CanvasTexture(sc);
+        const scr = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.95),
+          new THREE.MeshBasicMaterial({ map: st }));
+        scr.position.set(-4.9 + (k % 4) * 3.2, 1.7 + ((k / 4) | 0) * 1.5, -5.15);
+        g.add(scr);
+        PRO.tvScreens.push({ ctx: sq, tex: st, ph: Math.random() * 6 });
+      }
+      for (let k = 0; k < 3; k++)
+        box(2.0, 0.7, 1.0, new THREE.MeshLambertMaterial({ color: 0x3a4048 }), -3.6 + k * 3.6, 0.35, -2.2, g);
+    } else {
+      // стеллажи с коробками
+      for (let r = 0; r < 3; r++) {
+        box(12, 0.12, 1.1, new THREE.MeshLambertMaterial({ color: 0xc3bcae }), 0, 0.75 + r * 1.5, -4.4, g);
+        for (let k = 0; k < 14; k++) {
+          box(0.6, 0.75, 0.6, new THREE.MeshLambertMaterial({
+            color: [0xc0563f, 0x3f7ac0, 0xc0a03f, 0x4fb07a, 0xa04fb0, 0xb0724f][(k + r) % 6] }),
+            -5.6 + k * 0.86, 1.2 + r * 1.5, -4.4, g);
+        }
+      }
+      for (let k = 0; k < 2; k++)
+        box(3.2, 1.0, 1.6, new THREE.MeshLambertMaterial({ color: 0xa8a29a }), -3.2 + k * 6.4, 0.5, -1.8, g);
+    }
+    PRO.shops.push({ g: g, sign: sname, neon: neon, l: sl, mat: sm });
+  }
+
+  // ── ЦЕНТРАЛЬНАЯ ГАЛЕРЕЯ: светильники, вывески-указатели, гирлянды ──
+  for (let i = 0; i < 14; i++) {
+    const z = -3 - i * 6.5;
+    const pl = new THREE.Mesh(new THREE.PlaneGeometry(9, 1.4),
       new THREE.MeshBasicMaterial({ color: 0xf2f6ff }));
-    pl.rotation.x = Math.PI / 2; pl.position.set(0, 8.3, z); mall.add(pl);
-    const l = new THREE.PointLight(0xdfe8ff, 0.75, 22, 1.7);
-    l.position.set(0, 7.4, z); mall.add(l);
+    pl.rotation.x = Math.PI / 2; pl.position.set(0, 11.3, z); mall.add(pl);
+    const l = new THREE.PointLight(0xdfe8ff, 0.62, 26, 1.7);
+    l.position.set(0, 9.6, z); mall.add(l);
     PRO.mallLights.push(l);
   }
+  // подвесные указатели
+  const dirTex = (txt) => cvsTex(256, 96, (q, w, h) => {
+    q.fillStyle = 'rgba(14,18,24,.92)'; q.fillRect(0, 0, w, h);
+    q.strokeStyle = '#8fd8ff'; q.lineWidth = 3; q.strokeRect(5, 5, w - 10, h - 10);
+    q.fillStyle = '#dff0ff'; q.font = '700 26px Segoe UI, Arial'; q.textAlign = 'center';
+    q.fillText(txt, w / 2, h / 2 + 10);
+  });
+  ['ЭСКАЛАТОР ↑ 2 ЭТАЖ', 'ФУДКОРТ →', 'ТУАЛЕТЫ ←', 'ВЫХОД ↓'].forEach((txt, i) => {
+    const dm = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 1.28),
+      new THREE.MeshBasicMaterial({ map: dirTex(txt), transparent: true, side: THREE.DoubleSide }));
+    dm.position.set(i % 2 ? 3.4 : -3.4, 6.4, -8 - i * 17); mall.add(dm);
+    box(0.05, 4.6, 0.05, new THREE.MeshLambertMaterial({ color: 0x5a626c }),
+      dm.position.x, 9, dm.position.z, mall);
+  });
 
-  // эскалатор в глубине + балкон 2 этажа
-  const esc = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.4, 12),
-    new THREE.MeshLambertMaterial({ color: 0x8d949c }));
-  esc.position.set(-4.6, 3.1, -24); esc.rotation.x = -0.42; mall.add(esc);
-  box(0.12, 1.1, 12, new THREE.MeshLambertMaterial({ color: 0x39424c }), -6.2, 3.9, -24, mall)
-    .rotation.x = -0.42;
-  box(24, 0.4, 6, new THREE.MeshLambertMaterial({ color: 0xa8a29a }), 0, 6.1, -32, mall);
-
-  // фонтан-остров и скамьи, пальмы в кадках
-  const fount = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.4, 0.7, 22),
-    new THREE.MeshLambertMaterial({ color: 0x9fa6ad }));
-  fount.position.set(4.4, 0.35, -14); mall.add(fount);
-  const water = new THREE.Mesh(new THREE.CylinderGeometry(1.95, 1.95, 0.08, 22),
-    new THREE.MeshPhongMaterial({ color: 0x2f6f8f, shininess: 160, specular: 0xbfe6ff,
+  // ── ФОНТАН-ОСТРОВ в центре атриума ──
+  const fount = new THREE.Group(); fount.position.set(0, 0, -26); mall.add(fount);
+  const fb = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 3.7, 0.8, 26),
+    new THREE.MeshLambertMaterial({ color: 0xa8aeb5 }));
+  fb.position.y = 0.4; fount.add(fb);
+  const water = new THREE.Mesh(new THREE.CylinderGeometry(3.05, 3.05, 0.1, 26),
+    new THREE.MeshPhongMaterial({ color: 0x2f7fa0, shininess: 200, specular: 0xcfeaff,
       transparent: true, opacity: 0.85 }));
-  water.position.set(4.4, 0.72, -14); mall.add(water);
+  water.position.y = 0.82; fount.add(water);
   PRO.water = water;
-  for (let i = 0; i < 4; i++) {
-    box(1.6, 0.12, 0.5, new THREE.MeshLambertMaterial({ color: 0x5a4632 }),
-      -3.5 + (i % 2) * 7.5, 0.5, -9 - ((i / 2) | 0) * 9, mall);
-    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.45, 0.7, 12),
-      new THREE.MeshLambertMaterial({ color: 0x4b4238 }));
-    pot.position.set(-8 + (i % 2) * 16, 0.35, -7 - ((i / 2) | 0) * 12); mall.add(pot);
-    const leaf = new THREE.Mesh(new THREE.SphereGeometry(1.0, 8, 6),
-      new THREE.MeshLambertMaterial({ color: 0x2f5f36 }));
-    leaf.position.set(pot.position.x, 1.5, pot.position.z); leaf.scale.y = 1.35; mall.add(leaf);
+  const fcol = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.6, 2.6, 14),
+    new THREE.MeshLambertMaterial({ color: 0xb8bec5 }));
+  fcol.position.y = 1.9; fount.add(fcol);
+  const fball = new THREE.Mesh(new THREE.SphereGeometry(0.75, 16, 12),
+    new THREE.MeshPhongMaterial({ color: 0x6fd0ff, emissive: 0x1a4a66, shininess: 180 }));
+  fball.position.y = 3.5; fount.add(fball);
+  PRO.fball = fball;
+  const fL = new THREE.PointLight(0x6fd0ff, 0.9, 16, 1.7);
+  fL.position.set(0, 2.2, 0); fount.add(fL); PRO.mallLights.push(fL);
+  // струйки воды
+  PRO.jets = [];
+  for (let i = 0; i < 10; i++) {
+    const jet = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: TEX.white, color: 0xbfe6ff, transparent: true, opacity: 0.5,
+      depthWrite: false, blending: THREE.AdditiveBlending }));
+    jet.scale.set(0.4, 0.4, 1);
+    jet.userData.a = (i / 10) * Math.PI * 2;
+    jet.userData.t = Math.random();
+    fount.add(jet); PRO.jets.push(jet);
   }
 
-  // ВЫВЕСКА GRAND MALL — прямо напротив лифта
-  const gmTex = cvsTex(512, 160, (q, w, h) => {
+  // ── ЭСКАЛАТОРЫ (пара, встречные) с ребристыми ступенями ──
+  PRO.escSteps = [];
+  [-1, 1].forEach((side) => {
+    const eg = new THREE.Group();
+    eg.position.set(side * 6.2, 0, -40);
+    eg.rotation.y = side > 0 ? 0.0 : 0.0;
+    mall.add(eg);
+    const ramp = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.35, 15),
+      new THREE.MeshLambertMaterial({ color: 0x8d949c }));
+    ramp.position.set(0, 3.2, 0); ramp.rotation.x = -0.44; eg.add(ramp);
+    [-1.6, 1.6].forEach((bx) => {
+      const bal = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.2, 15),
+        new THREE.MeshPhongMaterial({ color: 0xa8cbe4, transparent: true, opacity: 0.35,
+          shininess: 160 }));
+      bal.position.set(bx, 4.1, 0); bal.rotation.x = -0.44; eg.add(bal);
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.14, 15),
+        new THREE.MeshLambertMaterial({ color: 0x22262c }));
+      rail.position.set(bx, 4.78, 0); rail.rotation.x = -0.44; eg.add(rail);
+    });
+    for (let k = 0; k < 22; k++) {
+      const st = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.1, 0.55),
+        new THREE.MeshLambertMaterial({ color: 0x6f767e }));
+      st.userData.k = k / 22; st.userData.side = side;
+      eg.add(st); PRO.escSteps.push(st);
+    }
+    // площадка сверху
+    box(3.4, 0.3, 3, new THREE.MeshLambertMaterial({ color: 0x9aa1a8 }), 0, 6.3, -8.6, eg);
+  });
+  // балкон 2 этажа с перилами + магазины наверху (силуэты витрин)
+  box(MW, 0.5, 12, new THREE.MeshLambertMaterial({ color: 0xa8a29a }), 0, 6.2, -50, mall);
+  for (let i = 0; i < 10; i++) {
+    box(0.08, 1.1, 0.08, new THREE.MeshLambertMaterial({ color: 0x8a9098 }),
+      -14 + i * 3.1, 7.0, -44.2, mall);
+  }
+  box(MW, 0.12, 0.12, new THREE.MeshLambertMaterial({ color: 0x22262c }), 0, 7.6, -44.2, mall);
+  for (let i = 0; i < 4; i++) {
+    const c2 = [0xff8ab0, 0x8ad0ff, 0xffd08a, 0x9affc0][i];
+    const w2 = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 3.0),
+      new THREE.MeshBasicMaterial({ color: c2, transparent: true, opacity: 0.3 }));
+    w2.position.set(-11 + i * 7.4, 8.5, -55.6); mall.add(w2);
+    const l2 = new THREE.PointLight(c2, 0.3, 14, 1.8);
+    l2.position.set(w2.position.x, 8.2, -53); mall.add(l2); PRO.mallLights.push(l2);
+  }
+
+  // ── КИОСКИ, СКАМЬИ, УРНЫ, ПАЛЬМЫ, ТЕЛЕЖКИ, РАСТЯЖКА ──
+  for (let i = 0; i < 4; i++) {
+    const kz = -13 - i * 17;
+    const kx = i % 2 ? 5.6 : -5.6;
+    const kiosk = new THREE.Group(); kiosk.position.set(kx, 0, kz); mall.add(kiosk);
+    box(2.6, 1.15, 1.6, new THREE.MeshLambertMaterial({ color: 0x40464e }), 0, 0.58, 0, kiosk);
+    box(2.9, 0.12, 1.9, new THREE.MeshLambertMaterial({ color: 0xd4cfc6 }), 0, 1.22, 0, kiosk);
+    box(2.9, 0.1, 1.9, new THREE.MeshLambertMaterial({ color: 0x2f343b }), 0, 2.9, 0, kiosk);
+    [-1.3, 1.3].forEach((px2) => [-0.85, 0.85].forEach((pz2) =>
+      box(0.09, 1.7, 0.09, new THREE.MeshLambertMaterial({ color: 0x6a7079 }), px2, 2.05, pz2, kiosk)));
+    const kl = new THREE.PointLight(0xffe0a8, 0.42, 9, 1.8);
+    kl.position.set(0, 2.6, 0); kiosk.add(kl); PRO.mallLights.push(kl);
+    for (let k = 0; k < 5; k++)
+      box(0.3, 0.35, 0.3, new THREE.MeshLambertMaterial({
+        color: [0xd05a5a, 0x5ad0a0, 0xd0c05a, 0x5a8ad0, 0xc05ad0][k] }),
+        -1.0 + k * 0.5, 1.45, 0, kiosk);
+  }
+  for (let i = 0; i < 8; i++) {
+    const bz = -9 - i * 10;
+    const bx = i % 2 ? 4.2 : -4.2;
+    box(2.4, 0.14, 0.7, new THREE.MeshLambertMaterial({ color: 0x6b4a30 }), bx, 0.52, bz, mall);
+    box(2.4, 0.5, 0.1, new THREE.MeshLambertMaterial({ color: 0x6b4a30 }), bx, 0.82, bz - 0.3, mall);
+    [-1.0, 1.0].forEach((lx2) =>
+      box(0.14, 0.5, 0.6, new THREE.MeshLambertMaterial({ color: 0x3f444a }), bx + lx2, 0.25, bz, mall));
+    // урна
+    const bin = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.26, 0.85, 12),
+      new THREE.MeshLambertMaterial({ color: 0x44494f }));
+    bin.position.set(bx + 1.9, 0.42, bz); mall.add(bin);
+  }
+  for (let i = 0; i < 8; i++) {
+    const px2 = i % 2 ? 9.2 : -9.2, pz2 = -6 - ((i / 2) | 0) * 21;
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.6, 0.95, 14),
+      new THREE.MeshLambertMaterial({ color: 0x4b4238 }));
+    pot.position.set(px2, 0.48, pz2); mall.add(pot);
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 2.4, 8),
+      new THREE.MeshLambertMaterial({ color: 0x6a5236 }));
+    trunk.position.set(px2, 2.0, pz2); mall.add(trunk);
+    for (let k = 0; k < 6; k++) {
+      const leaf = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.06, 0.5),
+        new THREE.MeshLambertMaterial({ color: 0x2f6b3a }));
+      leaf.position.set(px2 + Math.cos(k) * 0.8, 3.2 - 0.1, pz2 + Math.sin(k) * 0.8);
+      leaf.rotation.y = k * 1.05; leaf.rotation.z = -0.28; mall.add(leaf);
+    }
+  }
+  // брошенные тележки (тревожная деталь: молл пуст)
+  for (let i = 0; i < 5; i++) {
+    const c3 = new THREE.Group();
+    c3.position.set(rnd(-8, 8), 0, -12 - i * 14);
+    c3.rotation.y = rnd(0, 6.28); mall.add(c3);
+    box(0.75, 0.55, 1.05, new THREE.MeshLambertMaterial({ color: 0x8d949c }), 0, 0.62, 0, c3);
+    box(0.7, 0.06, 1.0, new THREE.MeshLambertMaterial({ color: 0x6a7079 }), 0, 0.3, 0, c3);
+    [-0.3, 0.3].forEach((wx) => [-0.45, 0.45].forEach((wz) => {
+      const wl = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.05, 8),
+        new THREE.MeshLambertMaterial({ color: 0x2a2d31 }));
+      wl.rotation.z = Math.PI / 2; wl.position.set(wx, 0.08, wz); c3.add(wl);
+    }));
+  }
+  // растяжка SALE через атриум
+  const saleTex = cvsTex(512, 128, (q, w, h) => {
+    q.fillStyle = '#c01f3a'; q.fillRect(0, 0, w, h);
+    q.fillStyle = '#fff'; q.font = '900 62px Segoe UI, Arial'; q.textAlign = 'center';
+    q.fillText('SALE  -70%', w / 2, h / 2 + 22);
+  });
+  const sale = new THREE.Mesh(new THREE.PlaneGeometry(12, 3),
+    new THREE.MeshBasicMaterial({ map: saleTex, side: THREE.DoubleSide }));
+  sale.position.set(0, 8.4, -33); mall.add(sale);
+  PRO.sale = sale;
+
+  // ── ВЫВЕСКА GRAND MALL — в торце, огромная ──
+  const gmTex = cvsTex(1024, 256, (q, w, h) => {
     q.clearRect(0, 0, w, h);
-    q.shadowColor = '#ffd76a'; q.shadowBlur = 34;
-    q.fillStyle = '#fff3cf'; q.font = '900 74px Segoe UI, Arial'; q.textAlign = 'center';
-    q.fillText('GRAND MALL', w / 2, 88);
-    q.shadowBlur = 10; q.fillStyle = '#ffbf5e'; q.font = '700 24px Segoe UI, Arial';
-    q.fillText('1 ЭТАЖ · ATRIUM', w / 2, 130);
+    q.shadowColor = '#ffd76a'; q.shadowBlur = 44;
+    q.fillStyle = '#fff6dc'; q.font = '900 128px Segoe UI, Arial'; q.textAlign = 'center';
+    q.fillText('GRAND MALL', w / 2, 142);
+    q.shadowBlur = 14; q.fillStyle = '#ffbf5e'; q.font = '700 40px Segoe UI, Arial';
+    q.fillText('1 ЭТАЖ · ГЛАВНЫЙ АТРИУМ', w / 2, 208);
   });
   PRO.signMat = new THREE.MeshBasicMaterial({ map: gmTex, transparent: true });
-  const gmSign = new THREE.Mesh(new THREE.PlaneGeometry(11, 3.4), PRO.signMat);
-  gmSign.position.set(0, 5.6, -26); mall.add(gmSign);
-  const gmL = new THREE.PointLight(0xffcf80, 1.0, 26, 1.6);
-  gmL.position.set(0, 5.2, -23); mall.add(gmL);
-  PRO.mallLights.push(gmL);
+  const gmSign = new THREE.Mesh(new THREE.PlaneGeometry(20, 5), PRO.signMat);
+  gmSign.position.set(0, 9.6, -55.6); mall.add(gmSign);
+  const gmL = new THREE.PointLight(0xffcf80, 1.15, 34, 1.6);
+  gmL.position.set(0, 8.4, -50); mall.add(gmL); PRO.mallLights.push(gmL);
+
+  // пылинки в лучах света
+  PRO.dust = [];
+  for (let i = 0; i < 60; i++) {
+    const d2 = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: TEX.white, color: 0xdfeaff, transparent: true, opacity: 0.16,
+      depthWrite: false, blending: THREE.AdditiveBlending }));
+    d2.scale.set(0.07, 0.07, 1);
+    d2.position.set(rnd(-14, 14), rnd(0.5, 10), rnd(-58, -2));
+    d2.userData.sp = rnd(0.05, 0.2);
+    mall.add(d2); PRO.dust.push(d2);
+  }
 
   // «холодный» свет из проёма в кабину — включается при открытии
   const spill = new THREE.PointLight(0xd6e6ff, 0, 14, 1.7);
@@ -9709,6 +10025,8 @@ function proSfx(kind) {
       tone(96, 38, 0.6, 'sawtooth', 0.07, 0.05);
     }
     if (kind === 'drop') { tone(72, 26, 1.6, 'sine', 0.11, 0); }
+    if (kind === 'water') { noiseBurst(2.4, 4200, 2600, 0.7, 0.035, 0); }
+    if (kind === 'cart') { noiseBurst(1.4, 1600, 700, 3, 0.05, 0); tone(240, 190, 1.2, 'triangle', 0.02, 0); }
   } catch (e) {}
 }
 
@@ -9741,22 +10059,84 @@ function proUpdate(dt) {
     sp.material.opacity = 0.14 * Math.max(0, 1 - sp.position.y / 4.2);
     if (sp.position.y > 4.2) { sp.position.y = 0; sp.position.x = rnd(-1.6, 2.2); }
   });
-  if (PRO.water) PRO.water.position.y = 0.72 + Math.sin(t * 2.2) * 0.012;
+  if (PRO.water) PRO.water.position.y = 0.82 + Math.sin(t * 2.2) * 0.015;
+  if (PRO.fball) { PRO.fball.rotation.y += dt * 0.5; PRO.fball.position.y = 3.5 + Math.sin(t * 1.4) * 0.09; }
+  // струи фонтана
+  if (PRO.jets) PRO.jets.forEach((j) => {
+    j.userData.t += dt * 0.85;
+    if (j.userData.t > 1) j.userData.t -= 1;
+    const k = j.userData.t, a = j.userData.a;
+    const r = 0.3 + k * 2.6;
+    j.position.set(Math.cos(a) * r, 2.4 + Math.sin(k * Math.PI) * 2.1 - k * 0.6, Math.sin(a) * r);
+    j.material.opacity = 0.5 * (1 - k);
+  });
+  // эскалаторы: ступени ползут
+  if (PRO.escSteps) PRO.escSteps.forEach((st) => {
+    st.userData.k += dt * 0.055 * (st.userData.side > 0 ? 1 : -1);
+    if (st.userData.k > 1) st.userData.k -= 1;
+    if (st.userData.k < 0) st.userData.k += 1;
+    const k = st.userData.k;
+    st.position.set(0, 0.4 + k * 6.0, 7.0 - k * 14.4);
+  });
+  // пылинки
+  if (PRO.dust) PRO.dust.forEach((d2) => {
+    d2.position.y += d2.userData.sp * dt;
+    d2.position.x += Math.sin(t * 0.5 + d2.position.z) * 0.004;
+    if (d2.position.y > 10.5) d2.position.y = 0.4;
+  });
+  // экраны ELECTRO: реклама → помехи
+  if (PRO.tvScreens && (PRO.step2 = (PRO.step2 || 0) + dt) > 0.06) {
+    PRO.step2 = 0;
+    const bad = t > 30.5;
+    PRO.tvScreens.forEach((sc, i) => {
+      const q = sc.ctx;
+      if (bad || (t > 26 && Math.random() < 0.15)) {
+        const im = q.createImageData(96, 64);
+        for (let p2 = 0; p2 < im.data.length; p2 += 4) {
+          const v = (Math.random() * 255) | 0;
+          im.data[p2] = v; im.data[p2 + 1] = v; im.data[p2 + 2] = v; im.data[p2 + 3] = 255;
+        }
+        q.putImageData(im, 0, 0);
+        if (Math.random() < 0.3) { q.fillStyle = 'rgba(255,30,40,.5)'; q.fillRect(0, rnd(0, 64), 96, 3); }
+      } else {
+        const hue = (t * 40 + i * 40) % 360;
+        q.fillStyle = 'hsl(' + hue + ',70%,42%)'; q.fillRect(0, 0, 96, 64);
+        q.fillStyle = 'rgba(255,255,255,.9)'; q.font = '700 15px Arial'; q.textAlign = 'center';
+        q.fillText('FANTAZIA', 48, 28);
+        q.font = '700 11px Arial'; q.fillText('RP 3D', 48, 44);
+      }
+      sc.tex.needsUpdate = true;
+    });
+  }
+  // неон вывесок магазинов: лёгкое дыхание, потом срыв
+  if (PRO.shops) PRO.shops.forEach((sh, i) => {
+    let k = 0.85 + Math.sin(t * 2.2 + i) * 0.12;
+    if (t > 30.5) k = Math.random() < 0.5 ? rnd(0, 0.3) : 1;
+    if (sh.mat) sh.mat.opacity = k;
+    if (sh.neon) {
+      if (!sh.neon.userData.base) sh.neon.userData.base = sh.neon.material.color.clone();
+      sh.neon.material.color.copy(sh.neon.userData.base).multiplyScalar(0.5 + k * 0.5);
+    }
+  });
 
   // ─────────── ФАЗЫ ───────────
-  // 0.0–1.6  подход к служебной двери
-  // 1.6–2.2  стук/удар, дверь распахивается со скрипом
-  // 2.2–5.2  проход по коридору к лифту
-  // 5.2–6.4  табло B2, кнопка, двери лифта разъезжаются
-  // 6.4–8.0  вход в кабину, разворот
-  // 8.0–9.0  двери закрываются, панель B2
-  // 9.0–12.2 подъём B2 → B1 → 1, гул, тряска, свет мигает
-  // 12.2–12.6 ДИНЬ
-  // 12.6–14.0 ДВЕРИ РАСПАХИВАЮТСЯ → 1 ЭТАЖ GRAND MALL
-  // 14.0–15.4 ПОМЕХИ: свет вырубается, изображение рвётся, провал
+  //  0.0– 2.2  переулок, подход к служебной двери, удар → распахивается
+  //  2.2– 5.4  служебный коридор к грузовому лифту
+  //  5.4– 8.0  кнопка, двери лифта, вход в кабину
+  //  8.0– 9.0  двери закрываются
+  //  9.0–12.4  подъём B2 → B1 → 1
+  // 12.4–14.2  ДИНЬ · ДВЕРИ РАСПАХИВАЮТСЯ → 1 ЭТАЖ GRAND MALL
+  // 14.2–17.0  ВЫХОД в атриум, взгляд вверх на купол
+  // 17.0–21.0  проход мимо витрин, взгляд налево/направо
+  // 21.0–24.5  фонтан: облёт, брызги
+  // 24.5–28.0  эскалаторы и балкон 2 этажа, вывеска GRAND MALL
+  // 28.0–30.5  проход вглубь, молл пуст… тележка катится сама
+  // 30.5–33.2  ПОМЕХИ: свет вырубается, экраны рвёт, вывеска гаснет
+  // 33.2–34.5  провал в темноту → подземелье
   const fire = (at, kind) => {
     if (t >= at && !PRO.noiseAt[at]) { PRO.noiseAt[at] = 1; proSfx(kind); }
   };
+  const GL = 30.5; // старт помех
 
   // служебная дверь
   if (t > 1.7) {
@@ -9764,70 +10144,75 @@ function proUpdate(dt) {
     PRO.srvDoor.rotation.y = -1.42 * (k * k * (3 - 2 * k));
   } else PRO.srvDoor.rotation.y = 0;
 
-  // двери лифта: открываются 5.5-6.4, закрываются 8.0-9.0, распахиваются 12.6-14.0
+  // двери лифта
   let sep = 0;
   if (t >= 5.5 && t < 8.0) sep = clamp((t - 5.5) / 0.9, 0, 1);
   else if (t >= 8.0 && t < 12.6) sep = 1 - clamp((t - 8.0) / 1.0, 0, 1);
-  else if (t >= 12.6) sep = clamp((t - 12.6) / 0.85, 0, 1);
+  else if (t >= 12.6) sep = clamp((t - 12.6) / 1.1, 0, 1);
   const se = sep * sep * (3 - 2 * sep);
   PRO.doorL.position.x = -0.63 - se * 1.25;
   PRO.doorR.position.x = 0.63 + se * 1.25;
 
-  // свет из молла в кабину
-  PRO.spill.intensity = t > 12.6 ? clamp((t - 12.6) / 0.7, 0, 1) * 1.7 : 0;
+  PRO.spill.intensity = t > 12.6 ? clamp((t - 12.6) / 0.7, 0, 1) * 1.9 : 0;
 
-  // табло/панель
   const floorNow = t < 9.4 ? 'B2' : (t < 10.9 ? 'B1' : '1');
-  proTv(t < 5.4 ? 'B2' : floorNow, t > 14.0 ? '#ff3b3b' : '#ff9d4a');
+  proTv(t < 5.4 ? 'B2' : floorNow, t > GL ? '#ff3b3b' : '#ff9d4a');
   proPanel(floorNow, '1', t > 9.0 && t < 12.4);
 
-  // тряска кабины при подъёме
   let shake = 0;
   if (t > 9.0 && t < 12.2) shake = 0.012 + Math.sin(t * 34) * 0.006;
 
-  // свет в кабине мигает на подъёме, вырубается на помехах
   if (PRO.cabLight) {
     let k = 1;
     if (t > 9.0 && t < 12.2) { const n = Math.sin(t * 27) + Math.sin(t * 9.1); k = n > -1.2 ? 1 : rnd(0.05, 0.4); }
-    if (t > 14.0) k = Math.random() < 0.55 ? rnd(0, 0.25) : 1;
+    if (t > GL) k = Math.random() < 0.55 ? rnd(0, 0.25) : 1;
     PRO.cabLight.l.intensity = 1.25 * k;
     PRO.cabLight.m.material.color.setRGB(0.87 * k, 0.91 * k, 1 * k);
   }
 
-  // свет молла: горит, потом захлёбывается помехами
-  const mk = t > 14.0 ? (Math.random() < 0.6 ? rnd(0, 0.3) : 1) : 1;
+  // свет молла: ровный, потом волнами гаснет, затем срыв
+  let mk = 1;
+  if (t > 28.4 && t <= GL) mk = Math.random() < 0.06 ? rnd(0.3, 0.7) : 1;
+  if (t > GL) mk = Math.random() < 0.62 ? rnd(0, 0.28) : 1;
   PRO.mallLights.forEach((l) => {
     if (l.userData.base === undefined) l.userData.base = l.intensity;
     l.intensity = l.userData.base * mk;
   });
-  if (PRO.signMat) PRO.signMat.opacity = t > 14.0 ? (Math.random() < 0.5 ? rnd(0.05, 0.5) : 1) : 1;
+  if (PRO.signMat) PRO.signMat.opacity = t > GL ? (Math.random() < 0.5 ? rnd(0.05, 0.5) : 1) : 1;
+  if (PRO.sale) PRO.sale.rotation.z = Math.sin(t * 0.7) * 0.012;
 
   // экранные помехи
-  if (t > 14.0) glitch = Math.max(glitch, 0.35 + Math.random() * 0.35);
+  if (t > GL) glitch = Math.max(glitch, 0.3 + Math.random() * 0.4);
   if (t > 9.0 && t < 12.2 && Math.random() < 0.02) glitch = Math.max(glitch, 0.12);
+  if (t > 27.5 && t < GL && Math.random() < 0.012) glitch = Math.max(glitch, 0.2);
 
-  // звук по меткам
+  // звук
   fire(1.55, 'knock'); fire(1.75, 'creak');
   fire(2.5, 'step'); fire(3.1, 'step'); fire(3.7, 'step'); fire(4.3, 'step'); fire(4.9, 'step');
   fire(5.35, 'btn'); fire(5.5, 'open');
   fire(6.6, 'step'); fire(7.2, 'step');
   fire(7.95, 'btn'); fire(8.05, 'close');
   fire(9.05, 'hum'); fire(11.0, 'hum');
-  fire(12.25, 'ding'); fire(12.6, 'open'); fire(13.0, 'mall');
-  fire(14.02, 'glitch'); fire(14.5, 'glitch'); fire(14.95, 'drop');
+  fire(12.35, 'ding'); fire(12.6, 'open');
+  fire(13.4, 'mall'); fire(16.0, 'mall'); fire(20.0, 'mall'); fire(24.0, 'mall');
+  for (let sI = 0; sI < 22; sI++) fire(14.6 + sI * 0.62, 'step');
+  fire(21.2, 'water'); fire(28.6, 'cart');
+  fire(GL + 0.02, 'glitch'); fire(GL + 0.6, 'glitch'); fire(GL + 1.4, 'glitch');
+  fire(32.6, 'drop');
 
   // ─────────── КАМЕРА ───────────
   let px, py, pz, lx, ly, lz, fov = 54;
   const bob = (amp, sp) => Math.sin(t * sp) * amp;
+  const MZ0 = -17.2;                       // сдвиг группы mall
+  const mz = (v) => MZ0 + v;               // координата внутри молла → мир
+
   if (t < 2.2) {
-    // подход к двери, взгляд на табличку
     const k = cine(0, 1, 0.2, 2.2, t);
     px = lerp(1.9, 0.15, k); py = 1.72 + bob(0.035, 7.5) * (1 - k * 0.4);
     pz = lerp(6.4, 2.0, k);
     lx = 0; ly = lerp(2.1, 1.7, k); lz = -0.6;
     fov = 58 - k * 4;
   } else if (t < 5.4) {
-    // проход по коридору к лифту
     const k = cine(0, 1, 2.2, 5.4, t);
     px = lerp(0.1, 0, k) + bob(0.045, 6.4);
     py = 1.68 + bob(0.04, 12.8);
@@ -9835,50 +10220,105 @@ function proUpdate(dt) {
     lx = bob(0.05, 4.2); ly = 1.66 + bob(0.03, 5.5); lz = -14.5;
     fov = 56;
   } else if (t < 8.0) {
-    // вход в кабину
     const k = cine(0, 1, 5.7, 8.0, t);
     px = bob(0.04, 6.0); py = 1.68 + bob(0.035, 12);
     pz = lerp(-11.4, -15.9, k);
     lx = 0; ly = 1.62; lz = lerp(-16.6, -17.4, k);
     fov = 56;
   } else if (t < 12.4) {
-    // в кабине: разворот к дверям, ждём этаж
     const k = cine(0, 1, 8.0, 9.3, t);
     px = bob(0.02, 3.2) + shake * rnd(-1, 1);
     py = 1.66 + bob(0.02, 4.4) + shake * rnd(-1, 1);
     pz = -15.5;
-    // смотрим сначала на панель, потом на двери
     const look = clamp((t - 10.2) / 1.2, 0, 1);
-    lx = lerp(lerp(1.2, 1.2, k), 0, look);
+    lx = lerp(1.2, 0, look);
     ly = lerp(1.7, 1.62, look);
     lz = lerp(-14.9, -13.0, look);
     fov = 56 - look * 2;
-  } else if (t < 14.0) {
-    // двери распахиваются: медленный наезд в 1 этаж
-    const k = cine(0, 1, 12.6, 14.0, t);
+  } else if (t < 14.2) {
+    // двери распахиваются: наезд на светящийся проём
+    const k = cine(0, 1, 12.6, 14.2, t);
     px = 0; py = 1.66 + bob(0.02, 3.6);
-    pz = lerp(-15.5, -14.1, k);
-    lx = 0; ly = 1.9 + k * 0.6; lz = -30;
-    fov = lerp(54, 62, k);
+    pz = lerp(-15.5, -13.6, k);
+    lx = 0; ly = 1.85 + k * 0.5; lz = -30;
+    fov = lerp(54, 63, k);
+  } else if (t < 17.0) {
+    // ВЫХОД в атриум + взгляд вверх на стеклянный купол
+    const k = cine(0, 1, 14.2, 17.0, t);
+    px = bob(0.05, 5.2); py = 1.7 + bob(0.045, 10.4);
+    pz = lerp(-13.6, mz(-6), k);
+    const up = clamp((t - 15.2) / 1.4, 0, 1);
+    lx = bob(0.06, 3.4);
+    ly = lerp(2.2, 9.6, up * up);
+    lz = lerp(-34, mz(-12), up);
+    fov = lerp(63, 68, k);
+  } else if (t < 21.0) {
+    // проход мимо витрин: голова поворачивается влево-вправо
+    const k = cine(0, 1, 17.0, 21.0, t);
+    px = lerp(0, -1.4, Math.sin(k * Math.PI)) + bob(0.055, 5.0);
+    py = 1.72 + bob(0.05, 10.0);
+    pz = lerp(mz(-6), mz(-20), k);
+    // взгляд гуляет по магазинам
+    const sway = Math.sin(t * 0.9);
+    lx = sway * 13;
+    ly = 3.0 + Math.sin(t * 0.6) * 1.1;
+    lz = pz - 7 + Math.abs(sway) * 4;
+    fov = 64;
+  } else if (t < 24.5) {
+    // ФОНТАН: облёт по дуге
+    const k = cine(0, 1, 21.0, 24.5, t);
+    const a = -1.9 + k * 1.5;
+    const r = lerp(9.5, 6.2, k);
+    px = Math.cos(a) * r; py = lerp(1.75, 2.5, k) + bob(0.04, 8);
+    pz = mz(-26) + Math.sin(a) * r;
+    lx = 0; ly = lerp(1.6, 3.1, k); lz = mz(-26);
+    fov = lerp(64, 58, k);
+  } else if (t < 28.0) {
+    // ЭСКАЛАТОРЫ + балкон + вывеска GRAND MALL
+    const k = cine(0, 1, 24.5, 28.0, t);
+    px = lerp(-3.2, 0.4, k) + bob(0.05, 5.4);
+    py = 1.75 + bob(0.05, 10.6) + k * 0.25;
+    pz = lerp(mz(-30), mz(-40), k);
+    lx = lerp(-6.2, 0, k);
+    ly = lerp(4.4, 8.8, k);
+    lz = lerp(mz(-44), mz(-56), k);
+    fov = lerp(60, 55, k);
+  } else if (t < GL) {
+    // молл пуст… медленный доворот назад, ощущение слежки
+    const k = cine(0, 1, 28.0, GL, t);
+    px = 0.4 + bob(0.04, 4.2); py = 2.0 + bob(0.035, 8.2);
+    pz = lerp(mz(-40), mz(-44), k);
+    lx = lerp(0, -7.5, k * k);
+    ly = lerp(8.0, 3.2, k);
+    lz = lerp(mz(-56), mz(-30), k * k);
+    fov = lerp(55, 66, k);
+  } else if (t < 33.2) {
+    // ПОМЕХИ: камеру рвёт, тянет вглубь
+    const k = clamp((t - GL) / 2.7, 0, 1);
+    px = 0.4 + rnd(-1, 1) * 0.16 * (0.3 + k);
+    py = 2.0 + rnd(-1, 1) * 0.12 * (0.3 + k);
+    pz = lerp(mz(-44), mz(-38), k);
+    lx = rnd(-1, 1) * 0.5; ly = 2.6 + rnd(-1, 1) * 0.35; lz = mz(-8);
+    fov = lerp(66, 44, k * k);
   } else {
-    // помехи: камеру дёргает, притягивает вглубь молла
-    const k = clamp((t - 14.0) / 1.4, 0, 1);
-    px = rnd(-1, 1) * 0.12 * (0.3 + k);
-    py = 1.7 + rnd(-1, 1) * 0.09 * (0.3 + k);
-    pz = lerp(-14.1, -13.2, k);
-    lx = rnd(-1, 1) * 0.25; ly = 2.4 + rnd(-1, 1) * 0.2; lz = -32;
-    fov = lerp(62, 48, k * k);
+    // провал вниз: пол уходит из-под ног
+    const k = clamp((t - 33.2) / 1.3, 0, 1);
+    px = 0.4 + rnd(-1, 1) * 0.1;
+    py = lerp(2.0, -1.4, k * k);
+    pz = mz(-38);
+    lx = 0; ly = lerp(2.4, 9.0, k); lz = mz(-8);
+    fov = lerp(44, 84, k);
   }
   PRO.cam.position.set(px, py, pz);
   PRO.cam.lookAt(lx, ly, lz);
-  PRO.cam.rotation.z = (t > 14.0 ? rnd(-1, 1) * 0.02 : Math.sin(t * 1.7) * 0.006);
+  PRO.cam.rotation.z = (t > GL ? rnd(-1, 1) * 0.025 : Math.sin(t * 1.7) * 0.007);
   PRO.cam.fov = fov;
   PRO.cam.aspect = W / H;
   PRO.cam.updateProjectionMatrix();
 
-  // затемнения: вход из чёрного и уход в чёрный перед подземельем
+  // затемнения
   if (t < 0.8) OV.fadeT = 1 - clamp(t / 0.8, 0, 1);
-  else if (t > 14.9) OV.fadeT = clamp((t - 14.9) / 0.5, 0, 1);
+  else if (t > 33.9) OV.fadeT = clamp((t - 33.9) / 0.6, 0, 1);
   else OV.fadeT = 0;
 }
 
