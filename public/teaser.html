@@ -9737,66 +9737,142 @@ setTimeout(() => {
   S.add(G.up); S.add(G.lift); S.add(G.low); S.add(G.shaft);
   G.up.visible = true; G.lift.visible = true; G.low.visible = false; G.shaft.visible = false;
 
-  // ---------- ВЕРХНИЙ КОРИДОР (z 12..66) ----------
+  // ---------- ВЕРХНИЙ КОРИДОР v9 (z 12..66): служебный, живой ----------
   const UP = G.up;
-  UP.add(box(0.4, 4.4, 58, CM.con1, -2.75, 2.2, 39));
-  UP.add(box(0.4, 4.4, 58, CM.con1, 2.75, 2.2, 39));
-  UP.add(box(5.9, 0.4, 58, CM.con2, 0, 0.2, 39));
-  UP.add(box(5.9, 0.5, 58, CM.con3, 0, 4.35, 39));
-  UP.add(box(6.3, 4.6, 0.4, CM.con2, 0, 2.3, 66.2));
-  // трубы на потолке
-  UP.add(cyl(0.16, 0.16, 55, 10, CM.rust, -1.9, 3.95, 39, Math.PI / 2));
-  UP.add(cyl(0.11, 0.11, 55, 8, CM.metalD, 1.7, 3.7, 39, Math.PI / 2));
-  UP.add(cyl(0.07, 0.07, 30, 6, CM.rust2, 0.4, 4.0, 50, Math.PI / 2));
-  // хомуты труб
-  for (let z = 18; z < 64; z += 7.5) {
-    UP.add(box(0.5, 0.5, 0.16, CM.rust, -1.9, 3.95, z));
-    UP.add(box(0.4, 0.4, 0.14, CM.rust2, 1.7, 3.7, z));
-  }
-  // хлам: ящики, бочки, обломки
-  const junk = [
-    [box(1.1, 1.1, 1.1, CM.con3, -2.1, 0.55, 52), 0],
-    [box(0.8, 0.5, 1.4, CM.metalD, 2.0, 0.25, 48), 0.12],
-    [box(1.3, 0.9, 0.8, CM.con2, -1.9, 0.45, 43.5), 0],
-    [cyl(0.55, 0.55, 1.25, 12, CM.rust2, 1.95, 0.62, 39), 0],
-    [cyl(0.45, 0.45, 0.9, 10, CM.rust, -2.0, 0.45, 36.5), 0],
-    [box(0.9, 1.6, 0.4, CM.con3, 2.05, 0.8, 31), 0.2],
-    [box(1.4, 0.6, 0.9, CM.con1, -2.05, 0.3, 29.5), 0],
-    [box(0.5, 0.5, 0.5, CM.metalD, 1.85, 0.25, 24), 0],
-    [cyl(0.5, 0.5, 1.1, 10, CM.metal, -1.95, 0.55, 20.5), 0],
-    [box(1.2, 0.8, 0.8, CM.con2, 0.0, 0.4, 15.5), 0.35]
-  ];
-  junk.forEach((j) => { UP.add(j[0]); if (j[1]) j[0].rotation.y = j[1]; });
-  // паутина углы (условно — тонкие сегменты)
-  for (let i = 0; i < 5; i++) {
-    const w1 = box(0.02, 0.02, 1.4, CM.metalD, -2.72, 3.3, 20 + i * 9);
-    const w2 = box(0.02, 0.02, 1.4, CM.metalD, 2.72, 3.3, 21 + i * 9);
-    UP.add(w1); UP.add(w2);
-  }
-  // лужи
-  const puddle = new THREE.Mesh(new THREE.CircleGeometry(1.1, 18), new THREE.MeshLambertMaterial({ color: 0x101c1c, transparent: true, opacity: 0.85 }));
-  puddle.rotation.x = -Math.PI / 2; puddle.position.set(0.9, 0.03, 44);
-  UP.add(puddle);
-  const puddle2 = puddle.clone(); puddle2.position.set(-1.4, 0.03, 22); puddle2.scale.setScalar(0.7);
-  UP.add(puddle2);
-  // светильники (полумёртвые) — редкие точки света
-  function lamp(x, z, warm, dist) {
-    const ls = new THREE.PointLight(warm ? 0xd8b06a : 0x9aa8a0, 0.9, dist || 9, 1.6);
-    ls.position.set(x, 3.3, z);
-    UP.add(ls);
-    const m = sph(0.09, CM.bulb, x, 3.32, z);
-    UP.add(m);
-    G.flick.push({ l: ls, base: 0.9, ph: Math.random() * 9 });
-    return ls;
-  }
-  G.upLamps = [];
-  [18, 26, 34, 42, 50, 58].forEach((z, i) => {
-    const l = lamp(i % 2 ? -1.2 : 1.2, z, i % 3 !== 0, i % 3 === 0 ? 6 : 9);
-    G.upLamps.push(l);
-  });
-  // знак ржавый "B1" (табличка)
-  const sign1 = box(1.5, 0.7, 0.1, new THREE.MeshLambertMaterial({ color: 0x3c3524, emissive: 0x100c04 }), -2.5, 2.5, 62);
-  UP.add(sign1);
+  (function buildServiceCorridor() {
+    // --- коробка ---
+    UP.add(box(0.4, 4.4, 58, CM.con1, -2.75, 2.2, 39));
+    UP.add(box(0.4, 4.4, 58, CM.con1, 2.75, 2.2, 39));
+    UP.add(box(5.9, 0.4, 58, CM.con2, 0, 0.2, 39));
+    UP.add(box(5.9, 0.5, 58, CM.con3, 0, 4.35, 39));
+    UP.add(box(6.3, 4.6, 0.4, CM.con2, 0, 2.3, 66.2));
+    // --- пол: центральная дорожка + жёлтые кромки + трапы ---
+    UP.add(box(2.0, 0.02, 56, new THREE.MeshLambertMaterial({ color: 0x2c332f }), 0, 0.41, 39));
+    [-1.05, 1.05].forEach((x) => UP.add(box(0.09, 0.025, 56, new THREE.MeshBasicMaterial({ color: 0x8a7a2a }), x, 0.415, 39)));
+    for (let z = 16; z < 64; z += 12) {
+      UP.add(box(0.7, 0.03, 0.5, new THREE.MeshLambertMaterial({ color: 0x14161a }), 0, 0.415, z));
+    }
+    // лужи
+    [[0.9, 44, 1.1], [-1.4, 22, 0.8], [0.4, 55, 0.9], [-0.8, 31, 0.7]].forEach(([px, pz, pr]) => {
+      const pd = new THREE.Mesh(new THREE.CircleGeometry(pr, 16),
+        new THREE.MeshLambertMaterial({ color: 0x101c1c, transparent: true, opacity: 0.85 }));
+      pd.rotation.x = -Math.PI / 2; pd.position.set(px, 0.425, pz); UP.add(pd);
+    });
+    // --- стены: кафельный низ + пилястры ---
+    const tileM = new THREE.MeshPhongMaterial({ color: 0x1d2b26, specular: 0x3a5a50, shininess: 80 });
+    [-2.53, 2.53].forEach((x) => UP.add(box(0.06, 1.2, 56, tileM, x, 1.0, 39)));
+    UP.add(box(0.08, 0.08, 56, new THREE.MeshLambertMaterial({ color: 0x3a4a44 }), -2.52, 1.64, 39));
+    UP.add(box(0.08, 0.08, 56, new THREE.MeshLambertMaterial({ color: 0x3a4a44 }), 2.52, 1.64, 39));
+    for (let z = 14; z <= 62; z += 8) {
+      UP.add(box(0.18, 4.0, 0.7, CM.con3, -2.5, 2.0, z));
+      UP.add(box(0.18, 4.0, 0.7, CM.con3, 2.5, 2.0, z));
+    }
+    // --- потолок: венткороб, трубы, кабельные лотки ---
+    UP.add(box(1.1, 0.5, 56, CM.metalD, -0.9, 3.85, 39));
+    for (let z = 14; z <= 62; z += 6) UP.add(box(1.2, 0.56, 0.18, CM.rust, -0.9, 3.85, z));
+    UP.add(cyl(0.16, 0.16, 55, 10, CM.rust, 1.5, 3.9, 39, Math.PI / 2));
+    UP.add(cyl(0.11, 0.11, 55, 8, CM.metalD, 1.95, 3.65, 39, Math.PI / 2));
+    UP.add(cyl(0.07, 0.07, 40, 6, CM.rust2, -2.0, 3.7, 44, Math.PI / 2));
+    for (let z = 18; z < 64; z += 7.5) {
+      UP.add(box(0.5, 0.5, 0.16, CM.rust, 1.5, 3.9, z));
+      UP.add(box(0.4, 0.4, 0.14, CM.rust2, 1.95, 3.65, z));
+    }
+    UP.add(box(0.5, 0.12, 56, CM.con3, 0.3, 4.0, 39));
+    UP.add(cyl(0.03, 0.03, 56, 5, CM.metalD, 0.18, 4.08, 39, Math.PI / 2));
+    UP.add(cyl(0.03, 0.03, 56, 5, CM.rust2, 0.42, 4.08, 39, Math.PI / 2));
+    // вертикальные стояки с вентилями
+    [[17, 1], [28, -1], [39, 1], [50, -1], [61, 1]].forEach(([z, sd]) => {
+      const x = sd * 2.3;
+      UP.add(cyl(0.09, 0.09, 3.6, 8, CM.rust, x, 2.2, z));
+      UP.add(sph(0.14, CM.rust2, x, 1.3, z));
+      UP.add(cyl(0.17, 0.17, 0.08, 10, CM.metal, x, 1.3, z));
+    });
+    // --- светильники ---
+    function hangLamp(x, z, warm, hard) {
+      UP.add(cyl(0.02, 0.02, 0.7, 5, CM.metalD, x, 3.75, z));
+      UP.add(cyl(0.3, 0.12, 0.22, 10, CM.metalD, x, 3.32, z));
+      UP.add(sph(0.07, CM.bulb, x, 3.22, z));
+      const ls = new THREE.PointLight(warm ? 0xd8b06a : 0x9aa8a0, 0.95, 10, 1.6);
+      ls.position.set(x, 3.1, z); UP.add(ls);
+      G.flick.push({ l: ls, base: 0.95, ph: Math.random() * 9, hard: !!hard });
+      return ls;
+    }
+    [16, 24, 32, 40, 48, 56, 62].forEach((z, i) => {
+      hangLamp(i % 2 ? -0.9 : 0.9, z, i % 3 !== 1, i === 2 || i === 5);
+    });
+    // красная аварийка у лифта
+    UP.add(box(0.5, 0.22, 0.22, new THREE.MeshBasicMaterial({ color: 0xff2a14 }), -1.8, 3.5, 14.5));
+    const emL = new THREE.PointLight(0xff2a14, 0.7, 9, 1.7);
+    emL.position.set(-1.6, 3.3, 14.5); UP.add(emL);
+    G.flick.push({ l: emL, base: 0.7, ph: 4.4 });
+    // --- шкафы, пожарка, таблички ---
+    [[-2.42, 20], [2.42, 36], [-2.42, 52]].forEach(([x, z]) => {
+      UP.add(box(0.22, 1.6, 1.1, CM.metalD, x, 1.35, z));
+      UP.add(sph(0.03, CM.glowG, x + (x < 0 ? 0.12 : -0.12), 1.9, z - 0.3));
+      UP.add(sph(0.03, CM.glowR, x + (x < 0 ? 0.12 : -0.12), 1.9, z + 0.3));
+      UP.add(box(0.04, 0.5, 0.08, CM.metal, x + (x < 0 ? 0.12 : -0.12), 1.1, z + 0.4));
+    });
+    UP.add(box(0.25, 0.9, 0.7, new THREE.MeshLambertMaterial({ color: 0x8a1a12 }), 2.42, 1.3, 28));
+    UP.add(box(0.05, 0.6, 0.45, new THREE.MeshBasicMaterial({ color: 0x300a08 }), 2.3, 1.3, 28));
+    const sgnFire = tMesh('ПОЖАР', 0.6, 0.18, '#ffb0a0', null, 40, 400, 120);
+    if (sgnFire) { sgnFire.rotation.y = -Math.PI / 2; sgnFire.position.set(2.28, 1.9, 28); UP.add(sgnFire); }
+    const sgnB1 = tMesh('B1 · СЛУЖЕБНЫЙ ЭТАЖ', 2.2, 0.4, '#bfe6c8', '#1f8a4a', 40, 900, 170);
+    if (sgnB1) { sgnB1.rotation.y = Math.PI / 2; sgnB1.position.set(-2.5, 2.6, 58); UP.add(sgnB1); }
+    const sgnNo = tMesh('НЕ ВХОДИТЬ', 1.3, 0.32, '#ff9a7a', '#c81e0e', 40, 700, 160);
+    if (sgnNo) { sgnNo.rotation.y = Math.PI / 2; sgnNo.position.set(-2.5, 2.2, 44); UP.add(sgnNo); }
+    const sgnVolt = tMesh('380V · ОПАСНО', 1.1, 0.32, '#ffd0a0', '#ff7a2a', 40, 600, 170);
+    if (sgnVolt) { sgnVolt.rotation.y = -Math.PI / 2; sgnVolt.position.set(2.5, 2.2, 36.8); UP.add(sgnVolt); }
+    // подвесной указатель на лифт
+    const sgnLift = tMesh('ЛИФТ ↓', 1.5, 0.45, '#ffd9a0', '#ff7a2a', 56, 700, 200);
+    if (sgnLift) { sgnLift.position.set(0, 3.1, 13.2); UP.add(sgnLift); }
+    UP.add(cyl(0.015, 0.015, 0.8, 4, CM.metalD, -0.6, 3.7, 13.2));
+    UP.add(cyl(0.015, 0.015, 0.8, 4, CM.metalD, 0.6, 3.7, 13.2));
+    // надпись на полу
+    const flLift = tMesh('ЛИФТ', 1.8, 0.6, '#c8a020', null, 60, 700, 200);
+    if (flLift) { flLift.rotation.x = -Math.PI / 2; flLift.position.set(0, 0.43, 17); UP.add(flLift); }
+    // --- хлам и жизнь ---
+    UP.add(box(1.1, 0.12, 0.9, CM.rust, -2.0, 0.46, 52));
+    UP.add(box(0.7, 0.55, 0.6, CM.con3, -2.0, 0.8, 52));
+    UP.add(box(0.5, 0.4, 0.45, CM.con1, -1.95, 1.28, 51.9));
+    UP.add(cyl(0.5, 0.5, 1.15, 12, CM.rust2, 1.95, 0.98, 47));
+    UP.add(cyl(0.45, 0.45, 0.95, 10, CM.rust, -2.0, 0.88, 38));
+    UP.add(cyl(0.5, 0.5, 1.1, 10, CM.metal, 1.95, 0.95, 25));
+    [[-2.1, 33], [2.05, 30], [-2.05, 57]].forEach(([x, z], i) => {
+      const bg = sph(0.42 - (i % 2) * 0.08, CM.con2, x, 0.62, z);
+      bg.scale.y = 1.25; UP.add(bg);
+    });
+    // стремянка у стены
+    (function ladder() {
+      const g = new THREE.Group(); g.position.set(2.45, 0, 41); g.rotation.y = -Math.PI / 2; UP.add(g);
+      [-0.3, 0.3].forEach((ox) => g.add(box(0.07, 3.2, 0.07, CM.rust2, ox, 1.6, 0)));
+      for (let r = 0; r < 5; r++) g.add(box(0.67, 0.07, 0.07, CM.rust, 0, 0.5 + r * 0.6, 0));
+    })();
+    // бухта шланга + ведро + швабра
+    const hose = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.07, 8, 18), CM.rust2);
+    hose.position.set(-2.42, 1.9, 47); hose.rotation.y = Math.PI / 2; UP.add(hose);
+    UP.add(cyl(0.16, 0.12, 0.3, 10, CM.metalD, -2.1, 0.55, 27));
+    UP.add(cyl(0.02, 0.02, 1.4, 6, CM.rust, -2.3, 1.1, 26.6, 0.18));
+    // свисающие кабели
+    for (let i = 0; i < 4; i++) {
+      UP.add(cyl(0.022, 0.022, 1.1 + (i % 3) * 0.35, 5, CM.metalD, -1.2 + i * 0.8, 3.5 - (i % 3) * 0.15, 35 + i * 6, 0.08 + i * 0.04));
+    }
+    // цепь с крюком у лифта
+    UP.add(cyl(0.03, 0.03, 1.6, 6, CM.metalD, 1.9, 3.3, 15.5));
+    UP.add(box(0.18, 0.25, 0.1, CM.rust, 1.9, 2.45, 15.5));
+    // пар из стояка
+    const stmN = 26;
+    const stmPos = new Float32Array(stmN * 3);
+    const stmVel = [];
+    for (let i = 0; i < stmN; i++) {
+      stmPos[i * 3] = -2.25; stmPos[i * 3 + 1] = 2.6 + Math.random() * 0.4; stmPos[i * 3 + 2] = 49 + Math.random() * 0.4;
+      stmVel.push(0.5 + Math.random() * 0.8);
+    }
+    const stmGeo = new THREE.BufferGeometry();
+    stmGeo.setAttribute('position', new THREE.BufferAttribute(stmPos, 3));
+    const stmPts = new THREE.Points(stmGeo, new THREE.PointsMaterial({ color: 0xaab8b0, size: 0.16, transparent: true, opacity: 0.35 }));
+    UP.add(stmPts);
+    UP.userData.steam = { pts: stmPts, pos: stmPos, vel: stmVel, n: stmN };
+  })();
 
   // ---------- ЛИФТОВАЯ ШАХТА И КАБИНА (z 6.5..12) ----------
   const LF = G.lift;
@@ -9876,6 +9952,10 @@ setTimeout(() => {
   // трафарет на задней стене
   const cabSten = tMesh('СЛУЖЕБНЫЙ · B1—B5', 1.8, 0.3, '#8a95a5', null, 40, 800, 130);
   if (cabSten) { cabSten.position.set(0, 2.5, -1.62); cab.add(cabSten); }
+  const cabCap = tMesh('ГРУЗОПОДЪЁМНОСТЬ 500 КГ', 1.6, 0.2, '#c8b060', null, 34, 800, 120);
+  if (cabCap) { cabCap.position.set(0, 0.45, -1.62); cab.add(cabCap); }
+  cab.add(sph(0.09, CM.metalD, 0.8, 2.9, -0.8));   // мёртвый плафон (для атмосферы)
+  cab.add(box(0.22, 0.06, 0.22, CM.metalD, 0.8, 2.98, -0.8));
   // плафон кабины
   const cabLamp = new THREE.PointLight(0xcbb488, 1.0, 7, 1.5);
   cabLamp.position.set(0, 2.85, 0.2);
@@ -9888,7 +9968,7 @@ setTimeout(() => {
   api.liftBtns = { list: [] };
   (function buildLiftPanel() {
     const darkP = new THREE.MeshLambertMaterial({ color: 0x14161a });
-    cab.add(box(0.06, 1.5, 0.55, darkP, 1.36, 1.5, 1.2));
+    cab.add(box(0.06, 1.75, 0.55, darkP, 1.36, 1.4, 1.2));
     const names = ['B1', 'B2', 'B3', 'B4', 'B5'];
     names.forEach((nm, i) => {
       const by = 2.05 - i * 0.22;
@@ -9907,6 +9987,19 @@ setTimeout(() => {
     sos.rotation.z = Math.PI / 2; sos.position.set(1.31, 0.92, 1.08); cab.add(sos);
     const sosL = tMesh('SOS', 0.16, 0.1, '#ff8a7a', null, 44, 200, 120);
     if (sosL) { sosL.rotation.y = -Math.PI / 2; sosL.position.set(1.325, 0.92, 1.33); cab.add(sosL); }
+    // кнопки дверей ◀ ▶ (загораются при открытии/закрытии)
+    api.liftDoorM = { open: null, close: null };
+    [['open', 1.0], ['close', 1.16]].forEach(([key, bz]) => {
+      const dm = new THREE.MeshBasicMaterial({ color: 0x1a2a1a });
+      const db = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.035, 10), dm);
+      db.rotation.z = Math.PI / 2; db.position.set(1.31, 0.68, bz); cab.add(db);
+      api.liftDoorM[key] = dm;
+    });
+    const dl = tMesh('ДВЕРИ', 0.2, 0.08, '#9adf9a', null, 36, 300, 100);
+    if (dl) { dl.rotation.y = -Math.PI / 2; dl.position.set(1.325, 0.68, 1.33); cab.add(dl); }
+    // шапка панели
+    const plTop = tMesh('ЛИФТ · B1—B5', 0.45, 0.1, '#8a95a5', null, 36, 500, 110);
+    if (plTop) { plTop.rotation.y = -Math.PI / 2; plTop.position.set(1.325, 2.2, 1.2); cab.add(plTop); }
   })();
   api.liftBtnSet = function (idx, on) {
     try {
@@ -11023,20 +11116,16 @@ setTimeout(() => {
       if (sgnSL) { sgnSL.position.set(0, 3.6, 12.63); UP.add(sgnSL); }
       const sgnWay = tMesh('ЛИФТ →', 1.4, 0.4, '#bfe6ff', '#2a7ab0', 60, 600, 170);
       if (sgnWay) { sgnWay.rotation.y = -Math.PI / 2; sgnWay.position.set(2.54, 2.0, 16); UP.add(sgnWay); }
+      // табло этажа снаружи (над порталом)
+      UP.add(box(1.0, 0.36, 0.1, new THREE.MeshLambertMaterial({ color: 0x0c0e12 }), 0, 3.95, 12.62));
+      api.liftIndOut = makeFloorInd(0.85, 0.28);
+      api.liftIndOut.mesh.position.set(0, 3.95, 12.56);
+      UP.add(api.liftIndOut.mesh);
     })();
-    // предупреждающая разметка вдоль стен B1
-    addHaz(UP, 54, -1, 0.42, 39);
-    addHaz(UP, 54, 1, 0.42, 39);
-    // таблички-предупреждения на стенах B1
-    const pl1 = tMesh('НЕ ВХОДИТЬ · ОПАСНО', 1.15, 0.32, '#ff9a7a', '#c81e0e', 34, 700, 160);
-    if (pl1) { pl1.rotation.y = Math.PI / 2; pl1.position.set(-2.54, 2.1, 26); UP.add(pl1); }
-    const pl2 = tMesh('ВЫСОКОЕ НАПРЯЖЕНИЕ', 0.95, 0.3, '#ffd0a0', '#ff7a2a', 30, 700, 200);
-    if (pl2) { pl2.rotation.y = Math.PI / 2; pl2.position.set(-2.54, 1.5, 38.5); UP.add(pl2); }
-    const pl3 = tMesh('B1 · СЛУЖЕБНЫЙ ЭТАЖ', 1.3, 0.32, '#bfe6c8', '#1f8a4a', 36, 900, 200);
-    if (pl3) { pl3.rotation.y = -Math.PI / 2; pl3.position.set(2.54, 2.35, 44); UP.add(pl3); }
+    // (v9: разметка и таблички B1 — в новом коридоре выше)
     // запертые двери в стенах (серверная/архив)
     [(-1), (1)].forEach((sd) => {
-      const zz = sd > 0 ? 30 : 52;
+      const zz = sd > 0 ? 33 : 56;
       const dg2 = new THREE.Group(); dg2.position.set(sd * 2.56, 0, zz); UP.add(dg2);
       dg2.add(box(0.22, 2.6, 1.7, NM.doorM, 0, 1.3, 0));
       dg2.add(box(0.16, 0.7, 0.5, NM.glassD, 0, 1.7, sd * 0.2));
@@ -11044,20 +11133,7 @@ setTimeout(() => {
       const lbl = tMesh(sd > 0 ? 'АРХИВ' : 'СЕРВЕРНАЯ', 1.0, 0.24, '#ffd9a0', '#ff9a3c', 40, 600, 140);
       if (lbl) { lbl.rotation.y = sd > 0 ? -Math.PI / 2 : Math.PI / 2; lbl.position.set(0, 2.55, sd * 0.15); dg2.add(lbl); }
     });
-    // вертикальные трубы с вентилями вдоль стен + лужицы под ними
-    for (let z = 16; z <= 60; z += 11) {
-      const x = (z % 22 === 0 ? -1 : 1) * 2.35;
-      UP.add(cyl(0.09, 0.09, 4.2, 6, NM.rust, x, 2.1, z));
-      UP.add(sph(0.2, NM.rust2, x, 1.15, z));
-      UP.add(cyl(0.16, 0.16, 0.1, 8, NM.metal, x, 1.15, z));
-      const pd = new THREE.Mesh(new THREE.CircleGeometry(0.55, 10), NM.water);
-      pd.rotation.x = -Math.PI / 2; pd.position.set(x, 0.06, z + 0.7); UP.add(pd);
-    }
-    // оборванный кабель с крюком
-    const cab = new THREE.Group(); cab.position.set(-0.4, 0, 33.5); UP.add(cab);
-    cab.add(cyl(0.03, 0.03, 2.6, 5, NM.metalD, -0.5, 3.2, 0, 0.35));
-    cab.add(cyl(0.03, 0.03, 2.2, 5, NM.metalD, 0.4, 2.9, 0, -0.3));
-    cab.add(box(0.5, 0.06, 0.4, NM.rust, 0.1, 1.95, 0));
+    // (v9: стояки и кабели B1 — в новом коридоре выше)
 
     // B5: вода на полу
     LW.add(box(5.6, 0.03, 34, NM.water, 0, 0.045, -17));
@@ -11077,7 +11153,7 @@ setTimeout(() => {
     bx2.add(box(2.6, 0.16, 1.4, NM.conc2, 0, 3.6, 0));
     bx2.rotation.z = 0.16;
     for (let i = 0; i < 3; i++) {
-      const w = cyl(0.015, 0.015, 0.9 + i * 0.5, 4, NM.metalD, -0.7 + i * 0.7, 3.4 - i * 0.15, 0, 0.12);
+      const w = cyl(0.015, 0.015, 0.9 + i * 0.5, 4, CM.metalD, -0.7 + i * 0.7, 3.4 - i * 0.15, 0, 0.12);
       LW.add(w);
     }
     // граффити на стене
@@ -11204,6 +11280,8 @@ setTimeout(() => {
       for (let i = 0; i < 5; i++) api.liftBtnSet(i, false);
     } catch (e) {}
     try { api.liftIndIn.set('B1', ''); } catch (e) {}
+    try { api.liftIndOut.set('B1', ''); } catch (e) {}
+    try { api.liftDoorM.open.color.setHex(0x1a2a1a); api.liftDoorM.close.color.setHex(0x1a2a1a); } catch (e) {}
     try { api.callBtnMat.color.setHex(0x1a3a22); } catch (e) {}
     try { api.arrGlow.material.opacity = 0; api.arrL.intensity = 0; } catch (e) {}
     try { shaftG.position.y = 0; } catch (e) {}
@@ -11643,6 +11721,7 @@ setTimeout(() => {
       if (k > 0.75 && !P._btn) {
         P._btn = 1;
         try { api.liftBtnPress(4); } catch (e) {}
+        try { api.liftDoorM.close.color.setHex(0x36ff5e); } catch (e) {}
         try { caption('B5 · ВНИЗ', 1.4, 14); } catch (e) {}
       }
       if (!motorOn && k > 0.3) { motorOn = true; }
@@ -11655,7 +11734,7 @@ setTimeout(() => {
       if (k < 0.3) {
         const kk = k / 0.3;
         api.doorsAnim(Math.max(0, 1 - kk * 1.4));
-        if (kk > 0.25 && !F.doorCls) { F.doorCls = 1; SFX.doorClose(); setTimeout(() => SFX.clank(), 300); }
+        if (kk > 0.25 && !F.doorCls) { F.doorCls = 1; SFX.doorClose(); setTimeout(() => SFX.clank(), 300); try { api.liftDoorM.close.color.setHex(0x36ff5e); api.liftDoorM.open.color.setHex(0x1a2a1a); } catch (e) {} }
         // двери захлопнулись — подменяем коридор на шахту (не видно за створками)
         if (kk > 0.95 && !P._upoff) {
           P._upoff = 1;
@@ -11696,6 +11775,7 @@ setTimeout(() => {
           SFX.ding();
           floorTag('B' + floorCount);
           try { api.liftIndIn.set('B' + floorCount, '▼'); } catch (e) {}
+          try { api.liftIndOut.set('B' + floorCount, '▼'); } catch (e) {}
           try {
             api.liftBtnSet(floorCount - 1, true);
             if (floorCount !== 5) {
@@ -11723,7 +11803,7 @@ setTimeout(() => {
       const k = (p - T4) / (T6 - T4);
       if (k < 0.12) {
         F.spd = 0;
-        if (!P._arr) { P._arr = 1; SFX.arrive(); SFX.ding(); setTimeout(() => SFX.doorOpen(), 700); cabLamp.intensity = 1; try { api.liftBtnSet(4, false); } catch (e) {} try { api.liftIndIn.set('B5', ''); } catch (e) {} }
+        if (!P._arr) { P._arr = 1; SFX.arrive(); SFX.ding(); setTimeout(() => SFX.doorOpen(), 700); cabLamp.intensity = 1; try { api.liftBtnSet(4, false); } catch (e) {} try { api.liftIndIn.set('B5', ''); } catch (e) {} try { api.liftIndOut.set('B5', ''); } catch (e) {} }
         // скрежет остановки
         if (Math.random() < dt * 3) SFX.squeak();
       }
@@ -11732,7 +11812,7 @@ setTimeout(() => {
       if (k > 0.1 && k < 0.42) {
         const kk = (k - 0.1) / 0.32;
         api.doorsAnim(kk);
-        if (kk > 0.05 && !P._dopen) { P._dopen = 1; caption('УРОВЕНЬ B5 · СЛУЖЕБНЫЙ', 2.4, 15); }
+        if (kk > 0.05 && !P._dopen) { P._dopen = 1; caption('УРОВЕНЬ B5 · СЛУЖЕБНЫЙ', 2.4, 15); try { api.liftDoorM.open.color.setHex(0x36ff5e); api.liftDoorM.close.color.setHex(0x1a2a1a); } catch (e) {} }
         const ag = Math.max(0, Math.min(1, kk));
         try { api.arrGlow.material.opacity = 0.85 * ag; api.arrL.intensity = 1.3 * ag; } catch (e) {}
       }
@@ -11806,7 +11886,8 @@ setTimeout(() => {
     // ── хвост: лампы, пыль, вода, искры ──
     G.flick.forEach((f) => {
       if (!f.l) return;
-      const flicker = (Math.sin(wall * 9 + f.ph) > 0.995) ? 0.12 : 1.0;
+      let flicker = (Math.sin(wall * 9 + f.ph) > 0.995) ? 0.12 : 1.0;
+      if (f.hard && Math.sin(wall * 13.7 + f.ph * 2.0) > 0.55) flicker = 0.25;
       try { f.l.intensity = f.base * flicker * (0.92 + 0.08 * Math.sin(wall * 2.1 + f.ph)); } catch (e) {}
     });
     // пыль в коридорах
@@ -11826,6 +11907,19 @@ setTimeout(() => {
         }
         dustGeo.attributes.position.needsUpdate = true;
       }
+    }
+    // пар из стояка в коридоре B1
+    if (UP.userData.steam && G.up.visible) {
+      const ST = UP.userData.steam;
+      for (let i = 0; i < ST.n; i++) {
+        ST.pos[i * 3 + 1] += ST.vel[i] * dt;
+        ST.pos[i * 3] += Math.sin(wall * 2 + i) * dt * 0.25;
+        if (ST.pos[i * 3 + 1] > 3.9) {
+          ST.pos[i * 3 + 1] = 2.6;
+          ST.pos[i * 3] = -2.25 + (Math.random() - 0.5) * 0.2;
+        }
+      }
+      ST.pts.geometry.attributes.position.needsUpdate = true;
     }
     // B5: круги на воде, капли, искры, дым
     const fx = LW.fx;
