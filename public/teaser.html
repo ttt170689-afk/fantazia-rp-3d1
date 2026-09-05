@@ -84,8 +84,9 @@
 </div>
 <div id="start">
   <div class="logo">FANTAZIA RP 3D</div>
-  <div class="ttl">ПОДЗЕМЕЛЬЕ ХРАНИТЕЛЯ</div>
-  <div class="sub">КУТ-СЦЕНА · 24 СЕКУНДЫ · СО ЗВУКОМ 🎧</div>
+  <div class="ttl">СЛУЖЕБНЫЙ ВХОД</div>
+  <div class="sub" style="margin-top:-6px">GRAND MALL · ПОДЗЕМЕЛЬЕ ХРАНИТЕЛЯ</div>
+  <div class="sub">КУТ-СЦЕНА · 40 СЕКУНД · СО ЗВУКОМ 🎧</div>
   <button id="play">▶ СМОТРЕТЬ</button>
 </div>
 <div id="end">
@@ -9218,8 +9219,13 @@ function startShow() {
   if (AU && AU.state === 'suspended') AU.resume();
   pickVoices();
   resetShow();
-  T.phase = 'play';
   startEl.style.display = 'none';
+  // ПРОЛОГ: служебный вход → грузовой лифт → 1 этаж GRAND MALL → помехи
+  if (URLP.shot || URLP.nopro) { T.phase = 'play'; return; }
+  try { proReset(); } catch (e) {}
+  barsT.classList.add('on');
+  barsB.classList.add('on');
+  T.phase = 'pro';
 }
 DOC.getElementById('play').addEventListener('click', startShow);
 
@@ -9262,6 +9268,627 @@ function upBlackout(dt) {
   } catch (e) {}
 })();
 
+
+// ═══════════════════════════════════════════════════════════════════
+//  ПРОЛОГ v6 — СЛУЖЕБНЫЙ ВХОД · ГРУЗОВОЙ ЛИФТ · GRAND MALL 1 ЭТАЖ
+//  1) переулок, стальная дверь SERVICE ENTRANCE, мигающая лампа
+//  2) служебный коридор → грузовой лифт, кабина, панель этажей
+//  3) двери РАСПАХИВАЮТСЯ → атриум 1 этажа, витрины, вывеска
+//     → всё захлёбывается ПОМЕХАМИ → провал в подземелье
+// ═══════════════════════════════════════════════════════════════════
+const PRO = {
+  t: 0, dur: 15.4, scene: null, cam: null, on: false,
+  doorL: null, doorR: null, srvDoor: null,
+  lampFlick: null, panel: null, panelCtx: null, panelTex: null,
+  mall: null, cabLight: null, mallLights: [], noiseAt: [], step: 0,
+  signMat: null, tvMat: null, tvCtx: null, tvTex: null, floorSign: null
+};
+
+(function prologueBuild() {
+  const S = new THREE.Scene();
+  S.background = new THREE.Color(0x02030a);
+  S.fog = new THREE.Fog(0x03040c, 4, 46);
+  const C = new THREE.PerspectiveCamera(54, W / H, 0.05, 220);
+  PRO.scene = S; PRO.cam = C;
+
+  const box = (w, h, d, mat, x, y, z, par) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    m.position.set(x, y, z);
+    (par || S).add(m);
+    return m;
+  };
+
+  // ── текстуры ──
+  const texAsphalt = cvsTex(256, 256, (q, w, h) => {
+    q.fillStyle = '#0d0e12'; q.fillRect(0, 0, w, h);
+    for (let i = 0; i < 900; i++) {
+      const g = 14 + rnd(0, 22) | 0;
+      q.fillStyle = 'rgba(' + g + ',' + g + ',' + (g + 4) + ',.7)';
+      q.fillRect(rnd(0, w), rnd(0, h), rnd(1, 4), rnd(1, 4));
+    }
+    q.strokeStyle = 'rgba(0,0,0,.8)'; q.lineWidth = 2;
+    for (let i = 0; i < 8; i++) {
+      q.beginPath(); let x = rnd(0, w), y = rnd(0, h); q.moveTo(x, y);
+      for (let k = 0; k < 4; k++) { x += rnd(-40, 40); y += rnd(-40, 40); q.lineTo(x, y); }
+      q.stroke();
+    }
+  }, 10, 10);
+  const texConcrete = cvsTex(256, 256, (q, w, h) => {
+    q.fillStyle = '#1b1c22'; q.fillRect(0, 0, w, h);
+    for (let i = 0; i < 500; i++) {
+      const g = 26 + rnd(0, 26) | 0;
+      q.fillStyle = 'rgba(' + g + ',' + g + ',' + (g + 5) + ',.55)';
+      q.fillRect(rnd(0, w), rnd(0, h), rnd(4, 26), rnd(3, 16));
+    }
+    // подтёки
+    q.fillStyle = 'rgba(0,0,0,.35)';
+    for (let i = 0; i < 14; i++) q.fillRect(rnd(0, w), 0, rnd(2, 8), rnd(30, h));
+  }, 4, 2);
+  const texTile = cvsTex(256, 256, (q, w, h) => {
+    q.fillStyle = '#c9c6c0'; q.fillRect(0, 0, w, h);
+    const s = w / 4;
+    for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) {
+      const g = 186 + rnd(0, 40) | 0;
+      q.fillStyle = 'rgb(' + g + ',' + (g - 4) + ',' + (g - 12) + ')';
+      q.fillRect(x * s + 2, y * s + 2, s - 4, s - 4);
+    }
+  }, 14, 14);
+  const texMetal = cvsTex(128, 128, (q, w, h) => {
+    q.fillStyle = '#2a2d33'; q.fillRect(0, 0, w, h);
+    for (let i = 0; i < 130; i++) {
+      const g = 40 + rnd(0, 40) | 0;
+      q.fillStyle = 'rgba(' + g + ',' + (g + 2) + ',' + (g + 8) + ',.5)';
+      q.fillRect(0, rnd(0, h), w, rnd(1, 3));
+    }
+  }, 1, 1);
+  const texRibbed = cvsTex(128, 128, (q, w, h) => {
+    q.fillStyle = '#33363d'; q.fillRect(0, 0, w, h);
+    for (let x = 0; x < w; x += 8) {
+      q.fillStyle = 'rgba(255,255,255,.06)'; q.fillRect(x, 0, 3, h);
+      q.fillStyle = 'rgba(0,0,0,.45)'; q.fillRect(x + 3, 0, 5, h);
+    }
+  }, 3, 2);
+
+  // ── ПЕРЕУЛОК (z от 6 до -2) ──
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 40),
+    new THREE.MeshLambertMaterial({ map: texAsphalt }));
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.set(0, 0, 4);
+  S.add(ground);
+
+  const wallMat = new THREE.MeshLambertMaterial({ map: texConcrete });
+  box(0.6, 9, 22, wallMat, -5.2, 4.5, 6, S);   // левая стена переулка
+  box(0.6, 9, 22, wallMat, 5.2, 4.5, 6, S);    // правая
+  // фасад со служебной дверью (z = -0.4)
+  box(10.4, 9, 0.7, wallMat, 0, 4.5, -0.5, S);
+
+  // ниша входа
+  const nicheMat = new THREE.MeshLambertMaterial({ color: 0x14161c });
+  box(3.6, 3.3, 0.5, nicheMat, 0, 1.65, -0.16, S);
+
+  // СТАЛЬНАЯ ДВЕРЬ (петли слева) — SERVICE ENTRANCE
+  const doorTex = cvsTex(256, 384, (q, w, h) => {
+    q.fillStyle = '#3a3f47'; q.fillRect(0, 0, w, h);
+    for (let i = 0; i < 200; i++) {
+      const g = 52 + rnd(0, 40) | 0;
+      q.fillStyle = 'rgba(' + g + ',' + (g + 3) + ',' + (g + 9) + ',.45)';
+      q.fillRect(rnd(0, w), rnd(0, h), rnd(3, 22), rnd(2, 8));
+    }
+    // ржавые потёки
+    q.fillStyle = 'rgba(120,60,25,.35)';
+    for (let i = 0; i < 10; i++) q.fillRect(rnd(0, w), rnd(0, h * 0.6), rnd(3, 10), rnd(30, 150));
+    // рамка
+    q.strokeStyle = 'rgba(0,0,0,.6)'; q.lineWidth = 8;
+    q.strokeRect(14, 14, w - 28, h - 28);
+    // табличка
+    q.fillStyle = '#161a1f'; q.fillRect(34, 96, w - 68, 74);
+    q.strokeStyle = '#8ea0b4'; q.lineWidth = 2; q.strokeRect(34, 96, w - 68, 74);
+    q.fillStyle = '#cfe0f0'; q.font = '700 27px Segoe UI, Arial'; q.textAlign = 'center';
+    q.fillText('SERVICE', w / 2, 126);
+    q.fillText('ENTRANCE', w / 2, 156);
+    q.fillStyle = '#e2b03a'; q.font = '700 16px Segoe UI, Arial';
+    q.fillText('ТОЛЬКО ДЛЯ ПЕРСОНАЛА', w / 2, 200);
+    q.fillStyle = 'rgba(226,176,58,.85)'; q.font = '700 13px Segoe UI, Arial';
+    q.fillText('GRAND MALL · BLOCK B', w / 2, 224);
+    // ручка
+    q.fillStyle = '#9aa4ae'; q.fillRect(w - 60, h / 2 + 40, 12, 60);
+  });
+  const doorPivot = new THREE.Object3D();
+  doorPivot.position.set(-0.95, 0, -0.2);
+  S.add(doorPivot);
+  const srvDoor = new THREE.Mesh(new THREE.BoxGeometry(1.9, 3.1, 0.12),
+    new THREE.MeshLambertMaterial({ map: doorTex }));
+  srvDoor.position.set(0.95, 1.55, 0);
+  doorPivot.add(srvDoor);
+  PRO.srvDoor = doorPivot;
+
+  // тёмный проём за дверью
+  box(1.9, 3.1, 0.06, new THREE.MeshBasicMaterial({ color: 0x000000 }), 0, 1.55, -0.34, S);
+
+  // мигающая лампа-бра над дверью
+  const lampCase = box(0.7, 0.22, 0.4, new THREE.MeshLambertMaterial({ color: 0x1a1d22 }), 0, 3.5, -0.05, S);
+  const bulb = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.06, 0.3),
+    new THREE.MeshBasicMaterial({ color: 0xffe6b0 }));
+  bulb.position.set(0, 3.38, -0.05); S.add(bulb);
+  const lampL = new THREE.PointLight(0xffd9a0, 1.5, 12, 1.8);
+  lampL.position.set(0, 3.3, 0.5); S.add(lampL);
+  const lampHalo = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: TEX.warm, transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending }));
+  lampHalo.scale.set(3.4, 3.4, 1); lampHalo.position.set(0, 3.34, 0.2); S.add(lampHalo);
+  PRO.lampFlick = { l: lampL, b: bulb, h: lampHalo };
+
+  // мусорные баки, поддоны, ящики, труба
+  const junkMat = new THREE.MeshLambertMaterial({ color: 0x1e2a24 });
+  box(1.1, 1.3, 0.9, junkMat, -3.3, 0.65, 1.6, S);
+  box(1.1, 1.3, 0.9, junkMat, -3.3, 0.65, 3.0, S);
+  box(1.2, 0.12, 0.95, new THREE.MeshLambertMaterial({ color: 0x2c231a }), -3.3, 1.36, 1.6, S);
+  const crate = new THREE.MeshLambertMaterial({ color: 0x39301f });
+  box(0.9, 0.7, 0.8, crate, 3.4, 0.35, 1.2, S);
+  box(0.8, 0.6, 0.7, crate, 3.5, 0.95, 1.15, S);
+  box(1.4, 0.16, 1.1, crate, 3.2, 0.08, 2.8, S);
+  box(0.22, 8, 0.22, new THREE.MeshLambertMaterial({ color: 0x23262b }), -4.7, 4, 0.4, S);
+  // лужа с отражением лампы
+  const puddle = new THREE.Mesh(new THREE.CircleGeometry(1.5, 24),
+    new THREE.MeshPhongMaterial({ color: 0x0a1018, shininess: 120, specular: 0x9fb4d0 }));
+  puddle.rotation.x = -Math.PI / 2; puddle.position.set(0.5, 0.015, 2.2); S.add(puddle);
+
+  // пар из решётки
+  const steams = [];
+  for (let i = 0; i < 12; i++) {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: TEX.smoke, transparent: true, opacity: 0.12, depthWrite: false }));
+    sp.scale.set(2.4, 2.4, 1);
+    sp.position.set(rnd(-1.6, 2.2), rnd(0, 3), rnd(1.4, 4.4));
+    sp.userData.sp = rnd(0.18, 0.5);
+    S.add(sp); steams.push(sp);
+  }
+  PRO.steams = steams;
+
+  // ── СЛУЖЕБНЫЙ КОРИДОР (z от -1 до -13) ──
+  const corMat = new THREE.MeshLambertMaterial({ map: texConcrete });
+  const corFloor = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 13),
+    new THREE.MeshLambertMaterial({ map: texTile, color: 0x8a8a86 }));
+  corFloor.rotation.x = -Math.PI / 2; corFloor.position.set(0, 0.01, -7); S.add(corFloor);
+  box(0.3, 3.4, 13, corMat, -1.75, 1.7, -7, S);
+  box(0.3, 3.4, 13, corMat, 1.75, 1.7, -7, S);
+  const corCeil = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 13),
+    new THREE.MeshLambertMaterial({ color: 0x15171c, side: THREE.DoubleSide }));
+  corCeil.rotation.x = Math.PI / 2; corCeil.position.set(0, 3.4, -7); S.add(corCeil);
+
+  // трубы вдоль потолка + люминесцентные лампы
+  const pipeMat = new THREE.MeshLambertMaterial({ color: 0x2b2f36 });
+  for (let i = 0; i < 3; i++) {
+    const p = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 12.6, 8), pipeMat);
+    p.rotation.x = Math.PI / 2; p.position.set(-1.1 + i * 0.28, 3.15, -7); S.add(p);
+  }
+  PRO.tubes = [];
+  for (let i = 0; i < 4; i++) {
+    const z = -2.4 - i * 3;
+    const tube = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.08, 0.22),
+      new THREE.MeshBasicMaterial({ color: 0xbfe0ff }));
+    tube.position.set(0, 3.24, z); S.add(tube);
+    const tl = new THREE.PointLight(0x9fc4ee, 0.8, 8, 1.9);
+    tl.position.set(0, 3.0, z); S.add(tl);
+    PRO.tubes.push({ m: tube, l: tl, ph: Math.random() * 9, bad: i === 2 });
+  }
+  // разметка и знаки на стене
+  const stripe = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 13),
+    new THREE.MeshBasicMaterial({ color: 0xd8a11e }));
+  stripe.rotation.x = -Math.PI / 2; stripe.position.set(-1.2, 0.02, -7); S.add(stripe);
+  const signTex = (txt, col) => cvsTex(256, 128, (q, w, h) => {
+    q.fillStyle = '#101319'; q.fillRect(0, 0, w, h);
+    q.strokeStyle = col; q.lineWidth = 4; q.strokeRect(6, 6, w - 12, h - 12);
+    q.fillStyle = col; q.font = '700 30px Segoe UI, Arial'; q.textAlign = 'center';
+    q.fillText(txt, w / 2, h / 2 + 10);
+  });
+  const sg1 = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.55),
+    new THREE.MeshBasicMaterial({ map: signTex('ЛИФТ →', '#7fe0c0'), transparent: true }));
+  sg1.position.set(-1.58, 2.3, -5.2); sg1.rotation.y = Math.PI / 2; S.add(sg1);
+  const sg2 = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.55),
+    new THREE.MeshBasicMaterial({ map: signTex('B2 · СКЛАД', '#e0a03a'), transparent: true }));
+  sg2.position.set(1.58, 2.3, -8.4); sg2.rotation.y = -Math.PI / 2; S.add(sg2);
+  // тележка и коробки в коридоре
+  box(0.7, 0.06, 1.0, new THREE.MeshLambertMaterial({ color: 0x3b3f45 }), 1.2, 0.32, -4.2, S);
+  box(0.6, 0.5, 0.6, crate, 1.2, 0.6, -4.2, S);
+  box(0.6, 0.55, 0.6, crate, -1.15, 0.28, -9.4, S);
+
+  // ── ГРУЗОВОЙ ЛИФТ (портал на z = -13) ──
+  const shaftMat = new THREE.MeshLambertMaterial({ map: texMetal });
+  box(4.6, 4.0, 0.5, shaftMat, 0, 2.0, -13.3, S);       // стена с проёмом (разбита ниже)
+  // проём: закрываем чёрным, двери поверх
+  box(2.5, 3.2, 0.08, new THREE.MeshBasicMaterial({ color: 0x05060a }), 0, 1.6, -13.05, S);
+
+  // кабина за дверями (грузовая: рифлёные стены, лампа, стёганый протектор)
+  const cab = new THREE.Group(); cab.position.set(0, 0, -15.2); S.add(cab);
+  const cabMat = new THREE.MeshLambertMaterial({ map: texRibbed });
+  box(2.5, 0.06, 3.6, new THREE.MeshLambertMaterial({ color: 0x2b2b2e }), 0, 0.03, 0, cab);
+  box(0.08, 3.2, 3.6, cabMat, -1.25, 1.6, 0, cab);
+  box(0.08, 3.2, 3.6, cabMat, 1.25, 1.6, 0, cab);
+  box(2.5, 3.2, 0.08, cabMat, 0, 1.6, -1.8, cab);
+  box(2.5, 0.08, 3.6, new THREE.MeshLambertMaterial({ color: 0x1d1f24 }), 0, 3.2, 0, cab);
+  // квилт-протектор на задней стене
+  for (let y = 0; y < 5; y++) for (let x = 0; x < 4; x++) {
+    box(0.5, 0.5, 0.05, new THREE.MeshLambertMaterial({ color: 0x2f333b }),
+      -0.85 + x * 0.57, 0.55 + y * 0.52, -1.72, cab);
+  }
+  // поручень
+  const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.3, 8),
+    new THREE.MeshLambertMaterial({ color: 0x8d949c }));
+  rail.rotation.x = Math.PI / 2; rail.position.set(-1.16, 1.05, 0); cab.add(rail);
+  const rail2 = rail.clone(); rail2.position.x = 1.16; cab.add(rail2);
+  // лампа кабины
+  const cabPanelLight = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.4),
+    new THREE.MeshBasicMaterial({ color: 0xdfe9ff }));
+  cabPanelLight.rotation.x = Math.PI / 2; cabPanelLight.position.set(0, 3.14, 0); cab.add(cabPanelLight);
+  const cabL = new THREE.PointLight(0xcfe0ff, 1.25, 9, 1.8);
+  cabL.position.set(0, 2.9, 0); cab.add(cabL);
+  PRO.cabLight = { l: cabL, m: cabPanelLight };
+  PRO.cab = cab;
+
+  // ПАНЕЛЬ ЭТАЖЕЙ (живая, canvas)
+  const pc = DOC.createElement('canvas'); pc.width = 256; pc.height = 384;
+  PRO.panelCtx = pc.getContext('2d');
+  PRO.panelTex = new THREE.CanvasTexture(pc);
+  const panel = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.93),
+    new THREE.MeshBasicMaterial({ map: PRO.panelTex, transparent: true }));
+  panel.position.set(1.19, 1.65, -0.5); panel.rotation.y = -Math.PI / 2; cab.add(panel);
+  PRO.panel = panel;
+
+  // ТАБЛО НАД ПРОЁМОМ (снаружи, в коридоре)
+  const tc = DOC.createElement('canvas'); tc.width = 256; tc.height = 96;
+  PRO.tvCtx = tc.getContext('2d');
+  PRO.tvTex = new THREE.CanvasTexture(tc);
+  const tv = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.49),
+    new THREE.MeshBasicMaterial({ map: PRO.tvTex, transparent: true }));
+  tv.position.set(0, 3.55, -13.0); S.add(tv);
+  PRO.tv = tv;
+
+  // ДВЕРИ ЛИФТА (створки, разъезжаются)
+  const dMat = new THREE.MeshLambertMaterial({ map: texRibbed, color: 0x9aa1aa });
+  PRO.doorL = box(1.26, 3.2, 0.12, dMat, -0.63, 1.6, -13.0, S);
+  PRO.doorR = box(1.26, 3.2, 0.12, dMat, 0.63, 1.6, -13.0, S);
+
+  // ── GRAND MALL, 1 ЭТАЖ (за кабиной, открывается на z = -17) ──
+  const mall = new THREE.Group(); mall.position.set(0, 0, -17.2); S.add(mall);
+  PRO.mall = mall;
+  const mFloor = new THREE.Mesh(new THREE.PlaneGeometry(36, 40),
+    new THREE.MeshPhongMaterial({ map: texTile, shininess: 70, specular: 0x555555 }));
+  mFloor.rotation.x = -Math.PI / 2; mFloor.position.set(0, 0.005, -16); mall.add(mFloor);
+  const mCeil = new THREE.Mesh(new THREE.PlaneGeometry(36, 40),
+    new THREE.MeshLambertMaterial({ color: 0x20242c, side: THREE.DoubleSide }));
+  mCeil.rotation.x = Math.PI / 2; mCeil.position.set(0, 8.4, -16); mall.add(mCeil);
+  const mWall = new THREE.MeshLambertMaterial({ color: 0xb9b4ad });
+  box(0.5, 8.4, 40, mWall, -12, 4.2, -16, mall);
+  box(0.5, 8.4, 40, mWall, 12, 4.2, -16, mall);
+  box(24, 8.4, 0.5, mWall, 0, 4.2, -35.6, mall);
+
+  // витрины магазинов по бокам (светящиеся окна + вывески)
+  const shopNames = ['FASHION', 'TOYS', 'COFFEE', 'ELECTRO', 'SPORT', 'CANDY'];
+  const shopCols = [0xff5ea8, 0x5ed0ff, 0xffbf5e, 0x8affc0, 0xff7a5e, 0xc08aff];
+  PRO.shops = [];
+  for (let i = 0; i < 6; i++) {
+    const side = i % 2 ? 1 : -1;
+    const z = -6 - ((i / 2) | 0) * 8.5;
+    const glass = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 4.2),
+      new THREE.MeshBasicMaterial({ color: shopCols[i], transparent: true, opacity: 0.42 }));
+    glass.position.set(side * 11.6, 2.4, z);
+    glass.rotation.y = -side * Math.PI / 2;
+    mall.add(glass);
+    const sname = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 0.9),
+      new THREE.MeshBasicMaterial({ map: signTex(shopNames[i], '#ffffff'), transparent: true }));
+    sname.position.set(side * 11.5, 5.4, z);
+    sname.rotation.y = -side * Math.PI / 2;
+    mall.add(sname);
+    const sl = new THREE.PointLight(shopCols[i], 0.55, 16, 1.7);
+    sl.position.set(side * 9.5, 3.2, z); mall.add(sl);
+    PRO.mallLights.push(sl);
+    PRO.shops.push({ glass: glass, sign: sname, l: sl });
+  }
+
+  // потолочные светильники атриума
+  for (let i = 0; i < 6; i++) {
+    const z = -4 - i * 5.5;
+    const pl = new THREE.Mesh(new THREE.PlaneGeometry(7, 1.1),
+      new THREE.MeshBasicMaterial({ color: 0xf2f6ff }));
+    pl.rotation.x = Math.PI / 2; pl.position.set(0, 8.3, z); mall.add(pl);
+    const l = new THREE.PointLight(0xdfe8ff, 0.75, 22, 1.7);
+    l.position.set(0, 7.4, z); mall.add(l);
+    PRO.mallLights.push(l);
+  }
+
+  // эскалатор в глубине + балкон 2 этажа
+  const esc = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.4, 12),
+    new THREE.MeshLambertMaterial({ color: 0x8d949c }));
+  esc.position.set(-4.6, 3.1, -24); esc.rotation.x = -0.42; mall.add(esc);
+  box(0.12, 1.1, 12, new THREE.MeshLambertMaterial({ color: 0x39424c }), -6.2, 3.9, -24, mall)
+    .rotation.x = -0.42;
+  box(24, 0.4, 6, new THREE.MeshLambertMaterial({ color: 0xa8a29a }), 0, 6.1, -32, mall);
+
+  // фонтан-остров и скамьи, пальмы в кадках
+  const fount = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.4, 0.7, 22),
+    new THREE.MeshLambertMaterial({ color: 0x9fa6ad }));
+  fount.position.set(4.4, 0.35, -14); mall.add(fount);
+  const water = new THREE.Mesh(new THREE.CylinderGeometry(1.95, 1.95, 0.08, 22),
+    new THREE.MeshPhongMaterial({ color: 0x2f6f8f, shininess: 160, specular: 0xbfe6ff,
+      transparent: true, opacity: 0.85 }));
+  water.position.set(4.4, 0.72, -14); mall.add(water);
+  PRO.water = water;
+  for (let i = 0; i < 4; i++) {
+    box(1.6, 0.12, 0.5, new THREE.MeshLambertMaterial({ color: 0x5a4632 }),
+      -3.5 + (i % 2) * 7.5, 0.5, -9 - ((i / 2) | 0) * 9, mall);
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.45, 0.7, 12),
+      new THREE.MeshLambertMaterial({ color: 0x4b4238 }));
+    pot.position.set(-8 + (i % 2) * 16, 0.35, -7 - ((i / 2) | 0) * 12); mall.add(pot);
+    const leaf = new THREE.Mesh(new THREE.SphereGeometry(1.0, 8, 6),
+      new THREE.MeshLambertMaterial({ color: 0x2f5f36 }));
+    leaf.position.set(pot.position.x, 1.5, pot.position.z); leaf.scale.y = 1.35; mall.add(leaf);
+  }
+
+  // ВЫВЕСКА GRAND MALL — прямо напротив лифта
+  const gmTex = cvsTex(512, 160, (q, w, h) => {
+    q.clearRect(0, 0, w, h);
+    q.shadowColor = '#ffd76a'; q.shadowBlur = 34;
+    q.fillStyle = '#fff3cf'; q.font = '900 74px Segoe UI, Arial'; q.textAlign = 'center';
+    q.fillText('GRAND MALL', w / 2, 88);
+    q.shadowBlur = 10; q.fillStyle = '#ffbf5e'; q.font = '700 24px Segoe UI, Arial';
+    q.fillText('1 ЭТАЖ · ATRIUM', w / 2, 130);
+  });
+  PRO.signMat = new THREE.MeshBasicMaterial({ map: gmTex, transparent: true });
+  const gmSign = new THREE.Mesh(new THREE.PlaneGeometry(11, 3.4), PRO.signMat);
+  gmSign.position.set(0, 5.6, -26); mall.add(gmSign);
+  const gmL = new THREE.PointLight(0xffcf80, 1.0, 26, 1.6);
+  gmL.position.set(0, 5.2, -23); mall.add(gmL);
+  PRO.mallLights.push(gmL);
+
+  // «холодный» свет из проёма в кабину — включается при открытии
+  const spill = new THREE.PointLight(0xd6e6ff, 0, 14, 1.7);
+  spill.position.set(0, 2.4, -16.6); S.add(spill);
+  PRO.spill = spill;
+
+  // общий полумрак
+  const amb = new THREE.AmbientLight(0x2a3040, 0.34); S.add(amb);
+  PRO.amb = amb;
+  const moon = new THREE.DirectionalLight(0x6d86b8, 0.22);
+  moon.position.set(4, 12, 8); S.add(moon);
+})();
+
+// ── отрисовка панели этажей ──
+function proPanel(cur, target, moving) {
+  const q = PRO.panelCtx; if (!q) return;
+  q.fillStyle = '#101318'; q.fillRect(0, 0, 256, 384);
+  q.strokeStyle = '#5a6472'; q.lineWidth = 5; q.strokeRect(8, 8, 240, 368);
+  // дисплей
+  q.fillStyle = '#05070a'; q.fillRect(28, 28, 200, 86);
+  q.shadowColor = '#ff8a3a'; q.shadowBlur = 22;
+  q.fillStyle = '#ffb05a'; q.font = '900 62px Consolas, monospace'; q.textAlign = 'center';
+  q.fillText(cur, 128, 96);
+  q.shadowBlur = 0;
+  // стрелка
+  q.fillStyle = moving ? '#7fe0a0' : '#2c3440';
+  q.beginPath(); q.moveTo(128, 130); q.lineTo(152, 168); q.lineTo(104, 168); q.closePath(); q.fill();
+  // кнопки этажей
+  const labels = ['B2', 'B1', '1', '2', '3', 'СТОП'];
+  for (let i = 0; i < 6; i++) {
+    const x = 46 + (i % 2) * 92, y = 190 + ((i / 2) | 0) * 58;
+    const act = labels[i] === target;
+    q.fillStyle = act ? '#2b6f4a' : '#1a1f26';
+    q.beginPath(); q.arc(x + 30, y + 20, 24, 0, 7); q.fill();
+    q.strokeStyle = act ? '#7fe0a0' : '#39424f'; q.lineWidth = 3; q.stroke();
+    q.fillStyle = act ? '#d8ffe8' : '#8b95a3';
+    q.font = '700 19px Segoe UI, Arial';
+    q.fillText(labels[i], x + 30, y + 27);
+  }
+  PRO.panelTex.needsUpdate = true;
+}
+function proTv(txt, col) {
+  const q = PRO.tvCtx; if (!q) return;
+  q.fillStyle = '#07090d'; q.fillRect(0, 0, 256, 96);
+  q.strokeStyle = '#2c3440'; q.lineWidth = 4; q.strokeRect(4, 4, 248, 88);
+  q.shadowColor = col; q.shadowBlur = 20;
+  q.fillStyle = col; q.font = '900 44px Consolas, monospace'; q.textAlign = 'center';
+  q.fillText(txt, 128, 66);
+  q.shadowBlur = 0;
+  PRO.tvTex.needsUpdate = true;
+}
+
+// ── звук пролога ──
+function proSfx(kind) {
+  try {
+    if (kind === 'knock') { noiseBurst(0.12, 320, 90, 1.2, 0.14, 0); tone(70, 44, 0.18, 'sine', 0.1, 0); }
+    if (kind === 'creak') { tone(180, 96, 1.1, 'sawtooth', 0.035, 0); noiseBurst(1.0, 900, 380, 6, 0.035, 0); }
+    if (kind === 'step') { noiseBurst(0.07, 700, 220, 1.6, 0.055, 0); }
+    if (kind === 'btn') { tone(1180, 1180, 0.05, 'square', 0.05, 0); tone(880, 880, 0.09, 'square', 0.035, 0.07); }
+    if (kind === 'close') { noiseBurst(0.7, 480, 140, 1.1, 0.09, 0); tone(120, 60, 0.5, 'sine', 0.06, 0.45); }
+    if (kind === 'hum') { tone(58, 62, 3.6, 'sine', 0.05, 0); tone(117, 121, 3.6, 'triangle', 0.018, 0); }
+    if (kind === 'ding') { tone(1320, 1320, 0.5, 'sine', 0.09, 0); tone(1760, 1760, 0.7, 'sine', 0.05, 0.06); }
+    if (kind === 'open') { noiseBurst(0.9, 260, 900, 0.8, 0.08, 0); }
+    if (kind === 'mall') { tone(392, 392, 0.5, 'triangle', 0.03, 0); tone(523, 523, 0.6, 'triangle', 0.025, 0.22); }
+    if (kind === 'glitch') {
+      noiseBurst(0.32, 2600, 160, 0.4, 0.15, 0);
+      noiseBurst(0.16, 3400, 800, 2, 0.1, 0.2);
+      tone(96, 38, 0.6, 'sawtooth', 0.07, 0.05);
+    }
+    if (kind === 'drop') { tone(72, 26, 1.6, 'sine', 0.11, 0); }
+  } catch (e) {}
+}
+
+// ── тайминг и камера пролога ──
+function proUpdate(dt) {
+  const t = PRO.t;
+  const S = PRO.scene, C = PRO.cam;
+  if (!S) return;
+
+  // мигание уличной лампы (нестабильная)
+  const fl = PRO.lampFlick;
+  if (fl) {
+    const n = Math.sin(t * 21) * Math.sin(t * 7.3) + Math.sin(t * 53) * 0.4;
+    const k = n > -0.35 ? 1 : rnd(0.05, 0.4);
+    fl.l.intensity = 1.45 * k;
+    fl.b.material.color.setRGB(1 * k, 0.9 * k, 0.7 * k);
+    fl.h.material.opacity = 0.5 * k;
+  }
+  // люминесцентные лампы коридора
+  if (PRO.tubes) PRO.tubes.forEach((tb) => {
+    let k = 1;
+    if (tb.bad) { const n = Math.sin(t * 33 + tb.ph) + Math.sin(t * 11.7); k = n > -0.2 ? 1 : rnd(0.02, 0.35); }
+    else k = 0.9 + Math.sin(t * 3 + tb.ph) * 0.06;
+    tb.l.intensity = 0.8 * k;
+    tb.m.material.color.setRGB(0.75 * k, 0.87 * k, 1 * k);
+  });
+  // пар
+  if (PRO.steams) PRO.steams.forEach((sp) => {
+    sp.position.y += sp.userData.sp * dt;
+    sp.material.opacity = 0.14 * Math.max(0, 1 - sp.position.y / 4.2);
+    if (sp.position.y > 4.2) { sp.position.y = 0; sp.position.x = rnd(-1.6, 2.2); }
+  });
+  if (PRO.water) PRO.water.position.y = 0.72 + Math.sin(t * 2.2) * 0.012;
+
+  // ─────────── ФАЗЫ ───────────
+  // 0.0–1.6  подход к служебной двери
+  // 1.6–2.2  стук/удар, дверь распахивается со скрипом
+  // 2.2–5.2  проход по коридору к лифту
+  // 5.2–6.4  табло B2, кнопка, двери лифта разъезжаются
+  // 6.4–8.0  вход в кабину, разворот
+  // 8.0–9.0  двери закрываются, панель B2
+  // 9.0–12.2 подъём B2 → B1 → 1, гул, тряска, свет мигает
+  // 12.2–12.6 ДИНЬ
+  // 12.6–14.0 ДВЕРИ РАСПАХИВАЮТСЯ → 1 ЭТАЖ GRAND MALL
+  // 14.0–15.4 ПОМЕХИ: свет вырубается, изображение рвётся, провал
+  const fire = (at, kind) => {
+    if (t >= at && !PRO.noiseAt[at]) { PRO.noiseAt[at] = 1; proSfx(kind); }
+  };
+
+  // служебная дверь
+  if (t > 1.7) {
+    const k = clamp((t - 1.7) / 1.0, 0, 1);
+    PRO.srvDoor.rotation.y = -1.42 * (k * k * (3 - 2 * k));
+  } else PRO.srvDoor.rotation.y = 0;
+
+  // двери лифта: открываются 5.5-6.4, закрываются 8.0-9.0, распахиваются 12.6-14.0
+  let sep = 0;
+  if (t >= 5.5 && t < 8.0) sep = clamp((t - 5.5) / 0.9, 0, 1);
+  else if (t >= 8.0 && t < 12.6) sep = 1 - clamp((t - 8.0) / 1.0, 0, 1);
+  else if (t >= 12.6) sep = clamp((t - 12.6) / 0.85, 0, 1);
+  const se = sep * sep * (3 - 2 * sep);
+  PRO.doorL.position.x = -0.63 - se * 1.25;
+  PRO.doorR.position.x = 0.63 + se * 1.25;
+
+  // свет из молла в кабину
+  PRO.spill.intensity = t > 12.6 ? clamp((t - 12.6) / 0.7, 0, 1) * 1.7 : 0;
+
+  // табло/панель
+  const floorNow = t < 9.4 ? 'B2' : (t < 10.9 ? 'B1' : '1');
+  proTv(t < 5.4 ? 'B2' : floorNow, t > 14.0 ? '#ff3b3b' : '#ff9d4a');
+  proPanel(floorNow, '1', t > 9.0 && t < 12.4);
+
+  // тряска кабины при подъёме
+  let shake = 0;
+  if (t > 9.0 && t < 12.2) shake = 0.012 + Math.sin(t * 34) * 0.006;
+
+  // свет в кабине мигает на подъёме, вырубается на помехах
+  if (PRO.cabLight) {
+    let k = 1;
+    if (t > 9.0 && t < 12.2) { const n = Math.sin(t * 27) + Math.sin(t * 9.1); k = n > -1.2 ? 1 : rnd(0.05, 0.4); }
+    if (t > 14.0) k = Math.random() < 0.55 ? rnd(0, 0.25) : 1;
+    PRO.cabLight.l.intensity = 1.25 * k;
+    PRO.cabLight.m.material.color.setRGB(0.87 * k, 0.91 * k, 1 * k);
+  }
+
+  // свет молла: горит, потом захлёбывается помехами
+  const mk = t > 14.0 ? (Math.random() < 0.6 ? rnd(0, 0.3) : 1) : 1;
+  PRO.mallLights.forEach((l) => {
+    if (l.userData.base === undefined) l.userData.base = l.intensity;
+    l.intensity = l.userData.base * mk;
+  });
+  if (PRO.signMat) PRO.signMat.opacity = t > 14.0 ? (Math.random() < 0.5 ? rnd(0.05, 0.5) : 1) : 1;
+
+  // экранные помехи
+  if (t > 14.0) glitch = Math.max(glitch, 0.35 + Math.random() * 0.35);
+  if (t > 9.0 && t < 12.2 && Math.random() < 0.02) glitch = Math.max(glitch, 0.12);
+
+  // звук по меткам
+  fire(1.55, 'knock'); fire(1.75, 'creak');
+  fire(2.5, 'step'); fire(3.1, 'step'); fire(3.7, 'step'); fire(4.3, 'step'); fire(4.9, 'step');
+  fire(5.35, 'btn'); fire(5.5, 'open');
+  fire(6.6, 'step'); fire(7.2, 'step');
+  fire(7.95, 'btn'); fire(8.05, 'close');
+  fire(9.05, 'hum'); fire(11.0, 'hum');
+  fire(12.25, 'ding'); fire(12.6, 'open'); fire(13.0, 'mall');
+  fire(14.02, 'glitch'); fire(14.5, 'glitch'); fire(14.95, 'drop');
+
+  // ─────────── КАМЕРА ───────────
+  let px, py, pz, lx, ly, lz, fov = 54;
+  const bob = (amp, sp) => Math.sin(t * sp) * amp;
+  if (t < 2.2) {
+    // подход к двери, взгляд на табличку
+    const k = cine(0, 1, 0.2, 2.2, t);
+    px = lerp(1.9, 0.15, k); py = 1.72 + bob(0.035, 7.5) * (1 - k * 0.4);
+    pz = lerp(6.4, 2.0, k);
+    lx = 0; ly = lerp(2.1, 1.7, k); lz = -0.6;
+    fov = 58 - k * 4;
+  } else if (t < 5.4) {
+    // проход по коридору к лифту
+    const k = cine(0, 1, 2.2, 5.4, t);
+    px = lerp(0.1, 0, k) + bob(0.045, 6.4);
+    py = 1.68 + bob(0.04, 12.8);
+    pz = lerp(1.6, -11.4, k);
+    lx = bob(0.05, 4.2); ly = 1.66 + bob(0.03, 5.5); lz = -14.5;
+    fov = 56;
+  } else if (t < 8.0) {
+    // вход в кабину
+    const k = cine(0, 1, 5.7, 8.0, t);
+    px = bob(0.04, 6.0); py = 1.68 + bob(0.035, 12);
+    pz = lerp(-11.4, -15.9, k);
+    lx = 0; ly = 1.62; lz = lerp(-16.6, -17.4, k);
+    fov = 56;
+  } else if (t < 12.4) {
+    // в кабине: разворот к дверям, ждём этаж
+    const k = cine(0, 1, 8.0, 9.3, t);
+    px = bob(0.02, 3.2) + shake * rnd(-1, 1);
+    py = 1.66 + bob(0.02, 4.4) + shake * rnd(-1, 1);
+    pz = -15.5;
+    // смотрим сначала на панель, потом на двери
+    const look = clamp((t - 10.2) / 1.2, 0, 1);
+    lx = lerp(lerp(1.2, 1.2, k), 0, look);
+    ly = lerp(1.7, 1.62, look);
+    lz = lerp(-14.9, -13.0, look);
+    fov = 56 - look * 2;
+  } else if (t < 14.0) {
+    // двери распахиваются: медленный наезд в 1 этаж
+    const k = cine(0, 1, 12.6, 14.0, t);
+    px = 0; py = 1.66 + bob(0.02, 3.6);
+    pz = lerp(-15.5, -14.1, k);
+    lx = 0; ly = 1.9 + k * 0.6; lz = -30;
+    fov = lerp(54, 62, k);
+  } else {
+    // помехи: камеру дёргает, притягивает вглубь молла
+    const k = clamp((t - 14.0) / 1.4, 0, 1);
+    px = rnd(-1, 1) * 0.12 * (0.3 + k);
+    py = 1.7 + rnd(-1, 1) * 0.09 * (0.3 + k);
+    pz = lerp(-14.1, -13.2, k);
+    lx = rnd(-1, 1) * 0.25; ly = 2.4 + rnd(-1, 1) * 0.2; lz = -32;
+    fov = lerp(62, 48, k * k);
+  }
+  PRO.cam.position.set(px, py, pz);
+  PRO.cam.lookAt(lx, ly, lz);
+  PRO.cam.rotation.z = (t > 14.0 ? rnd(-1, 1) * 0.02 : Math.sin(t * 1.7) * 0.006);
+  PRO.cam.fov = fov;
+  PRO.cam.aspect = W / H;
+  PRO.cam.updateProjectionMatrix();
+
+  // затемнения: вход из чёрного и уход в чёрный перед подземельем
+  if (t < 0.8) OV.fadeT = 1 - clamp(t / 0.8, 0, 1);
+  else if (t > 14.9) OV.fadeT = clamp((t - 14.9) / 0.5, 0, 1);
+  else OV.fadeT = 0;
+}
+
+function proReset() {
+  PRO.t = 0;
+  PRO.noiseAt = [];
+  OV.fade = 1; OV.fadeT = 1;
+  try { proTv('B2', '#ff9d4a'); proPanel('B2', '1', false); } catch (e) {}
+}
+
 const clock = new THREE.Clock();
 const dW = DOC.getElementById('flashW');
 const dR = DOC.getElementById('flashR');
@@ -9275,6 +9902,30 @@ function loop() {
   const dt = dtRaw * (T.speed != null ? T.speed : 1);
   T.wall += dt;
   const wall = T.wall;
+  if (T.phase === 'pro') {
+    // ── ПРОЛОГ: отдельная сцена ──
+    PRO.t += dt;
+    try { proUpdate(dt); } catch (e) {}
+    try { renderer.render(PRO.scene, PRO.cam); } catch (e) {}
+    post2D(dt);
+    FXPost(dt);
+    upStats(dtRaw);
+    if (OV.flashW > 0.002) { dW.style.opacity = OV.flashW; OV.flashW = Math.max(0, OV.flashW - dt * 2.6); }
+    else dW.style.opacity = 0;
+    if (OV.flashR > 0.002) { dR.style.opacity = OV.flashR; OV.flashR = Math.max(0, OV.flashR - dt * 2.2); }
+    else dR.style.opacity = 0;
+    OV.fade += (OV.fadeT - OV.fade) * Math.min(1, dt * (OV.fadeT > OV.fade ? 6 : 3.6));
+    dB.style.opacity = OV.fade.toFixed(3);
+    if (PRO.t >= PRO.dur) {
+      // провал под GRAND MALL — начинается подземелье
+      T.phase = 'play';
+      T.t = 0;
+      cueI = 0;
+      OV.fade = 1; OV.fadeT = 1;
+      glitch = 0.4;
+    }
+    return;
+  }
   if (T.phase === 'play') {
     T.t += dt;
     runCues();
