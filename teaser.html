@@ -10,7 +10,7 @@
   #fx{position:fixed;inset:0;pointer-events:none;z-index:6;}
   #vig{position:fixed;inset:0;pointer-events:none;z-index:5;
     background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,.78) 100%);}
-  #scan{position:fixed;inset:0;pointer-events:none;z-index:7;opacity:.018;
+  #scan{position:fixed;inset:0;pointer-events:none;z-index:7;opacity:0; /* v15: сканлайны убраны */
     background:repeating-linear-gradient(0deg,rgba(255,255,255,.5) 0 1px,transparent 1px 3px);}
   .bar{position:fixed;left:0;right:0;height:11vh;background:#000;z-index:10;pointer-events:none;
     transition:transform .9s cubic-bezier(.6,0,.3,1);}
@@ -238,9 +238,9 @@ TEX.runes = cvsTex(512, 128, (q, w, h) => {
 
 // -- сцена --
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x050308);
-scene.fog = new THREE.Fog(0x080409, 6, 62);
-const BG0 = { r: 0.0196, g: 0.0118, b: 0.0314 }; // цвет зала до блэкаута
+scene.background = new THREE.Color(0x020104); // v15: зал темнее
+scene.fog = new THREE.Fog(0x040205, 5, 50); // v15: зал темнее
+const BG0 = { r: 0.008, g: 0.004, b: 0.016 }; // v15: цвет зала до блэкаута (темнее)
 const cam = new THREE.PerspectiveCamera(58, W / H, 0.1, 300);
 window.addEventListener('resize', () => {
   W = window.innerWidth; H = window.innerHeight;
@@ -276,12 +276,8 @@ for (let i = 0; i < 6; i++) {
 }
 let grainIdx = 0, grainAcc = 0, glitch = 0;
 function post2D(dt) {
+  // v15: зерно убрано — чистый кадр (остались только короткие акценты-глити на битах)
   fc.clearRect(0, 0, W, H);
-  grainAcc += dt;
-  if (grainAcc > 0.08) { grainAcc = 0; grainIdx = (grainIdx + 1) % grains.length; }
-  const bkG = BLACKOUT.t >= 0 ? clamp((T.t - BLACKOUT.t) / 0.5, 0, 1) : 0;
-  fc.globalAlpha = 0.085 * (1 - bkG * 0.8);
-  fc.drawImage(grains[grainIdx], 0, 0, W, H);
   fc.globalAlpha = 1;
   if (glitch > 0.01) {
     const n = 6 + (glitch * 10) | 0;
@@ -538,9 +534,9 @@ const BOSS_POS = { x: 0, z: -15 };
 
 (function buildDungeon() {
   const add = (m) => { scene.add(m); return m; };
-  DUN.amb = new THREE.AmbientLight(0x2a1e26, 0.62);
+  DUN.amb = new THREE.AmbientLight(0x1a1218, 0.4); // v15: темнее
   scene.add(DUN.amb);
-  DUN.moon = new THREE.PointLight(0x4a3850, 0.4, 60, 1.6);
+  DUN.moon = new THREE.PointLight(0x3a2c40, 0.22, 60, 1.6); // v15: темнее
   DUN.moon.position.set(0, 10, 10);
   add(DUN.moon);
 
@@ -694,7 +690,7 @@ const BOSS_POS = { x: 0, z: -15 };
     vein.position.set(rnd(-6, 6), 0.015, -11 + i * 1.6);
     add(vein);
   }
-  const circleLight = new THREE.PointLight(0xff2018, 1.1, 26, 1.6);
+  const circleLight = new THREE.PointLight(0xff2018, 0.85, 24, 1.6); // v15
   circleLight.position.set(0, 1.6, BOSS_POS.z + 2);
   add(circleLight);
   DUN.circleLight = circleLight;
@@ -729,7 +725,7 @@ const BOSS_POS = { x: 0, z: -15 };
     f2.scale.set(0.55, 0.9, 1);
     f2.position.y = 1.6;
     g.add(f2);
-    const li = new THREE.PointLight(0xff9840, 1.05, 17, 1.7);
+    const li = new THREE.PointLight(0xff9840, 0.78, 15, 1.7); // v15
     li.position.y = 1.9;
     g.add(li);
     g.position.set(x, 4.6, z);
@@ -776,7 +772,7 @@ const BOSS_POS = { x: 0, z: -15 };
     f1.scale.set(1.5, 2.2, 1);
     f1.position.y = 2.2;
     g.add(f1);
-    const li = new THREE.PointLight(0xff8830, 1.0, 15, 1.7);
+    const li = new THREE.PointLight(0xff8830, 0.78, 13, 1.7); // v15
     li.position.y = 2.3;
     g.add(li);
     g.position.set(x, 0, z);
@@ -1065,10 +1061,10 @@ function upDungeon(dt, wall) {
   // АБСОЛЮТНЫЙ БЛЭКАУТ: гасим ВСЁ — остаются только глаза
   const bk = BLACKOUT.t >= 0 ? clamp((T.t - BLACKOUT.t) / 0.5, 0, 1) : 0;
   scene.background.setRGB(BG0.r * (1 - bk), BG0.g * (1 - bk), BG0.b * (1 - bk));
-  scene.fog.color.setRGB(0.031 * (1 - bk), 0.016 * (1 - bk), 0.035 * (1 - bk));
-  scene.fog.near = lerp(6, 2.2, bk);
-  scene.fog.far = lerp(62, 24, bk);
-  if (scanEl) scanEl.style.opacity = (0.05 * (1 - bk)).toFixed(3);
+  scene.fog.color.setRGB(0.016 * (1 - bk), 0.008 * (1 - bk), 0.02 * (1 - bk));
+  scene.fog.near = lerp(5, 2.2, bk);
+  scene.fog.far = lerp(50, 24, bk);
+  if (scanEl) scanEl.style.opacity = '0'; // v15: сканлайны убраны
   // факелы: живое мерцание, пока горят
   DUN.flamesAll.forEach((tc) => {
     let power = tc.on;
@@ -1087,12 +1083,12 @@ function upDungeon(dt, wall) {
     if (tc.f2) { tc.f2.material.opacity = 0.85 * power * fl; tc.f2.scale.set(0.55 * fl, 0.9 * fl, 1); }
     const tz = tc.g ? tc.g.position.z : 0;
     const lean = tc.g ? Math.exp(-Math.abs(cam.position.z - tz) / 2.6) : 0; // факел кланяется камере
-    tc.li.intensity = 1.05 * power * fl + lean * 0.4 * power;
+    tc.li.intensity = 0.78 * power * fl + lean * 0.3 * power; // v15: темнее
     if (tc.g) tc.g.rotation.z = Math.sin(wall * 2.3) * lean * 0.22;
     if (!tc.chandel) tc.f1.scale.set(1.15 * fl, (1.8 + Math.sin(wall * 11 + tc.ph) * 0.22) * power, 1);
   });
   // красный круг дышит
-  if (DUN.circleLight) DUN.circleLight.intensity = (1 - bk) * (1.0 + Math.sin(wall * 2.2) * 0.18);
+  if (DUN.circleLight) DUN.circleLight.intensity = (1 - bk) * (0.85 + Math.sin(wall * 2.2) * 0.15);
   // руны вращаются
   DUN.runes.forEach((r, i) => {
     r.rotation.y += r.userData.dir * dt;
@@ -1100,9 +1096,9 @@ function upDungeon(dt, wall) {
   });
   // кристаллы пульсируют
   DUN.crystals.forEach(({ cr, gl }, i) => {
-    const p = (0.6 + Math.sin(wall * 1.8 + i * 1.7) * 0.3) * (1 - bk);
+    const p = (0.45 + Math.sin(wall * 1.8 + i * 1.7) * 0.22) * (1 - bk);
     cr.material.emissiveIntensity = p;
-    gl.material.opacity = (0.28 * p + 0.12) * (1 - bk);
+    gl.material.opacity = (0.22 * p + 0.1) * (1 - bk);
   });
   // пыль
   DUN.dust.forEach((d) => {
@@ -1297,7 +1293,7 @@ const DUN2 = { rats: [], drips: [], bubbles: [], chandelier: null, gateBars: [] 
       ch.rotation.x = -Math.sin(a) * 0.35;
       g.add(ch);
     }
-    const li = new THREE.PointLight(0xffa050, 0.8, 14, 1.7);
+    const li = new THREE.PointLight(0xffa050, 0.78, 13, 1.7); // v15
     li.position.y = 0.5;
     g.add(li);
     g.position.set(0, 8.6, -8);
@@ -3420,25 +3416,15 @@ function musStop() {
 //  ПЛЁНКА v3: gate weave · мерцание экспозиции · дыхание letterbox
 const FILM = { t: 0 };
 function upFilm(dt, wall) {
+  // v15: gate weave / мерцание экспозиции / дрожание letterbox ВЫКЛЮЧЕНЫ — чистый кадр
   FILM.t += dt;
-  // gate weave: кадр чуть плавает в затворе (1-1.5px)
-  const wx = NZ.n1(wall * 2.4) * 1.3;
-  const wy = NZ.n1(wall * 2.1 + 40) * 1.1;
-  cv.style.transform = 'translate(' + wx.toFixed(2) + 'px,' + wy.toFixed(2) + 'px)';
-  // мерцание экспозиции (как старый прожектор)
-  const flick = 1 + NZ.n1(wall * 8.5 + 9) * 0.012 + (Math.random() < 0.006 ? -0.02 : 0);
-  const base = cv.style.filter || '';
-  // применяем только brightness-дельту, не конфликтуя с grade:
-  cv.style.setProperty('--flick', flick.toFixed(4));
-  // лёгкое дрожание letterbox
-  if (FILM.t % 0.1 < dt) {
+  if (cv.style.transform) cv.style.transform = '';
+  if (!FILM.fixed) {
+    FILM.fixed = 1;
     const barT = DOC.getElementById('barT');
     const barB = DOC.getElementById('barB');
-    if (barT && barB) {
-      const j = NZ.n1(wall * 1.7) * 2;
-      barT.style.height = 'calc(11vh + ' + j.toFixed(1) + 'px)';
-      barB.style.height = 'calc(11vh - ' + j.toFixed(1) + 'px)';
-    }
+    if (barT) barT.style.height = '11vh';
+    if (barB) barB.style.height = '11vh';
   }
 }
 
@@ -3533,7 +3519,7 @@ const V5 = { rose: null, roseGlass: [], candelabras: [] };
   scene.add(roseGroup);
   V5.rose = roseGroup;
   // холодный свет из розы (падает на спину босса)
-  const roseLight = new THREE.PointLight(0x4a6a9a, 0.5, 30, 1.6);
+  const roseLight = new THREE.PointLight(0x4a6a9a, 0.35, 30, 1.6); // v15
   roseLight.position.set(0, 7.2, -24.6);
   scene.add(roseLight);
   V5.roseLight = roseLight;
@@ -3593,7 +3579,7 @@ const V5 = { rose: null, roseGlass: [], candelabras: [] };
       g.add(fl);
       flames.push(fl);
     }
-    const li = new THREE.PointLight(0xffa050, 0.6, 12, 1.7);
+    const li = new THREE.PointLight(0xffa050, 0.45, 12, 1.7); // v15
     li.position.y = 3.2;
     g.add(li);
     g.position.set(side * 6.4, 0, -22.6);
@@ -3606,15 +3592,15 @@ function upApse(dt, wall) {
   const bk = BLACKOUT.t >= 0 ? clamp((T.t - BLACKOUT.t) / 0.6, 0, 1) : 0;
   // витраж гаснет в тьме (стекло темнеет)
   V5.roseGlass.forEach((gl2, i) => {
-    gl2.material.emissiveIntensity = (0.3 + Math.sin(wall * 0.9 + i * 0.7) * 0.06) * (1 - bk);
+    gl2.material.emissiveIntensity = (0.22 + Math.sin(wall * 0.9 + i * 0.7) * 0.05) * (1 - bk);
   });
-  if (V5.roseLight) V5.roseLight.intensity = 0.5 * (1 - bk);
-  if (V5.medallion) V5.medallion.material.emissiveIntensity = 0.4 * (1 - bk) + 0.05;
+  if (V5.roseLight) V5.roseLight.intensity = 0.35 * (1 - bk);
+  if (V5.medallion) V5.medallion.material.emissiveIntensity = 0.3 * (1 - bk) + 0.04;
   // канделябры
   V5.candelabras.forEach((c) => {
     const fl = 0.8 + Math.sin(wall * 8.7) * 0.2;
     c.flames.forEach((f, i) => { f.material.opacity = fl * (1 - bk); });
-    c.li.intensity = 0.6 * fl * (1 - bk);
+    c.li.intensity = 0.45 * fl * (1 - bk);
   });
 }
 
@@ -3712,7 +3698,7 @@ const V6 = { gargoyles: [], brazier2: null, salt: null, skullGarland: [] };
   flame.scale.set(1.3, 1.9, 1);
   flame.position.y = 2.75;
   g.add(flame);
-  const li = new THREE.PointLight(0xff7830, 0.9, 13, 1.7);
+  const li = new THREE.PointLight(0xff7830, 0.65, 13, 1.7); // v15
   li.position.y = 2.9;
   g.add(li);
   g.position.set(-3.4, 0, -3.4);
@@ -3784,9 +3770,9 @@ function upDetails2(dt, wall) {
     const fl = 0.85 + Math.sin(wall * 9 + 2) * 0.15;
     V6.brazier2.flame.material.opacity = 0.95 * fl * (1 - bk);
     V6.brazier2.flame.scale.y = 1.9 + Math.sin(wall * 11) * 0.3;
-    V6.brazier2.li.intensity = 0.9 * fl * (1 - bk);
+    V6.brazier2.li.intensity = 0.65 * fl * (1 - bk);
     V6.brazier2.coals.forEach((c, i) => {
-      c.material.emissiveIntensity = (0.7 + Math.sin(wall * 3 + i * 2) * 0.3) * (1 - bk);
+      c.material.emissiveIntensity = (0.55 + Math.sin(wall * 3 + i * 2) * 0.25) * (1 - bk);
     });
     // искорки из жаровни
     if (T.phase === 'play' && Math.random() < dt * 1.5 && bk < 0.5) {
@@ -5377,7 +5363,7 @@ const LIGHT2 = { rays: [], swing: [], flash: 0, eyeProj: null };
     ray.rotation.z = [-0.16, 0.1, -0.08, 0.2][i];
     ray.rotation.y = rnd(-0.3, 0.3);
     scene.add(ray);
-    LIGHT2.rays.push({ m: ray, base: 0.5, ph: rnd(0, 6.28) });
+    LIGHT2.rays.push({ m: ray, base: 0.34, ph: rnd(0, 6.28) }); // v15
   }
 })();
 
@@ -5408,7 +5394,7 @@ const LIGHT2 = { rays: [], swing: [], flash: 0, eyeProj: null };
       core.scale.setScalar(0.9);
       core.position.y = -2.35;
       g.add(core);
-      const li = new THREE.PointLight(0xffa050, 0.8, 13, 1.7);
+      const li = new THREE.PointLight(0xffa050, 0.55, 13, 1.7); // v15
       li.position.y = -2.35;
       g.add(li);
       g.position.set(cx, 8.9, cz);
@@ -5519,7 +5505,7 @@ function upLight2(dt, wall) {
     s.g.rotation.x = Math.cos(wall * s.spd * 0.8 + s.ph) * s.amp * 0.6;
     const fl = 0.85 + Math.sin(wall * 9 + s.ph) * 0.15;
     s.core.material.opacity = 0.95 * fl * (1 - bk);
-    s.li.intensity = 0.8 * fl * (1 - bk);
+    s.li.intensity = 0.55 * fl * (1 - bk);
     // при блэкауте лампы дико качаются и гаснут
     if (bk > 0 && bk < 1) {
       s.g.rotation.z += Math.sin(wall * 26 + s.ph) * bk * 0.3;
@@ -6792,7 +6778,7 @@ const FILM2 = {
   vign: null,       // виньетка
   bloomEdge: null,  // кайма
   shake: 0,         // микротряска кадра
-  on: true
+  on: false // v15: зерно/царапины/волосы выключены — чистый кадр
 };
 
 (function film2Init() {
@@ -9571,8 +9557,8 @@ function resetShow() {
     e.material.opacity = 0.65;
     e.scale.setScalar(1);
   });
-  if (DUN.amb) DUN.amb.intensity = 0.46;
-  if (DUN.moon) DUN.moon.intensity = 0.26;
+  if (DUN.amb) DUN.amb.intensity = 0.3; // v15: темнее
+  if (DUN.moon) DUN.moon.intensity = 0.16; // v15: темнее
   BOSS.turn = -1;
   try { if (window.B4) { B4.reveal = -1; if (B4.hideTillTurn) B4.hideTillTurn.forEach((c) => { c.visible = false; }); } } catch (e) {}
   // старая локация: снять рубильник — зал и свет возвращаются
@@ -9659,8 +9645,8 @@ DOC.getElementById('play').addEventListener('click', startShow);
 function upBlackout(dt) {
   if (BLACKOUT.t < 0) return;
   const k = clamp((T.t - BLACKOUT.t) / 0.5, 0, 1);
-  if (DUN.amb) DUN.amb.intensity = 0.46 * (1 - k) + 0.04 * k;
-  if (DUN.moon) DUN.moon.intensity = 0.26 * (1 - k) + 0.015 * k;
+  if (DUN.amb) DUN.amb.intensity = 0.3 * (1 - k) + 0.03 * k;
+  if (DUN.moon) DUN.moon.intensity = 0.16 * (1 - k) + 0.01 * k;
 }
 
 // ── СУМРАК: виден только босс (силуэт в темноте), комната скрыта ──
@@ -10469,7 +10455,7 @@ setTimeout(() => {
         g.stroke();
       }
     }, 6, 12);
-    const roadMat = new THREE.MeshLambertMaterial({ map: texRoad });
+    const roadMat = new THREE.MeshPhongMaterial({ map: texRoad, specular: 0x4a5a78, shininess: 140 }); // v15: мокрый асфальт
     const texPave = cvsTex(256, 256, (g, W, H) => {
       const rnd = lcg(77);
       g.fillStyle = '#232326'; g.fillRect(0, 0, W, H);
@@ -10679,6 +10665,14 @@ setTimeout(() => {
         halo0.position.set(hx, 5.92, z); GX.add(halo0);
         const pool0 = new THREE.Mesh(new THREE.PlaneGeometry(7, 7), new THREE.MeshBasicMaterial({ map: TEX.warm, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false }));
         pool0.rotation.x = -Math.PI / 2; pool0.position.set(hx, 0.02, z); GX.add(pool0);
+        // v15: объёмный конус света + блик-дорожка на мокром асфальте
+        const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 2.4, 5.6, 12, 1, true),
+          new THREE.MeshBasicMaterial({ color: 0xffd9a6, transparent: true, opacity: 0.055, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+        cone.position.set(hx, 3.0, z); GX.add(cone);
+        const streak0 = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 7.5),
+          new THREE.MeshBasicMaterial({ map: TEX.warm, color: 0xffc98e, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false }));
+        streak0.rotation.x = -Math.PI / 2; streak0.position.set(hx, 0.025, z + 3.6); GX.add(streak0);
+        if (z === 19 && x < 0) GX.faulty = { pl: pl, halo: halo0, cone: cone, streak: streak0 };
       });
     }
     // кусты вдоль тротуара
@@ -10703,6 +10697,13 @@ setTimeout(() => {
       GX.add(sph(0.08, NM.redGlow, x + 0.9, 0.52, z + 2.15));
       GX.add(sph(0.07, NM.warmDim, x - 0.85, 0.55, z - 2.2));
       GX.add(sph(0.07, NM.warmDim, x + 0.85, 0.55, z - 2.2));
+      // v15: колёса
+      [[-1.5, -1], [1.5, -1], [-1.5, 1], [1.5, 1]].forEach(([oz, sdw]) => {
+        const wh = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.25, 10), NM.wallDark);
+        wh.rotation.z = Math.PI / 2;
+        wh.position.set(x + sdw * 0.95, 0.34, z + oz);
+        GX.add(wh);
+      });
     });
     // гидрант
     const hyd = new THREE.Group(); hyd.position.set(6.0, 0, 4.0); GX.add(hyd);
@@ -10741,6 +10742,19 @@ setTimeout(() => {
       fp.rotation.y = sd > 0 ? Math.PI / 2 : -Math.PI / 2;
       fp.position.set(x + sd * (w / 2 + 0.03), 0.35 + (h - 0.6) / 2, z);
       GX.add(fp);
+      // v15: карнизы, водосток, подъезд с козырьком и лампой
+      const fx0 = x + sd * (w / 2 + 0.03);
+      [h * 0.45, h * 0.75].forEach((cy) => {
+        GX.add(box(0.22, 0.28, d - 0.4, NM.conc2, fx0 + sd * 0.1, cy, z));
+      });
+      GX.add(cyl(0.07, 0.07, h - 1, 6, NM.steel, fx0 + sd * 0.16, h / 2, z + d / 2 - 0.6));
+      const dz = z + ((seed % 3) - 1) * 2.2;
+      GX.add(box(0.14, 2.4, 1.5, NM.wallDark, fx0 + sd * 0.1, 1.2, dz));
+      GX.add(box(0.7, 0.14, 1.8, NM.conc, fx0 + sd * 0.4, 0.07, dz));
+      GX.add(box(0.9, 0.08, 1.9, NM.conc2, fx0 + sd * 0.5, 2.6, dz));
+      GX.add(sph(0.07, NM.warm, fx0 + sd * 0.75, 2.42, dz));
+      const ph = mkHalo(TEX.warm, 0xffffff, 1.6, 1.6, 0.4);
+      ph.position.set(fx0 + sd * 0.8, 2.42, dz); GX.add(ph);
     }
     houseBlock(-11.5, 9, 7, 13, 13, 11);
     houseBlock(-12.5, 24, 8, 16, 14, 23);
@@ -10772,6 +10786,23 @@ setTimeout(() => {
         sh.position.set(fx + sd * 0.02, 1.2, z - w * 0.3 + i * w * 0.3);
         GX.add(sh);
       }
+      // v15: рамы витрины, блик на стекле, полки в глубине
+      const frM = new THREE.MeshBasicMaterial({ color: 0x0c0e12 });
+      [-w / 2, 0, w / 2].forEach((oz) => {
+        const vb = new THREE.Mesh(new THREE.PlaneGeometry(0.09, 2.5), frM);
+        vb.rotation.y = gl.rotation.y; vb.position.set(fx + sd * 0.03, 1.35, z + oz); GX.add(vb);
+      });
+      const hb = new THREE.Mesh(new THREE.PlaneGeometry(w, 0.09), frM);
+      hb.rotation.y = gl.rotation.y; hb.position.set(fx + sd * 0.03, 1.35, z); GX.add(hb);
+      const shine = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 2.6),
+        new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.10, blending: THREE.AdditiveBlending, depthWrite: false }));
+      shine.rotation.y = gl.rotation.y; shine.rotation.z = 0.5;
+      shine.position.set(fx + sd * 0.04, 1.4, z - w * 0.18); GX.add(shine);
+      [0.75, 1.35].forEach((sy) => {
+        const shelf = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.9, 0.07),
+          new THREE.MeshBasicMaterial({ color: 0x241a10 }));
+        shelf.rotation.y = gl.rotation.y; shelf.position.set(fx - sd * 0.25, sy, z); GX.add(shelf);
+      });
       const sg = tMesh(name, w * 0.95, 0.62, fg, bg, 52, 800, 120);
       if (sg) {
         sg.rotation.y = gl.rotation.y;
@@ -10836,6 +10867,10 @@ setTimeout(() => {
     const tlh = mkHalo(TEX.white, 0x20ff60, 1.2, 1.2, 0.6);
     tlh.position.set(5.2, 4.0, 14.3); GX.add(tlh);
     GX.tlHalo = tlh;
+    // v15: пешеходная секция
+    GX.add(box(0.3, 0.5, 0.3, NM.wallDark, 5.2, 2.9, 14));
+    GX.tlPed = new THREE.MeshBasicMaterial({ color: 0x20ff60 });
+    GX.add(sph(0.08, GX.tlPed, 5.2, 2.9, 14.17));
     // ── остановка с лайтбоксом ──
     const bus = new THREE.Group(); bus.position.set(-6.5, 0, 33.5); GX.add(bus);
     bus.add(box(3.4, 0.12, 1.6, NM.steel, 0, 2.5, 0));
@@ -10849,11 +10884,19 @@ setTimeout(() => {
     if (ad) { ad.position.set(1.85, 1.5, -0.3); ad.rotation.y = Math.PI / 2; bus.add(ad); }
     const adGlow = mkHalo(TEX.white, 0x4a9adf, 2.4, 2.4, 0.4);
     adGlow.position.set(2.1, 1.5, -0.3); bus.add(adGlow);
+    const route = tMesh('№ 7 · ЦЕНТР · ВОКЗАЛ', 2.4, 0.3, '#ffe9c4', '#1a3a6a', 44, 800, 100);
+    if (route) { route.position.set(0, 2.28, -0.68); bus.add(route); }
     // ── провода через улицу ──
     [18, 32].forEach((wz) => {
-      GX.add(box(4.6, 0.035, 0.035, NM.wallDark, -6.7, 7.0, wz));
-      GX.add(box(9.2, 0.035, 0.035, NM.wallDark, 0, 6.55, wz));
-      GX.add(box(4.6, 0.035, 0.035, NM.wallDark, 6.7, 7.0, wz));
+      // v15: провисшие провода (цепная линия из сегментов)
+      for (let s = 0; s < 12; s++) {
+        const xa = -9 + s * 1.5, xb = xa + 1.5;
+        const ya = 7.15 - (1 - Math.pow(Math.abs(xa) / 9, 2)) * 0.85;
+        const yb = 7.15 - (1 - Math.pow(Math.abs(xb) / 9, 2)) * 0.85;
+        const seg = box(1.55, 0.035, 0.035, NM.wallDark, (xa + xb) / 2, (ya + yb) / 2, wz);
+        seg.rotation.z = Math.atan2(yb - ya, xb - xa);
+        GX.add(seg);
+      }
     });
     GX.add(cyl(0.09, 0.11, 7.6, 6, NM.conc2, -7.6, 3.8, 18));
     GX.add(cyl(0.09, 0.11, 7.6, 6, NM.conc2, 7.4, 3.8, 32));
@@ -10864,9 +10907,10 @@ setTimeout(() => {
       if (i % 2 === 0) GX.add(cyl(0.3, 0.26, 0.75, 8, NM.steel, tx + 0.8 * (tx > 0 ? 1 : -1), 0.38, tz + 0.7));
     });
     // ── большие лужи (почти зеркала) ──
-    const pudM = new THREE.MeshPhongMaterial({ color: 0x2a3a55, specular: 0xaaccee, shininess: 90, transparent: true, opacity: 0.5 });
-    [[-2.5, 12, 2.2], [2.8, 27, 2.8], [-1.5, 36, 1.8], [1.8, 6, 1.5]].forEach(([px, pz, pr]) => {
-      const pd = new THREE.Mesh(new THREE.CircleGeometry(pr, 18), pudM);
+    const pudMs = [0x2a3a55, 0x3a2a4a, 0x2a4a55, 0x4a3a2a].map((c) =>
+      new THREE.MeshPhongMaterial({ color: c, specular: 0xccddff, shininess: 160, transparent: true, opacity: 0.55 }));
+    [[-2.5, 12, 2.2], [2.8, 27, 2.8], [-1.5, 36, 1.8], [1.8, 6, 1.5], [4.5, 20, 1.2], [-4.8, 30, 1.4], [0.5, 42, 1.6]].forEach(([px, pz, pr], pi) => {
+      const pd = new THREE.Mesh(new THREE.CircleGeometry(pr, 18), pudMs[pi % pudMs.length]); // v15: неон в лужах
       pd.rotation.x = -Math.PI / 2; pd.position.set(px, 0.018, pz); GX.add(pd);
     });
     // ── красная дорожка + свет из-под козырька ──
@@ -10897,6 +10941,9 @@ setTimeout(() => {
     });
     const tailGlow = mkHalo(TEX.red, 0xffffff, 1.6, 1.2, 0.5);
     tailGlow.position.set(2.5, 0.6, 0); pcar.add(tailGlow);
+    const trail = new THREE.Mesh(new THREE.PlaneGeometry(6.5, 1.4),
+      new THREE.MeshBasicMaterial({ map: TEX.red, color: 0xff4030, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false }));
+    trail.rotation.x = -Math.PI / 2; trail.position.set(5.2, 0.04, 0); pcar.add(trail); // v15: красный след на мокром
     // ── пар из люка ──
     GX.steam = [];
     for (let i = 0; i < 3; i++) {
@@ -10913,6 +10960,14 @@ setTimeout(() => {
     ped.add(cyl(0.02, 0.02, 0.9, 4, NM.steel, 0.18, 1.6, 0));
     ped.add(cyl(0.04, 0.8, 0.4, 8, new THREE.MeshLambertMaterial({ color: 0xa01828 }), 0.18, 2.05, 0));
     ped.rotation.y = Math.PI / 2;
+    // v15: второй прохожий (навстречу, синий зонт)
+    const ped2 = new THREE.Group(); ped2.position.set(8, 0, 27); ped2.visible = false; GX.add(ped2);
+    GX.ped2 = ped2;
+    ped2.add(cyl(0.22, 0.26, 1.1, 8, NM.wallDark, 0, 0.85, 0));
+    ped2.add(sph(0.14, new THREE.MeshLambertMaterial({ color: 0xb08a68 }), 0, 1.55, 0));
+    ped2.add(cyl(0.02, 0.02, 0.9, 4, NM.steel, -0.18, 1.6, 0));
+    ped2.add(cyl(0.04, 0.8, 0.4, 8, new THREE.MeshLambertMaterial({ color: 0x1a3a8a }), -0.18, 2.05, 0));
+    ped2.rotation.y = -Math.PI / 2;
     // силуэт на остановке
     bus.add(box(0.5, 0.7, 0.4, NM.wallDark, -0.7, 1.05, -0.4));
     bus.add(sph(0.13, NM.wallDark, -0.7, 1.55, -0.4));
@@ -11059,8 +11114,11 @@ setTimeout(() => {
     // ── вторая машина (навстречу) ──
     const pcar2 = new THREE.Group(); pcar2.position.set(-26, 0, 16); pcar2.visible = false; GX.add(pcar2);
     GX.pcar2 = pcar2;
-    pcar2.add(box(4.2, 0.6, 1.85, new THREE.MeshLambertMaterial({ color: 0x3a2226 }), 0, 0.55, 0));
+    pcar2.add(box(4.2, 0.6, 1.85, new THREE.MeshLambertMaterial({ color: 0x9a7414 }), 0, 0.55, 0)); // v15: такси
     pcar2.add(box(2.2, 0.5, 1.65, NM.glassD, -0.2, 1.05, 0));
+    pcar2.add(box(0.8, 0.2, 0.42, NM.warm, -0.2, 1.42, 0)); // v15: шашечки такси
+    const taxiH = mkHalo(TEX.warm, 0xffc86a, 1.6, 1.0, 0.5);
+    taxiH.position.set(-0.2, 1.45, 0); pcar2.add(taxiH);
     [[-1.4, -0.95], [1.4, -0.95], [-1.4, 0.95], [1.4, 0.95]].forEach(([wx, wz2]) => {
       pcar2.add(cyl(0.32, 0.32, 0.24, 10, NM.wallDark, wx, 0.32, wz2, Math.PI / 2));
     });
@@ -11078,8 +11136,93 @@ setTimeout(() => {
     });
     const tailGlow2 = mkHalo(TEX.red, 0xffffff, 1.6, 1.2, 0.5);
     tailGlow2.position.set(-2.5, 0.6, 0); pcar2.add(tailGlow2);
+    const trail2 = new THREE.Mesh(new THREE.PlaneGeometry(6.5, 1.4),
+      new THREE.MeshBasicMaterial({ map: TEX.red, color: 0xff4030, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false }));
+    trail2.rotation.x = -Math.PI / 2; trail2.position.set(-5.2, 0.04, 0); pcar2.add(trail2); // v15
+    // ═══ v15 УЛЬТРА-УЛИЦА: небо, луна, силуэт города ═══
+    const skyTex = cvsTex(64, 256, (g, W, H) => {
+      const gr = g.createLinearGradient(0, 0, 0, H);
+      gr.addColorStop(0, '#020308');
+      gr.addColorStop(0.55, '#0a1226');
+      gr.addColorStop(0.82, '#2a2434');
+      gr.addColorStop(1, '#3a2c22');
+      g.fillStyle = gr; g.fillRect(0, 0, W, H);
+      for (let i = 0; i < 130; i++) {
+        g.fillStyle = 'rgba(255,255,255,' + (0.25 + Math.random() * 0.6).toFixed(2) + ')';
+        g.fillRect(Math.random() * W, Math.random() * H * 0.6, 1, 1);
+      }
+    });
+    const sky = new THREE.Mesh(new THREE.PlaneGeometry(260, 110),
+      new THREE.MeshBasicMaterial({ map: skyTex, fog: false }));
+    sky.position.set(0, 42, -70); GX.add(sky);
+    const moonD = new THREE.Mesh(new THREE.CircleGeometry(3.2, 24),
+      new THREE.MeshBasicMaterial({ color: 0xe8eef8, fog: false }));
+    moonD.position.set(34, 46, -69); GX.add(moonD);
+    const moonH = mkHalo(TEX.white, 0xbdd2f0, 22, 22, 0.5);
+    moonH.material.fog = false; moonH.position.set(34, 46, -68); GX.add(moonH);
+    const cityGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.warm, color: 0xff9a50, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+    cityGlow.scale.set(120, 26, 1); cityGlow.position.set(-10, 12, -60); GX.add(cityGlow);
+    // дальние башни-силуэты с редкими окнами и маяками
+    GX.beacons = [];
+    [[-34, 12, 30], [-18, 10, 38], [24, 12, 34], [40, 10, 44]].forEach(([tx, tw, th], bi) => {
+      GX.add(box(tw, th, 8, NM.wallDark, tx, th / 2 - 0.1, -38));
+      for (let wy = 4; wy < th - 2; wy += 3.4) {
+        for (let wx = 0; wx < 3; wx++) {
+          if (Math.random() < 0.72) continue;
+          const wlit = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.1),
+            Math.random() < 0.7 ? winWarm : winCool);
+          wlit.position.set(tx - tw / 2 + 2 + wx * (tw - 4) / 2, wy, -33.9);
+          GX.add(wlit);
+        }
+      }
+      const bc = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6),
+        new THREE.MeshBasicMaterial({ color: 0xff2020, fog: false }));
+      bc.position.set(tx, th + 0.4, -38); GX.add(bc);
+      GX.beacons.push(bc);
+    });
+    // красная дорожка: столбики с канатом + швейцар у двери
+    const goldM = new THREE.MeshPhongMaterial({ color: 0x8a6a20, specular: 0xccaa44, shininess: 100 });
+    const ropeM = new THREE.MeshLambertMaterial({ color: 0x7a1420 });
+    [[-2.2, 3.6], [2.2, 3.6], [-2.2, 0.6], [2.2, 0.6]].forEach(([sx, sz]) => {
+      GX.add(cyl(0.05, 0.07, 0.95, 8, goldM, sx, 0.62, sz));
+      GX.add(sph(0.08, goldM, sx, 1.14, sz));
+      GX.add(cyl(0.16, 0.18, 0.06, 8, goldM, sx, 0.18, sz));
+    });
+    [-2.2, 2.2].forEach((sx) => {
+      for (let s = 0; s < 6; s++) {
+        const za = 0.6 + s * 0.5, zb = za + 0.5;
+        const ya = 1.02 - Math.sin((s / 6) * Math.PI) * 0.22;
+        const yb = 1.02 - Math.sin(((s + 1) / 6) * Math.PI) * 0.22;
+        const rp = box(0.05, 0.05, 0.55, ropeM, sx, (ya + yb) / 2, (za + zb) / 2);
+        rp.rotation.x = Math.atan2(yb - ya, zb - za);
+        GX.add(rp);
+      }
+    });
+    const doorman = new THREE.Group(); doorman.position.set(3.6, 0.1, -0.6); doorman.rotation.y = -0.5; GX.add(doorman);
+    doorman.add(box(0.55, 1.15, 0.35, NM.wallDark, 0, 0.85, 0));
+    doorman.add(sph(0.14, new THREE.MeshLambertMaterial({ color: 0xc8a080 }), 0, 1.62, 0));
+    doorman.add(cyl(0.16, 0.16, 0.14, 8, new THREE.MeshLambertMaterial({ color: 0x7a1420 }), 0, 1.78, 0));
+    doorman.add(box(0.08, 0.5, 0.05, goldM, 0, 1.0, 0.19));
+    // табличка улицы + парковка
+    GX.add(cyl(0.05, 0.06, 3.4, 6, NM.steel, -5.5, 1.7, 10));
+    const stS = tMesh('FANTAZIA AVE', 1.7, 0.32, '#ffffff', '#1a4a8a', 44, 700, 110);
+    if (stS) { stS.position.set(-5.5, 3.1, 10); stS.rotation.y = Math.PI / 2; GX.add(stS); }
+    GX.add(cyl(0.05, 0.06, 2.8, 6, NM.steel, 5.6, 1.4, 26));
+    const pkS = tMesh('P', 0.5, 0.5, '#ffffff', '#1a4a8a', 60, 200, 200);
+    if (pkS) { pkS.position.set(5.6, 2.6, 26); pkS.rotation.y = -Math.PI / 2; GX.add(pkS); }
+    // мусор на асфальте + летящий лист
+    const litM = new THREE.MeshLambertMaterial({ color: 0x8a8a86 });
+    [[-3.2, 14.5, 0.4], [2.2, 19.2, 1.2], [-1.1, 31.5, 2.1], [4.1, 8.8, 0.9], [-4.4, 24.2, 1.7]].forEach(([lx, lz, lr]) => {
+      const lp = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.4), litM);
+      lp.rotation.x = -Math.PI / 2; lp.rotation.z = lr;
+      lp.position.set(lx, 0.015, lz); GX.add(lp);
+    });
+    const paper = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 0.42),
+      new THREE.MeshBasicMaterial({ color: 0xb8b8b0, side: THREE.DoubleSide }));
+    paper.position.set(-2, 0.4, 40); GX.add(paper);
+    GX.paper = paper;
     // ДОЖДЬ (точки)
-    const rainN = 1300;
+    const rainN = 2200; // v15: ливень гуще
     const rpos = new Float32Array(rainN * 3);
     const rvel = [];
     for (let i = 0; i < rainN; i++) {
@@ -11090,7 +11233,7 @@ setTimeout(() => {
     }
     const rainGeo = new THREE.BufferGeometry();
     rainGeo.setAttribute('position', new THREE.BufferAttribute(rpos, 3));
-    const rainPts = new THREE.Points(rainGeo, new THREE.PointsMaterial({ color: 0x9fb4c8, size: 0.05, transparent: true, opacity: 0.3 }));
+    const rainPts = new THREE.Points(rainGeo, new THREE.PointsMaterial({ color: 0x9fb4c8, size: 0.06, transparent: true, opacity: 0.42 }));
     GX.add(rainPts);
     GX.rainPts = rainPts; GX.rpos = rpos; GX.rvel = rvel; GX.rainN = rainN;
   }
@@ -11585,7 +11728,7 @@ setTimeout(() => {
     GM.svc._anim = 0;
     try { SFX2.svcBoom(); } catch (e) {}
     try { SFX2.glitchHit(); } catch (e) {}
-    try { glitch = Math.max(glitch, 0.7); } catch (e) {}
+    try { glitch = Math.max(glitch, 0.35); } catch (e) {}
     try { OV.flashW = Math.max(OV.flashW, 0.1); } catch (e) {}
   }
 
@@ -12031,7 +12174,7 @@ setTimeout(() => {
     const z = 46 - 43.6 * k;
     cam.position.set(Math.sin(lt * 0.6) * 0.2, 1.75 + Math.sin(lt * 0.42) * 0.02, z);
     cam.lookAt(Math.sin(lt * 0.5) * 0.3, 1.85, -4);
-    // ── ИМБА-ВХОД: двери РАСПАХИВАЮТСЯ резким рывком + ПОМЕХИ ──
+    // ── ИМБА-ВХОД: двери РАСПАХИВАЮТСЯ резким рывком ──
     let dk = 0;
     if (lt > 4.5) {
       const raw = Math.min(1, (lt - 4.5) / 1.1);
@@ -12042,28 +12185,27 @@ setTimeout(() => {
     if (dk > 0.04 && !CX.f1) {
       CX.f1 = 1;
       try { SFX2.doorBurst(); } catch (e) {}
-      try { glitch = Math.max(glitch, 0.65); } catch (e) {}
+      try { glitch = Math.max(glitch, 0.3); } catch (e) {}
       try { OV.flashW = Math.max(OV.flashW, 0.12); } catch (e) {}
       try { caption('GRAND MALL · ВХОД', 1.8, 14); } catch (e) {}
     }
     if (dk > 0.55 && !CX.f2) {
       CX.f2 = 1;
-      try { glitch = Math.max(glitch, 0.4); } catch (e) {}
+      try { glitch = Math.max(glitch, 0.2); } catch (e) {}
       try { SFX2.glitchHit(); } catch (e) {}
     }
     if (dk >= 1 && !CX.f3) {
       CX.f3 = 1;
-      try { glitch = Math.max(glitch, 0.3); } catch (e) {}
+      try { glitch = Math.max(glitch, 0.15); } catch (e) {}
       try { SFX2.doorBoom(); } catch (e) {}
       try { caption('1 ЭТАЖ · МОДА · ФУДКОРТ', 2.2, 12); } catch (e) {}
     }
-    // фликер неона и зала во время распахивания (помехи в свете)
+    // фликер неона и зала во время распахивания
     if (lt > 4.4 && lt < 6.8) {
       const fl = Math.random();
       if (GX.sgn) GX.sgn.visible = fl > 0.12;
       if (GX.sgnEnter) GX.sgnEnter.visible = fl > 0.2;
       if (GX.hall1L) GX.hall1L.intensity = (0.25 + 1.5 * Math.min(1, dk)) * (fl > 0.15 ? 1 : 0.25);
-      if (Math.random() < 0.12) { try { glitch = Math.max(glitch, 0.18); } catch (e) {} }
       cam.position.x += (Math.random() - 0.5) * 0.05 * Math.min(1, dk);
       cam.position.y += (Math.random() - 0.5) * 0.03 * Math.min(1, dk);
     } else {
@@ -12115,6 +12257,15 @@ setTimeout(() => {
         GX.ped.position.y = Math.abs(Math.sin(lt * 9)) * 0.05;
       } else GX.ped.visible = false;
     }
+    // v15: второй прохожий
+    if (GX.ped2) {
+      const pk2 = (lt - 2.0) / 3.8;
+      if (pk2 >= 0 && pk2 <= 1) {
+        GX.ped2.visible = true;
+        GX.ped2.position.x = 7 - 14 * pk2;
+        GX.ped2.position.y = Math.abs(Math.sin(lt * 9 + 2)) * 0.05;
+      } else GX.ped2.visible = false;
+    }
     // вторая машина (навстречу)
     if (GX.pcar2) {
       const ck2 = (lt - 3.0) / 4.5;
@@ -12138,6 +12289,7 @@ setTimeout(() => {
       GX.tl.y.color.setHex(phTL === 'y' ? 0xffb020 : 0x33220a);
       GX.tl.g.color.setHex(phTL === 'g' ? 0x20ff60 : 0x0a3314);
       if (GX.tlHalo) GX.tlHalo.material.color.setHex(phTL === 'r' ? 0xff2a2a : (phTL === 'y' ? 0xffb020 : 0x20ff60));
+      if (GX.tlPed) GX.tlPed.color.setHex(phTL === 'r' ? 0x20ff60 : 0xff2020); // v15: пешеходная секция
     }
     // глючный неон бара
     if (GX.barSign) {
@@ -12145,6 +12297,15 @@ setTimeout(() => {
       GX.barSign.visible = bon;
       if (GX.barHalo) GX.barHalo.material.opacity = bon ? 0.5 : 0.06;
       if (!bon && Math.random() < dt * 6) { try { SFX2.neonBuzz(); } catch (e) {} }
+    }
+    // v15: битый фонарь трещит
+    if (GX.faulty) {
+      const fon = Math.random() > 0.25;
+      GX.faulty.pl.intensity = fon ? 0.55 : 0.04;
+      GX.faulty.halo.material.opacity = fon ? 0.55 : 0.03;
+      GX.faulty.cone.material.opacity = fon ? 0.055 : 0.004;
+      GX.faulty.streak.material.opacity = fon ? 0.4 : 0.03;
+      if (!fon && Math.random() < dt * 8) { try { SFX2.neonBuzz(); } catch (e) {} }
     }
     // круги на лужах
     if (GX.ripples) {
@@ -12165,6 +12326,17 @@ setTimeout(() => {
     if (CX.flashT > 0) {
       CX.flashT -= dt;
       try { OV.flashW = Math.max(OV.flashW, Math.random() < 0.55 ? 0.42 : 0.06); } catch (e) {}
+    }
+    // v15: маяки на башнях мигают попеременно
+    if (GX.beacons) {
+      const bb = Math.floor(lt * 1.6) % 2 === 0;
+      GX.beacons.forEach((bcn, bi) => { bcn.visible = (bi % 2 === 0) ? bb : !bb; });
+    }
+    // v15: летящий лист
+    if (GX.paper) {
+      const pu = (lt * 0.35) % 1;
+      GX.paper.position.set(-2 + pu * 5 + Math.sin(lt * 3) * 0.4, 0.3 + Math.abs(Math.sin(lt * 2.2)) * 0.8, 40 - pu * 22);
+      GX.paper.rotation.set(lt * 4, lt * 3, lt * 2);
     }
     // далёкая сирена
     if (!CX.siren && lt > 5.2) { CX.siren = 1; try { SFX2.siren(); } catch (e) {} }
@@ -12284,7 +12456,6 @@ setTimeout(() => {
       V._anim = Math.min(1, (V._anim || 0) + dt * 1.5);
       const ease = 1 - Math.pow(1 - V._anim, 3);
       try { svcGatesAnim(ease); } catch (e) {}
-      if (Math.random() < 0.25) { try { glitch = Math.max(glitch, 0.12); } catch (e) {} }
       cam.position.x += (Math.random() - 0.5) * 0.05 * (1 - ease);
       cam.position.y += (Math.random() - 0.5) * 0.03 * (1 - ease);
     }
@@ -12312,7 +12483,7 @@ setTimeout(() => {
           FR._floor = n;
           try { setFreightInd(n === 1 ? 'B1' : '▼B' + n); } catch (e) {}
           try { SFX2.freightDing(); } catch (e) {}
-          if (n >= 4) { try { glitch = Math.max(glitch, 0.22); } catch (e) {} }
+          if (n >= 4) { try { glitch = Math.max(glitch, 0.12); } catch (e) {} }
         }
       }
       const fl = 0.72 + 0.28 * Math.sin(lt * 13.7) * Math.sin(lt * 7.3);
@@ -12327,7 +12498,7 @@ setTimeout(() => {
           if (!FR._clank) {
             FR._clank = 1;
             try { SFX.clank(); } catch (e) {}
-            try { glitch = Math.max(glitch, 0.3); } catch (e) {}
+            try { glitch = Math.max(glitch, 0.15); } catch (e) {}
             try { caption('ЧТО-ТО В ЛИФТЕ…', 1.3, 13); } catch (e) {}
           }
         } else if (FR._clank && lt >= 8.9) {
