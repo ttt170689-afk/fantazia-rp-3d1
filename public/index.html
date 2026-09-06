@@ -26817,6 +26817,256 @@ document.addEventListener('selectstart', function(e) {
   };
 })();
 
+
+// ═══════════════════════════════════════════════════════════════════
+//  📱 ПОЛНЫЙ МОБИЛЬНЫЙ ПОРТ (v28)
+//  Единый слой: контекстная кнопка действия, вход/выход из машин
+//  и зданий, вождение с джойстика, доступ ко всем панелям.
+// ═══════════════════════════════════════════════════════════════════
+(function fzMobilePort() {
+  'use strict';
+
+  function isMob() {
+    if (typeof window.IS_MOBILE === 'boolean') return window.IS_MOBILE;
+    const ua = /Android|iPhone|iPad|iPod|IEMobile|Opera Mini/i.test(navigator.userAgent || '');
+    const touch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    return ua || (touch && Math.min(innerWidth, innerHeight) <= 900);
+  }
+  if (!isMob()) return;
+  document.body.classList.add('fz-mobile');
+
+  // ─── 1. Стили мобильного порта ──────────────────────────────────
+  const css = document.createElement('style');
+  css.textContent = `
+  /* Контекстная кнопка действия — крупная, над правым блоком кнопок */
+  #fzActBtn{position:fixed;right:14px;bottom:196px;z-index:200;display:none;
+    min-width:150px;max-width:62vw;padding:14px 18px;border-radius:16px;
+    background:linear-gradient(135deg,rgba(46,204,113,.95),rgba(39,174,96,.95));
+    color:#fff;font-size:16px;font-weight:700;text-align:center;border:2px solid rgba(255,255,255,.35);
+    box-shadow:0 6px 22px rgba(0,0,0,.45);touch-action:manipulation;
+    -webkit-user-select:none;user-select:none;line-height:1.2}
+  #fzActBtn:active{transform:scale(.93);filter:brightness(1.15)}
+  #fzActBtn.car{background:linear-gradient(135deg,rgba(52,152,219,.95),rgba(41,128,185,.95))}
+  #fzActBtn.exit{background:linear-gradient(135deg,rgba(231,76,60,.95),rgba(192,57,43,.95))}
+  #fzActBtn.quest{background:linear-gradient(135deg,rgba(241,196,15,.97),rgba(230,126,34,.97));color:#231a00}
+
+  /* Родные кнопки входа/выхода прячем — их заменяет #fzActBtn */
+  body.fz-mobile #actionButtons{display:none!important}
+  body.fz-mobile #interactHint{display:none!important}
+
+  /* Выход из здания — вверху слева, не под пальцами */
+  body.fz-mobile #exitBuildingBtn{position:fixed!important;top:auto!important;
+    bottom:196px!important;left:14px!important;transform:none!important;
+    z-index:200!important;padding:13px 16px!important;font-size:14px!important;
+    border-radius:16px!important;min-height:0!important;max-width:44vw!important}
+  /* Выход из машины — туда же, чтобы не спорил с джойстиком */
+  body.fz-mobile #exitCarBtn{position:fixed!important;bottom:196px!important;
+    left:14px!important;right:auto!important;top:auto!important;z-index:200!important;
+    padding:13px 16px!important;font-size:14px!important;border-radius:16px!important}
+
+  /* Панель быстрых иконок справа сверху: карта, чат, пауза */
+  #fzQuickBar{position:fixed;top:8px;right:8px;z-index:210;display:flex;
+    flex-direction:column;gap:7px;pointer-events:auto}
+  #fzQuickBar .fzq{width:44px;height:44px;border-radius:13px;
+    background:rgba(0,0,0,.6);border:1.5px solid rgba(108,92,231,.5);
+    display:flex;align-items:center;justify-content:center;font-size:20px;
+    backdrop-filter:blur(5px);touch-action:manipulation;-webkit-user-select:none;user-select:none}
+  #fzQuickBar .fzq:active{background:rgba(108,92,231,.6);transform:scale(.9)}
+
+  /* Руль/газ/тормоз для вождения */
+  #fzDrive{position:fixed;inset:auto 0 0 0;height:150px;z-index:190;display:none;
+    pointer-events:none}
+  #fzDrive .dbtn{position:absolute;bottom:22px;width:78px;height:78px;border-radius:50%;
+    background:rgba(0,0,0,.6);border:2.5px solid rgba(255,255,255,.28);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:26px;
+    pointer-events:auto;touch-action:none;backdrop-filter:blur(5px);
+    -webkit-user-select:none;user-select:none}
+  #fzDrive .dbtn:active{transform:scale(.9);background:rgba(108,92,231,.55)}
+  #fzDrive #dLeft{left:16px}
+  #fzDrive #dRight{left:106px}
+  #fzDrive #dBrake{right:106px;background:rgba(192,57,43,.6)}
+  #fzDrive #dGas{right:16px;background:rgba(39,174,96,.6);width:88px;height:88px;font-size:30px}
+  body.fz-driving #mobileJoystick{display:none!important}
+  body.fz-driving #fzDrive{display:block!important}
+  body.fz-driving #mobileRightBtns{bottom:120px!important}
+
+  /* Модалки на телефоне: не шире экрана, со скроллом */
+  body.fz-mobile .panel,body.fz-mobile .modal-content{
+    max-width:96vw!important;max-height:82vh!important;overflow-y:auto!important;
+    -webkit-overflow-scrolling:touch}
+  `;
+  document.head.appendChild(css);
+
+  // ─── 2. Контекстная кнопка действия ─────────────────────────────
+  const act = document.createElement('div');
+  act.id = 'fzActBtn';
+  document.body.appendChild(act);
+
+  let actMode = null;
+  function tapAct(e) {
+    e.preventDefault(); e.stopPropagation();
+    if (!actMode) return;
+    try {
+      if (actMode === 'car')      { handleCarInteraction(); }
+      else if (actMode === 'exitcar')  { exitCar(); }
+      else if (actMode === 'exitbuild'){ exitBuilding(); }
+      else                        { handleInteraction(); }
+    } catch (err) { console.warn('[mobport] act', err); }
+  }
+  act.addEventListener('touchstart', tapAct, { passive: false });
+  act.addEventListener('click', function (e) { e.preventDefault(); });
+
+  function nearCar() {
+    try {
+      if (typeof localPlayer === 'undefined' || !localPlayer || !localPlayer.mesh) return false;
+      if (typeof cars === 'undefined' || !cars) return false;
+      const p = localPlayer.mesh.position;
+      for (const c of cars) {
+        const dx = c.mesh.position.x - p.x, dz = c.mesh.position.z - p.z;
+        if (Math.sqrt(dx * dx + dz * dz) < 3.5) return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  const LABELS = {
+    sit_bench: '🪑 Присесть', stairs_up: '⬆️ Наверх', stairs_down: '⬇️ Вниз',
+    escalator_up: '⬆️ Эскалатор', escalator_down: '⬇️ Эскалатор',
+    elevator: '🛗 Лифт', npc: '💬 Поговорить',
+    quest_note: '📄 Взять записку', quest_axe: '🪓 Взять топор',
+    quest_axe_locked: '🔒 Заперто', quest_boards: '🪵 Сломать доски',
+    quest_bossdoor: '🚪 Войти'
+  };
+
+  // главный тик: решаем, что показать на кнопке
+  setInterval(function () {
+    try {
+      const driving = (typeof localCar !== 'undefined') && !!localCar;
+      document.body.classList.toggle('fz-driving', driving);
+
+      if (driving) { act.style.display = 'none'; actMode = null; return; }
+
+      if (typeof sittingOn !== 'undefined' && sittingOn) {
+        actMode = 'stand'; act.className = 'exit';
+        act.textContent = '🧍 Встать'; act.style.display = 'block'; return;
+      }
+      const ni = (typeof nearestInteractable !== 'undefined') ? nearestInteractable : null;
+      if (ni) {
+        const t = String(ni.type);
+        actMode = 'inter';
+        act.className = t.indexOf('quest_') === 0 ? 'quest' : '';
+        let lbl = LABELS[t];
+        if (!lbl) {
+          const ent = ['apartment','house','office','cinema','club','restaurant',
+                       'gym','bank','hospital','mall','karaoke'];
+          lbl = ent.indexOf(t) >= 0 ? ('🚪 Войти: ' + (ni.name || '')) : ('⚡ ' + (ni.name || 'Действие'));
+        }
+        act.textContent = lbl;
+        act.style.display = 'block'; return;
+      }
+      if (nearCar()) {
+        actMode = 'car'; act.className = 'car';
+        act.textContent = '🚗 Сесть в машину';
+        act.style.display = 'block'; return;
+      }
+      act.style.display = 'none'; actMode = null;
+    } catch (e) {}
+  }, 180);
+
+  // ─── 3. Быстрые кнопки: карта / чат / пауза ─────────────────────
+  const qb = document.createElement('div');
+  qb.id = 'fzQuickBar';
+  const quick = [
+    ['🗺️', function () { try { toggleBigMap(); } catch (e) {} }],
+    ['💬', function () {
+        try {
+          const i = document.getElementById('chatInput');
+          if (i) { i.focus(); }
+          else { togglePanel('chat'); }
+        } catch (e) {}
+      }],
+    ['⏸', function () { try { openPauseMenu(); } catch (e) {} }]
+  ];
+  quick.forEach(function (q) {
+    const b = document.createElement('div');
+    b.className = 'fzq'; b.textContent = q[0];
+    b.addEventListener('touchstart', function (e) {
+      e.preventDefault(); e.stopPropagation(); q[1]();
+    }, { passive: false });
+    b.addEventListener('click', function (e) { e.preventDefault(); });
+    qb.appendChild(b);
+  });
+  document.body.appendChild(qb);
+
+  // ─── 4. Вождение с телефона: газ / тормоз / руль ────────────────
+  const drive = document.createElement('div');
+  drive.id = 'fzDrive';
+  drive.innerHTML =
+    '<div class="dbtn" id="dLeft">◀</div>' +
+    '<div class="dbtn" id="dRight">▶</div>' +
+    '<div class="dbtn" id="dBrake">⬇</div>' +
+    '<div class="dbtn" id="dGas">⬆</div>';
+  document.body.appendChild(drive);
+
+  function bindHold(id, code) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const on = function (e) {
+      e.preventDefault(); e.stopPropagation();
+      if (typeof keys !== 'undefined') keys[code] = true;
+    };
+    const off = function (e) {
+      e.preventDefault(); e.stopPropagation();
+      if (typeof keys !== 'undefined') keys[code] = false;
+    };
+    el.addEventListener('touchstart', on, { passive: false });
+    el.addEventListener('touchend', off, { passive: false });
+    el.addEventListener('touchcancel', off, { passive: false });
+    // страховка от залипания газа
+    window.addEventListener('blur', function () { if (typeof keys !== 'undefined') keys[code] = false; });
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden && typeof keys !== 'undefined') keys[code] = false;
+    });
+  }
+  bindHold('dGas', 'KeyW');
+  bindHold('dBrake', 'KeyS');
+  bindHold('dLeft', 'KeyA');
+  bindHold('dRight', 'KeyD');
+
+  // выход из машины дублируем на кнопку 🚪 (mobEnter)
+  const mobEnter = document.getElementById('mobEnter');
+  if (mobEnter) {
+    mobEnter.addEventListener('touchstart', function (e) {
+      if (typeof localCar !== 'undefined' && localCar) {
+        e.preventDefault(); e.stopImmediatePropagation();
+        try { exitCar(); } catch (err) {}
+      }
+    }, { passive: false, capture: true });
+  }
+
+  // ─── 5. Не даём странице скроллиться/зумиться пальцами ──────────
+  document.addEventListener('touchmove', function (e) {
+    if (e.target && e.target.closest &&
+        (e.target.closest('.panel') || e.target.closest('.modal-content') ||
+         e.target.closest('#chatMessages') || e.target.closest('input') ||
+         e.target.closest('textarea'))) return; // внутри панелей скролл нужен
+    if (e.touches && e.touches.length > 1) { e.preventDefault(); return; }
+    e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
+
+  // ─── 6. Держим реальную высоту экрана (адресная строка) ─────────
+  function vh() {
+    document.documentElement.style.setProperty('--fzvh', window.innerHeight + 'px');
+  }
+  vh();
+  window.addEventListener('resize', vh);
+  window.addEventListener('orientationchange', function () { setTimeout(vh, 300); });
+
+  console.log('[FANTAZIA] 📱 мобильный порт v28 активен');
+})();
+
 // ═══════════════════════════════════════════════════════════════════
 //  ФИНАЛИЗАТОР: подтверждение сборки (маркер для диагностики)
 // ═══════════════════════════════════════════════════════════════════
