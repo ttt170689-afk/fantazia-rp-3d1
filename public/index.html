@@ -5091,14 +5091,29 @@ function startEscalatorRide(dir) {
     localPlayer.currentAnimation = 'walk';
     if (t >= 1) {
       clearInterval(iv);
-      currentFloor = target;
-      buildInterior(currentBuildingType);
-      // высадка на площадке
+      // ── v52: ПЛАВНАЯ СМЕНА ЭТАЖА ──
+      // Раньше buildInterior() срабатывал мгновенно прямо посреди поездки:
+      // геометрия менялась в один кадр, и это читалось как телепорт
+      // («не доезжаю, а тэпаюсь»). Теперь перестройка спрятана за
+      // коротким затемнением — игрок видит, что он доехал.
       const landX = bx + (dir > 0 ? MALL_ESC.xUp[0] : MALL_ESC.xUp[1]);
       const landZ = bz + (dir > 0 ? MALL_ESC.zTop - 1.4 : MALL_ESC.zBottom + 1.4);
-      localPlayer.mesh.position.set(landX, target * FH + 0.01, landZ);
-      localPlayer.currentAnimation = 'idle';
-      escalatorRide.active = false;
+      const _finish = () => {
+        localPlayer.mesh.position.set(landX, target * FH + 0.01, landZ);
+        localPlayer.currentAnimation = 'idle';
+        escalatorRide.active = false;
+        if (window.FZ52) FZ52.legalTeleport({ x: landX, y: target * FH, z: landZ });
+      };
+      if (typeof fzFloorTransition === 'function') {
+        fzFloorTransition(() => {
+          currentFloor = target;
+          buildInterior(currentBuildingType);
+        }, _finish);
+      } else {
+        currentFloor = target;
+        buildInterior(currentBuildingType);
+        _finish();
+      }
       const lb = currentBuildingType === 'mall' ? floorLabelOf(currentFloor) : String(currentFloor+1);
       document.getElementById('floorIndicator').textContent = currentBuildingType === 'mall'
         ? `🏬 GRAND MALL · ${lb}`
@@ -10244,9 +10259,13 @@ function startElevatorRide(targetFloor) {
       }
       if (t >= 1) {
         clearInterval(rideInterval);
-        // Rebuild interior
+        // v52: перестройка этажа под затемнением — без рывка геометрии
         currentFloor = targetFloor;
-        buildInterior(currentBuildingType);
+        if (typeof fzFloorTransition === 'function') {
+          fzFloorTransition(() => { buildInterior(currentBuildingType); });
+        } else {
+          buildInterior(currentBuildingType);
+        }
         // Reposition
         if (localPlayer.mesh) localPlayer.mesh.position.y = toY;
         document.getElementById('floorIndicator').textContent = isMall2
@@ -18848,13 +18867,32 @@ function changeFloor(delta) {
 
 // =================== ОСНОВНОЙ ЦИКЛ ===================
 const _isMob = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || ('ontouchstart' in window && window.innerWidth < 1024);
-const _frameInterval = _isMob ? 1000 / 120 : 0;
+// v52: было 1000/120 — то есть кап на 120 FPS, который фактически НЕ
+// ограничивал ничего: телефон рисовал максимум, грелся и садил батарею.
+// Реальный кап берём из профиля устройства (30/45/60), см. FZ_MOB.
 let _lastFrameTime = 0;
+let _fzPrevTs = 0;
 
 function animate(timestamp) {
   requestAnimationFrame(animate);
-  if (_isMob && timestamp - _lastFrameTime < _frameInterval) return;
-  if (_isMob) _lastFrameTime = timestamp;
+
+  // вкладка свёрнута — не рендерим вообще (экономия батареи)
+  if (window.FZ_MOB && FZ_MOB.hidden) return;
+
+  if (_isMob) {
+    const cap = (window.FZ_MOB && FZ_MOB.profile && FZ_MOB.profile.fps) || 60;
+    const interval = 1000 / cap;
+    if (timestamp - _lastFrameTime < interval) return;
+    _lastFrameTime = timestamp;
+  }
+
+  // замер кадра для авто-качества
+  if (_fzPrevTs) {
+    const _ms = timestamp - _fzPrevTs;
+    if (window.FZ52) FZ52.tick(_ms);
+    if (window.FZ_MOB) { FZ_MOB.sample(_ms); FZ_MOB.adapt(); }
+  }
+  _fzPrevTs = timestamp;
 
   const delta = clock.getDelta();
   animationTime += delta;
@@ -19033,20 +19071,46 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
   }
 
   // --- Удалённые игроки: интерполяция ---
-  Object.values(remotePlayers).forEach(rp => {
-    if (!rp.mesh || !rp.targetPos) return;
-    rp.mesh.position.x += (rp.targetPos.x - rp.mesh.position.x) * 0.15;
-    rp.mesh.position.y += (rp.targetPos.y - rp.mesh.position.y) * 0.15;
-    rp.mesh.position.z += (rp.targetPos.z - rp.mesh.position.z) * 0.15;
+  // v52 ОПТИМИЗАЦИЯ. Было три проблемы, все в горячем цикле:
+  //  1. Object.values() создавал НОВЫЙ массив каждый кадр → мусор для GC
+  //     и микрофризы на телефоне. Теперь идём по ключам через for-in.
+  //  2. animateRemoteCharacter считалась для ВСЕХ игроков, даже за спиной
+  //     и в километре. Теперь дальних пропускаем (расстояние из профиля).
+  //  3. Коэффициент 0.15 давал разную скорость на 30 и 144 FPS.
+  //     Заменён на кадронезависимое сглаживание.
+  {
+    const _pp = mesh.position;
+    const _cull = (window.FZ52 && FZ52.cullDistance) ? FZ52.cullDistance : 180;
+    const _cull2 = _cull * _cull;
+    // кадронезависимо: за dt секунд догоняем ту же долю пути
+    const _k = 1 - Math.pow(0.001, delta);
+    let _animBudget = (window.FZ_MOB && FZ_MOB.profile)
+      ? FZ_MOB.profile.remoteAnim : 32;
 
-    // Плавный поворот
-    let angleDiff = rp.targetRot - rp.mesh.rotation.y;
-    while (angleDiff > Math.PI) angleDiff -= Math.PI*2;
-    while (angleDiff < -Math.PI) angleDiff += Math.PI*2;
-    rp.mesh.rotation.y += angleDiff * 0.15;
+    for (const _id in remotePlayers) {
+      const rp = remotePlayers[_id];
+      if (!rp || !rp.mesh || !rp.targetPos) continue;
 
-    animateRemoteCharacter(rp.mesh, rp.animation || 'idle', rp.dance, animationTime);
-  });
+      const rpm = rp.mesh.position;
+      rpm.x += (rp.targetPos.x - rpm.x) * _k;
+      rpm.y += (rp.targetPos.y - rpm.y) * _k;
+      rpm.z += (rp.targetPos.z - rpm.z) * _k;
+
+      let angleDiff = rp.targetRot - rp.mesh.rotation.y;
+      while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+      while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+      rp.mesh.rotation.y += angleDiff * _k;
+
+      // далеко — позицию обновили (чтобы не «прыгал» при приближении),
+      // но скелет не анимируем: это самая дорогая часть
+      const _dx = rpm.x - _pp.x, _dz = rpm.z - _pp.z;
+      if (_dx * _dx + _dz * _dz > _cull2) { rp.mesh.visible = false; continue; }
+      rp.mesh.visible = true;
+      if (_animBudget-- <= 0) continue;
+
+      animateRemoteCharacter(rp.mesh, rp.animation || 'idle', rp.dance, animationTime);
+    }
+  }
 
   // --- Питомец следует за игроком ---
   if (localPet3D && localPlayer.pet) {
@@ -19133,9 +19197,20 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
   }
 
   // --- Анимация конечностей NPC (каждые 2 кадра, только видимые) ---
+  // v52: добавлен куллинг по расстоянию и бюджет на кадр. Раньше
+  // анимировались все видимые NPC сразу — на слабом телефоне это
+  // десятки скелетов в кадре. Теперь дальние замирают (их всё равно
+  // не видно в деталях), а ближние получают полную анимацию.
   if (_npcUpdateFrame % 2 === 0) {
+    const _npcCull = (window.FZ_MOB && FZ_MOB.profile) ? FZ_MOB.profile.cull : 200;
+    const _npcCull2 = _npcCull * _npcCull;
+    let _npcBudget = (window.FZ_MOB && FZ_MOB.profile) ? FZ_MOB.profile.npcAnim : 40;
+    const _px = mesh.position.x, _pz = mesh.position.z;
     npcs.forEach(npc => {
       if (!npc.mesh.visible) return;
+      const _ndx = npc.mesh.position.x - _px, _ndz = npc.mesh.position.z - _pz;
+      if (_ndx * _ndx + _ndz * _ndz > _npcCull2) return;
+      if (_npcBudget-- <= 0) return;
       const ud = npc.mesh.userData;
       if (!ud.leftArm) return;
       const nt  = animationTime;
@@ -23044,6 +23119,18 @@ body.game-active canvas{touch-action:none}
      без лифтов-дублей, служебный вход заколочен досками.
      Определяет window.FZ_TEASER_MALL; вызывается из buildMallInterior. -->
 <script src="mall-teaser.js?v=42"></script>
+<!-- ═══ FANTAZIA v52: глубокий фикс ═══
+     core      — античит-совместимость, профилировщик, кэш DOM, easing
+     mobile    — определение устройства, авто-качество, куллинг, батарея
+     graphics  — освещение, тонмаппинг, пыль, тени-пятна, анимации
+     cosmetics — 206 предметов косметики на 24 архетипах
+     gameplay  — заработок монет, плавная смена этажей
+     Порядок важен: core объявляет FZ52, остальные на него опираются. -->
+<script src="fz52-core.js?v=52"></script>
+<script src="fz52-mobile.js?v=52"></script>
+<script src="fz52-graphics.js?v=52"></script>
+<script src="fz52-cosmetics.js?v=52"></script>
+<script src="fz52-gameplay.js?v=52"></script>
 <!-- ========== FZ: админ-панель + новости (новые) ========== -->
 <style>
 #fzNews{position:fixed;inset:0;background:rgba(5,8,18,.82);display:none;align-items:center;justify-content:center;z-index:9500;backdrop-filter:blur(8px)}

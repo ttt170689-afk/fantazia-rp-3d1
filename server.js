@@ -4,6 +4,8 @@ const { Server } = require('socket.io');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+// v52: серверный античит — валидация позиций и rate-limit событий.
+const AntiCheat = require('./anticheat.js');
 
 // ======================================================
 // FANTAZIA RP 3D SERVER
@@ -690,6 +692,8 @@ setInterval(() => {
 // ======================================================
 
 io.on('connection', (socket) => {
+  // v52: заводим состояние античита для этого соединения
+  AntiCheat.acInit(socket.id);
   console.log(`[+] CONNECT: ${socket.id}`);
 
   // ----------------------------------------------------
@@ -797,20 +801,32 @@ io.on('connection', (socket) => {
     const player = players[socket.id];
     if (!player) return;
 
+    // ── v52: АНТИЧИТ ──
+    // Раньше сюда принимались ЛЮБЫЕ координаты: клиент мог отправить
+    // x=99999 (телепорт), огромную скорость (спидхак) или NaN, который
+    // через broadcast ломал физику у всех остальных игроков.
+    if (!AntiCheat.acRate(socket.id, 'updatePosition')) return;
+
     const pos = data.position || {};
     const rot = data.rotation || {};
+    const verdict = AntiCheat.acCheckPosition(socket.id, pos, player.position);
 
-    player.position = {
-      x: Number(pos.x) || 0,
-      y: Number(pos.y) || 0,
-      z: Number(pos.z) || 0
-    };
+    player.position = verdict.position;
 
-    player.rotation = {
-      y: Number(rot.y) || 0
-    };
+    if (!verdict.ok) {
+      // Откатываем игрока на последнюю достоверную точку. Не баним:
+      // такой же эффект даёт лаг или разрыв связи у честного игрока.
+      socket.emit('positionReset', {
+        position: verdict.position,
+        reason: verdict.reason || 'invalid'
+      });
+    }
 
-    player.animation = data.animation || 'idle';
+    const ry = Number(rot.y);
+    player.rotation = { y: Number.isFinite(ry) ? ry : 0 };
+
+    const anim = typeof data.animation === 'string' ? data.animation : 'idle';
+    player.animation = anim.length <= 24 ? anim : 'idle';
 
     socket.broadcast.emit('playerMoved', {
       id: socket.id,
@@ -826,6 +842,7 @@ io.on('connection', (socket) => {
   socket.on('sendChat', (data = {}) => {
     const player = players[socket.id];
     if (!player) return;
+    if (!AntiCheat.acRate(socket.id, 'sendChat')) return;
 
     const text = sanitizeText(data.text);
     if (!text) return;
@@ -862,6 +879,7 @@ io.on('connection', (socket) => {
   // ТАНЦЫ / АНИМАЦИИ
   // ----------------------------------------------------
   socket.on('startDance', (danceType) => {
+    if (!AntiCheat.acRate(socket.id, 'startDance')) return;
     const player = players[socket.id];
     if (!player) return;
 
@@ -877,6 +895,7 @@ io.on('connection', (socket) => {
   socket.on('stopDance', () => {
     const player = players[socket.id];
     if (!player) return;
+    if (!AntiCheat.acRate(socket.id, 'stopDance')) return;
 
     player.dance = null;
     player.animation = 'idle';
@@ -891,6 +910,7 @@ io.on('connection', (socket) => {
   // РАБОТЫ
   // ----------------------------------------------------
   socket.on('getJob', (jobId) => {
+    if (!AntiCheat.acRate(socket.id, 'getJob')) return;
     const player = players[socket.id];
     if (!player) return;
 
@@ -913,6 +933,7 @@ io.on('connection', (socket) => {
   socket.on('quitJob', () => {
     const player = players[socket.id];
     if (!player) return;
+    if (!AntiCheat.acRate(socket.id, 'quitJob')) return;
 
     if (!player.job) {
       notify(socket.id, 'У вас нет работы', 'error');
@@ -933,6 +954,7 @@ io.on('connection', (socket) => {
   socket.on('buyItem', (data = {}) => {
     const player = players[socket.id];
     if (!player) return;
+    if (!AntiCheat.acRate(socket.id, 'buyItem')) return;
 
     const shopType = data.shopType;
     const itemId = data.itemId;
@@ -965,6 +987,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('useItem', (uid) => {
+    if (!AntiCheat.acRate(socket.id, 'useItem')) return;
     const player = players[socket.id];
     if (!player) return;
 
@@ -1015,6 +1038,7 @@ io.on('connection', (socket) => {
   // ПИТОМЦЫ
   // ----------------------------------------------------
   socket.on('adoptPet', (petType) => {
+    if (!AntiCheat.acRate(socket.id, 'adoptPet')) return;
     const player = players[socket.id];
     if (!player) return;
 
@@ -1052,6 +1076,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('feedPet', (foodId) => {
+    if (!AntiCheat.acRate(socket.id, 'feedPet')) return;
     const player = players[socket.id];
     if (!player || !player.pet) return;
 
@@ -1078,6 +1103,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('renamePet', (newName) => {
+    if (!AntiCheat.acRate(socket.id, 'renamePet')) return;
     const player = players[socket.id];
     if (!player || !player.pet) return;
 
@@ -1096,6 +1122,7 @@ io.on('connection', (socket) => {
   // КВАРТИРЫ
   // ----------------------------------------------------
   socket.on('buyApartment', (aptId) => {
+    if (!AntiCheat.acRate(socket.id, 'buyApartment')) return;
     const player = players[socket.id];
     if (!player) return;
 
@@ -1130,6 +1157,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('sellApartment', () => {
+    if (!AntiCheat.acRate(socket.id, 'sellApartment')) return;
     const player = players[socket.id];
     if (!player || !player.apartment) {
       notify(socket.id, 'У вас нет квартиры', 'error');
@@ -1155,6 +1183,7 @@ io.on('connection', (socket) => {
   // ДРУЗЬЯ
   // ----------------------------------------------------
   socket.on('addFriend', (targetId) => {
+    if (!AntiCheat.acRate(socket.id, 'addFriend')) return;
     if (!players[socket.id] || !players[targetId]) {
       notify(socket.id, 'Игрок не найден', 'error');
       return;
@@ -1184,6 +1213,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('removeFriend', (targetId) => {
+    if (!AntiCheat.acRate(socket.id, 'removeFriend')) return;
     if (!friendships[socket.id]) return;
 
     friendships[socket.id] = friendships[socket.id].filter(id => id !== targetId);
@@ -1203,6 +1233,7 @@ io.on('connection', (socket) => {
   socket.on('interact', (data = {}) => {
     const player = players[socket.id];
     if (!player) return;
+    if (!AntiCheat.acRate(socket.id, 'interact')) return;
 
     if (data.type === 'wave' && data.targetId && players[data.targetId]) {
       notify(data.targetId, `${player.name} помахал вам 👋`, 'info');
@@ -1210,8 +1241,14 @@ io.on('connection', (socket) => {
     }
 
     if (data.type === 'giveMoney' && data.targetId && players[data.targetId]) {
-      const amount = Number(data.amount) || 0;
-      if (amount <= 0) {
+      // v52: раньше проходили дробные суммы (1.9999 → списывалось меньше,
+      // чем зачислялось) и перевод самому себе — дюп денег.
+      if (data.targetId === socket.id) {
+        notify(socket.id, 'Нельзя перевести самому себе', 'error');
+        return;
+      }
+      const amount = AntiCheat.acAmount(data.amount, 100000000);
+      if (amount === null) {
         notify(socket.id, 'Неверная сумма', 'error');
         return;
       }
@@ -1235,9 +1272,24 @@ io.on('connection', (socket) => {
   // ----------------------------------------------------
   // СПОРТЗАЛ / ОПЫТ
   // ----------------------------------------------------
+  // ── v52: ЛЕГАЛЬНЫЙ ТЕЛЕПОРТ ──
+  // Вход в здание, смена этажа и спавн двигают игрока мгновенно —
+  // для античита это выглядит как рывок через полкарты. Клиент
+  // предупреждает об этом заранее, и мы открываем «окно тишины».
+  // Событие безопасно: оно НЕ задаёт позицию, а лишь снимает подозрение
+  // на пару секунд, поэтому спамить им бессмысленно.
+  socket.on('legalTeleport', (data = {}) => {
+    const player = players[socket.id];
+    if (!player) return;
+    AntiCheat.acAllowTeleport(socket.id, data && data.position);
+  });
+
   socket.on('workout', () => {
     const player = players[socket.id];
     if (!player) return;
+    // v52: без лимита это событие можно было слать в цикле из консоли
+    // и качать бесконечный EXP. Теперь не чаще раза в 3 секунды.
+    if (!AntiCheat.acRate(socket.id, 'workout')) return;
 
     addExp(socket.id, 10);
     notify(socket.id, 'Тренировка завершена! +10 EXP', 'success');
@@ -1271,6 +1323,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('voiceStart', () => {
+    if (!AntiCheat.acRate(socket.id, 'voiceStart')) return;
     const player = players[socket.id];
     if (!player) return;
 
@@ -1282,6 +1335,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('voiceStop', () => {
+    if (!AntiCheat.acRate(socket.id, 'voiceStop')) return;
     const player = players[socket.id];
     if (!player) return;
 
@@ -1296,6 +1350,7 @@ io.on('connection', (socket) => {
   // PING
   // ----------------------------------------------------
   socket.on('pingCheck', () => {
+    if (!AntiCheat.acRate(socket.id, 'pingCheck')) return;
     socket.emit('pongCheck', { time: Date.now() });
   });
 
@@ -1423,6 +1478,7 @@ io.on('connection', (socket) => {
   // ОТКЛЮЧЕНИЕ
   // ----------------------------------------------------
   socket.on('disconnect', () => {
+    AntiCheat.acDrop(socket.id);   // v52: чистим состояние античита
     const player = players[socket.id];
 
     if (player) {
