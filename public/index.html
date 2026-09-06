@@ -6249,6 +6249,13 @@ function fzPolishCity() {
   // ─── 4. ДЕТАЛИ: окна, крыши, урны ───────────────────────────────
   try { fzPolishDetails(MOB); } catch (e) { console.warn('[POLISH details]', e); }
 
+  // ─── v34: ИНФРАСТРУКТУРА ────────────────────────────────────────
+  try { fzSidewalks(MOB); }      catch (e) { console.warn('[UP sidewalks]', e); }
+  try { fzUpgradeBridges(MOB); } catch (e) { console.warn('[UP bridges]', e); }
+  try { fzBusStops(MOB); }       catch (e) { console.warn('[UP stops]', e); }
+  try { fzTrafficLights(MOB); }  catch (e) { console.warn('[UP lights]', e); }
+  try { fzStreetLife(MOB); }     catch (e) { console.warn('[UP street]', e); }
+
   // ─── 5. КРАСИВЫЙ ВХОД В GRAND MALL ──────────────────────────────
   fzGrandMallEntrance(MOB);
 }
@@ -6524,6 +6531,319 @@ function fzPolishDetails(MOB) {
 
   console.log('[POLISH] детали: окон', lit.length + dark.length,
               '| парапетов', par.length, '| урн', bins.length);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  v34: СУПЕР-АПГРЕЙД ГОРОДА
+//  Город не переделывается — существующая застройка остаётся,
+//  поверх неё достраивается инфраструктура: вантовые мосты,
+//  автобусные остановки, светофоры, фонари, скамейки, ограждения.
+//  Всё массовое — через InstancedMesh (1 draw call на тип).
+// ═══════════════════════════════════════════════════════════════════════
+
+// общий инстансер
+function fzInst(geo, mat, items) {
+  if (!items || !items.length) return null;
+  const im = new THREE.InstancedMesh(geo, mat, items.length);
+  const d = new THREE.Object3D();
+  items.forEach((it, i) => {
+    d.position.set(it[0], it[1], it[2]);
+    d.rotation.set(it[3] || 0, it[4] || 0, it[5] || 0);
+    d.scale.set(it[6] === undefined ? 1 : it[6],
+                it[7] === undefined ? 1 : it[7],
+                it[8] === undefined ? 1 : it[8]);
+    d.updateMatrix(); im.setMatrixAt(i, d.matrix);
+  });
+  im.instanceMatrix.needsUpdate = true;
+  im.castShadow = false; im.receiveShadow = false;
+  scene.add(im);
+  return im;
+}
+
+// ─── ВАНТОВЫЕ МОСТЫ ────────────────────────────────────────────────
+// Были плоские балки с перилами. Добавляем А-образные пилоны и веер
+// вант — мост читается как настоящее инженерное сооружение.
+function fzUpgradeBridges(MOB) {
+  const specs = [
+    { x: 0,    z: 260,  ns: false },
+    { x: 0,    z: -260, ns: false },
+    { x: -260, z: 0,    ns: true  },
+    { x: 260,  z: 0,    ns: true  }
+  ];
+  const pylonMat = new THREE.MeshLambertMaterial({ color: 0xe2e7ec });
+  const cableMat = new THREE.MeshLambertMaterial({ color: 0x8b939c });
+  const guardMat = new THREE.MeshLambertMaterial({ color: 0xc8ced4 });
+  const lampMat  = new THREE.MeshBasicMaterial({ color: 0xfff1c9 });
+
+  const legs = [], cables = [], guards = [], poles = [], lamps = [];
+  const L = 120, PY = 26;
+
+  specs.forEach(sp => {
+    const { x: cx, z: cz, ns } = sp;
+    // вдоль моста: t — продольная ось, off — поперечная
+    const at = (t, off) => ns ? [cx + off, cz + t] : [cx + t, cz + off];
+
+    [-30, 30].forEach(tp => {
+      // А-образный пилон: две наклонные ноги + ригель
+      [-5.2, 5.2].forEach(side => {
+        const [px, pz] = at(tp, side);
+        const leg = [px, PY / 2, pz, 0, 0, 0, 1, PY, 1];
+        // наклон внутрь
+        if (ns) leg[3] = 0, leg[5] = side > 0 ? 0.12 : -0.12;
+        else    leg[3] = side > 0 ? -0.12 : 0.12;
+        legs.push(leg);
+      });
+      // поперечный ригель вверху
+      const [bx, bz] = at(tp, 0);
+      guards.push([bx, PY - 3, bz, 0, ns ? Math.PI / 2 : 0, 0, 11, 1.1, 1.1]);
+
+      // веер вант к палубе
+      for (let k = 1; k <= (MOB ? 4 : 7); k++) {
+        const reach = k * (MOB ? 7 : 4.2);
+        [-1, 1].forEach(dir => {
+          [-5.2, 5.2].forEach(side => {
+            const [ax, az] = at(tp, side);
+            const [tx, tz] = at(tp + dir * reach, side);
+            const dx = tx - ax, dz = tz - az, dy = PY - 4 - 1.2;
+            const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            const mx = (ax + tx) / 2, mz = (az + tz) / 2, my = (PY - 4 + 1.2) / 2;
+            const ry = Math.atan2(dx, dz);
+            const rx = Math.acos(Math.max(-1, Math.min(1, -dy / len)));
+            cables.push([mx, my, mz, rx, ry, 0, 1, len, 1]);
+          });
+        });
+      }
+    });
+
+    // отбойники по краям палубы + фонари
+    [-4.6, 4.6].forEach(off => {
+      const [gx, gz] = at(0, off);
+      guards.push([gx, 1.05, gz, 0, 0, 0, ns ? 0.36 : L, 0.7, ns ? L : 0.36]);
+    });
+    for (let t = -L / 2 + 10; t <= L / 2 - 10; t += (MOB ? 30 : 15)) {
+      [-4.6, 4.6].forEach(off => {
+        const [lx, lz] = at(t, off);
+        poles.push([lx, 3.2, lz, 0, 0, 0, 1, 6.4, 1]);
+        lamps.push([lx, 6.6, lz]);
+      });
+    }
+  });
+
+  fzInst(new THREE.BoxGeometry(1.5, 1, 1.5), pylonMat, legs);
+  fzInst(new THREE.BoxGeometry(0.16, 1, 0.16), cableMat, cables);
+  fzInst(new THREE.BoxGeometry(1, 1, 1), guardMat, guards);
+  fzInst(new THREE.CylinderGeometry(0.13, 0.16, 1, 6), pylonMat, poles);
+  fzInst(new THREE.SphereGeometry(0.42, 8, 6), lampMat, lamps);
+
+  console.log('[UPGRADE] мосты: пилонов', legs.length, '| вант', cables.length,
+              '| фонарей', lamps.length);
+}
+
+// Остановка стоит на тротуаре СВОЕЙ дороги (это нормально), но не должна
+// попадать на перпендикулярную улицу или в здание.
+function fzStopPlaceOk(x, z) {
+  // 1) не на проезжей части НИ ОДНОЙ дороги (полуширина 8.2 с запасом)
+  for (let i = 0; i < FZ_ROADS.length; i++) {
+    const q = FZ_ROADS[i];
+    if (Math.abs(x - q) < 8.2) return false;
+    if (Math.abs(z - q) < 8.2) return false;
+  }
+  // 2) не внутри здания (с отступом 2)
+  for (let i = 0; i < buildings.length; i++) {
+    const b = buildings[i];
+    if (!b || !b.bounds) continue;
+    if (x > b.bounds.minX - 2 && x < b.bounds.maxX + 2 &&
+        z > b.bounds.minZ - 2 && z < b.bounds.maxZ + 2) return false;
+  }
+  return true;
+}
+
+// ─── АВТОБУСНЫЕ ОСТАНОВКИ ──────────────────────────────────────────
+// В городе их не было вовсе. Ставим полноценные павильоны вдоль
+// главных проспектов: навес, стеклянные стенки, лавка, знак, урна.
+function fzBusStops(MOB) {
+  // остановки по обеим сторонам главных проспектов, каждые ~50 единиц
+  const STOPS = [];
+  [0, 50, -50, 100, -100].forEach(function (lane) {
+    [-138, -88, -38, 38, 88, 138].forEach(function (t) {
+      // вдоль оси X (павильон стоит на тротуаре, лицом к дороге)
+      STOPS.push({ x: t, z: lane + 9.4, r: 0 });
+      STOPS.push({ x: t, z: lane - 9.4, r: Math.PI });
+      // вдоль оси Z
+      STOPS.push({ x: lane + 9.4, z: t, r: -Math.PI / 2 });
+      STOPS.push({ x: lane - 9.4, z: t, r: Math.PI / 2 });
+    });
+  });
+  // прореживаем: каждая вторая, чтобы не превратить город в частокол
+  const STOPS_F = STOPS.filter(function (s, i) { return i % (MOB ? 4 : 2) === 0; });
+  STOPS.length = 0; Array.prototype.push.apply(STOPS, STOPS_F);
+  const roofMat  = new THREE.MeshLambertMaterial({ color: 0x2f6f8f });
+  const postMat  = new THREE.MeshLambertMaterial({ color: 0x39424a });
+  const glassMat = new THREE.MeshBasicMaterial({ color: 0xbfe0f5, transparent: true, opacity: 0.32 });
+  const benchMat = new THREE.MeshLambertMaterial({ color: 0xb5803f });
+  const signMat  = new THREE.MeshLambertMaterial({ color: 0x1b6fb5 });
+  const litMat   = new THREE.MeshBasicMaterial({ color: 0xfff0c4 });
+
+  const roofs=[], posts=[], glass=[], benches=[], signs=[], lits=[];
+
+  STOPS.forEach(s => {
+    const { x, z, r } = s;
+    // павильон занимает ~6x3 — проверяем, что он не влез в дом.
+    // На дороге он стоять не может по построению (тротуарная полоса 9.4),
+    // но соседняя перпендикулярная улица может пересечь это место.
+    if (!fzStopPlaceOk(x, z)) return;
+    const c = Math.cos(r), sn = Math.sin(r);
+    // локальные координаты -> мировые (поворот вокруг Y)
+    const P = (lx, lz) => [x + lx * c - lz * sn, z + lx * sn + lz * c];
+
+    // навес 6 x 2.6
+    roofs.push([x, 3.05, z, 0, r, 0, 6.2, 0.24, 2.8]);
+    // 4 стойки
+    [[-2.8,-1.2],[2.8,-1.2],[-2.8,1.2],[2.8,1.2]].forEach(([lx,lz]) => {
+      const [px,pz] = P(lx,lz);
+      posts.push([px, 1.5, pz, 0, 0, 0, 1, 3, 1]);
+      streetColliders.push({ x: px, z: pz, r: 0.28 });
+    });
+    // задняя стеклянная стенка + боковины
+    const [bx,bz] = P(0,1.3);
+    glass.push([bx, 1.75, bz, 0, r, 0, 5.9, 2.4, 1]);
+    [[-2.9,0],[2.9,0]].forEach(([lx,lz]) => {
+      const [gx,gz] = P(lx,lz);
+      glass.push([gx, 1.75, gz, 0, r + Math.PI/2, 0, 2.4, 2.4, 1]);
+    });
+    // лавка внутри
+    const [sx,sz] = P(0,0.75);
+    benches.push([sx, 0.55, sz, 0, r, 0, 4.6, 0.14, 0.55]);
+    benches.push([sx, 0.28, sz, 0, r, 0, 4.4, 0.5, 0.12]);
+    sitSpots.push({ x: sx, z: sz, y: 0.66, rot: r, type: 'bench' });
+    // знак-столб с табличкой
+    const [qx,qz] = P(3.6,-1.4);
+    posts.push([qx, 1.6, qz, 0, 0, 0, 1, 3.2, 1]);
+    signs.push([qx, 3.3, qz, 0, r, 0, 1.5, 0.9, 0.12]);
+    streetColliders.push({ x: qx, z: qz, r: 0.3 });
+    // подсветка под навесом
+    lits.push([x, 2.85, z, Math.PI/2, 0, 0, 5.4, 2.2, 1]);
+  });
+
+  fzInst(new THREE.BoxGeometry(1,1,1), roofMat, roofs);
+  fzInst(new THREE.CylinderGeometry(0.1,0.1,1,6), postMat, posts);
+  fzInst(new THREE.PlaneGeometry(1,1), glassMat, glass);
+  fzInst(new THREE.BoxGeometry(1,1,1), benchMat, benches);
+  fzInst(new THREE.BoxGeometry(1,1,1), signMat, signs);
+  fzInst(new THREE.PlaneGeometry(1,1), litMat, lits);
+
+  console.log('[UPGRADE] остановок:', STOPS.length);
+}
+
+// ─── СВЕТОФОРЫ НА ПЕРЕКРЁСТКАХ ─────────────────────────────────────
+function fzTrafficLights(MOB) {
+  const R = [0, 50, -50, 100, -100];
+  const poleMat = new THREE.MeshLambertMaterial({ color: 0x2d3238 });
+  const boxMat  = new THREE.MeshLambertMaterial({ color: 0x1b1f24 });
+  const redM    = new THREE.MeshBasicMaterial({ color: 0xff4136 });
+  const yelM    = new THREE.MeshBasicMaterial({ color: 0x7a6a20 });
+  const grnM    = new THREE.MeshBasicMaterial({ color: 0x2ecc40 });
+  const poles=[], boxes=[], reds=[], yels=[], grns=[];
+
+  R.forEach(a => R.forEach(b => {
+    [[-8.4,-8.4],[8.4,8.4]].forEach(([ox,oz]) => {
+      const x=a+ox, z=b+oz;
+      poles.push([x, 2.4, z, 0,0,0, 1, 4.8, 1]);
+      boxes.push([x, 5.3, z, 0,0,0, 0.55, 1.5, 0.42]);
+      reds.push([x, 5.78, z+0.24]);
+      yels.push([x, 5.32, z+0.24]);
+      grns.push([x, 4.86, z+0.24]);
+      streetColliders.push({ x, z, r: 0.3 });
+    });
+  }));
+  fzInst(new THREE.CylinderGeometry(0.12,0.14,1,6), poleMat, poles);
+  fzInst(new THREE.BoxGeometry(1,1,1), boxMat, boxes);
+  const g = new THREE.CircleGeometry(0.14, 8);
+  fzInst(g, redM, reds); fzInst(g, yelM, yels); fzInst(g, grnM, grns);
+  console.log('[UPGRADE] светофоров:', poles.length);
+}
+
+// проверка места: не на проезжей части и не внутри здания
+const FZ_ROADS = [0, 50, -50, 100, -100, 150, -150, 200, -200];
+function fzSpotFree(x, z, pad) {
+  const RW = 8.2 + (pad || 0);
+  for (let i = 0; i < FZ_ROADS.length; i++) {
+    const q = FZ_ROADS[i];
+    if (Math.abs(x - q) < RW) return false;
+    if (Math.abs(z - q) < RW) return false;
+  }
+  for (let i = 0; i < buildings.length; i++) {
+    const b = buildings[i];
+    if (!b || !b.bounds) continue;
+    if (x > b.bounds.minX - 1.5 && x < b.bounds.maxX + 1.5 &&
+        z > b.bounds.minZ - 1.5 && z < b.bounds.maxZ + 1.5) return false;
+  }
+  return true;
+}
+
+// ─── ТРОТУАРЫ ВДОЛЬ ВСЕХ ДОРОГ ─────────────────────────────────────
+// Раньше асфальт переходил прямо в траву. Кладём тротуарную ленту
+// с бордюром — улицы получают «слои» и выглядят обжитыми.
+function fzSidewalks(MOB) {
+  const R = [0, 50, -50, 100, -100, 150, -150];
+  const SPAN = 380, RW = 7.0, SW = 3.4;
+  const walkMat = new THREE.MeshLambertMaterial({ color: 0x9ea4ab });
+  const curbMat = new THREE.MeshLambertMaterial({ color: 0xc2c7cd });
+  const walks = [], curbs = [];
+  R.forEach(p => {
+    [-1, 1].forEach(sd => {
+      const off = sd * (RW + SW / 2);
+      // вдоль Z
+      walks.push([p + off, 0.03, 0, -Math.PI/2, 0, 0, SW, SPAN, 1]);
+      curbs.push([p + sd * RW, 0.09, 0, 0, 0, 0, 0.34, 0.18, SPAN]);
+      // вдоль X
+      walks.push([0, 0.03, p + off, -Math.PI/2, 0, Math.PI/2, SW, SPAN, 1]);
+      curbs.push([0, 0.09, p + sd * RW, 0, 0, 0, SPAN, 0.18, 0.34]);
+    });
+  });
+  fzInst(new THREE.PlaneGeometry(1,1), walkMat, walks);
+  fzInst(new THREE.BoxGeometry(1,1,1), curbMat, curbs);
+  console.log('[UPGRADE] тротуаров:', walks.length);
+}
+
+// ─── УЛИЧНАЯ МЕБЕЛЬ: скамейки, урны, клумбы ────────────────────────
+function fzStreetLife(MOB) {
+  const R = [0, 50, -50, 100, -100];
+  const step = MOB ? 44 : 24;
+  const benchW = new THREE.MeshLambertMaterial({ color: 0xa8763c });
+  const benchL = new THREE.MeshLambertMaterial({ color: 0x4a5057 });
+  const binMat = new THREE.MeshLambertMaterial({ color: 0x35573f });
+  const potMat = new THREE.MeshLambertMaterial({ color: 0xa9603f });
+  const flowerMat = new THREE.MeshLambertMaterial({ color: 0xd9527e });
+  const seats=[], backs=[], legs=[], bins=[], pots=[], flowers=[];
+
+  R.forEach(p => {
+    for (let t = -150; t <= 150; t += step) {
+      if (R.some(q => Math.abs(t - q) < 12)) continue;
+      [[p + 9.2, t, 0], [t, p + 9.2, Math.PI/2]].forEach(([x, z, ry]) => {
+        // мебель ставится на тротуар своей улицы, но не должна попадать
+        // на перпендикулярную дорогу или в здание
+        if (!fzStopPlaceOk(x, z)) return;
+        seats.push([x, 0.52, z, 0, ry, 0, 2.0, 0.12, 0.6]);
+        backs.push([x, 0.86, z, 0, ry, 0, 2.0, 0.5, 0.1]);
+        legs.push([x, 0.26, z, 0, ry, 0, 1.8, 0.5, 0.1]);
+        sitSpots.push({ x, z, y: 0.64, rot: ry, type: 'bench' });
+        streetColliders.push({ x, z, r: 1.0 });
+        // урна рядом
+        bins.push([x + 1.7, 0.55, z]);
+        // клумба
+        pots.push([x - 2.4, 0.3, z, 0, 0, 0, 1.5, 0.6, 1.5]);
+        flowers.push([x - 2.4, 0.78, z]);
+      });
+    }
+  });
+  fzInst(new THREE.BoxGeometry(1,1,1), benchW, seats);
+  fzInst(new THREE.BoxGeometry(1,1,1), benchW, backs);
+  fzInst(new THREE.BoxGeometry(1,1,1), benchL, legs);
+  fzInst(new THREE.CylinderGeometry(0.36,0.3,1.1,8), binMat, bins);
+  fzInst(new THREE.BoxGeometry(1,1,1), potMat, pots);
+  fzInst(new THREE.SphereGeometry(0.55,8,6), flowerMat, flowers);
+  console.log('[UPGRADE] скамеек:', seats.length, '| урн:', bins.length, '| клумб:', pots.length);
 }
 
 function buildCity() {
@@ -7159,8 +7479,21 @@ function buildMallInteriorWorld(scene, mallGroup) {
     { label: 'РЕДКОЕ', type: 'rare', color: 0xFFD700 },
     { label: 'СКОРО', type: 'soon', color: 0xAAAAAA }
   ];
-  const radius = 62;
-  const angles = [0, Math.PI/4, Math.PI/2, 3*Math.PI/4, Math.PI, 5*Math.PI/4, 3*Math.PI/2, 7*Math.PI/4];
+  // v34: угол 90° (Math.PI/2) указывал ровно на вход в GRAND MALL —
+  // розовый куб магазина вставал перед парадной лестницей и загораживал
+  // проход. Убираем сектор входа: раскидываем ларьки по бокам и сзади,
+  // оставляя фронтальную зону (|angle - 90°| < 40°) свободной.
+  const radius = 72;
+  const angles = [
+    0,                 // восток
+    Math.PI * 0.22,
+    Math.PI * 0.78,    // <- вместо PI/2 (прямо перед входом)
+    Math.PI,           // запад
+    Math.PI * 1.18,
+    Math.PI * 1.5,     // север (задняя сторона)
+    Math.PI * 1.75,
+    Math.PI * 1.92
+  ];
   shopDef.forEach((shop, i) => {
     const a = angles[i];
     const sx = MX + Math.cos(a) * radius;
@@ -21657,21 +21990,23 @@ body.game-active canvas{touch-action:none}
 <div id="fzNews" onclick="if(event.target===this)fzCloseNews()">
   <div class="fzn-box">
     <h2>✨ НОВОСТИ FANTAZIA RP</h2>
-    <div class="fzn-ver" id="fznVer">v33 «РОДНОЙ ГОРОД» · сервер онлайн</div>
+    <div class="fzn-ver" id="fznVer">v34 «СУПЕР-АПГРЕЙД ГОРОДА» · сервер онлайн</div>
 
-    <div class="fzn-item new"><b>🏙 СТАРЫЙ ГОРОД ВЕРНУЛСЯ:</b> родная застройка на месте — все районы, небоскрёбы, пустыня, пещеры, мосты и дальние города. Ничего не потеряно.</div>
+    <div class="fzn-item new"><b>🧹 УБРАН БЛОК У ВХОДА:</b> розовый куб магазина стоял ровно перед лестницей GRAND MALL и загораживал проход. Ларьки перенесены — фронтальная зона входа теперь свободна.</div>
 
-    <div class="fzn-item new"><b>✨ ГОРОД ДОВЕДЁН ДО УМА:</b> переработано освещение (мягкая заливка + тёплый контровой свет), 1200+ светящихся окон на фасадах, парапеты и вентиляция на крышах, урны вдоль улиц.</div>
+    <div class="fzn-item new"><b>🌉 ВАНТОВЫЕ МОСТЫ:</b> все 4 моста получили А-образные пилоны высотой 26 м, веер из 128 вант, отбойники и фонари вдоль палубы. Были плоскими балками — стали настоящими сооружениями.</div>
 
-    <div class="fzn-item new"><b>🛣 УЛИЦЫ КАК НАСТОЯЩИЕ:</b> осевая прерывистая разметка, зебры на всех перекрёстках, бордюрные камни вдоль дорог.</div>
+    <div class="fzn-item new"><b>🚏 АВТОБУСНЫЕ ОСТАНОВКИ:</b> 30 павильонов вдоль проспектов — навес, стеклянные стенки, лавка (на неё можно сесть), знак и подсветка.</div>
 
-    <div class="fzn-item new"><b>🏬 ПАРАДНЫЙ ВХОД В GRAND MALL:</b> стеклянный портал с золотой аркой, широкая гранитная лестница с ковровой дорожкой, неоновая вывеска, световые пилоны, пальмы в кадках и вращающиеся двери.</div>
+    <div class="fzn-item new"><b>🚦 СВЕТОФОРЫ:</b> 50 светофоров на всех перекрёстках — мачта, короб, три сигнала.</div>
 
-    <div class="fzn-item"><b>🎬 КАТ-СЦЕНА:</b> при заходе — кинематографичный облёт города с высоты. Пропускается кнопкой или Escape.</div>
+    <div class="fzn-item new"><b>🛣 ДОРОГИ:</b> тротуарные ленты с бордюрами вдоль всей сети, осевая разметка, зебры на 49 перекрёстках.</div>
 
-    <div class="fzn-item"><b>🪓 КВЕСТ:</b> 6 записок → топор в сейфе за картиной в кабинете директора офисного центра → доски у лифта → босс под ТЦ.</div>
+    <div class="fzn-item new"><b>🌳 УЛИЧНАЯ ЖИЗНЬ:</b> скамейки, урны и клумбы вдоль главных улиц — все проверены на попадание в дороги и здания.</div>
 
-    <div class="fzn-item"><b>📱 МОБИЛКА:</b> вход/выход из машин, газ-тормоз-руль, контекстная кнопка действия, аналоговый джойстик.</div>
+    <div class="fzn-item"><b>🏬 ПАРАДНЫЙ ВХОД В GRAND MALL:</b> стеклянный портал, золотая арка, гранитная лестница с ковром, неоновая вывеска, световые пилоны, пальмы, вращающиеся двери.</div>
+
+    <div class="fzn-item"><b>✨ ГОРОД:</b> переработанное освещение, 1100+ светящихся окон, парапеты и вентиляция на крышах.</div>
 
     <button class="fzn-close" onclick="fzCloseNews()">Играть →</button>
   </div>
