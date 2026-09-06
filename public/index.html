@@ -14188,9 +14188,9 @@ function fzServiceDoor(bx, bz, F, FH, add, mat, B, colp, liftX, LWALLZ) {
   // ── проём в стене: боковые простенки + перемычка ──
   const SW2 = 1.1;
   [-1, 1].forEach(sx => {
-    B(SW2, DH + 1.0, 0.5, 0x9aa2ad, dX + sx * (DW + 0.14 + SW2 / 2), (DH + 1.0) / 2, Z, 0);
+    B(SW2, DH + 1.0, 0.5, 0x2e3238, dX + sx * (DW + 0.14 + SW2 / 2), (DH + 1.0) / 2, Z, 0);
   });
-  B(DW * 2 + 0.28, 0.9, 0.5, 0x9aa2ad, dX, DH + 0.55, Z, 0);
+  B(DW * 2 + 0.28, 0.9, 0.5, 0x2e3238, dX, DH + 0.55, Z, 0);
   // тёмные щёки ниши
   B(DW * 2 + 0.28, DH + 0.1, 0.1, 0x0b0e13, dX, (DH + 0.1) / 2, Z - 0.18, 0);
   [-1, 1].forEach(sx => {
@@ -14201,6 +14201,38 @@ function fzServiceDoor(bx, bz, F, FH, add, mat, B, colp, liftX, LWALLZ) {
     B(0.14, DH + 0.34, 0.1, 0x454e57, dX + sx * (DW + 0.1), (DH + 0.34) / 2, JAMBZ, 0);
   });
   B(DW * 2 + 0.42, 0.16, 0.1, 0x454e57, dX, DH + 0.22, JAMBZ, 0);
+
+  // ── HAZARD-ПОЛОСЫ на косяках (v43: как у броневорот тизера) ──
+  // В тизере колонны служебного портала оклеены жёлто-чёрной лентой
+  // (hazardTex). Это самая узнаваемая деталь служебного входа.
+  (function fzHazardStripes() {
+    let hzMat;
+    try {
+      const cv = document.createElement('canvas');
+      cv.width = 64; cv.height = 64;
+      const c2 = cv.getContext('2d');
+      if (c2) {
+        c2.fillStyle = '#b8860b'; c2.fillRect(0, 0, 64, 64);
+        c2.fillStyle = '#181004';
+        c2.beginPath();
+        for (let i = -64; i < 128; i += 16) {
+          c2.moveTo(i, 64); c2.lineTo(i + 64, 0);
+          c2.lineTo(i + 78, 0); c2.lineTo(i + 14, 64);
+          c2.fill();
+        }
+        const tex = new THREE.CanvasTexture(cv);
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(1, 3);
+        hzMat = new THREE.MeshBasicMaterial({ map: tex });
+      }
+    } catch (e) { /* нет canvas — обойдёмся заливкой */ }
+    if (!hzMat) hzMat = new THREE.MeshBasicMaterial({ color: 0xc8a020 });
+    [-1, 1].forEach(sx => {
+      const hp = new THREE.Mesh(new THREE.PlaneGeometry(0.3, DH + 0.2), hzMat);
+      hp.position.set(bx + dX + sx * (DW + 0.19), F + (DH + 0.2) / 2, bz + JAMBZ + 0.06);
+      add(hp);
+    });
+  })();
 
   if (broken) {
     // ── ПРОЁМ ОТКРЫТ: за дверью настоящий тамбур с лестницей вниз ──
@@ -14228,12 +14260,15 @@ function fzServiceDoor(bx, bz, F, FH, add, mat, B, colp, liftX, LWALLZ) {
   }
 
   // ── ЗАКРЫТАЯ МЕТАЛЛИЧЕСКАЯ ДВЕРЬ ──
-  const doorMat = mat(0x6f4a2c, 0x1a1008, 0.06);
+  // v43: полотно — СТАЛЬНОЕ, как броневорота тизера (gateM 0x3d434b),
+  // а не деревянное. Служебный вход должен читаться как техническая
+  // дверь, а не как дверь сарая.
+  const doorMat = mat(0x3d434b, 0x0e1114, 0.05);
   const door = new THREE.Mesh(new THREE.BoxGeometry(DW * 2, DH, 0.12), doorMat);
   door.position.set(bx + dX, F + DH / 2, bz + LEAFZ); add(door);
   // филёнки и ручка
   [-0.62, 0.62].forEach(o => {
-    B(DW * 0.82, DH * 0.38, 0.03, 0x8a5c36, dX + o * DW * 0.5, DH / 2 + (o > 0 ? 0.52 : -0.52), LEAFZ + 0.07, 0);
+    B(DW * 0.82, DH * 0.38, 0.03, 0x4a5058, dX + o * DW * 0.5, DH / 2 + (o > 0 ? 0.52 : -0.52), LEAFZ + 0.07, 0);
   });
   B(0.14, 0.14, 0.1, 0x2a2f36, dX + DW * 0.72, DH * 0.48, LEAFZ + 0.09, 0);
   // табличка «служебное»
@@ -16289,7 +16324,9 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
   fzLiftCabin(bx, bz, F, FH, add, mat, B, liftX, LWALLZ, DOORW, DOORH);
 
   // ── СТВОРКИ: утоплены в нишу ──
-  const doorMat = () => new THREE.MeshLambertMaterial({ color: 0xaeb6c0, emissive: 0x1a2028, emissiveIntensity: 0.18 });
+  // v43: цвет створок — как в тизере (0xb8b8c0, светлый металлик),
+  // раньше был темнее и с синеватой подсветкой.
+  const doorMat = () => new THREE.MeshLambertMaterial({ color: 0xb8b8c0, emissive: 0x2a2f36, emissiveIntensity: 0.12 });
   const dl = new THREE.Mesh(new THREE.BoxGeometry(DOORW, DOORH, 0.1), doorMat());
   dl.position.set(bx + liftX - DOORW/2, F + DOORH/2, bz + DOORZ);
   dl.userData.isElevDoorL = true;
@@ -16306,7 +16343,9 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
   });
 
   // ── НАЛИЧНИК: тонкая стальная рамка заподлицо со стеной ──
-  const steelC = 0x39424e, steelLite = 0x59636f;
+  // v43: наличник в цветах тизера — бежевая рама с золотой кромкой
+  // (в тизере рама MM.beige2, вывеска золотая #c8a060). Была тёмная сталь.
+  const steelC = 0xa79a86, steelLite = 0xc8a060;
   [-1, 1].forEach(sx => {
     B(0.16, DOORH + 0.5, 0.1, steelC, liftX + sx * (DOORW + 0.1), (DOORH + 0.5)/2, JAMBZ, 0);
     for (let rr = 0; rr < 7; rr++)
@@ -16337,6 +16376,30 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
   const indScr = new THREE.Mesh(new THREE.PlaneGeometry(1.34, 0.5),
     new THREE.MeshBasicMaterial({ map: indTex, transparent: true }));
   indScr.position.set(bx + liftX, F + DOORH + 0.78, bz + JAMBZ + 0.08); add(indScr);
+
+  // ── ЗОЛОТАЯ ВЫВЕСКА «ЛИФТ» (v43: как в тизере) ──
+  // В тизере над лифтом висит табличка ЛИФТ золотом по тёмному
+  // (tMesh('ЛИФТ', ... '#5a4a3a', '#c8a060')). В игре её не было.
+  (function fzLiftSign() {
+    const cv = document.createElement('canvas');
+    cv.width = 512; cv.height = 128;
+    const g = cv.getContext('2d');
+    if (!g) return;
+    g.fillStyle = '#5a4a3a';
+    g.fillRect(0, 0, 512, 128);
+    g.strokeStyle = '#c8a060'; g.lineWidth = 6;
+    g.strokeRect(7, 7, 498, 114);
+    g.fillStyle = '#c8a060';
+    g.font = '800 74px Arial';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.shadowColor = '#ffd9a0'; g.shadowBlur = 16;
+    g.fillText('ЛИФТ', 256, 68);
+    const tex = new THREE.CanvasTexture(cv);
+    const pl = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.4),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+    pl.position.set(bx + liftX, F + DOORH + 1.32, bz + JAMBZ + 0.08);
+    add(pl);
+  })();
 
   // ── ПАНЕЛЬ ВЫЗОВА сбоку ──
   const cpX = liftX + DOORW + 0.75;

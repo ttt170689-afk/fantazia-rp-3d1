@@ -252,11 +252,23 @@
           wallS(0, -40.2, 44.4, 0.5, MM.beige);
           // западная стена (глухая)
           wallS(-22.25, -22, 0.5, 36.4, MM.beige);
-          // восточная стена — v39: ГЛУХАЯ.
-          // В тизере здесь были два проёма (под служебные ворота z≈-19 и под
-          // грузовой лифт z≈-24). Оба объекта удалены как дубли настоящих,
-          // поэтому проёмы заделаны — иначе в зале зияли бы дыры в стене.
-          wallS(22.25, -22, 0.5, 36.4, MM.beige);
+          // восточная стена — С ПРОЁМАМИ, как в тизере (v43: возвращено).
+          // Проёмы нужны под служебные броневорота (z≈-19) и грузовой лифт
+          // (z≈-24). В v39 стену заделали вместе с удалением этих объектов;
+          // теперь комплекс вернули, значит и проёмы должны быть на месте.
+          (function eastWallGate() {
+            // северный сегмент разрезан: проём под ГРУЗОВОЙ ЛИФТ (z -26..-22)
+            const segN1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 5.5, 14.2), MM.beige);
+            segN1.position.set(22.25, 2.75, -33.1); B.add(segN1);
+            const segN2 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 5.5, 1.1), MM.beige);
+            segN2.position.set(22.25, 2.75, -21.45); B.add(segN2);
+            const lintelF = new THREE.Mesh(new THREE.BoxGeometry(0.5, 2.3, 4.0), MM.beige);
+            lintelF.position.set(22.25, 4.35, -24); B.add(lintelF);
+            const segS = new THREE.Mesh(new THREE.BoxGeometry(0.5, 5.5, 13.3), MM.beige);
+            segS.position.set(22.25, 2.75, -10.45); B.add(segS);
+            const lintel = new THREE.Mesh(new THREE.BoxGeometry(0.5, 2.1, 3.8), MM.beige);
+            lintel.position.set(22.25, 4.45, -19); B.add(lintel);
+          })();
           // южная стена — стеклянный вход (сплошное стекло + стойки)
           for (let x = -20; x <= 20; x += 4) {
             const st = new THREE.Mesh(new THREE.BoxGeometry(0.16, 5.5, 0.3), MM.metal);
@@ -503,18 +515,260 @@
               leaf.position.set(px, 1.2, pz); leaf.scale.y = 1.4; B.add(leaf);
             });
           });
-          // ════ СЛУЖЕБНЫЙ КОМПЛЕКС ТИЗЕРА УДАЛЁН (v39) ════
-          // В тизере здесь строились броневорота B1, грузовой лифт с табло
-          // B1→B5 и комната босса. В игре всё это дублировало настоящие
-          // объекты: рабочий лифт (кабина + катсцена + табло B5…3),
-          // fzServiceDoor (заколоченный досками служебный вход) и
-          // fzBossDoorway. Из-за дублей игрок видел два лифта рядом и
-          // вторую служебную дверь без досок. Настоящие объекты строит
-          // buildMallInterior в public/index.html.
-          // Пустые заглушки: setFreightInd и внешние вызовы их проверяют.
+          // ════ СЛУЖЕБНЫЙ КОМПЛЕКС ИЗ ТИЗЕРА (v43: возвращён) ════
+          // Броневорота «СЛУЖЕБНЫЙ ВХОД · B1» на (21.4, -19) и грузовой
+          // лифт с живым табло на (21.4, -24) — ровно как в тизере.
+          // Это ВОСТОЧНАЯ стена; пассажирский лифт игры стоит на (16, -8),
+          // поэтому наложения лифтов, из-за которого их убрали в v39, нет.
           GM.brd = [];
-          GM.svc = null;
-          GM.freight = null;
+          GM.svc = { gateL: null, gateR: null, beacon: null, beaconL: null, inGlow: null, signP: null, cctvLed: null, _open: 0, _anim: 0, _flying: false };
+          GM.freight = { doorL: null, doorR: null, leak: null, leakL: null, indCtx: null, indTex: null, callG: null, callR: null, _floor: 1, _clank: 0, _open: 0, _ding: 0, _bang: 0, bossRoom: null, boss: null, bossLight: null, bossEyes: null, bossEyeL: null, cabLamp: null, smoke: null };
+          (function buildServiceComplex() {
+            const steelD = new THREE.MeshLambertMaterial({ color: 0x2e3238 });
+            const steelM = new THREE.MeshLambertMaterial({ color: 0x4a5058 });
+            const darkM = new THREE.MeshBasicMaterial({ color: 0x020203 });
+            const qx = 21.4, qz = -19;
+            // ── портал броневорот ──
+            B.add(box(0.5, 3.6, 0.5, steelD, qx - 0.1, 1.8, qz - 1.65));
+            B.add(box(0.5, 3.6, 0.5, steelD, qx - 0.1, 1.8, qz + 1.65));
+            B.add(box(0.5, 0.6, 3.8, steelD, qx - 0.1, 3.5, qz));
+            B.add(box(0.9, 0.08, 3.4, steelM, qx - 0.4, 0.04, qz));   // порог
+            // откосы проёма (туннель в стене)
+            B.add(box(0.9, 3.4, 0.25, steelD, 21.7, 1.7, qz - 1.78));
+            B.add(box(0.9, 3.4, 0.25, steelD, 21.7, 1.7, qz + 1.78));
+            B.add(box(0.9, 0.25, 3.8, steelD, 21.7, 3.3, qz));
+            // hazard-полосы на колоннах
+            const hzT = hazardTex();
+            const hzM = hzT ? new THREE.MeshBasicMaterial({ map: hzT }) : new THREE.MeshBasicMaterial({ color: 0xc8a020 });
+            [-1.65, 1.65].forEach((oz) => {
+              const hp = new THREE.Mesh(new THREE.PlaneGeometry(0.44, 3.2), hzM);
+              hp.rotation.y = -Math.PI / 2;
+              hp.position.set(qx - 0.36, 1.7, qz + oz);
+              B.add(hp);
+            });
+            // ── створки броневорот (раздвижные вдоль z) ──
+            const gateM = new THREE.MeshLambertMaterial({ color: 0x3d434b });
+            function mkGate(side) {   // side -1: северная, +1: южная
+              const g = new THREE.Group();
+              g.position.set(qx - 0.2, 0, qz + side * 0.78);
+              g.add(box(0.16, 3.0, 1.5, gateM, 0, 1.5, 0));
+              for (let r = 0; r < 3; r++) g.add(box(0.06, 0.12, 1.4, steelM, -0.1, 0.9 + r * 0.7, 0));
+              g.add(box(0.08, 0.5, 0.5, new THREE.MeshBasicMaterial({ color: 0x0c1210 }), -0.08, 2.1, 0)); // иллюминатор
+              const hz = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.3), hzM);
+              hz.rotation.y = -Math.PI / 2; hz.position.set(-0.09, 0.35, 0); g.add(hz);
+              g.add(box(0.1, 0.5, 0.12, steelM, -0.12, 1.4, -side * 0.55));  // ручка у центра
+              const st = tMesh('B1', 0.5, 0.35, '#ffb98a', null, 60, 300, 200);
+              if (st) { st.rotation.y = -Math.PI / 2; st.position.set(-0.1, 2.62, 0); g.add(st); }
+              g.userData.z0 = qz + side * 0.78;
+              B.add(g);
+              return g;
+            }
+            GM.svc.gateL = mkGate(-1);
+            GM.svc.gateR = mkGate(1);
+            // ── вывески ──
+            const sgnP = tMesh('СЛУЖЕБНЫЙ ВХОД · B1', 3.6, 0.55, '#ffb98a', '#c0392b', 44, 1100, 170);
+            if (sgnP) { sgnP.position.set(qx - 0.15, 4.1, qz); sgnP.rotation.y = -Math.PI / 2; B.add(sgnP); }
+            GM.svc.signP = sgnP;
+            const sgnBan = tMesh('ПОСТОРОННИМ ВХОД ЗАПРЕЩЁН', 2.8, 0.28, '#ff8a7a', null, 36, 1100, 130);
+            if (sgnBan) { sgnBan.position.set(qx - 0.36, 3.5, qz); sgnBan.rotation.y = -Math.PI / 2; B.add(sgnBan); }
+            // ── маяк + камера + кодовая панель ──
+            const bcn = cyl(0.12, 0.16, 0.22, 10, new THREE.MeshBasicMaterial({ color: 0xff2a14 }), qx - 0.2, 3.92, qz);
+            B.add(bcn); GM.svc.beacon = bcn;
+            const bcnL = new THREE.PointLight(0xff2a14, 0.5, 8, 1.7);
+            bcnL.position.set(qx - 0.9, 3.7, qz); B.add(bcnL); GM.svc.beaconL = bcnL;
+            B.add(box(0.34, 0.08, 0.08, steelD, 21.75, 4.32, qz + 2.4));
+            const cctv = box(0.35, 0.18, 0.18, new THREE.MeshLambertMaterial({ color: 0x14161a }), 21.5, 4.2, qz + 2.4);
+            cctv.rotation.y = 0.5; cctv.rotation.z = -0.22; B.add(cctv);
+            const cctvLed = sph(0.035, new THREE.MeshBasicMaterial({ color: 0xff2020 }), 21.32, 4.1, qz + 2.32);
+            B.add(cctvLed); GM.svc.cctvLed = cctvLed;
+            B.add(box(0.14, 0.5, 0.34, new THREE.MeshLambertMaterial({ color: 0x14161a }), 21.9, 1.5, qz + 2.3));
+            B.add(sph(0.03, new THREE.MeshBasicMaterial({ color: 0x36ff5e }), 21.82, 1.62, qz + 2.3));
+            // напольная разметка перед воротами
+            const flT = hazardTex();
+            if (flT) {
+              flT.repeat.set(4, 1);
+              const flM = new THREE.MeshBasicMaterial({ map: flT, transparent: true, opacity: 0.75 });
+              const fl = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 0.55), flM);
+              fl.rotation.x = -Math.PI / 2;
+              fl.position.set(qx - 1.7, 0.045, qz);
+              B.add(fl);
+            }
+            // ── ЛЕСТНИЧНЫЙ ПРОСВЕТ за воротами (настоящая ниша в стене!) ──
+            const nicheM = new THREE.MeshLambertMaterial({ color: 0x1b1e24 });
+            B.add(box(1.2, 0.15, 3.2, NM.conc2, 22.3, -0.05, qz));   // площадка
+            for (let i = 0; i < 4; i++) {
+              B.add(box(1.0, 0.3, 3.2, NM.conc2, 23.2 + i * 0.95, -0.28 - i * 0.3, qz));
+            }
+            B.add(box(4.6, 4.2, 0.3, nicheM, 24.2, 1.4, qz - 1.8));
+            B.add(box(4.6, 4.2, 0.3, nicheM, 24.2, 1.4, qz + 1.8));
+            B.add(box(4.6, 0.3, 3.9, nicheM, 24.2, 3.35, qz));
+            B.add(box(0.3, 4.2, 3.9, nicheM, 26.4, 1.4, qz));
+            B.add(sph(0.08, NM.warm, 23.4, 2.5, qz - 1.4));
+            B.add(sph(0.07, NM.warmDim, 25.2, 1.9, qz + 1.2));
+            const inGlow = new THREE.PointLight(0xffca8e, 0.0, 9, 1.7);
+            inGlow.position.set(23.6, 2.0, qz); B.add(inGlow);
+            GM.svc.inGlow = inGlow;
+            const sgnDeep = tMesh('B1 ↓', 1.2, 0.5, '#ff6a5a', '#a01f1f', 70, 500, 200);
+            if (sgnDeep) { sgnDeep.position.set(26.2, 1.7, qz); sgnDeep.rotation.y = -Math.PI / 2; B.add(sgnDeep); }
+            // ═══ ГРУЗОВОЙ СЛУЖЕБНЫЙ ЛИФТ (восточная стена, z=-24) ═══
+            const fx = 21.4, fz = -24;
+            // портал лифта (рамка вокруг проёма — без глухой задней плиты!)
+            B.add(box(0.5, 0.55, 4.0, steelD, fx - 0.05, 3.62, fz));           // перемычка сверху
+            B.add(box(0.5, 3.8, 0.45, steelD, fx - 0.05, 1.9, fz - 1.78));     // стойка север
+            B.add(box(0.5, 3.8, 0.45, steelD, fx - 0.05, 1.9, fz + 1.78));     // стойка юг
+            B.add(box(0.8, 0.08, 3.2, steelM, fx - 0.3, 0.04, fz));            // порог
+            const frM = new THREE.MeshLambertMaterial({ color: 0x6a7078 });
+            function mkFr(side) {
+              const g = new THREE.Group();
+              g.position.set(fx - 0.35, 0, fz + side * 0.8);
+              g.add(box(0.14, 2.9, 1.55, frM, 0, 1.45, 0));
+              for (let r = 0; r < 3; r++) g.add(box(0.05, 2.7, 0.1, steelM, -0.08, 1.45, -0.5 + r * 0.5));
+              g.add(box(0.06, 0.4, 0.9, new THREE.MeshBasicMaterial({ color: 0x0c1210 }), -0.07, 2.2, 0));
+              const st2 = tMesh(side < 0 ? 'ГРУЗ' : 'ЛИФТ', 0.9, 0.26, '#8a95a5', null, 40, 500, 140);
+              if (st2) { st2.rotation.y = -Math.PI / 2; st2.position.set(-0.08, 0.75, 0); g.add(st2); }
+              g.userData.z0 = fz + side * 0.8;
+              g.userData.x0 = fx - 0.35;
+              B.add(g);
+              return g;
+            }
+            GM.freight.doorL = mkFr(-1);
+            GM.freight.doorR = mkFr(1);
+            // свет из щели дверей
+            const leak = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 2.7),
+              new THREE.MeshBasicMaterial({ color: 0xcfe8ff, transparent: true, opacity: 0.9 }));
+            leak.position.set(fx - 0.43, 1.45, fz); leak.rotation.y = -Math.PI / 2; B.add(leak);
+            GM.freight.leak = leak;
+            const leakL = new THREE.PointLight(0xbfe0ff, 0.5, 6, 1.8);
+            leakL.position.set(fx - 1.0, 1.8, fz); B.add(leakL);
+            GM.freight.leakL = leakL;
+            // живое табло этажа
+            B.add(box(0.3, 0.55, 1.6, new THREE.MeshLambertMaterial({ color: 0x0c0e12 }), fx - 0.3, 3.35, fz));
+            const indCv = DOC.createElement('canvas'); indCv.width = 256; indCv.height = 80;
+            GM.freight.indCtx = indCv.getContext('2d');
+            GM.freight.indTex = new THREE.CanvasTexture(indCv);
+            const indMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.4),
+              new THREE.MeshBasicMaterial({ map: GM.freight.indTex, transparent: true }));
+            indMesh.position.set(fx - 0.46, 3.35, fz); indMesh.rotation.y = -Math.PI / 2; B.add(indMesh);
+            setFreightInd('B1');
+            const sgnFr = tMesh('ГРУЗОВОЙ ЛИФТ · ПЕРСОНАЛ', 3.4, 0.42, '#cfd6e0', '#3a5a78', 40, 1100, 140);
+            if (sgnFr) { sgnFr.position.set(fx - 0.3, 3.95, fz); sgnFr.rotation.y = -Math.PI / 2; B.add(sgnFr); }
+            // панель вызова (на стене рядом с порталом)
+            B.add(box(0.14, 0.7, 0.4, new THREE.MeshLambertMaterial({ color: 0x14161a }), 21.9, 1.5, fz + 2.35));
+            const callG = sph(0.035, new THREE.MeshBasicMaterial({ color: 0x36ff5e }), 21.82, 1.62, fz + 2.35);
+            const callR = sph(0.035, new THREE.MeshBasicMaterial({ color: 0x551512 }), 21.82, 1.45, fz + 2.35);
+            B.add(callG); B.add(callR);
+            GM.freight.callG = callG; GM.freight.callR = callR;
+            // вентрешётка над лифтом
+            for (let v = 0; v < 3; v++) B.add(box(0.1, 0.08, 2.6, steelD, fx - 0.3, 4.35 + v * 0.16, fz));
+            // напольная разметка + тележка с коробками
+            const flT2 = hazardTex();
+            if (flT2) {
+              flT2.repeat.set(1, 4);
+              const flM2 = new THREE.MeshBasicMaterial({ map: flT2, transparent: true, opacity: 0.7 });
+              const fl2 = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 3.4), flM2);
+              fl2.rotation.x = -Math.PI / 2;
+              fl2.position.set(fx - 1.5, 0.045, fz);
+              B.add(fl2);
+            }
+            B.add(box(1.1, 0.12, 0.7, steelM, 20.2, 0.35, fz - 2.8));
+            B.add(box(0.7, 0.5, 0.5, new THREE.MeshLambertMaterial({ color: 0x8a6a4a }), 20.2, 0.66, fz - 2.7));
+            B.add(box(0.5, 0.4, 0.4, new THREE.MeshLambertMaterial({ color: 0x6b5a3a }), 20.1, 1.1, fz - 2.9));
+            [[-0.45, -0.28], [0.45, -0.28], [-0.45, 0.28], [0.45, 0.28]].forEach(([ox, oz]) => {
+              B.add(cyl(0.07, 0.07, 0.06, 8, new THREE.MeshLambertMaterial({ color: 0x1b1e24 }), 20.2 + ox, 0.07, fz - 2.8 + oz));
+            });
+            // конус у ворот
+            B.add(cyl(0.24, 0.3, 0.8, 12, new THREE.MeshLambertMaterial({ color: 0xd35400, emissive: 0xd35400, emissiveIntensity: 0.15 }), 19.8, 0.4, -19));
+            // ═══ КАБИНА ЛИФТА + КОМНАТА БОССА ЗА ДВЕРЯМИ (видно, когда створки открыты) ═══
+            const OUTER = B;   // v21: ссылка на группу молла (внутри IIFE B будет переопределён)
+            (function buildBossRoom() {
+              const cabM = new THREE.MeshLambertMaterial({ color: 0x232830 });
+              const roomM = new THREE.MeshLambertMaterial({ color: 0x14161c });
+              const rx0 = 22.0;           // начало кабины (за проёмом)
+              // v21: всё, что ЗА створками, живёт в отдельной группе — она скрыта,
+              // пока двери закрыты (кабина уехала на B5, за дверью шахта).
+              const RM = new THREE.Group();
+              OUTER.add(RM);              // OUTER = группа молла (см. алиас ниже)
+              RM.visible = false;
+              GM.freight.bossRoom = RM;
+              const B = RM;               // дальше всё добавляем в группу
+              // кабина лифта
+              B.add(box(1.9, 0.1, 3.4, new THREE.MeshLambertMaterial({ color: 0x2c3138 }), rx0 + 0.95, 0.05, fz)); // пол
+              B.add(box(1.9, 0.12, 3.4, cabM, rx0 + 0.95, 3.35, fz));                                   // потолок
+              B.add(box(1.9, 3.4, 0.12, cabM, rx0 + 0.95, 1.7, fz - 1.7));
+              B.add(box(1.9, 3.4, 0.12, cabM, rx0 + 0.95, 1.7, fz + 1.7));
+              // плафон кабины
+              const cabGl = sph(0.12, new THREE.MeshBasicMaterial({ color: 0xffe6bc }), rx0 + 0.95, 3.15, fz);
+              B.add(cabGl);
+              const cabLi = new THREE.PointLight(0xffd9a0, 0.9, 8, 1.7);
+              cabLi.position.set(rx0 + 0.9, 2.8, fz); B.add(cabLi);
+              GM.freight.cabLamp = cabLi;
+              // ── ЗАЛ БОССА (за кабиной) ──
+              const bx0 = rx0 + 2.0;
+              B.add(box(8.0, 0.2, 9.0, roomM, bx0 + 4, -0.05, fz));                 // пол
+              B.add(box(8.0, 0.3, 9.0, roomM, bx0 + 4, 5.2, fz));                   // потолок
+              B.add(box(8.0, 5.4, 0.3, roomM, bx0 + 4, 2.6, fz - 4.5));
+              B.add(box(8.0, 5.4, 0.3, roomM, bx0 + 4, 2.6, fz + 4.5));
+              B.add(box(0.3, 5.4, 9.0, roomM, bx0 + 8, 2.6, fz));                   // дальняя стена
+              // колонны зала
+              [-3.2, 3.2].forEach((oz) => {
+                [1.6, 5.6].forEach((ox) => B.add(box(0.5, 5.2, 0.5, new THREE.MeshLambertMaterial({ color: 0x1b1f26 }), bx0 + ox, 2.6, fz + oz)));
+              });
+              // алая подсветка зала
+              const bLi = new THREE.PointLight(0xff2a14, 1.35, 22, 1.6);
+              bLi.position.set(bx0 + 4.5, 3.2, fz); B.add(bLi);
+              GM.freight.bossLight = bLi;
+              const bLi2 = new THREE.PointLight(0xff6a20, 0.7, 14, 1.7);
+              bLi2.position.set(bx0 + 1.6, 2.2, fz); B.add(bLi2);
+              // трон-постамент
+              B.add(cyl(2.4, 2.8, 0.45, 16, new THREE.MeshLambertMaterial({ color: 0x1e2229 }), bx0 + 5.4, 0.28, fz));
+              B.add(box(1.7, 2.6, 0.5, new THREE.MeshLambertMaterial({ color: 0x2a1216 }), bx0 + 6.4, 1.8, fz)); // спинка трона
+              // ── САМ БОСС (силуэт, смотрит на двери) ──
+              const boss = new THREE.Group();
+              boss.position.set(bx0 + 5.2, 0.5, fz);
+              const bodyM = new THREE.MeshLambertMaterial({ color: 0x0f1116, emissive: 0x2a0608, emissiveIntensity: 0.5 });
+              boss.add(box(1.9, 2.3, 1.3, bodyM, 0, 1.6, 0));                       // торс
+              boss.add(box(1.05, 0.95, 0.95, bodyM, -0.15, 3.25, 0));               // голова
+              boss.add(box(0.55, 2.1, 0.55, bodyM, 0, 1.5, -1.15));                 // руки
+              boss.add(box(0.55, 2.1, 0.55, bodyM, 0, 1.5, 1.15));
+              boss.add(box(0.7, 1.1, 0.7, bodyM, 0, 0.05, -0.45));                  // ноги
+              boss.add(box(0.7, 1.1, 0.7, bodyM, 0, 0.05, 0.45));
+              // плащ
+              const cloak = box(0.35, 3.0, 2.6, new THREE.MeshLambertMaterial({ color: 0x2a0a10 }), 0.75, 1.7, 0);
+              boss.add(cloak);
+              // рога
+              [-0.42, 0.42].forEach((oz) => {
+                const horn = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.75, 6), new THREE.MeshLambertMaterial({ color: 0x3a2a24 }));
+                horn.position.set(-0.1, 3.95, oz); horn.rotation.x = oz * 0.5; boss.add(horn);
+              });
+              // глаза (смотрят в сторону лифта, -x)
+              const eyeM = new THREE.MeshBasicMaterial({ color: 0xff2a14 });
+              const eyeA = sph(0.1, eyeM, -0.66, 3.35, -0.24);
+              const eyeB = sph(0.1, eyeM, -0.66, 3.35, 0.24);
+              boss.add(eyeA); boss.add(eyeB);
+              const eyeL = new THREE.PointLight(0xff2010, 0.9, 9, 1.8);
+              eyeL.position.set(-1.0, 3.35, 0); boss.add(eyeL);
+              boss.rotation.y = Math.PI;   // лицом к дверям лифта
+              B.add(boss);
+              GM.freight.boss = boss;
+              GM.freight.bossEyes = [eyeA, eyeB];
+              GM.freight.bossEyeL = eyeL;
+              // вывеска над троном
+              const sgnB = tMesh('BOSS · B5', 2.6, 0.6, '#ff8a7a', '#c81e0e', 60, 800, 190);
+              if (sgnB) { sgnB.position.set(bx0 + 7.8, 3.6, fz); sgnB.rotation.y = -Math.PI / 2; B.add(sgnB); }
+              // дым/пар у пола зала
+              const smN = 40, smPos = new Float32Array(smN * 3);
+              for (let i = 0; i < smN; i++) {
+                smPos[i * 3] = bx0 + 1 + Math.random() * 7;
+                smPos[i * 3 + 1] = 0.1 + Math.random() * 1.2;
+                smPos[i * 3 + 2] = fz + (Math.random() - 0.5) * 7;
+              }
+              const smGeo = new THREE.BufferGeometry();
+              smGeo.setAttribute('position', new THREE.BufferAttribute(smPos, 3));
+              const smPts = new THREE.Points(smGeo, new THREE.PointsMaterial({ color: 0xff7a5a, size: 0.13, transparent: true, opacity: 0.35 }));
+              B.add(smPts);
+              GM.freight.smoke = { pts: smPts, pos: smPos, n: smN };
+            })();
+          })();
           // 2 этаж (вид снизу через атриум): витрины электроники над северной стеной
           for (let i = 0; i < 6; i++) {
             const c = [0x0af, 0xfa0, 0xaf0, 0xf0a, 0xaff, 0xa0f][i];
