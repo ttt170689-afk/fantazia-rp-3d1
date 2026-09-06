@@ -16441,16 +16441,41 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
     B(0.5, PH + 0.7, 0.5, 0x2e3238, FR.x, (PH + 0.7) / 2, FR.z - (PW + 0.5), 0);
     B(0.5, PH + 0.7, 0.5, 0x2e3238, FR.x, (PH + 0.7) / 2, FR.z + (PW + 0.5), 0);
     B(0.5, 0.6, PW * 2 + 1.5, 0x2e3238, FR.x, PH + 0.55, FR.z, 0);
-    // ниша шахты — чтобы за створками была темнота, а не стена зала
-    B(0.14, PH, PW * 2, 0x05070a, FR.x - 0.45, PH / 2, FR.z, 0);
-    // порог
+    // v50: ЧЁРНАЯ ПАНЕЛЬ УБРАНА. Она стояла на x = FR.x - 0.45 = 20.55,
+    // то есть ПЕРЕД створками (20.7), и закрывала их сплошным чёрным
+    // прямоугольником — на скриншоте игрока вместо дверей зияла дыра.
+    // Темнота за дверьми не нужна: там теперь настоящая кабина.
+    // порог — рифлёная стальная полоса в полу проёма
     B(0.9, 0.07, PW * 2, 0x4a5058, FR.x - 0.25, 0.035, FR.z, 0);
+    for (let tr = 0; tr < 9; tr++) {
+      B(0.86, 0.02, 0.05, 0x39414a, FR.x - 0.25, 0.075, FR.z - PW + 0.2 + tr * 0.33, 0);
+    }
+
+    // ── ПЛОСКОСТЬ СТВОРОК ──
+    // Держим её в одной переменной: от неё же считаются карманы,
+    // направляющие и передняя стенка кабины, иначе между дверьми и
+    // кабиной остаётся щель и сквозь неё видно пустоту.
+    const DXp = FR.x - 0.3;
+    const SLIDE_MAX = 1.42;            // столько уезжает створка (animateElevatorDoors)
+
+    // ── КАРМАНЫ, куда прячутся створки ──
+    // Без них открытая дверь торчала бы из-за косяка прямо в зал.
+    // Панель чуть западнее полотна перекрывает уехавшую створку.
+    [-1, 1].forEach(sd => {
+      const zc = FR.z + sd * (PW + SLIDE_MAX / 2 + 0.05);
+      B(0.1, PH + 0.12, SLIDE_MAX + 0.2, 0x555d66, DXp - 0.11, (PH + 0.12) / 2, zc, 0);
+      // притолока над карманом, чтобы сверху не было щели
+      B(0.16, 0.18, SLIDE_MAX + 0.3, 0x2e3238, DXp - 0.08, PH + 0.09, zc, 0);
+    });
+
+    // ── НАПРАВЛЯЮЩАЯ (рельс) над проёмом ──
+    B(0.14, 0.1, PW * 2 + SLIDE_MAX * 2 + 0.4, 0x39424e, DXp - 0.05, PH + 0.06, FR.z, 0);
 
     // ── СТВОРКИ: серо-стальные, с рёбрами и окном, как на фото ──
     const leafMat = () => new THREE.MeshLambertMaterial({ color: 0x6a7078 });
     const mkLeaf = (side) => {
       const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.12, PH, PW), leafMat());
-      leaf.position.set(bx + FR.x - 0.3, F + PH / 2, bz + FR.z + side * PW / 2);
+      leaf.position.set(bx + DXp, F + PH / 2, bz + FR.z + side * PW / 2);
       // три вертикальных ребра жёсткости
       for (let r = 0; r < 3; r++) {
         const rib = new THREE.Mesh(new THREE.BoxGeometry(0.05, PH - 0.2, 0.1),
@@ -16463,6 +16488,16 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
         new THREE.MeshBasicMaterial({ color: 0x0c1210 }));
       win.position.set(-0.08, PH * 0.26, 0);
       leaf.add(win);
+      // кромка притвора — по ней двери сходятся посередине
+      const edge = new THREE.Mesh(new THREE.BoxGeometry(0.14, PH, 0.05),
+        new THREE.MeshLambertMaterial({ color: 0x39424e }));
+      edge.position.set(0, 0, -side * (PW / 2 - 0.025));
+      leaf.add(edge);
+      // резиновый отбойник на кромке
+      const rub = new THREE.Mesh(new THREE.BoxGeometry(0.15, PH, 0.02),
+        new THREE.MeshLambertMaterial({ color: 0x14181c }));
+      rub.position.set(0, 0, -side * (PW / 2 - 0.005));
+      leaf.add(rub);
       add(leaf);
       return leaf;
     };
@@ -16517,7 +16552,10 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
     // ═══════════════════════════════════════════════════════════════
     const CD2 = 3.0;                    // глубина кабины (вдоль X)
     const CW2 = PW * 2;                 // ширина (вдоль Z)
-    const CX = FR.x + 0.3 + CD2 / 2;    // центр кабины за створками
+    // v50: кабина придвинута ВПЛОТНУЮ к створкам. Раньше её передняя
+    // стенка была на 21.3, а двери на 20.7 — между ними зияла щель
+    // в 60 см, сквозь которую просвечивала пустота.
+    const CX = FR.x - 0.24 + CD2 / 2;   // центр кабины сразу за створками
     const CH2 = PH + 0.35;              // высота
 
     // шахта-короб, чтобы за кабиной не зияла дыра в мир
