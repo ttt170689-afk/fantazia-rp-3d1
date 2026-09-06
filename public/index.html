@@ -10417,6 +10417,15 @@ function createCharacterLegacy(appearance, isLocal) {
 }
 
 function createNameTag(name, group) {
+  // v46: у СВОЕГО персонажа ник НЕ рисуем вообще — камера от третьего
+  // лица смотрит прямо на него, и спрайт «123123» перекрывал пол-экрана
+  // (жалоба со скриншотов). Проверку делаем ДО выбора ветки, чтобы
+  // отсечь и модель, и запасной вариант со спрайтом.
+  if (typeof localPlayer !== 'undefined' && localPlayer && localPlayer.mesh === group) {
+    const m0 = group.userData && group.userData.model;
+    if (m0 && m0._tag) m0._tag.visible = false;
+    return;
+  }
   // Новая модель — используем её встроенный ник
   const model = group.userData && group.userData.model;
   if (model) {
@@ -11096,7 +11105,9 @@ function initSocket(name) {
     scene.add(char3D);
     localPlayer.mesh = char3D;
 
-    createNameTag(localPlayer.name, char3D);
+    // v46: НАД СВОИМ игроком ник НЕ рисуем. Камера от третьего лица
+    // смотрит прямо на него, и спрайт «123123» перекрывал пол-экрана
+    // (жалоба со скриншотов). Ники остальных игроков остаются.
 
     // Загрузка истории чата
     data.chatHistory.forEach(msg => addChatMessage(msg));
@@ -14084,7 +14095,11 @@ function fzBossDoorway(bx, bz, F, add, mat) {
   const qx = bx + 18.6, qz = bz + 3;
   const dark = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 3), new THREE.MeshBasicMaterial({ color: 0x050508 }));
   dark.position.set(qx, F + 1.5, qz); dark.rotation.y = -Math.PI / 2; add(dark);
-  const frame2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3.2, 2.8), mat(0x2c2016));
+  // v46: коричневая рама УБРАНА — игрок показал её на скриншоте как
+  // «коричневую доску» рядом с грузовым лифтом. Вместо неё тонкий
+  // стальной портал в цвет служебной зоны, чтобы проём не выглядел
+  // деревянной заплаткой посреди металла.
+  const frame2 = new THREE.Mesh(new THREE.BoxGeometry(0.16, 3.2, 2.8), mat(0x2e3238));
   frame2.position.set(qx, F + 1.6, qz); add(frame2);
 
   if (window.FZ_QUEST.bossDead) {
@@ -16305,13 +16320,16 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
 
   // ── стена с проёмом: три плиты вместо сплошной ──
   // (простой куб перекрыл бы нишу, поэтому обходим проём)
+  // v46: пилоны и перемычка шахты — серо-стальные, как обшивка
+  // грузового лифта тизера. Бежевый 0xc9c3b4 выбивался из общей
+  // «служебной» гаммы, на которую указал игрок.
   const SIDEW = (4.8 - (DOORW * 2 + 0.36)) / 2;
   [-1, 1].forEach(sx => {
-    B(SIDEW, FH, 0.5, 0xc9c3b4,
+    B(SIDEW, FH, 0.5, 0x8a9199,
       liftX + sx * (DOORW + 0.18 + SIDEW / 2), FH / 2, LWALLZ, 0);
   });
   // перемычка над проёмом (от верха двери до потолка)
-  B(DOORW * 2 + 0.36, FH - (DOORH + 0.42), 0.5, 0xc9c3b4,
+  B(DOORW * 2 + 0.36, FH - (DOORH + 0.42), 0.5, 0x8a9199,
     liftX, DOORH + 0.42 + (FH - (DOORH + 0.42)) / 2, LWALLZ, 0);
 
   // ── откосы проёма (щёки и притолока) ──
@@ -16329,7 +16347,10 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
   // ── СТВОРКИ: утоплены в нишу ──
   // v43: цвет створок — как в тизере (0xb8b8c0, светлый металлик),
   // раньше был темнее и с синеватой подсветкой.
-  const doorMat = () => new THREE.MeshLambertMaterial({ color: 0xb8b8c0, emissive: 0x2a2f36, emissiveIntensity: 0.12 });
+  // v46: створки в стиле ГРУЗОВОГО ЛИФТА ИЗ ТИЗЕРА (игрок показал его
+  // на фото и сказал «он и будет лифтом»). Там полотно серо-стальное
+  // 0x6a7078 с тремя вертикальными рёбрами и тёмным окном-визиром.
+  const doorMat = () => new THREE.MeshLambertMaterial({ color: 0x6a7078 });
   const dl = new THREE.Mesh(new THREE.BoxGeometry(DOORW, DOORH, 0.1), doorMat());
   dl.position.set(bx + liftX - DOORW/2, F + DOORH/2, bz + DOORZ);
   dl.userData.isElevDoorL = true;
@@ -16340,24 +16361,48 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
   dr.userData.isElevDoorR = true;
   dr.userData.homeX = bx + liftX + DOORW/2;
   add(dr);
-  // вертикальный шов на створках
-  [-1, 1].forEach(sx => {
-    B(0.05, DOORH - 0.2, 0.03, 0x8892a0, liftX + sx * DOORW * 0.55, DOORH/2, DOORZ + 0.06, 0);
+
+  // ── ДЕТАЛИ СТВОРОК КАК В ТИЗЕРЕ ──
+  // Важно: рёбра и окна делаем ДОЧЕРНИМИ мешами створок, иначе они
+  // останутся висеть в воздухе, когда двери разъедутся.
+  [[-1, dl], [1, dr]].forEach(([side, leaf]) => {
+    // три вертикальных ребра жёсткости (в тизере — 3 полосы на створку)
+    for (let r = 0; r < 3; r++) {
+      const rib = new THREE.Mesh(
+        new THREE.BoxGeometry(0.1, DOORH - 0.18, 0.04),
+        new THREE.MeshLambertMaterial({ color: 0x4a5058 }));
+      rib.position.set(-DOORW / 2 + DOORW * (r + 0.5) / 3, 0, 0.07);
+      leaf.add(rib);
+    }
+    // тёмное окно-визир в верхней части полотна
+    const win = new THREE.Mesh(
+      new THREE.BoxGeometry(DOORW * 0.62, 0.42, 0.03),
+      new THREE.MeshBasicMaterial({ color: 0x0c1210 }));
+    win.position.set(0, DOORH * 0.26, 0.07);
+    leaf.add(win);
+    // кромка притвора по центру проёма
+    const edge = new THREE.Mesh(
+      new THREE.BoxGeometry(0.05, DOORH - 0.1, 0.05),
+      new THREE.MeshLambertMaterial({ color: 0x39424e }));
+    edge.position.set(side * (DOORW / 2 - 0.03), 0, 0.06);
+    leaf.add(edge);
   });
 
   // ── НАЛИЧНИК: тонкая стальная рамка заподлицо со стеной ──
-  // v43: наличник в цветах тизера — бежевая рама с золотой кромкой
-  // (в тизере рама MM.beige2, вывеска золотая #c8a060). Была тёмная сталь.
-  const steelC = 0xa79a86, steelLite = 0xc8a060;
+  // v46: портал — ТЁМНАЯ СТАЛЬ, как у грузового лифта тизера (steelD
+  // 0x2e3238 / steelM 0x4a5058). Бежево-золотую раму из v43 игрок
+  // забраковал: «правильный лифт» на его фото — серо-стальной.
+  const steelC = 0x2e3238, steelLite = 0x4a5058;
   [-1, 1].forEach(sx => {
-    B(0.16, DOORH + 0.5, 0.1, steelC, liftX + sx * (DOORW + 0.1), (DOORH + 0.5)/2, JAMBZ, 0);
+    B(0.22, DOORH + 0.55, 0.14, steelC, liftX + sx * (DOORW + 0.12), (DOORH + 0.55)/2, JAMBZ, 0);
+    // болты по стойке (в тизере стойки клёпаные)
     for (let rr = 0; rr < 7; rr++)
-      B(0.2, 0.04, 0.12, steelLite, liftX + sx * (DOORW + 0.1), 0.4 + rr * 0.42, JAMBZ, 0);
+      B(0.1, 0.06, 0.16, steelLite, liftX + sx * (DOORW + 0.12), 0.4 + rr * 0.42, JAMBZ, 0);
   });
-  B(DOORW * 2 + 0.52, 0.18, 0.1, steelC, liftX, DOORH + 0.34, JAMBZ, 0);
-  B(DOORW * 2 + 0.52, 0.05, 0.12, steelLite, liftX, DOORH + 0.46, JAMBZ, 0);
-  // порог в полу проёма
-  B(DOORW * 2 + 0.3, 0.05, 0.5, 0x7c8794, liftX, 0.025, LWALLZ + 0.05, 0);
+  B(DOORW * 2 + 0.6, 0.26, 0.14, steelC, liftX, DOORH + 0.38, JAMBZ, 0);
+  B(DOORW * 2 + 0.6, 0.06, 0.16, steelLite, liftX, DOORH + 0.53, JAMBZ, 0);
+  // порог в полу проёма — рифлёная стальная плита
+  B(DOORW * 2 + 0.3, 0.06, 0.5, 0x4a5058, liftX, 0.03, LWALLZ + 0.05, 0);
 
   // ── свет из щели над дверьми ──
   const slit = new THREE.Mesh(new THREE.PlaneGeometry(DOORW * 2, 0.09),
