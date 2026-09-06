@@ -18097,8 +18097,16 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
           st.userData.s += o.userData.speed * o.userData.dir * delta;
           if (st.userData.s > 1) st.userData.s -= 1;
           if (st.userData.s < 0) st.userData.s += 1;
-          st.position.y = o.userData.baseY + 0.62 + FHesc * st.userData.s;
-          st.position.z = o.userData.baseZ + MALL_ESC.zBottom - runE * st.userData.s;
+          const sp = st.userData.s;
+          // v41: у ступени есть рифление (rib) и подступёнок (riser) —
+          // у каждого свой сдвиг относительно проступи. Без этих поправок
+          // рёбра и стенки сплющивались в одну плоскость с проступью.
+          const dz = st.userData.rib !== undefined ? st.userData.rib
+                   : (st.userData.riser ? -0.30 : 0);
+          const dy = st.userData.rib !== undefined ? 0.055
+                   : (st.userData.riser ? -0.15 : 0);
+          st.position.y = o.userData.baseY + 0.62 + FHesc * sp + dy;
+          st.position.z = o.userData.baseZ + MALL_ESC.zBottom - runE * sp + dz;
           st.position.x = o.userData.baseX;
         }
       }
