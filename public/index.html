@@ -5398,11 +5398,14 @@ function initThreeJS() {
   scene.add(ground);
 
   buildCity();
-  buildStreetFurniture();
+  // v29: у нового города своя уличная мебель (фонари/светофоры) — старую
+  // не строим, иначе объекты задваиваются и просаживают FPS.
+  const _newCity = !!(window.FZ_NEWCITY && FZ_NEWCITY.root);
+  if (!_newCity) buildStreetFurniture();
   buildQuestNotes();
   buildTraffic();
   buildPedestrians();
-  buildParkPlayground();
+  if (!_newCity) buildParkPlayground();
   buildGasStation();
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -6065,7 +6068,21 @@ function buildFantaziaCityV3() {
 }
 
 function buildCity() {
-  // ═══ ИСХОДНЫЙ ГОРОД (вернул как было изначально) ═══
+  // ═══ v29: НОВЫЙ ГОРОД ═══
+  // Реалистичная сеточная застройка из newcity.js. Инстансинг + LOD,
+  // поэтому на телефоне заметно легче старого города.
+  // GRAND MALL сохраняем — на него завязан квест (записки/топор/босс).
+  if (window.FZ_NEWCITY && typeof FZ_NEWCITY.build === 'function') {
+    const ok = FZ_NEWCITY.build();
+    if (ok) {
+      buildGrandMall();      // ТЦ на прежнем месте (85, -85)
+      buildNPCPopulation();  // жители
+      return;
+    }
+    console.warn('[CITY] newcity не собрался — откат на старый город');
+  }
+
+  // ── ЗАПАСНОЙ ВАРИАНТ: старый город, если модуль не загрузился ──
   buildRoads();
   buildCentralPlaza();
   buildShoppingDistrict();
@@ -6077,8 +6094,7 @@ function buildCity() {
   buildSouthernIndustrialZone();
   buildEasternDistrict();
   buildWesternVillage();
-  buildCityExpansion();   // расширение города (v2.15)
-  // --- НОВЫЕ ЗОНЫ ---
+  buildCityExpansion();
   buildMegaSkyscraperDistrict();
   buildDesert();
   buildCaves();
@@ -12737,16 +12753,34 @@ function buildTraffic() {
     scene.add(g);
     return g;
   };
-  const routes = [
-    { pts: [[-160,-177],[160,-177],[170,-177],[177,-170],[177,160],[170,177],[160,177],[-160,177],[-170,177],[-177,170],[-177,-160],[-177,-170]], loop: true,  n: 5 },
-    { pts: [[-220, 3], [220, 3]],    loop: false, n: 2 },
-    { pts: [[220, -3], [-220, -3]],  loop: false, n: 2 },
-    { pts: [[3, -220], [3, 220]],    loop: false, n: 2 },
-    { pts: [[-160, 57], [160, 57]],  loop: false, n: 1 },
-    { pts: [[160, -57], [-160, -57]],loop: false, n: 1 },
-    { pts: [[57, -150], [57, 10]],   loop: false, n: 1 },
-    { pts: [[-57, 160], [-57, -160]],loop: false, n: 1 },
-  ];
+  // v29: маршруты построены под сетку нового города (улицы кратны 80).
+  // Правостороннее движение: полоса смещена на 3.5 от осевой линии.
+  let routes;
+  if (window.FZ_NEWCITY && FZ_NEWCITY.root) {
+    const BL = FZ_NEWCITY.BLOCK, EX = FZ_NEWCITY.EXTENT, LANE = 3.5;
+    routes = [];
+    for (let i = -3; i <= 3; i++) {
+      const p = i * BL;
+      if (Math.abs(p) > EX) continue;
+      // вдоль X: туда по одной полосе, обратно по другой
+      routes.push({ pts: [[-EX + 10, p + LANE], [EX - 10, p + LANE]], loop: false, n: 1 });
+      routes.push({ pts: [[EX - 10, p - LANE], [-EX + 10, p - LANE]], loop: false, n: 1 });
+      // вдоль Z
+      routes.push({ pts: [[p - LANE, -EX + 10], [p - LANE, EX - 10]], loop: false, n: 1 });
+      routes.push({ pts: [[p + LANE, EX - 10], [p + LANE, -EX + 10]], loop: false, n: 1 });
+    }
+  } else {
+    routes = [
+      { pts: [[-160,-177],[160,-177],[170,-177],[177,-170],[177,160],[170,177],[160,177],[-160,177],[-170,177],[-177,170],[-177,-160],[-177,-170]], loop: true,  n: 5 },
+      { pts: [[-220, 3], [220, 3]],    loop: false, n: 2 },
+      { pts: [[220, -3], [-220, -3]],  loop: false, n: 2 },
+      { pts: [[3, -220], [3, 220]],    loop: false, n: 2 },
+      { pts: [[-160, 57], [160, 57]],  loop: false, n: 1 },
+      { pts: [[160, -57], [-160, -57]],loop: false, n: 1 },
+      { pts: [[57, -150], [57, 10]],   loop: false, n: 1 },
+      { pts: [[-57, 160], [-57, -160]],loop: false, n: 1 },
+    ];
+  }
   let ci = 0;
   routes.forEach(r => {
     for (let k = 0; k < r.n; k++) {
@@ -12867,13 +12901,27 @@ function buildPedestrians() {
     scene.add(g);
     return g;
   };
-  const paths = [
-    [[7.4, -130], [7.4, 130]], [[-7.4, 130], [-7.4, -130]],
-    [[-130, 7.4], [130, 7.4]], [[130, -7.4], [-130, -7.4]],
-    [[-140, 65.7], [140, 65.7]], [[140, -65.7], [-140, -65.7]],
-    [[65.7, -140], [65.7, 140]], [[-65.7, 140], [-65.7, -140]],
-    [[-150, 168.3], [150, 168.3]], [[150, -168.3], [-150, -168.3]],
-  ];
+  // v29: пешеходы ходят по тротуарам новой сетки (осевая ±9)
+  let paths;
+  if (window.FZ_NEWCITY && FZ_NEWCITY.root) {
+    const BL = FZ_NEWCITY.BLOCK, SW = FZ_NEWCITY.ROAD_W / 2 + FZ_NEWCITY.SIDEWALK_W / 2;
+    paths = [];
+    for (let i = -2; i <= 2; i++) {
+      const p = i * BL;
+      paths.push([[-BL * 2.5, p + SW], [BL * 2.5, p + SW]]);
+      paths.push([[BL * 2.5, p - SW], [-BL * 2.5, p - SW]]);
+      paths.push([[p + SW, -BL * 2.5], [p + SW, BL * 2.5]]);
+      paths.push([[p - SW, BL * 2.5], [p - SW, -BL * 2.5]]);
+    }
+  } else {
+    paths = [
+      [[7.4, -130], [7.4, 130]], [[-7.4, 130], [-7.4, -130]],
+      [[-130, 7.4], [130, 7.4]], [[130, -7.4], [-130, -7.4]],
+      [[-140, 65.7], [140, 65.7]], [[140, -65.7], [-140, -65.7]],
+      [[65.7, -140], [65.7, 140]], [[-65.7, 140], [-65.7, -140]],
+      [[-150, 168.3], [150, 168.3]], [[150, -168.3], [-150, -168.3]],
+    ];
+  }
   for (let k = 0; k < 14; k++) {
     const path = paths[k % paths.length];
     const grp = mkPed();
@@ -13097,9 +13145,9 @@ const FZ_NOTE_TEXTS = [
   { t: 'Дневник смотрителя парка. Стр. 1.\n\n«Парк Фантазия закрывали в спешке, прямо посреди сезона. Нас было трое в смене. Директор сказал: „Уходите. Объект консервируется“. Мы ушли. Все, кроме меня.»\n\n✍ Кем-то на полях приписано: СОБЕРИ ВСЕ 6 СТРАНИЦ. Они разбросаны по городу.' },
   { t: 'Дневник смотрителя парка. Стр. 2.\n\n«Ночью в аттракционах что-то живёт. Карусель крутится сама. Я чинил её 12 лет — она не может крутиться сама. Сегодня ночью она крутилась и играла музыку. Двери были закрыты. На мне.»' },
   { t: 'Дневник смотрителя парка. Стр. 3.\n\n«Рабочие с АЗС говорили, что видели тень с цилиндром. Смех из парадной. Коллеги звали меня уезжать. Я остался. Это же МОЙ парк. Кому я его оставлю?»' },
-  { t: 'Дневник смотрителя парка. Стр. 4.\n\n«Он заколотил проход в подвал GRAND MALL. Слушает радио на парковке и хохочет. Я видел его руки — это не руки. Это клешни. Я спрятал ТОПОР. Наверху. На самом последнем этаже. Пусть попробует достать.»' },
+  { t: 'Дневник смотрителя парка. Стр. 4.\n\n«Он заколотил проход в подвал GRAND MALL. Слушает радио на парковке и хохочет. Я видел его руки — это не руки. Это клешни. Я спрятал ТОПОР в офисной башне. На самом верху, за картиной. Пусть попробует достать.»' },
   { t: 'Дневник смотрителя парка. Стр. 5.\n\n«Он живёт под полом торгового центра. Полночь — его час. Лампы щёлкают одна за другой, и тогда он приходит. Я не буду писать, чем это кончилось. Если читаешь это — я не успел.»' },
-  { t: 'Дневник смотрителя парка. Стр. 6 — ПОСЛЕДНЯЯ.\n\n«ТОПОР — на 3 этаже GRAND MALL, за кинозалом. ЗАКОЛОЧЕННЫЙ ПРОХОД — на 1 этаже. Собери страницы, возьми топор, сойди вниз. Он ждёт уже очень давно. ОСВОБОДИ ФАНТАЗИЮ.»' },
+  { t: 'Дневник смотрителя парка. Стр. 6 — ПОСЛЕДНЯЯ.\n\n«ТОПОР — в ОФИСНОМ ЦЕНТРЕ, кабинет директора на последнем этаже, СЕЙФ ЗА КАРТИНОЙ. ЗАКОЛОЧЕННЫЙ ПРОХОД — 1 этаж GRAND MALL. Собери страницы, возьми топор, сойди вниз. Он ждёт уже очень давно. ОСВОБОДИ ФАНТАЗИЮ.»' },
 ];
 const FZ_NOTE_SPOTS = [
   { x: 12, z: 10 },    // площадь у спавна
@@ -13147,7 +13195,7 @@ function fzQuestChipUpdate() {
   if (window.FZ_QUEST.bossDead) { chip.style.display = 'none'; return; }
   chip.style.display = 'block';
   chip.textContent = done
-    ? (window.FZ_QUEST.axe ? '🪓 ТОПОР ЕСТЬ → СБЕЙ ДОСКИ У ЛИФТА' : '📜 ВСЕ 6/6 → ТОПОР В НИШЕ, 3 ЭТ.')
+    ? (window.FZ_QUEST.axe ? '🪓 ТОПОР ЕСТЬ → СБЕЙ ДОСКИ У ЛИФТА' : '📜 ВСЕ 6/6 → СЕЙФ В ОФИСЕ, ВЕРХ. ЭТАЖ')
     : '📜 Записки: ' + n + '/6';
   chip.style.borderColor = done ? 'rgba(120,255,160,.6)' : 'rgba(255,215,120,.5)';
   chip.style.color = done ? '#c8ffd9' : '#ffe9b8';
@@ -13204,7 +13252,7 @@ function fzPickNote(inter) {
   document.exitPointerLock && document.exitPointerLock();
   showNotification('📜 Записка ' + n + '/6' + (n >= 6 ? ' — ВСЕ СОБРАНЫ!' : ''), n >= 6 ? 'success' : 'info');
   if (n >= 6) {
-    setTimeout(() => showNotification('🪓 Ищи ТОПОР на 3 этаже GRAND MALL', 'success'), 1400);
+    setTimeout(() => showNotification('🪓 Ищи ТОПОР в ОФИСНОМ ЦЕНТРЕ — кабинет директора, сейф за картиной', 'success'), 1400);
   } else if (n === 1) {
     setTimeout(() => showNotification('🎯 КВЕСТ: собери все 6 записок', 'info'), 1400);
     setTimeout(() => showNotification('📜 Кликни по чипу — перечитать записки', 'info'), 3200);
@@ -13267,7 +13315,7 @@ function fzTryBreakBoards() {
     return;
   }
   if (!window.FZ_QUEST.axe) {
-    showNotification('🪵 Доски не поддаются. Нужен ТОПОР — ниша на 3 этаже, за кинозалом', 'error');
+    showNotification('🪵 Доски не поддаются. Нужен ТОПОР — сейф в кабинете директора офисного центра', 'error');
     return;
   }
   window.FZ_QUEST.boardsBroken = true;
@@ -13346,6 +13394,74 @@ function fzMallAxe(bx, bz, F, add, mat) {
   }));
   sp.scale.set(2.2, 2.2, 1); sp.position.set(bx - 8, F + 1.2, bz + 12); add(sp);
   interactables.push({ position: { x: bx - 8, y: F, z: bz + 12 }, type: 'quest_axe', name: '🪓 РЖАВЫЙ ТОПОР СМОТРИТЕЛЯ', range: 3.6, interior: true });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  v29: ТОПОР В КАБИНЕТЕ ДИРЕКТОРА (офисный центр, верхний этаж)
+//  Спрятан в стенном сейфе за картиной. Пока не собраны все 6 страниц
+//  дневника — сейф заперт и код неизвестен.
+// ═══════════════════════════════════════════════════════════════════
+function fzOfficeAxe(bx, bz, F, add, mat) {
+  if (window.FZ_QUEST.axe || window.FZ_QUEST.bossDead) return;
+  const opened = fzQuestNotesFound() >= 6;
+  const WX = bx - 13.6;            // западная стена кабинета
+  const WZ = bz - 4;
+
+  if (!opened) {
+    // ── картина на стене: за ней сейф, но игрок этого ещё не знает ──
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.2, 3.0), mat(0x6b4a2a));
+    frame.position.set(WX, F + 2.0, WZ); add(frame);
+    const canvasArt = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.8),
+      mat(0x2e4a6b, 0x14324a, 0.12));
+    canvasArt.position.set(WX + 0.1, F + 2.0, WZ);
+    canvasArt.rotation.y = Math.PI / 2; add(canvasArt);
+    interiorColliders.push({ minX: WX - 0.3, maxX: WX + 0.3, minZ: WZ - 1.5, maxZ: WZ + 1.5 });
+    addInteriorSign('🖼 СТРАННАЯ КАРТИНА', WX + 0.6, F + 3.5, WZ, add);
+    interactables.push({ position: { x: WX + 1.4, y: F, z: WZ },
+      type: 'quest_axe_locked', name: '🔒 Сейф за картиной', range: 3.0, interior: true });
+    return;
+  }
+
+  // ── картина отодвинута, сейф вскрыт ──
+  const safeBody = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.7, 2.0), mat(0x2b3038));
+  safeBody.position.set(WX + 0.3, F + 1.9, WZ); add(safeBody);
+  const cavity = new THREE.Mesh(new THREE.BoxGeometry(0.42, 1.45, 1.75), mat(0x0a0c0f));
+  cavity.position.set(WX + 0.42, F + 1.9, WZ); add(cavity);
+  // распахнутая дверца
+  const doorS = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.6, 1.9), mat(0x3a424c));
+  doorS.position.set(WX + 1.35, F + 1.9, WZ - 0.85);
+  doorS.rotation.y = -1.15; add(doorS);
+  const dial = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.06, 12), mat(0xc9a227));
+  dial.rotation.z = Math.PI / 2;
+  dial.position.set(WX + 1.42, F + 1.9, WZ - 0.6); add(dial);
+
+  const nicheL = new THREE.PointLight(0xffd9a0, 1.0, 8);
+  nicheL.position.set(WX + 1.2, F + 2.0, WZ); add(nicheL);
+
+  // сам топор — стоит в сейфе
+  const g = new THREE.Group();
+  const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 1.1, 8), mat(0x8a6a3a));
+  g.add(handle);
+  const headM = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.34, 0.5), mat(0xb8bec4, 0x8899aa, 0.2));
+  headM.position.set(0, 0.48, 0.1); g.add(headM);
+  const edge = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.3, 0.12), mat(0xe8eef2, 0xccddff, 0.5));
+  edge.position.set(0, 0.48, 0.38); g.add(edge);
+  g.position.set(WX + 0.45, F + 1.75, WZ);
+  g.rotation.z = 0.12;
+  add(g);
+  window._fzAxeMesh = g;
+
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: (function () { const c = document.createElement('canvas'); c.width = c.height = 64;
+      const gg = c.getContext('2d'); const gr = gg.createRadialGradient(32, 32, 2, 32, 32, 32);
+      gr.addColorStop(0, 'rgba(255,215,150,0.85)'); gr.addColorStop(1, 'rgba(255,215,150,0)');
+      gg.fillStyle = gr; gg.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })(),
+    transparent: true, depthWrite: false
+  }));
+  sp.scale.set(2.2, 2.2, 1); sp.position.set(WX + 0.5, F + 2.0, WZ); add(sp);
+  addInteriorSign('🪓 СЕЙФ ВСКРЫТ', WX + 0.9, F + 3.4, WZ, add);
+  interactables.push({ position: { x: WX + 1.5, y: F, z: WZ },
+    type: 'quest_axe', name: '🪓 РЖАВЫЙ ТОПОР СМОТРИТЕЛЯ', range: 3.4, interior: true });
 }
 
 function fzPickAxe() {
@@ -13986,7 +14102,7 @@ function fzQuestMapMarkers(ctx, W2, W2Z, big) {
     if (big) {
       ctx.font = 'bold 10px Segoe UI';
       ctx.strokeStyle = 'rgba(0,0,0,0.85)'; ctx.lineWidth = 3;
-      const lbl = { axe: '🪓 ТОПОР — В МОЛЛЕ', boards: '🪵 ДОСКИ — ЗАПАДНАЯ СТЕНА', boss: '☠ ХРАНИТЕЛЬ ЖДЁТ ВНИЗУ', locked: '☠ ПОД МОЛЛОМ ЧТО-ТО ЕСТЬ' }[stage];
+      const lbl = { axe: '🪓 ТОПОР — В ОФИСЕ', boards: '🪵 ДОСКИ — ЗАПАДНАЯ СТЕНА', boss: '☠ ХРАНИТЕЛЬ ЖДЁТ ВНИЗУ', locked: '☠ ПОД МОЛЛОМ ЧТО-ТО ЕСТЬ' }[stage];
       ctx.strokeText(lbl, mx, mz - 14); ctx.fillText(lbl, mx, mz - 14);
     } else if (stage === 'boss') {
       ctx.fillStyle = '#ffd0d0'; ctx.font = 'bold 8px Segoe UI';
@@ -14181,7 +14297,7 @@ function handleInteraction() {
   if (inter.type === 'quest_note') { fzPickNote(inter); return; }
   if (inter.type === 'quest_axe') { fzPickAxe(); return; }
   if (inter.type === 'quest_axe_locked') {
-    showNotification('🔒 Ниша замурована. Страниц дневника: ' + fzQuestNotesFound() + '/6', 'error');
+    showNotification('🔒 Сейф заперт, код в дневнике. Страниц: ' + fzQuestNotesFound() + '/6', 'error');
     return;
   }
   if (inter.type === 'quest_boards') { fzTryBreakBoards(); return; }
@@ -14271,6 +14387,38 @@ function checkInteractables() {
 }
 
 // =================== СТОЛКНОВЕНИЯ ===================
+// ═══ v29: индекс коллизий по ячейкам (ускоряет checkCollision) ═══
+const FZ_CELL = 40;
+window._fzGrid = null;
+window._fzGridSig = '';
+function fzCollisionGrid() {
+  // сигнатура: пересобираем только когда мир реально изменился
+  const sig = buildings.length + ':' + streetColliders.length;
+  if (window._fzGrid && window._fzGridSig === sig) return window._fzGrid;
+  const g = new Map();
+  const put = (gx, gz, key, obj) => {
+    const k = gx + ',' + gz;
+    let cell = g.get(k);
+    if (!cell) { cell = { b: [], s: [] }; g.set(k, cell); }
+    cell[key].push(obj);
+  };
+  for (let i = 0; i < buildings.length; i++) {
+    const b = buildings[i];
+    if (!b || !b.bounds) continue;
+    const x0 = Math.floor(b.bounds.minX / FZ_CELL), x1 = Math.floor(b.bounds.maxX / FZ_CELL);
+    const z0 = Math.floor(b.bounds.minZ / FZ_CELL), z1 = Math.floor(b.bounds.maxZ / FZ_CELL);
+    for (let gx = x0; gx <= x1; gx++) for (let gz = z0; gz <= z1; gz++) put(gx, gz, 'b', b);
+  }
+  for (let i = 0; i < streetColliders.length; i++) {
+    const c = streetColliders[i];
+    if (!c) continue;
+    put(Math.floor(c.x / FZ_CELL), Math.floor(c.z / FZ_CELL), 's', c);
+  }
+  window._fzGrid = g;
+  window._fzGridSig = sig;
+  return g;
+}
+
 function checkCollision(newX, newZ) {
   const playerRadius = 0.5;
 
@@ -14288,19 +14436,31 @@ function checkCollision(newX, newZ) {
     return false;
   }
 
-  for (const b of buildings) {
-    if (newX + playerRadius > b.bounds.minX &&
-        newX - playerRadius < b.bounds.maxX &&
-        newZ + playerRadius > b.bounds.minZ &&
-        newZ - playerRadius < b.bounds.maxZ) {
-      return true;
+  // ── v29: ПРОСТРАНСТВЕННАЯ СЕТКА ──
+  // В новом городе 230+ зданий и 2000+ уличных коллайдеров. Линейный
+  // перебор каждый кадр съедал заметную часть кадрового бюджета на телефоне.
+  // Индексируем объекты по ячейкам 40x40 и проверяем только соседние.
+  const grid = fzCollisionGrid();
+  const cx = Math.floor(newX / FZ_CELL), cz = Math.floor(newZ / FZ_CELL);
+  for (let gx = cx - 1; gx <= cx + 1; gx++) {
+    for (let gz = cz - 1; gz <= cz + 1; gz++) {
+      const cell = grid.get(gx + ',' + gz);
+      if (!cell) continue;
+      const bs = cell.b;
+      for (let i = 0; i < bs.length; i++) {
+        const b = bs[i];
+        if (newX + playerRadius > b.bounds.minX &&
+            newX - playerRadius < b.bounds.maxX &&
+            newZ + playerRadius > b.bounds.minZ &&
+            newZ - playerRadius < b.bounds.maxZ) return true;
+      }
+      const ss = cell.s;
+      for (let i = 0; i < ss.length; i++) {
+        const c = ss[i];
+        const dx = newX - c.x, dz = newZ - c.z;
+        if (dx * dx + dz * dz < (c.r + playerRadius) * (c.r + playerRadius)) return true;
+      }
     }
-  }
-
-  // ── КОЛЛИЗИИ УЛИЧНЫХ ОБЪЕКТОВ (деревья, лавочки, фонари, урны) ──
-  for (const c of streetColliders) {
-    const dx = newX - c.x, dz = newZ - c.z;
-    if (dx*dx + dz*dz < (c.r + playerRadius) * (c.r + playerRadius)) return true;
   }
 
   const half = CONFIG.WORLD_SIZE / 2 - 2;
@@ -14494,7 +14654,14 @@ function buildInterior(type) {
   } // конец оболочки не-ТЦ
 
   // Интерьер зависит от типа
-  if (type === 'office') (currentFloor === 0 ? buildOfficeInterior : buildOfficeOpenSpace)(bx, bz, currentFloor, FH, addObj, mat);
+  if (type === 'office') {
+    // v29: 0 — холл, верхний этаж — КАБИНЕТ ДИРЕКТОРА (там квестовый топор),
+    // между ними — опенспейс.
+    const topFloor = (INTERIOR_CONFIGS.office.floors || 8) - 1;
+    if (currentFloor === 0) buildOfficeInterior(bx, bz, currentFloor, FH, addObj, mat);
+    else if (currentFloor === topFloor) buildOfficeDirectorRoom(bx, bz, currentFloor, FH, addObj, mat);
+    else buildOfficeOpenSpace(bx, bz, currentFloor, FH, addObj, mat);
+  }
   else if (type === 'cinema') buildCinemaInterior(bx, bz, currentFloor, FH, addObj, mat);
   else if (type === 'club') buildClubInterior(bx, bz, currentFloor, FH, addObj, mat);
   else if (type === 'house') buildSuperHouseInterior(bx, bz, currentFloor, FH, addObj, mat);
@@ -14984,8 +15151,8 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
       star.rotation.x = -Math.PI / 2; star.rotation.z = k * 0.4;
       star.position.set(bx + 2.5, F + 0.04, bz - 14 + k * 2); add(star);
     }
-    // ═══ КВЕСТ: ТОПОР СМОТРИТЕЛЯ (пень у южной стены) ═══
-    fzMallAxe(bx, bz, F, add, mat);
+    // v29: топор переехал в кабинет директора офисного центра —
+    // искать его в ТЦ больше не нужно (см. fzOfficeAxe).
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -15301,6 +15468,89 @@ function buildOfficeInterior(bx, bz, floor, FH, add, mat) {
     pl.position.set(bx + lx, F + FH - 0.6, bz + lz); add(pl);
   });
 }
+// ═══════════════════════════════════════════════════════════════════
+//  v29: КАБИНЕТ ДИРЕКТОРА — верхний этаж офисного центра.
+//  Панорама на город, тяжёлый стол, шкафы и сейф за картиной.
+// ═══════════════════════════════════════════════════════════════════
+function buildOfficeDirectorRoom(bx, bz, floor, FH, add, mat) {
+  const F = floor * FH;
+  const B = (w, h, d, color, x, y, z, ry, emissive, em) => {
+    const m2 = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, emissive || 0, em || 0));
+    m2.position.set(x, F + y, z); if (ry) m2.rotation.y = ry;
+    add(m2); return m2;
+  };
+  const col = (x1, z1, x2, z2) => interiorColliders.push({ minX: x1, maxX: x2, minZ: z1, maxZ: z2 });
+
+  // паркет
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(30, 24), mat(0x6b4a30));
+  fl.rotation.x = -Math.PI / 2; fl.position.set(bx, F + 0.015, bz); add(fl);
+  // ковёр под столом
+  const rug = new THREE.Mesh(new THREE.PlaneGeometry(11, 8), mat(0x3a2733));
+  rug.rotation.x = -Math.PI / 2; rug.position.set(bx + 3, F + 0.025, bz); add(rug);
+
+  // панорамное остекление на востоке — вид на новый город
+  for (let z = -9; z <= 9; z += 3) {
+    const gl = new THREE.Mesh(new THREE.PlaneGeometry(2.9, 3.4),
+      new THREE.MeshBasicMaterial({ color: 0x9ecbe8, transparent: true, opacity: 0.32 }));
+    gl.position.set(bx + 14.4, F + 1.9, bz + z);
+    gl.rotation.y = -Math.PI / 2; add(gl);
+  }
+
+  // стол директора
+  B(4.4, 0.16, 2.0, 0x4a3423, bx + 4, 0.78, bz, 0);
+  B(0.2, 0.76, 1.8, 0x3a2820, bx + 2.1, 0.38, bz, 0);
+  B(0.2, 0.76, 1.8, 0x3a2820, bx + 5.9, 0.38, bz, 0);
+  col(bx + 1.8, bz - 1.1, bx + 6.2, bz + 1.1);
+  // монитор и лампа
+  const scr = B(1.1, 0.62, 0.06, 0x0d1114, bx + 4, 1.3, bz - 0.5, 0, 0x2d6cb5, 0.5);
+  scr.userData = { isTVLight: true };
+  B(0.12, 0.5, 0.12, 0x2a2a2a, bx + 5.4, 1.1, bz + 0.4, 0);
+  B(0.34, 0.14, 0.34, 0xffe0a0, bx + 5.4, 1.4, bz + 0.4, 0, 0xffcc66, 0.7);
+  // кресло
+  B(1.0, 0.14, 1.0, 0x1e2228, bx + 7.4, 0.5, bz, 0);
+  B(1.0, 1.2, 0.16, 0x1e2228, bx + 7.9, 1.1, bz, 0);
+  col(bx + 6.9, bz - 0.6, bx + 8.1, bz + 0.6);
+
+  // шкафы вдоль северной стены
+  for (let i = 0; i < 4; i++) {
+    const x = bx - 8 + i * 4;
+    B(3.4, 2.6, 0.9, 0x53381f, x, 1.3, bz - 10.6, 0);
+    for (let r = 0; r < 3; r++) {
+      B(3.0, 0.1, 0.7, 0x6b4a2a, x, 0.6 + r * 0.75, bz - 10.5, 0);
+      for (let k = 0; k < 6; k++) {
+        B(0.16, 0.5, 0.5, [0x8b2f2f, 0x2f4f8b, 0x2f8b4f, 0x8b7a2f][k % 4],
+          x - 1.3 + k * 0.5, 0.9 + r * 0.75, bz - 10.5, 0);
+      }
+    }
+    col(x - 1.7, bz - 11.1, x + 1.7, bz - 10.1);
+  }
+
+  // переговорный уголок
+  B(2.6, 0.12, 1.4, 0x4a3423, bx - 8, 0.5, bz + 7, 0);
+  [-1, 1].forEach(o => {
+    B(0.9, 0.12, 0.9, 0x2c313a, bx - 8 + o * 2.4, 0.45, bz + 7, 0);
+    B(0.9, 0.9, 0.14, 0x23272e, bx - 8 + o * 2.9, 0.9, bz + 7, 0);
+  });
+
+  // растение в кадке
+  B(0.7, 0.7, 0.7, 0x6b4a3a, bx + 12, 0.35, bz - 8, 0);
+  const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(1.1, 0), mat(0x3f7a3a));
+  crown.position.set(bx + 12, F + 1.5, bz - 8); add(crown);
+  col(bx + 11.5, bz - 8.5, bx + 12.5, bz - 7.5);
+
+  // тёплый свет
+  const lamp = new THREE.PointLight(0xffe0b0, 0.85, 26);
+  lamp.position.set(bx + 2, F + 3.4, bz); add(lamp);
+  const lamp2 = new THREE.PointLight(0xcfe4ff, 0.5, 22);
+  lamp2.position.set(bx - 8, F + 3.4, bz); add(lamp2);
+
+  addInteriorSign('🏢 КАБИНЕТ ДИРЕКТОРА', bx, F + FH - 0.6, bz - 11, add);
+  spawnInteriorNPC(bx + 9.5, F, bz + 5, 'clerk', add);
+
+  // ═══ КВЕСТ: топор в сейфе за картиной ═══
+  fzOfficeAxe(bx, bz, F, add, mat);
+}
+
 function buildOfficeOpenSpace(bx, bz, floor, FH, add, mat) {
   // ═══ 🏢 ОПЕНСПЕЙС — стартап-лофт "FANTAZIA DEV" ═══
   const F = floor * FH;
@@ -20524,6 +20774,7 @@ body.game-active canvas{touch-action:none}
 })();
 </script>
 
+<script src="newcity.js?v=29"></script>
 <script src="city2.js?v=1"></script>
 <!-- ========== FZ: админ-панель + новости (новые) ========== -->
 <style>
