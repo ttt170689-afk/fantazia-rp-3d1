@@ -5417,7 +5417,11 @@ function initThreeJS() {
   // ── ОПТИМИЗАЦИЯ: camera far = FOG_FAR, ничего дальше не рендерится ──
   camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 900);
   window.camera = camera;
-  camera.position.set(0, 10, 15);
+  // v49: камера стартует СРАЗУ у точки спавна игрока (17, 0, 21).
+  // Раньше она стояла в (0, 10, 15) — далеко и высоко, и в первые кадры
+  // зрителя «сбрасывало с небес», пока камера долетала до персонажа.
+  camera.position.set(17, 2.6, 26);
+  camera.lookAt(17, 1.5, 21);
 
   // ── СУПЕР-ГРАФИКА: antialias на ПК, полный pixelRatio до 2 ──
   const optPixelRatio = _isMob ? Math.min(window.devicePixelRatio, 1) : Math.min(window.devicePixelRatio, 2);
@@ -9863,7 +9867,18 @@ function fzLiftCamStart(fromY, toY) {
   window.fzTEASER.active = true;
   window.fzTEASER.camPos = LIFT_CAM.pos;
   window.fzTEASER.look = LIFT_CAM.look;
-  if (localPlayer.mesh) localPlayer.mesh.visible = false;
+  // v49: игрока БОЛЬШЕ НЕ ПРЯЧЕМ. Раньше катсцена шла от первого лица
+  // и модель скрывали — со стороны выглядело, будто человечек просто
+  // стоит на месте. Теперь он реально заходит в кабину и выходит:
+  // позицию ведёт fzLiftCamUpdate, а камера смотрит на него со спины.
+  if (localPlayer.mesh) {
+    localPlayer.mesh.visible = true;
+    LIFT_CAM.startPos = localPlayer.mesh.position.clone();
+    if (localPlayer.mesh.userData.model) {
+      try { localPlayer.mesh.userData.model.setState('walk'); } catch (e) {}
+    }
+    localPlayer.currentAnimation = 'walk';
+  }
   if (typeof fzShowSkip === 'function') fzShowSkip(true);
 }
 
@@ -9886,6 +9901,11 @@ function fzLiftCamEnd() {
   LIFT_CAM.active = false;
   if (window.fzTEASER) window.fzTEASER.active = false;
   if (localPlayer.mesh && window.cameraMode !== 'first') localPlayer.mesh.visible = true;
+  // v49: вернуть персонажа в покой после поездки
+  if (localPlayer.mesh && localPlayer.mesh.userData.model) {
+    try { localPlayer.mesh.userData.model.setState('idle'); } catch (e) {}
+  }
+  localPlayer.currentAnimation = 'idle';
   if (typeof fzShowSkip === 'function') fzShowSkip(false);
 }
 
@@ -9940,10 +9960,37 @@ function fzLiftCamUpdate(dt) {
     lookX = L.doorX - 6.0;
   }
 
-  // Движение идёт по X, ось проёма (Z) постоянна — покачивание вбок
-  // добавляем именно по Z, иначе тряска гоняла бы камеру вперёд-назад.
-  L.pos.set(camX, camY, L.doorZ + sway);
-  L.look.set(lookX, camY - 0.06, L.doorZ + sway * 2);
+  // ── v49: ВЕДЁМ САМОГО ПЕРСОНАЖА ──
+  // Раньше двигалась только камера, а модель прятали — казалось, что
+  // человечек стоит столбом. Теперь ставим его ровно туда, где идёт
+  // «взгляд», и разворачиваем по ходу движения.
+  const pm = localPlayer && localPlayer.mesh;
+  if (pm) {
+    pm.visible = true;
+    pm.position.x = camX;
+    pm.position.z = L.doorZ;
+    pm.position.y = camY - EYE;              // ноги на полу кабины
+    // лицом по ходу: внутрь (восток) или наружу (запад)
+    const goingIn = (L.phase === 'enter');
+    const goingOut = (L.phase === 'exit');
+    if (goingIn)  pm.rotation.y = Math.PI / 2;
+    if (goingOut) pm.rotation.y = -Math.PI / 2;
+    if (L.phase === 'turn' || L.phase === 'ride' || L.phase === 'open') {
+      pm.rotation.y = -Math.PI / 2;          // стоим лицом к дверям
+    }
+    const moving = goingIn || goingOut;
+    if (pm.userData.model) {
+      try { pm.userData.model.setState(moving ? 'walk' : 'idle'); } catch (e) {}
+    }
+    localPlayer.currentAnimation = moving ? 'walk' : 'idle';
+  }
+
+  // Камера снимает персонажа СО СПИНЫ, с небольшим отступом и выше
+  // головы — иначе она стояла бы у него внутри и мы бы его не увидели.
+  const BACK = 2.5, UP = 0.55;
+  const dirX = (lookX >= camX) ? 1 : -1;     // куда смотрим по X
+  L.pos.set(camX - dirX * BACK, camY + UP, L.doorZ + sway);
+  L.look.set(lookX, camY - 0.1, L.doorZ + sway * 2);
   camera.rotation.z = rollZ;
 }
 
@@ -11449,7 +11496,28 @@ function initControls() {
       showNotification('🖱️ Обзор: зажми ЛКМ и веди мышью · WASD — ходьба', 'info');
     }
   };
-  renderer.domElement.addEventListener('click', () => {
+  // ═══════════════════════════════════════════════════════════════
+  //  v49: КЛИК ПО ПЕРСОНАЖУ → ОТКРЫТЬ ПРОФИЛЬ (редактор внешности)
+  //  Луч из точки клика; если попали в свою модель — открываем
+  //  редактор. По себе кликать удобно только в 3-м лице, поэтому
+  //  в 1-м лице клик работает как раньше (захват мыши).
+  // ═══════════════════════════════════════════════════════════════
+  const fzRay = new THREE.Raycaster();
+  const fzPtr = new THREE.Vector2();
+  renderer.domElement.addEventListener('click', (ev) => {
+    // при захваченной мыши прицела нет — клик не по модели
+    if (!isPointerLocked && localPlayer && localPlayer.mesh &&
+        window.cameraMode !== 'first' && localPlayer.mesh.visible) {
+      const r = renderer.domElement.getBoundingClientRect();
+      fzPtr.x = ((ev.clientX - r.left) / r.width) * 2 - 1;
+      fzPtr.y = -((ev.clientY - r.top) / r.height) * 2 + 1;
+      fzRay.setFromCamera(fzPtr, camera);
+      const hits = fzRay.intersectObject(localPlayer.mesh, true);
+      if (hits.length) {
+        if (typeof openSkinEditor === 'function') openSkinEditor();
+        return;                       // не захватываем мышь этим кликом
+      }
+    }
     if (!isPointerLocked) fzTryLock();
   });
   document.addEventListener('pointerlockchange', () => {
@@ -16440,6 +16508,91 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
     fLight.position.set(bx + FR.x - 1.6, F + PH - 0.3, bz + FR.z);
     add(fLight);
 
+
+    // ═══════════════════════════════════════════════════════════════
+    //  ИНТЕРЬЕР КАБИНЫ — виден, когда створки открыты, и во время
+    //  катсцены (камера заезжает внутрь). Сделан как служебный лифт
+    //  в тизере: тёмные стальные панели, плафон, поручни, панель
+    //  кнопок по этажам и живое табло над ней.
+    // ═══════════════════════════════════════════════════════════════
+    const CD2 = 3.0;                    // глубина кабины (вдоль X)
+    const CW2 = PW * 2;                 // ширина (вдоль Z)
+    const CX = FR.x + 0.3 + CD2 / 2;    // центр кабины за створками
+    const CH2 = PH + 0.35;              // высота
+
+    // шахта-короб, чтобы за кабиной не зияла дыра в мир
+    B(0.24, CH2 + 1.0, CW2 + 0.8, 0x080b10, CX + CD2 / 2 + 0.12, (CH2 + 1.0) / 2, FR.z, 0);
+    [-1, 1].forEach(sz2 => {
+      B(CD2 + 0.5, CH2 + 1.0, 0.24, 0x080b10, CX, (CH2 + 1.0) / 2, FR.z + sz2 * (CW2 / 2 + 0.4), 0);
+    });
+    B(CD2 + 0.5, 0.24, CW2 + 0.8, 0x080b10, CX, CH2 + 0.75, FR.z, 0);
+
+    // пол, потолок, стены кабины
+    B(CD2, 0.1, CW2, 0x2c3138, CX, 0.05, FR.z, 0);
+    B(CD2 - 0.4, 0.03, CW2 - 0.4, 0x39414a, CX, 0.11, FR.z, 0);   // рифлёная накладка
+    B(CD2, 0.12, CW2, 0x232830, CX, CH2, FR.z, 0);
+    B(0.12, CH2, CW2, 0x232830, CX + CD2 / 2 - 0.06, CH2 / 2, FR.z, 0);        // задняя
+    [-1, 1].forEach(sz2 => {
+      B(CD2, CH2, 0.12, 0x232830, CX, CH2 / 2, FR.z + sz2 * (CW2 / 2 - 0.06), 0);
+    });
+
+    // стеновые панели с расшивкой (как в тизерной кабине)
+    [-1, 1].forEach(sz2 => {
+      for (let i = -1; i <= 1; i++) {
+        B(CD2 / 3.6, CH2 - 1.2, 0.03, 0x2e353d,
+          CX + i * (CD2 / 3.3), CH2 / 2 + 0.15, FR.z + sz2 * (CW2 / 2 - 0.13), 0);
+      }
+    });
+    // зеркало на задней стенке
+    B(0.04, 1.5, CW2 - 0.9, 0x8fb3c9, CX + CD2 / 2 - 0.14, 1.85, FR.z, 0);
+
+    // поручни
+    B(0.07, 0.07, CW2 - 0.4, 0xb0b8c2, CX + CD2 / 2 - 0.2, 1.05, FR.z, 0);
+    [-1, 1].forEach(sz2 => {
+      B(CD2 - 0.5, 0.07, 0.07, 0xb0b8c2, CX, 1.05, FR.z + sz2 * (CW2 / 2 - 0.18), 0);
+    });
+
+    // плафон под потолком
+    const cabGlow = new THREE.Mesh(new THREE.BoxGeometry(CD2 - 0.7, 0.07, CW2 - 0.7),
+      mat(0xffe6bc, 0xffdca8, 0.9));
+    cabGlow.position.set(bx + CX, F + CH2 - 0.12, bz + FR.z);
+    add(cabGlow);
+    const cabLight = new THREE.PointLight(0xffd9a0, 0.85, 9);
+    cabLight.position.set(bx + CX, F + CH2 - 0.5, bz + FR.z);
+    add(cabLight);
+
+    // ── ПАНЕЛЬ КНОПОК на боковой стене (все 8 этажей) ──
+    const panZ = FR.z + CW2 / 2 - 0.14;      // прижата к стенке
+    const panX = CX - 0.35;
+    B(0.5, 1.65, 0.06, 0x14181f, panX, 1.5, panZ, 0);
+    B(0.42, 1.55, 0.03, 0x1c222b, panX, 1.5, panZ - 0.03, 0);
+    MALL_FLOORS.forEach((lb, i) => {
+      // сверху вниз: 3, 2, 1, B1..B5
+      const by = 2.18 - i * 0.2;
+      const lit = (i === floor);
+      const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.03, 12),
+        mat(lit ? 0xffd479 : 0x2b3038, lit ? 0xffae2b : 0, lit ? 0.85 : 0));
+      cap.rotation.x = Math.PI / 2;
+      cap.position.set(bx + panX, F + by, bz + panZ - 0.05);
+      add(cap);
+    });
+    // кнопки открытия/закрытия дверей внизу панели
+    [[-0.1, 0x66ff99], [0.1, 0xff9966]].forEach(([oz, cc]) => {
+      const b2 = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.03, 10),
+        mat(cc, cc, 0.5));
+      b2.rotation.x = Math.PI / 2;
+      b2.position.set(bx + panX + oz, F + 0.72, bz + panZ - 0.05);
+      add(b2);
+    });
+
+    // ── ЖИВОЕ ТАБЛО ВНУТРИ КАБИНЫ (тот же canvas, что и снаружи) ──
+    B(0.62, 0.3, 0.05, 0x0a0d12, panX, 2.48, panZ, 0);
+    const inScr = new THREE.Mesh(new THREE.PlaneGeometry(0.56, 0.24),
+      new THREE.MeshBasicMaterial({ map: indTex2, transparent: true }));
+    inScr.position.set(bx + panX, F + 2.48, bz + panZ - 0.04);
+    inScr.rotation.y = Math.PI;
+    add(inScr);
+
     // ── КОЛЛАЙДЕР: сам портал непроходим, подход к дверям открыт ──
     colp(FR.x + 0.15, FR.z, 0.7, PW * 2 + 1.6);
 
@@ -18602,8 +18755,10 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
     );
     // Персонаж поворачивается вслед за камерой (другие игроки видят куда ты смотришь)
     mesh.rotation.y = cameraAngleH;
-    // Скрыть тело в 1-м лице
-    mesh.visible = false;
+    // Скрыть тело в 1-м лице.
+    // v49: но НЕ во время катсцены лифта — там мы специально показываем
+    // персонажа со стороны, иначе он снова «пропадёт».
+    mesh.visible = !!(LIFT_CAM && LIFT_CAM.active);
   } else {
     mesh.visible = true;
     camera.position.x = mesh.position.x + Math.sin(cameraAngleH) * camDist * Math.cos(cameraAngleV);
@@ -22089,145 +22244,389 @@ body.game-active canvas{touch-action:none}
   <div id="fziSkip">ПРОПУСТИТЬ ⏭</div>
 </div>
 <script>
+// ═══════════════════════════════════════════════════════════════════════
+//  v49: ВСТУПИТЕЛЬНАЯ КАТСЦЕНА — полная переработка.
+//  Было: статичный задник, титр и вспышка (~6 с).
+//  Стало: 6 актов с движением камеры, дождём, молниями, проездом
+//  по неоновому городу, наездом на GRAND MALL и финальным титром.
+//  Всё рисуется на canvas 2D — никаких ассетов, работает и на телефоне.
+// ═══════════════════════════════════════════════════════════════════════
 (function () {
   var box = document.getElementById('fzIntro');
   var seen = false;
   try { seen = sessionStorage.getItem('fzIntroSeen') === '1'; } catch (e) {}
   if (!box || seen) { if (box) box.remove(); return; }
   box.style.display = 'block';
+
   var cv = document.getElementById('fziCv');
   var q = cv.getContext('2d');
   var goBtn = document.getElementById('fziGo');
-  var W, H, stars = [], bld = [], emb = [];
+  var W, H, DPR = Math.min(window.devicePixelRatio || 1, 2);
+  var stars = [], sky = [], mid = [], near = [], rain = [], emb = [], win = [];
+
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+
   function rs() {
-    W = cv.width = innerWidth; H = cv.height = innerHeight;
+    W = innerWidth; H = innerHeight;
+    cv.width = W * DPR; cv.height = H * DPR;
+    cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    q.setTransform(DPR, 0, 0, DPR, 0, 0);
+
     stars = [];
-    for (var i = 0; i < 130; i++) stars.push({ x: Math.random() * W, y: Math.random() * H * 0.72, r: Math.random() * 1.7 + 0.4, p: Math.random() * 6.28 });
-    bld = [];
-    var x = -40;
-    while (x < W + 40) { var w = 44 + Math.random() * 92, h = 50 + Math.random() * 150; bld.push({ x: x, w: w, h: h }); x += w + 6; }
+    for (var i = 0; i < 190; i++)
+      stars.push({ x: rnd(0, W), y: rnd(0, H * 0.66), r: rnd(0.4, 2.0), p: rnd(0, 6.28) });
+
+    // три слоя города для параллакса
+    function layer(cnt, hMin, hMax, wMin, wMax) {
+      var a = [], x = -120;
+      while (x < W * 2.2) {
+        var w = rnd(wMin, wMax), h = rnd(hMin, hMax);
+        a.push({ x: x, w: w, h: h, lit: Math.random() < 0.75 });
+        x += w + rnd(4, 16);
+      }
+      return a;
+    }
+    sky  = layer(0, H * 0.20, H * 0.42, 50, 120);
+    mid  = layer(0, H * 0.14, H * 0.30, 40, 96);
+    near = layer(0, H * 0.08, H * 0.20, 60, 150);
+
+    rain = [];
+    for (i = 0; i < 260; i++)
+      rain.push({ x: rnd(0, W), y: rnd(0, H), l: rnd(9, 26), v: rnd(700, 1500), o: rnd(0.10, 0.42) });
+
+    // окна-огоньки для ближнего слоя
+    win = [];
+    for (i = 0; i < near.length; i++) {
+      var b = near[i];
+      for (var wy = 0; wy < 9; wy++)
+        for (var wx = 0; wx < 5; wx++)
+          if (Math.random() < 0.30)
+            win.push({ b: i, ox: 8 + wx * 12, oy: 12 + wy * 16, on: Math.random() < 0.8, p: rnd(0, 6.28) });
+    }
     emb = [];
   }
   rs();
   addEventListener('resize', rs);
-  var t0 = null, skipped = false, done = false;
-  var T_TITLE = 2.55, T_STRIKE = 3.3, T_Q = 4.55, T_SLAM = 5.35, T_GO = 6.3;
+
+  // ── тайминги актов (сек) ──
+  var A1 = 0.0;    // тьма, проступает дождь и город
+  var A2 = 3.2;    // молния, силуэт города
+  var A3 = 6.0;    // проезд камеры вдоль улицы
+  var A4 = 9.2;    // наезд на GRAND MALL
+  var A5 = 12.0;   // титр FANTAZIA RP
+  var A6 = 15.0;   // удар GRAND MALL SECRET
+  var T_GO = 17.4; // появление кнопки
+  var TOTAL = 18.5;
+
+  var t0 = null, skipped = false, done = false, prevT = 0;
+  var flashes = [{ t: A2 + 0.15 }, { t: A2 + 0.55 }, { t: A4 + 1.4 }, { t: A6 + 0.05 }];
+
+  function ease(k) { return k < 0 ? 0 : k > 1 ? 1 : k * k * (3 - 2 * k); }
+  function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+
+  function drawLayer(arr, camX, par, base, colTop, colBot, hy) {
+    for (var i = 0; i < arr.length; i++) {
+      var b = arr[i];
+      var x = b.x - camX * par;
+      // зацикливаем по горизонтали
+      var span = W * 2.2 + 140;
+      x = ((x % span) + span) % span - 120;
+      if (x > W + 60 || x + b.w < -60) continue;
+      var g = q.createLinearGradient(0, hy - b.h, 0, hy);
+      g.addColorStop(0, colTop); g.addColorStop(1, colBot);
+      q.fillStyle = g;
+      q.fillRect(x, hy - b.h, b.w, b.h + 120);
+      b._sx = x;
+    }
+  }
+
   function fr(ts) {
     if (t0 === null) t0 = ts;
     var t = (ts - t0) / 1000;
-    if (skipped && t < T_SLAM + 0.05) t = T_SLAM + 0.05;
+    if (skipped && t < A6) t = A6;
+    var dt = Math.min(0.05, Math.max(0, t - prevT)); prevT = t;
+
+    // ── тряска экрана на ударах ──
     var shX = 0, shY = 0;
-    if (t > T_STRIKE && t < T_STRIKE + 0.5) { var k1 = 1 - (t - T_STRIKE) / 0.5; shX = (Math.random() - 0.5) * 14 * k1; shY = (Math.random() - 0.5) * 10 * k1; }
-    if (t > T_SLAM && t < T_SLAM + 0.4) { var k2 = 1 - (t - T_SLAM) / 0.4; shX = (Math.random() - 0.5) * 18 * k2; shY = (Math.random() - 0.5) * 12 * k2; }
+    for (var f = 0; f < flashes.length; f++) {
+      var d = t - flashes[f].t;
+      if (d > 0 && d < 0.45) {
+        var k = 1 - d / 0.45;
+        shX += (Math.random() - 0.5) * 16 * k;
+        shY += (Math.random() - 0.5) * 11 * k;
+      }
+    }
+
     q.save();
     q.translate(shX, shY);
-    var g = q.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, '#04030a'); g.addColorStop(0.72, '#0a0716'); g.addColorStop(1, '#020209');
-    q.fillStyle = g; q.fillRect(-20, -20, W + 40, H + 40);
-    var pk = Math.min(1, Math.max(0, (t - 1) / 4));
-    var pg = q.createRadialGradient(W / 2, H * 0.74, 10, W / 2, H * 0.74, Math.max(W, H) * 0.55);
-    pg.addColorStop(0, 'rgba(122,60,255,' + (0.26 * pk * (0.7 + 0.3 * Math.sin(t * 2.1))).toFixed(3) + ')');
-    pg.addColorStop(1, 'rgba(122,60,255,0)');
-    q.fillStyle = pg; q.fillRect(-20, -20, W + 40, H + 40);
-    for (var i = 0; i < stars.length; i++) {
-      var s = stars[i];
-      q.globalAlpha = 0.3 + 0.7 * Math.abs(Math.sin(t * 1.3 + s.p));
-      q.fillStyle = '#cfd6ff';
-      q.fillRect(s.x, s.y, s.r, s.r);
+
+    // ── НЕБО: градиент, темнеет к финалу ──
+    var night = clamp01((t - A4) / 4);
+    var g0 = q.createLinearGradient(0, 0, 0, H);
+    g0.addColorStop(0, night > 0.4 ? '#0a0413' : '#070512');
+    g0.addColorStop(0.62, '#0d0a1e');
+    g0.addColorStop(1, '#03020a');
+    q.fillStyle = g0; q.fillRect(-30, -30, W + 60, H + 60);
+
+    // ── ЗВЁЗДЫ ──
+    var starA = clamp01((t - 0.3) / 2.2) * (1 - clamp01((t - A3) / 2));
+    if (starA > 0.01) {
+      for (var i = 0; i < stars.length; i++) {
+        var s = stars[i];
+        q.globalAlpha = starA * (0.25 + 0.75 * Math.abs(Math.sin(t * 1.4 + s.p)));
+        q.fillStyle = '#d5dcff';
+        q.fillRect(s.x, s.y, s.r, s.r);
+      }
+      q.globalAlpha = 1;
+    }
+
+    // ── ФИОЛЕТОВОЕ ЗАРЕВО НАД ГОРОДОМ ──
+    var pk = clamp01((t - 0.8) / 3);
+    var pg = q.createRadialGradient(W / 2, H * 0.80, 10, W / 2, H * 0.80, Math.max(W, H) * 0.62);
+    pg.addColorStop(0, 'rgba(124,58,255,' + (0.30 * pk * (0.72 + 0.28 * Math.sin(t * 1.7))).toFixed(3) + ')');
+    pg.addColorStop(1, 'rgba(124,58,255,0)');
+    q.fillStyle = pg; q.fillRect(-30, -30, W + 60, H + 60);
+
+    // ── МОЛНИЯ ──
+    var fl = 0;
+    for (f = 0; f < flashes.length; f++) {
+      var dd = t - flashes[f].t;
+      if (dd > 0 && dd < 0.4) fl = Math.max(fl, Math.sin((1 - dd / 0.4) * Math.PI * 0.5));
+    }
+
+    // ── КАМЕРА: медленный проезд + наезд ──
+    var camX = 0, zoom = 1, hy = H * 0.82;
+    if (t > A3) camX = (t - A3) * 96;                       // проезд вдоль улицы
+    if (t > A4) {
+      var kz = ease(clamp01((t - A4) / 3.2));
+      zoom = 1 + kz * 0.55;                                  // наезд
+      hy = H * (0.82 + kz * 0.05);
+    }
+    q.save();
+    q.translate(W / 2, H * 0.62);
+    q.scale(zoom, zoom);
+    q.translate(-W / 2, -H * 0.62);
+
+    // ── ГОРОД: три слоя параллакса ──
+    drawLayer(sky, camX, 0.18, 0,
+      fl > 0.1 ? 'rgba(58,64,104,0.95)' : 'rgba(20,22,44,0.95)',
+      'rgba(9,10,24,1)', hy - H * 0.06);
+    drawLayer(mid, camX, 0.42, 0,
+      fl > 0.1 ? 'rgba(48,52,92,0.97)' : 'rgba(15,16,34,1)',
+      'rgba(7,8,20,1)', hy - H * 0.02);
+    drawLayer(near, camX, 0.85, 0,
+      fl > 0.1 ? 'rgba(40,42,74,1)' : 'rgba(10,11,24,1)',
+      'rgba(5,5,14,1)', hy);
+
+    // окна ближних зданий
+    q.fillStyle = fl > 0.25 ? 'rgba(255,244,214,0.75)' : 'rgba(255,186,90,0.34)';
+    for (i = 0; i < win.length; i++) {
+      var wI = win[i], bb = near[wI.b];
+      if (!bb || bb._sx === undefined) continue;
+      if (!wI.on && Math.sin(t * 0.7 + wI.p) < 0.85) continue;
+      var wx2 = bb._sx + wI.ox, wy2 = hy - bb.h + wI.oy;
+      if (wx2 < -10 || wx2 > W + 10 || wy2 > hy - 8) continue;
+      q.fillRect(wx2, wy2, 4, 7);
+    }
+
+    // ── GRAND MALL: подсвеченное здание в центре ──
+    var mallK = clamp01((t - A3 + 1) / 3);
+    if (mallK > 0.01) {
+      var mw = Math.min(W * 0.46, 620) * (1 + (zoom - 1) * 0.2);
+      var mx = W / 2 - mw / 2, mhh = H * 0.20, my = hy - mhh;
+      q.globalAlpha = mallK;
+      // корпус
+      var mg = q.createLinearGradient(0, my, 0, hy);
+      mg.addColorStop(0, 'rgba(38,26,74,0.98)');
+      mg.addColorStop(1, 'rgba(16,10,34,1)');
+      q.fillStyle = mg; q.fillRect(mx, my, mw, mhh);
+      // светящиеся окна-полосы
+      for (var r2 = 0; r2 < 4; r2++) {
+        q.fillStyle = 'rgba(150,110,255,' + (0.12 + 0.10 * Math.sin(t * 2 + r2)).toFixed(3) + ')';
+        q.fillRect(mx + 10, my + 16 + r2 * (mhh / 4.6), mw - 20, 7);
+      }
+      // неоновая вывеска
+      var sgA = 0.55 + 0.45 * Math.abs(Math.sin(t * 2.6));
+      q.save();
+      q.shadowColor = 'rgba(190,140,255,0.95)';
+      q.shadowBlur = 26 + 14 * sgA;
+      q.fillStyle = 'rgba(226,204,255,' + sgA.toFixed(3) + ')';
+      q.font = '700 ' + Math.max(13, Math.min(W * 0.023, 24)) + 'px Arial';
+      q.textAlign = 'center';
+      q.fillText('G R A N D   M A L L', W / 2, my + 30);
+      q.restore();
+      // прожекторы в небо
+      for (var pjI = -1; pjI <= 1; pjI += 2) {
+        var ang = Math.sin(t * 0.8 + pjI) * 0.30;
+        q.save();
+        q.translate(W / 2 + pjI * mw * 0.34, my + 4);
+        q.rotate(ang + (pjI < 0 ? -0.22 : 0.22));
+        var lg = q.createLinearGradient(0, 0, 0, -H * 0.55);
+        lg.addColorStop(0, 'rgba(170,130,255,0.24)');
+        lg.addColorStop(1, 'rgba(170,130,255,0)');
+        q.fillStyle = lg;
+        q.beginPath(); q.moveTo(-7, 0); q.lineTo(7, 0);
+        q.lineTo(64, -H * 0.55); q.lineTo(-64, -H * 0.55); q.closePath(); q.fill();
+        q.restore();
+      }
+      q.globalAlpha = 1;
+    }
+
+    // ── МОКРЫЙ АСФАЛЬТ с отражениями ──
+    var rg = q.createLinearGradient(0, hy, 0, H + 40);
+    rg.addColorStop(0, 'rgba(24,18,48,0.95)');
+    rg.addColorStop(1, 'rgba(4,4,12,1)');
+    q.fillStyle = rg; q.fillRect(-30, hy, W + 60, H - hy + 60);
+    q.globalAlpha = 0.16;
+    for (i = 0; i < near.length; i++) {
+      var nb = near[i];
+      if (nb._sx === undefined) continue;
+      q.fillStyle = 'rgba(150,120,255,0.5)';
+      q.fillRect(nb._sx, hy, nb.w, Math.min(nb.h * 0.42, H - hy));
     }
     q.globalAlpha = 1;
-    var fl = 0;
-    if (t > 1.9 && t < 2.25) fl = Math.sin((t - 1.9) / 0.35 * Math.PI);
-    if (t > 2.9 && t < 3.2) fl = Math.sin((t - 2.9) / 0.3 * Math.PI) * 0.55;
-    if (fl > 0.02) { q.fillStyle = 'rgba(160,150,255,' + (fl * 0.16).toFixed(3) + ')'; q.fillRect(-20, -20, W + 40, H + 40); }
-    var hy = H * 0.78;
-    q.fillStyle = fl > 0.05 ? 'rgba(66,74,110,' + (0.4 + fl * 0.5).toFixed(3) + ')' : '#060510';
-    for (i = 0; i < bld.length; i++) { var b = bld[i]; q.fillRect(b.x, hy - b.h, b.w, b.h + 90); }
-    q.fillStyle = fl > 0.3 ? 'rgba(255,240,200,0.5)' : 'rgba(255,186,90,0.22)';
-    for (i = 0; i < bld.length; i++) {
-      b = bld[i];
-      for (var wy = hy - b.h + 10; wy < hy - 6; wy += 15)
-        for (var wx = b.x + 6; wx < b.x + b.w - 8; wx += 13)
-          if ((Math.sin(wx * 12.9 + wy * 7.7) * 0.5 + 0.5) < 0.14) q.fillRect(wx, wy, 4, 6);
+
+    q.restore(); // конец зума
+
+    // ── ДОЖДЬ (поверх зума, во весь экран) ──
+    var rainA = clamp01((t - 0.5) / 2) * (1 - clamp01((t - A6) / 2.5));
+    if (rainA > 0.01) {
+      q.strokeStyle = 'rgba(190,205,255,0.5)';
+      q.lineWidth = 1.1;
+      q.beginPath();
+      for (i = 0; i < rain.length; i++) {
+        var dp = rain[i];
+        dp.y += dp.v * dt;
+        dp.x -= dp.v * dt * 0.16;
+        if (dp.y > H) { dp.y = -20; dp.x = rnd(0, W); }
+        if (dp.x < -20) dp.x = W + 20;
+        q.globalAlpha = dp.o * rainA;
+        q.moveTo(dp.x, dp.y);
+        q.lineTo(dp.x - dp.l * 0.16, dp.y + dp.l);
+      }
+      q.stroke();
+      q.globalAlpha = 1;
     }
-    var mallW = Math.min(W * 0.42, 560), mx = W / 2 - mallW / 2, my = hy - 118;
-    q.fillStyle = fl > 0.2 ? 'rgba(90,60,160,0.75)' : 'rgba(48,30,92,0.8)';
-    q.fillRect(mx, my, mallW, 34);
-    q.fillStyle = 'rgba(200,170,255,' + (0.5 + 0.4 * Math.sin(t * 3)).toFixed(3) + ')';
-    q.font = '700 17px Arial'; q.textAlign = 'center';
-    q.fillText('G R A N D   M A L L', W / 2, my + 23);
-    if (t > T_TITLE) {
-      var a1 = Math.min(1, (t - T_TITLE) / 0.5);
-      var fs1 = Math.min(W * 0.085, 96);
+
+    // ── ВСПЫШКА МОЛНИИ поверх всего ──
+    if (fl > 0.02) {
+      q.fillStyle = 'rgba(178,170,255,' + (fl * 0.30).toFixed(3) + ')';
+      q.fillRect(-30, -30, W + 60, H + 60);
+    }
+
+    // ── АКТ 5: ТИТР FANTAZIA RP ──
+    if (t > A5) {
+      var a1 = clamp01((t - A5) / 0.7);
+      var pop = 1 + (1 - ease(clamp01((t - A5) / 0.5))) * 0.35;
+      var fs1 = Math.min(W * 0.092, 112);
+      q.save();
+      q.translate(W / 2, H * 0.33);
+      q.scale(pop, pop);
       q.font = '900 ' + fs1 + 'px Arial';
       q.textAlign = 'center';
-      var gl = t < T_STRIKE ? (Math.random() - 0.5) * 8 * (1 - (t - T_TITLE)) : 0;
-      q.globalAlpha = a1 * 0.35; q.fillStyle = '#ff3a4a'; q.fillText('FANTAZIA RP', W / 2 + gl + 3, H * 0.34);
-      q.fillStyle = '#39d0ff'; q.fillText('FANTAZIA RP', W / 2 + gl - 3, H * 0.34);
-      q.globalAlpha = a1; q.fillStyle = '#eceaf6'; q.fillText('FANTAZIA RP', W / 2 + gl, H * 0.34);
-      q.globalAlpha = 1;
+      var gl = (t < A5 + 0.6) ? (Math.random() - 0.5) * 9 : Math.sin(t * 3) * 1.2;
+      // хроматическая аберрация
+      q.globalAlpha = a1 * 0.42;
+      q.fillStyle = '#ff2f45'; q.fillText('FANTAZIA RP', gl + 4, 0);
+      q.fillStyle = '#31d4ff'; q.fillText('FANTAZIA RP', gl - 4, 0);
+      q.globalAlpha = a1;
+      q.shadowColor = 'rgba(180,160,255,0.7)'; q.shadowBlur = 24;
+      q.fillStyle = '#f2f0fb'; q.fillText('FANTAZIA RP', gl, 0);
+      q.restore();
+      // подчёркивание
+      if (t > A5 + 0.7) {
+        var k3 = ease(clamp01((t - A5 - 0.7) / 0.5));
+        var lw = Math.min(W * 0.60, 700);
+        q.save();
+        q.strokeStyle = '#ff2b3a';
+        q.lineWidth = Math.max(4, H * 0.011);
+        q.shadowColor = '#ff2b3a'; q.shadowBlur = 24;
+        q.beginPath();
+        q.moveTo(W / 2 - lw / 2, H * 0.395);
+        q.lineTo(W / 2 - lw / 2 + lw * k3, H * 0.378);
+        q.stroke();
+        q.restore();
+      }
+      // подзаголовок
+      if (t > A5 + 1.1) {
+        q.globalAlpha = clamp01((t - A5 - 1.1) / 0.6) * (0.55 + 0.35 * Math.abs(Math.sin(t * 2.4)));
+        q.fillStyle = '#9aa0c8';
+        q.font = '600 ' + Math.min(W * 0.026, 26) + 'px Arial';
+        q.textAlign = 'center';
+        q.fillText('Г О Р О Д   Ж Д Ё Т', W / 2, H * 0.455);
+        q.globalAlpha = 1;
+      }
     }
-    if (t > T_STRIKE) {
-      var k3 = Math.min(1, (t - T_STRIKE) / 0.42);
-      var lw = Math.min(W * 0.62, 720);
-      q.strokeStyle = '#ff2b3a';
-      q.lineWidth = Math.max(5, H * 0.014);
-      q.shadowColor = '#ff2b3a'; q.shadowBlur = 26;
-      q.beginPath();
-      q.moveTo(W / 2 - lw / 2, H * 0.345);
-      q.lineTo(W / 2 - lw / 2 + lw * k3, H * 0.325);
-      q.stroke();
-      q.shadowBlur = 0;
-    }
-    if (t > T_Q && t < T_SLAM + 0.1) {
-      var a2 = 0.35 + 0.4 * Math.abs(Math.sin(t * 4));
-      q.globalAlpha = a2;
-      q.fillStyle = '#8a8aa4';
-      q.font = '700 ' + Math.min(W * 0.045, 44) + 'px Arial';
-      q.fillText('?   ?   ?', W / 2, H * 0.46);
-      q.globalAlpha = 1;
-    }
-    if (t > T_SLAM) {
-      var k4 = Math.min(1, (t - T_SLAM) / 0.34);
-      var sc = 2.3 - 1.3 * k4;
-      var fs2 = Math.min(W * 0.062, 66);
+
+    // ── АКТ 6: УДАР «GRAND MALL SECRET» ──
+    if (t > A6) {
+      var k4 = ease(clamp01((t - A6) / 0.38));
+      var sc = 2.5 - 1.5 * k4;
+      var fs2 = Math.min(W * 0.066, 74);
       q.save();
-      q.translate(W / 2, H * 0.585);
+      q.translate(W / 2, H * 0.60);
       q.scale(sc, sc);
       q.globalAlpha = k4;
-      q.shadowColor = 'rgba(255,43,58,0.8)'; q.shadowBlur = 40 * k4 + 8;
+      q.shadowColor = 'rgba(255,43,58,0.9)'; q.shadowBlur = 44 * k4 + 10;
       q.fillStyle = '#ff2b3a';
       q.font = '900 ' + fs2 + 'px Arial';
+      q.textAlign = 'center';
       q.fillText('GRAND MALL SECRET', 0, 0);
       q.restore();
       q.globalAlpha = 1;
       if (k4 >= 1 && emb.length === 0) {
-        for (var e2 = 0; e2 < 46; e2++) emb.push({ a: Math.random() * 6.28, v: 90 + Math.random() * 300, l: 1, r: 1 + Math.random() * 2.4 });
+        for (var e2 = 0; e2 < 70; e2++)
+          emb.push({ a: rnd(0, 6.28), v: rnd(110, 460), l: 1, r: rnd(1, 3.6) });
       }
     }
-    q.save();
-    q.translate(W / 2, H * 0.585);
-    for (e2 = 0; e2 < emb.length; e2++) {
-      var em2 = emb[e2]; em2.l -= 0.012;
-      if (em2.l <= 0) continue;
-      var dd = (1 - em2.l) * em2.v;
-      q.globalAlpha = em2.l;
-      q.fillStyle = '#ff5a2a';
-      q.fillRect(Math.cos(em2.a) * dd, Math.sin(em2.a) * dd - (1 - em2.l) * 26, em2.r, em2.r);
+
+    // ── ИСКРЫ ──
+    if (emb.length) {
+      q.save();
+      q.translate(W / 2, H * 0.60);
+      for (e2 = 0; e2 < emb.length; e2++) {
+        var em2 = emb[e2];
+        em2.l -= 0.011;
+        if (em2.l <= 0) continue;
+        var ddd = (1 - em2.l) * em2.v;
+        q.globalAlpha = em2.l;
+        q.fillStyle = em2.l > 0.6 ? '#ffd08a' : '#ff5a2a';
+        q.fillRect(Math.cos(em2.a) * ddd, Math.sin(em2.a) * ddd - (1 - em2.l) * 30, em2.r, em2.r);
+      }
+      q.restore();
+      q.globalAlpha = 1;
     }
+
+    // ── КИНОПОЛОСЫ сверху/снизу ──
+    var barK = ease(clamp01(t / 1.0)) * (1 - clamp01((t - T_GO) / 1.2));
+    var bh = H * 0.085 * barK;
+    if (bh > 0.5) {
+      q.fillStyle = '#000';
+      q.fillRect(-30, -30, W + 60, bh + 30);
+      q.fillRect(-30, H - bh, W + 60, bh + 30);
+    }
+
+    // ── СКАНЛАЙНЫ + ВИНЬЕТКА ──
+    q.fillStyle = 'rgba(0,0,0,0.13)';
+    for (var y = 0; y < H; y += 4) q.fillRect(-30, y, W + 60, 1);
+    var vg = q.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.34, W / 2, H / 2, Math.max(W, H) * 0.78);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.76)');
+    q.fillStyle = vg; q.fillRect(-30, -30, W + 60, H + 60);
+
+    // ── ЗАТЕМНЕНИЕ В НАЧАЛЕ ──
+    if (t < 1.0) {
+      q.fillStyle = 'rgba(0,0,0,' + (1 - clamp01(t / 1.0)).toFixed(3) + ')';
+      q.fillRect(-30, -30, W + 60, H + 60);
+    }
+
     q.restore();
-    q.globalAlpha = 1;
-    q.fillStyle = 'rgba(0,0,0,0.16)';
-    for (var y = 0; y < H; y += 4) q.fillRect(-20, y, W + 40, 1);
-    var vg = q.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.36, W / 2, H / 2, Math.max(W, H) * 0.75);
-    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.72)');
-    q.fillStyle = vg; q.fillRect(-20, -20, W + 40, H + 40);
-    q.restore();
+
     if (t > T_GO && !done) { done = true; box.classList.add('fzi-go'); }
     requestAnimationFrame(fr);
   }
   requestAnimationFrame(fr);
-  function fin() { if (t0 === null) t0 = performance.now() - 1; skipped = true; }
+
+  function fin() { skipped = true; }
   cv.addEventListener('click', fin);
   document.getElementById('fziSkip').addEventListener('click', fin);
   function closeIntro() {
