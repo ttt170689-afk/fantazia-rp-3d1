@@ -126,6 +126,134 @@ const fx = DOC.getElementById('fx');
 const fc = fx.getContext('2d');
 fx.width = W; fx.height = H;
 
+
+// ═══════════════════════════════════════════════════════════════════════
+//  v35: ЗАПИСЬ ТИЗЕРА В ВИДЕОФАЙЛ
+//  В песочнице нет ffmpeg и браузера, поэтому отрендерить mp4 на сервере
+//  невозможно. Вместо этого тизер умеет записывать сам себя: MediaRecorder
+//  снимает canvas + звук и сохраняет файл на диск.
+//  Кнопка «● ЗАПИСАТЬ ВИДЕО» + горячая клавиша R. Также ?rec=1 —
+//  запись стартует автоматически вместе с тизером.
+// ═══════════════════════════════════════════════════════════════════════
+(function fzTeaserRecorder() {
+  var rec = null, chunks = [], startedAt = 0, timerIv = null;
+
+  // MP4 поддерживают не все браузеры; выбираем лучший доступный формат
+  function pickMime() {
+    var want = [
+      'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+      'video/mp4;codecs=avc1.42E01E',
+      'video/mp4',
+      'video/webm;codecs=vp9,opus',
+      'video/webm;codecs=vp8,opus',
+      'video/webm'
+    ];
+    for (var i = 0; i < want.length; i++) {
+      if (window.MediaRecorder && MediaRecorder.isTypeSupported(want[i])) return want[i];
+    }
+    return '';
+  }
+
+  function ui() {
+    var b = DOC.createElement('div');
+    b.id = 'fzRecBtn';
+    b.textContent = '● ЗАПИСАТЬ ВИДЕО';
+    b.style.cssText = 'position:fixed;right:16px;top:16px;z-index:99999;' +
+      'padding:10px 16px;border-radius:22px;border:2px solid #ff4d4d;' +
+      'background:rgba(20,8,10,.78);color:#ffd7d7;font:700 13px Arial;' +
+      'letter-spacing:.06em;cursor:pointer;backdrop-filter:blur(6px);' +
+      'user-select:none;-webkit-user-select:none';
+    b.onclick = function () { rec ? stop() : start(); };
+    DOC.body.appendChild(b);
+    return b;
+  }
+
+  function setLabel(t, on) {
+    var b = DOC.getElementById('fzRecBtn');
+    if (!b) return;
+    b.textContent = t;
+    b.style.borderColor = on ? '#ff2d2d' : '#ff4d4d';
+    b.style.background = on ? 'rgba(120,10,10,.85)' : 'rgba(20,8,10,.78)';
+  }
+
+  function start() {
+    if (rec) return;
+    var mime = pickMime();
+    if (!mime) { alert('Браузер не поддерживает запись видео (MediaRecorder).'); return; }
+
+    var fps = 60;
+    var vs = cv.captureStream ? cv.captureStream(fps) : null;
+    if (!vs) { alert('Этот браузер не умеет captureStream у canvas.'); return; }
+
+    // звук: подмешиваем мастер-выход тизера, если он уже создан
+    try {
+      if (typeof AU !== 'undefined' && AU && typeof MG !== 'undefined' && MG) {
+        var dest = AU.createMediaStreamDestination();
+        MG.connect(dest);
+        dest.stream.getAudioTracks().forEach(function (t) { vs.addTrack(t); });
+      }
+    } catch (e) { /* без звука — не критично */ }
+
+    chunks = [];
+    try {
+      rec = new MediaRecorder(vs, { mimeType: mime, videoBitsPerSecond: 12000000 });
+    } catch (e) {
+      alert('Не удалось начать запись: ' + e.message); rec = null; return;
+    }
+    rec.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+    rec.onstop = save;
+    rec.start(250);
+    startedAt = Date.now();
+    timerIv = setInterval(function () {
+      var s = Math.floor((Date.now() - startedAt) / 1000);
+      setLabel('■ СТОП  ' + Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2), true);
+    }, 250);
+    setLabel('■ СТОП  0:00', true);
+  }
+
+  function stop() {
+    if (!rec) return;
+    clearInterval(timerIv); timerIv = null;
+    try { rec.stop(); } catch (e) {}
+  }
+
+  function save() {
+    var mime = rec && rec.mimeType ? rec.mimeType : 'video/webm';
+    rec = null;
+    setLabel('● ЗАПИСАТЬ ВИДЕО', false);
+    if (!chunks.length) return;
+    var ext = mime.indexOf('mp4') >= 0 ? 'mp4' : 'webm';
+    var blob = new Blob(chunks, { type: mime });
+    chunks = [];
+    var a = DOC.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'fantazia-teaser.' + ext;
+    DOC.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+    if (ext === 'webm') {
+      setTimeout(function () {
+        alert('Сохранено в .webm — этот браузер не умеет писать MP4.\\n' +
+              'Открой видео в Chrome/Edge, либо конвертируй в MP4 любым конвертером.');
+      }, 400);
+    }
+  }
+
+  window.fzRecStart = start;
+  window.fzRecStop = stop;
+
+  if (DOC.readyState === 'loading') DOC.addEventListener('DOMContentLoaded', ui);
+  else ui();
+
+  DOC.addEventListener('keydown', function (e) {
+    if (e.code === 'KeyR' && !e.ctrlKey && !e.metaKey) { e.preventDefault(); rec ? stop() : start(); }
+  });
+
+  // ?rec=1 — начать запись сразу
+  try {
+    if (/[?&]rec=1/.test(location.search)) setTimeout(start, 600);
+  } catch (e) {}
+})();
+
 const rnd = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
 const lerp = (a, b, k) => a + (b - a) * k;

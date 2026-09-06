@@ -14077,31 +14077,101 @@ function fzQuestNotesAnim(t) {
   });
 }
 
-// ═══ КВЕСТ V3.4: доски/топор/арена/босс ═══
-function fzMallBoards(bx, bz, F, FH, add, mat) {
+// ═══ КВЕСТ V3.4: проём босса / топор / арена ═══
+// v35: доски отсюда убраны — заколочен только служебный вход у лифта.
+// Здесь остаётся сам тёмный проём, ведущий вниз к боссу.
+function fzBossDoorway(bx, bz, F, add, mat) {
   const qx = bx + 18.6, qz = bz + 3;
   const dark = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 3), new THREE.MeshBasicMaterial({ color: 0x050508 }));
   dark.position.set(qx, F + 1.5, qz); dark.rotation.y = -Math.PI / 2; add(dark);
   const frame2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3.2, 2.8), mat(0x2c2016));
   frame2.position.set(qx, F + 1.6, qz); add(frame2);
+
   if (window.FZ_QUEST.bossDead) {
     addInteriorSign('☣️ ЗЛО ПОБЕЖДЕНО', qx - 0.3, F + 2.6, qz, add);
     return;
   }
   if (window.FZ_QUEST.boardsBroken) {
+    addInteriorSign('🕳 СПУСК ВНИЗ', qx - 0.3, F + 2.6, qz, add);
     interactables.push({ position: { x: qx - 0.9, y: F, z: qz }, type: 'quest_bossdoor', name: '🕳 Тёмный проём: СПУСТИТЬСЯ', range: 2.6, interior: true });
     return;
   }
-  window._fzBoardMeshes = [];
-  [[0.35, 0.4], [-0.3, -0.35], [0.02, 0.1]].forEach(([oy, rot]) => {
-    const bd = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.5, 3.4), mat(0x6b4a2a));
-    bd.position.set(qx - 0.25, F + 1.2 + oy, qz);
-    bd.rotation.x = rot;
-    bd.userData = { isBoard: true, vy: 0, vr: (Math.random() - 0.5) * 8, throwing: false };
-    add(bd); window._fzBoardMeshes.push(bd);
+  // пока служебный вход не вскрыт — проём просто заперт
+  addInteriorSign('🚪 ЗАПЕРТО', qx - 0.3, F + 2.6, qz, add);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  v35: СЛУЖЕБНАЯ ДВЕРЬ (отдельно от лифта)
+//  Металлическая дверь в стене слева от лифта, заколоченная досками.
+//  Пассажирский лифт при этом остаётся чистым и полностью рабочим.
+//  Сбить доски можно только топором и только собрав все 6 записок.
+// ═══════════════════════════════════════════════════════════════════════
+function fzServiceDoor(bx, bz, F, FH, add, mat, B, colp, liftX, LWALLZ) {
+  const dX = liftX - 7.6;              // заметно левее лифта
+  const DW = 1.3, DH = 2.6;
+  const Z = LWALLZ;
+  const broken = window.FZ_QUEST.boardsBroken || window.FZ_QUEST.bossDead;
+
+  // ── стеновая ниша + стальная рама ──
+  B(DW * 2 + 1.3, DH + 1.0, 0.34, 0x9aa2ad, dX, (DH + 1.0) / 2, Z + 0.18, 0);
+  B(DW * 2 + 0.6, DH + 0.34, 0.14, 0x2f363d, dX, (DH + 0.34) / 2, Z + 0.3, 0);
+  [-1, 1].forEach(sx => {
+    B(0.2, DH + 0.34, 0.22, 0x454e57, dX + sx * (DW + 0.24), (DH + 0.34) / 2, Z + 0.36, 0);
   });
-  addInteriorSign('⛔ ЗАКОЛОЧЕНО', qx - 0.4, F + 2.9, qz, add);
-  interactables.push({ position: { x: qx - 0.9, y: F, z: qz }, type: 'quest_boards', name: '🪵 Заколоченный проход', range: 2.6, interior: true });
+  B(DW * 2 + 0.6, 0.2, 0.24, 0x454e57, dX, DH + 0.32, Z + 0.36, 0);
+
+  if (broken) {
+    // ── ПРОЁМ ОТКРЫТ: тёмный ход вниз ──
+    B(DW * 2, DH, 0.1, 0x07090c, dX, DH / 2, Z + 0.4, 0);
+    const gl = new THREE.PointLight(0x66ccff, 0.5, 8);
+    gl.position.set(bx + dX, F + 1.6, bz + Z + 1.2); add(gl);
+    addInteriorSign('🕳 СЛУЖЕБНЫЙ ХОД', bx + dX, F + DH + 0.95, bz + Z + 0.45, add);
+    return;
+  }
+
+  // ── ЗАКРЫТАЯ МЕТАЛЛИЧЕСКАЯ ДВЕРЬ ──
+  const doorMat = mat(0x6f4a2c, 0x1a1008, 0.06);
+  const door = new THREE.Mesh(new THREE.BoxGeometry(DW * 2, DH, 0.12), doorMat);
+  door.position.set(bx + dX, F + DH / 2, bz + Z + 0.42); add(door);
+  // филёнки и ручка
+  [-0.62, 0.62].forEach(o => {
+    B(DW * 0.82, DH * 0.38, 0.03, 0x8a5c36, dX + o * DW * 0.5, DH / 2 + (o > 0 ? 0.52 : -0.52), Z + 0.49, 0);
+  });
+  B(0.14, 0.14, 0.1, 0x2a2f36, dX + DW * 0.72, DH * 0.48, Z + 0.52, 0);
+  // табличка «служебное»
+  B(0.72, 0.3, 0.03, 0xc9a227, dX, DH * 0.78, Z + 0.5, 0);
+
+  // ── ДОСКИ КРЕСТ-НАКРЕСТ ──
+  window._fzLiftBoards = [];
+  const plank = (px, py, w2, rz) => {
+    const bd = new THREE.Mesh(new THREE.BoxGeometry(w2, 0.4, 0.14), mat(0x7a5433));
+    bd.position.set(bx + dX + px, F + py, bz + Z + 0.58);
+    bd.rotation.z = rz;
+    bd.userData = { isBoard: true, vy: 0, vr: (Math.random() - 0.5) * 8, throwing: false };
+    add(bd); window._fzLiftBoards.push(bd);
+    // гвозди по краям
+    for (let n = -1; n <= 1; n += 2) {
+      const nail = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.1, 6), mat(0x2a2018));
+      nail.rotation.x = Math.PI / 2;
+      nail.position.set(bd.position.x + n * (w2 / 2 - 0.22) * Math.cos(rz),
+                        bd.position.y + n * (w2 / 2 - 0.22) * Math.sin(rz),
+                        bz + Z + 0.67);
+      add(nail);
+    }
+  };
+  const diag = DW * 2 + 1.1;
+  plank(0, DH * 0.55,  diag,  0.72);     // крест \
+  plank(0, DH * 0.55,  diag, -0.72);     // крест /
+  plank(0, DH * 0.24,  DW * 2 + 0.7, 0); // горизонталь низ
+  plank(0, DH * 0.88,  DW * 2 + 0.7, 0); // горизонталь верх
+
+  addInteriorSign('⛔ СЛУЖЕБНЫЙ ВХОД ЗАКОЛОЧЕН', bx + dX, F + DH + 1.15, bz + Z + 0.6, add);
+  colp(dX, Z + 0.5, DW * 2 + 1.0, 0.5);
+  interactables.push({
+    position: { x: bx + dX, y: F, z: bz + Z + 2.0 },
+    type: 'quest_boards', name: '🪵 Заколоченный служебный вход',
+    range: 3.0, interior: true
+  });
 }
 
 function fzTryBreakBoards() {
@@ -14122,28 +14192,32 @@ function fzTryBreakBoards() {
   [].concat(window._fzBoardMeshes || [], window._fzLiftBoards || [])
     .forEach(bd => { bd.userData.throwing = true; bd.userData.vy = 4 + Math.random() * 2; });
   (function(){ _fzInterPrepLen = -1; const _k = interactables.filter(i2 => i2.type !== 'quest_boards'); interactables.length = 0; Array.prototype.push.apply(interactables, _k); })();
-  showNotification('💥 Доски разлетелись в щепки! Служебный лифт разблокирован', 'success');
+  showNotification('💥 Доски разлетелись в щепки! Служебный вход открыт', 'success');
   setTimeout(() => {
     const bx = INTERIOR_BASE.x, bz = INTERIOR_BASE.z;
     interactables.push({ position: { x: bx + 17.7, y: 0, z: bz + 3 }, type: 'quest_bossdoor', name: '🕳 Тёмный проём: СПУСТИТЬСЯ', range: 2.6, interior: true });
-    showNotification('🛗 Теперь лифт везёт до B5. Он ждёт внизу...', 'info');
+    showNotification('🛗 Лифт теперь везёт до B5. Он ждёт внизу...', 'info');
     // перестроить этаж, чтобы убрать коллайдер досок
     try { buildInterior(currentBuildingType); } catch (e) {}
   }, 700);
 }
 
 function fzBoardsAnim(dt) {
-  if (!window._fzBoardMeshes) return;
-  window._fzBoardMeshes.forEach(bd => {
-    if (bd.userData.throwing) {
+  // v35: доски теперь только на служебной двери (_fzLiftBoards).
+  // Раньше анимация смотрела лишь на _fzBoardMeshes — после переноса
+  // доски зависали бы в воздухе, не разлетаясь.
+  const arr = window._fzLiftBoards;
+  if (!arr || !arr.length) return;
+  arr.forEach(bd => {
+    if (bd.userData && bd.userData.throwing) {
       bd.userData.vy -= 12 * dt;
       bd.position.x -= 5 * dt;
       bd.position.y += bd.userData.vy * dt;
       bd.rotation.z += bd.userData.vr * dt;
     }
   });
-  window._fzBoardMeshes = window._fzBoardMeshes.filter(bd => bd.position.y > -3);
-  if (!window._fzBoardMeshes.length) window._fzBoardMeshes = null;
+  window._fzLiftBoards = arr.filter(bd => bd.position.y > -3);
+  if (!window._fzLiftBoards.length) window._fzLiftBoards = null;
 }
 
 function fzMallAxe(bx, bz, F, add, mat) {
@@ -14267,7 +14341,7 @@ function fzPickAxe() {
   if (window._fzAxeMesh) window._fzAxeMesh.visible = false;
   (function(){ _fzInterPrepLen = -1; const _k = interactables.filter(i2 => i2.type !== 'quest_axe'); interactables.length = 0; Array.prototype.push.apply(interactables, _k); })();
   fzSfxChord([220, 330, 440], 0.4);
-  showNotification('🪓 ТОПОР СМОТРИТЕЛЯ получен! Спускайся на 1 этаж — служебный лифт заколочен', 'success');
+  showNotification('🪓 ТОПОР СМОТРИТЕЛЯ получен! Спускайся на 1 этаж — служебный вход заколочен', 'success');
 }
 
 // ═══ АРЕНА БОССА ═══
@@ -15822,6 +15896,9 @@ function buildInterior(type) {
   } // конец оболочки не-ТЦ
 
   // Интерьер зависит от типа
+  // v35: старые интерьерные точки чистим ДО постройки, иначе очистка
+  // затирала то, что билдеры только что добавили.
+  (function(){ _fzInterPrepLen = -1; const _k = interactables.filter(i => i.interior !== true); interactables.length = 0; Array.prototype.push.apply(interactables, _k); })();
   if (type === 'office') {
     // v29: 0 — холл, верхний этаж — КАБИНЕТ ДИРЕКТОРА (там квестовый топор),
     // между ними — опенспейс.
@@ -15846,7 +15923,13 @@ function buildInterior(type) {
   buildStairs(bx, bz, currentFloor, FH, addObj, mat, cfg.floors);
 
   // Лифт (если этажей > 1)
-  if (cfg.floors > 1) buildElevator(bx, bz, currentFloor, FH, addObj, mat, cfg.floors);
+  // v35: в ТЦ свой лифт из тизера (стальной портал, табло, панель вызова) —
+  // он строится внутри buildMallInterior. Обычный buildElevator рисовал
+  // ВТОРОЙ лифт поверх него: получалось два лифта в одном зале, и его
+  // створки перехватывали elevatorDoorLeft/Right у настоящего портала.
+  if (cfg.floors > 1 && type !== 'mall') {
+    buildElevator(bx, bz, currentFloor, FH, addObj, mat, cfg.floors);
+  }
 
   // Освещение интерьера
   const intLight = new THREE.PointLight(0xFFFFDD, 1.2, 30);
@@ -15866,7 +15949,9 @@ function buildInterior(type) {
   ].forEach(c => interiorColliders.push(c));
 
   // Интерактивные зоны в интерьере
-  (function(){ _fzInterPrepLen = -1; const _k = interactables.filter(i => i.interior !== true); interactables.length = 0; Array.prototype.push.apply(interactables, _k); })();
+  // v35: очистка перенесена ВЫШЕ (до вызова билдеров). Здесь она стирала
+  // точки, которые только что создал buildMallInterior — в том числе
+  // «Заколоченный служебный вход», из-за чего доски нельзя было сбить.
   if (type !== 'mall' && type !== 'house') { // в доме лестниц нет — один огромный зал
     const stairZ = bz - D/2 + 3;
     const stairX = bx - W/2 + 3;
@@ -16130,41 +16215,14 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
   colp(liftX, LWALLZ, 4.8, 0.6);
 
   // ═══════════════════════════════════════════════════════════════════
-  // v26: СЛУЖЕБНЫЙ ВХОД ЗАКОЛОЧЕН.
-  // Пока доски целы, лифт физически не может уехать в подвалы —
-  // створки перекрыты крест-накрест досками смотрителя.
-  // Сбить их можно только ТОПОРОМ и только собрав все 6 страниц.
+  // v35: СЛУЖЕБНЫЙ ВХОД — ОТДЕЛЬНАЯ ДВЕРЬ, НЕ ЛИФТ.
+  // Раньше доски прибивались прямо на пассажирский лифт из тизера:
+  // красивый портал выглядел сломанным, а лифт — заколоченным.
+  // Теперь лифт всегда чистый и рабочий, а заколочена отдельная
+  // служебная дверь в стене слева от него.
   // ═══════════════════════════════════════════════════════════════════
-  if (!bsm && sf === 0 && !window.FZ_QUEST.boardsBroken && !window.FZ_QUEST.bossDead) {
-    window._fzLiftBoards = [];
-    // крест-накрест + горизонтали поперёк проёма
-    [[-0.62, 0.62], [0.62, -0.62], [0, 0], [0, 0]].forEach(([rz], bi) => {
-      const horiz = bi >= 2;
-      const bd = new THREE.Mesh(
-        new THREE.BoxGeometry(horiz ? DOORW * 2 + 0.6 : 0.5, 0.42, 0.16),
-        mat(0x6b4a2a));
-      bd.position.set(bx + liftX, F + (horiz ? (bi === 2 ? 0.75 : 2.45) : 1.6),
-        bz + LWALLZ + 0.58);
-      if (!horiz) {
-        bd.scale.y = (DOORW * 2 + 0.9) / 0.42;
-        bd.rotation.z = rz;
-      }
-      bd.userData = { isBoard: true, vy: 0, vr: (Math.random() - 0.5) * 8, throwing: false };
-      add(bd); window._fzLiftBoards.push(bd);
-      // ржавые гвозди
-      for (let nl = -1; nl <= 1; nl += 2) {
-        const nail = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.1, 6), mat(0x2a2018));
-        nail.rotation.x = Math.PI / 2;
-        nail.position.set(bd.position.x + nl * (horiz ? 1.3 : 0.9),
-          bd.position.y + (horiz ? 0 : nl * 0.9), bz + LWALLZ + 0.68);
-        add(nail);
-      }
-    });
-    // предупреждение краской
-    addInteriorSign('⛔ СЛУЖЕБНЫЙ ВХОД ЗАКОЛОЧЕН', bx + liftX, F + DOORH + 1.5, bz + LWALLZ + 0.6, add);
-    colp(liftX, LWALLZ + 0.6, DOORW * 2 + 0.8, 0.5);
-    interactables.push({ position: { x: bx + liftX, y: F, z: bz + LWALLZ + 2.2 },
-      type: 'quest_boards', name: '🪵 Заколоченный служебный вход', range: 3.0, interior: true });
+  if (!bsm && sf === 0) {
+    fzServiceDoor(bx, bz, F, FH, add, mat, B, colp, liftX, LWALLZ);
   }
 
   // ═══ КОНТЕНТ (минимум, без хлама) ═══
@@ -16228,8 +16286,11 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
     spawnInteriorNPC(bx + 18, F, bz + 12, 'guard', add);
     spawnInteriorNPC(bx - 8, F, bz + 6, 'shopper', add);
     spawnInteriorNPC(bx + 3, F, bz - 1, 'shopper', add);
-    // ═══ КВЕСТ: заколоченный проход (восточная стена) ═══
-    fzMallBoards(bx, bz, F, FH, add, mat);
+    // v35: второй заколоченный проход у восточной стены УБРАН —
+    // он дублировал служебный вход и путал игрока (две «заколочки»).
+    // Остался один служебный вход у лифта (fzServiceDoor).
+    // Дверь босса появляется здесь только после того, как доски сбиты.
+    fzBossDoorway(bx, bz, F, add, mat);
   }
 
   if (sf === 1) {
@@ -21990,23 +22051,21 @@ body.game-active canvas{touch-action:none}
 <div id="fzNews" onclick="if(event.target===this)fzCloseNews()">
   <div class="fzn-box">
     <h2>✨ НОВОСТИ FANTAZIA RP</h2>
-    <div class="fzn-ver" id="fznVer">v34 «СУПЕР-АПГРЕЙД ГОРОДА» · сервер онлайн</div>
+    <div class="fzn-ver" id="fznVer">v35 «СЛУЖЕБНЫЙ ВХОД» · сервер онлайн</div>
 
-    <div class="fzn-item new"><b>🧹 УБРАН БЛОК У ВХОДА:</b> розовый куб магазина стоял ровно перед лестницей GRAND MALL и загораживал проход. Ларьки перенесены — фронтальная зона входа теперь свободна.</div>
+    <div class="fzn-item new"><b>🛗 ЛИФТ БОЛЬШЕ НЕ ЗАКОЛОЧЕН:</b> доски прибивались прямо на красивый лифт из тизера — он выглядел сломанным. Теперь лифт всегда чистый и рабочий.</div>
 
-    <div class="fzn-item new"><b>🌉 ВАНТОВЫЕ МОСТЫ:</b> все 4 моста получили А-образные пилоны высотой 26 м, веер из 128 вант, отбойники и фонари вдоль палубы. Были плоскими балками — стали настоящими сооружениями.</div>
+    <div class="fzn-item new"><b>🚪 ОТДЕЛЬНЫЙ СЛУЖЕБНЫЙ ВХОД:</b> заколочена своя металлическая дверь слева от лифта — с филёнками, табличкой, досками крест-накрест и ржавыми гвоздями.</div>
 
-    <div class="fzn-item new"><b>🚏 АВТОБУСНЫЕ ОСТАНОВКИ:</b> 30 павильонов вдоль проспектов — навес, стеклянные стенки, лавка (на неё можно сесть), знак и подсветка.</div>
+    <div class="fzn-item new"><b>🧹 УБРАН ВТОРОЙ ЛИФТ:</b> в зале ТЦ строился ещё один, обычный лифт поверх лифта из тизера — два лифта в одном месте. Лишний удалён.</div>
 
-    <div class="fzn-item new"><b>🚦 СВЕТОФОРЫ:</b> 50 светофоров на всех перекрёстках — мачта, короб, три сигнала.</div>
+    <div class="fzn-item new"><b>🧹 УБРАНА ВТОРАЯ «ЗАКОЛОЧКА»:</b> у восточной стены висел дублирующий заколоченный проход. Теперь заколочен ровно один вход, там же и дверь к боссу.</div>
 
-    <div class="fzn-item new"><b>🛣 ДОРОГИ:</b> тротуарные ленты с бордюрами вдоль всей сети, осевая разметка, зебры на 49 перекрёстках.</div>
+    <div class="fzn-item new"><b>🎬 ТИЗЕР ПИШЕТСЯ В ВИДЕО:</b> в тизере появилась кнопка «● ЗАПИСАТЬ ВИДЕО» (или клавиша R). Пишет картинку со звуком в MP4 и сохраняет файл. Ссылка teaser.html?rec=1 стартует запись автоматически.</div>
 
-    <div class="fzn-item new"><b>🌳 УЛИЧНАЯ ЖИЗНЬ:</b> скамейки, урны и клумбы вдоль главных улиц — все проверены на попадание в дороги и здания.</div>
+    <div class="fzn-item"><b>🌉 ГОРОД:</b> вантовые мосты, 30 автобусных остановок, 50 светофоров, тротуары с бордюрами, скамейки и клумбы.</div>
 
-    <div class="fzn-item"><b>🏬 ПАРАДНЫЙ ВХОД В GRAND MALL:</b> стеклянный портал, золотая арка, гранитная лестница с ковром, неоновая вывеска, световые пилоны, пальмы, вращающиеся двери.</div>
-
-    <div class="fzn-item"><b>✨ ГОРОД:</b> переработанное освещение, 1100+ светящихся окон, парапеты и вентиляция на крышах.</div>
+    <div class="fzn-item"><b>🏬 GRAND MALL:</b> парадный вход — стеклянный портал, золотая арка, гранитная лестница, неоновая вывеска.</div>
 
     <button class="fzn-close" onclick="fzCloseNews()">Играть →</button>
   </div>
