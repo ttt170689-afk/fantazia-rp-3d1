@@ -3361,6 +3361,12 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
     <div class="mob-btn" id="mobInteract" ontouchstart="handleInteraction()" title="Действие">⚡</div>
     <div class="mob-btn" id="mobDance"    ontouchstart="toggleDanceBar()" title="Танцы">💃</div>
     <div class="mob-btn" id="mobMenu"     ontouchstart="togglePanel('jobs')" title="Меню">📋</div>
+    <!-- v53: приседание с телефона. На ПК это Ctrl/C, а на мобиле
+         механика была недоступна вообще. -->
+    <div class="mob-btn" id="mobCrouch"
+      ontouchstart="window.fzCrouching=true"
+      ontouchend="window.fzCrouching=false"
+      ontouchcancel="window.fzCrouching=false" title="Присесть">🦵</div>
   </div>
   <!-- ВЕРХНИЕ КНОПКИ -->
   <div id="mobileTopBtns">
@@ -3667,6 +3673,13 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
       <div class="settings-row">
         <label>Туман</label>
         <button id="set_fog" class="toggle-btn on" onclick="toggleSetting('fog')">ВКЛ</button>
+      </div>
+      <!-- v53: ползунок яркости. Мониторы и телефоны сильно отличаются
+           по калибровке — то, что нормально на одном, слепит на другом. -->
+      <div class="settings-row">
+        <label>Яркость <span id="brightVal" style="opacity:.6;font-size:12px">0.84</span></label>
+        <input id="set_brightness" type="range" min="0.45" max="1.15" step="0.01" value="0.84"
+               oninput="fzSetBrightness(this.value)" style="width:180px;accent-color:#6c5ce7">
       </div>
       <div class="settings-row">
         <label>Антиалиасинг</label>
@@ -12454,14 +12467,39 @@ function updatePlayerListUI(list) {
 // =================== УВЕДОМЛЕНИЯ ===================
 // v31: был точный дубликат объявления — второе молча затирало первое.
 // Плюс защита от отсутствующего контейнера (падало до готовности HUD).
+// v53: у стека уведомлений не было НИКАКОГО ограничения. При частых
+// событиях (шаги квеста, монеты, вход в зоны) плашки наслаивались и
+// закрывали пол-экрана — на скриншоте игрока видно две одинаковые
+// подряд. Теперь: одинаковые схлопываются в счётчик «×N», а всего
+// на экране держим не больше пяти.
+let _fzNotifLast = { text: '', el: null, n: 0, t: 0 };
+
 function showNotification(text, type) {
   const container = document.getElementById('notifications');
   if (!container) return;
+  const now = Date.now();
+
+  // повтор того же текста в течение 3 секунд — не плодим плашки
+  if (_fzNotifLast.el && _fzNotifLast.text === text &&
+      now - _fzNotifLast.t < 3000 && _fzNotifLast.el.isConnected) {
+    _fzNotifLast.n++;
+    _fzNotifLast.t = now;
+    _fzNotifLast.el.textContent = text + '  ×' + _fzNotifLast.n;
+    return;
+  }
+
   const div = document.createElement('div');
   div.className = 'notification ' + (type || 'info');
   div.textContent = text;
   container.appendChild(div);
-  setTimeout(() => div.remove(), 3000);
+
+  // не больше 5 плашек одновременно — старые убираем
+  while (container.children.length > 5) {
+    container.removeChild(container.firstChild);
+  }
+
+  _fzNotifLast = { text: text, el: div, n: 1, t: now };
+  setTimeout(() => { if (div.parentNode) div.remove(); }, 3000);
 }
 
 // =================== WORLD EVENT BANNER ===================
@@ -16264,6 +16302,11 @@ const INTERIOR_CONFIGS = {
 // canvas-текстуры вывесок (512x96 на каждый этаж) оставались в видеопамяти.
 // Катаясь на лифте по 8 этажам ТЦ, игрок накапливал утечку.
 function fzDisposeInterior() {
+  // v53 ФИКС УТЕЧКИ: модуль графики (v52) создаёт пылинки и тени-пятна
+  // и складывает их в свой список. Метод dispose() у него был, но его
+  // НИКТО не вызывал — при каждом входе/выходе из здания объекты
+  // копились в сцене вместе с текстурами. Теперь чистим здесь.
+  try { if (window.FZ_GFX && FZ_GFX.dispose) FZ_GFX.dispose(); } catch (e) {}
   interiorObjects.forEach(o => {
     scene.remove(o);
     if (!o.traverse) return;
@@ -19016,6 +19059,14 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
     localPlayer.currentAnimation = 'dance';
   }
   animateCharacter(mesh, localPlayer.currentAnimation || 'idle', animationTime, delta);
+  // v53: поверх базовой анимации — живые детали: моргание, поворот
+  // головы за камерой, наклон в поворотах, приседание, просадка при
+  // приземлении, мелкие движения в покое. Работает от РЕАЛЬНОЙ скорости
+  // персонажа, а не от строки состояния, поэтому переходы плавные.
+  if (window.FZ_ANIM) {
+    try { FZ_ANIM.updateCharacter(mesh, localPlayer.currentAnimation, animationTime, delta, true); }
+    catch (e) { /* анимация не должна ронять кадр */ }
+  }
 
 
 
@@ -19109,6 +19160,12 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
       if (_animBudget-- <= 0) continue;
 
       animateRemoteCharacter(rp.mesh, rp.animation || 'idle', rp.dance, animationTime);
+      // v53: живые детали и у других игроков — но только у ближних,
+      // бюджет уже отфильтровал дальних выше
+      if (window.FZ_ANIM) {
+        try { FZ_ANIM.updateCharacter(rp.mesh, rp.animation, animationTime, delta, false); }
+        catch (e) {}
+      }
     }
   }
 
@@ -21364,10 +21421,21 @@ function progressQuest(qId, amount) {
   const q = FP_QUESTS.find(x => x.id === qId);
   if (!q || isQuestDone(q)) return;
   let prog = getQuestProgress(q);
+  const wasBelow = prog < q.max;          // v53: было ли НЕ выполнено ДО этого
   prog = Math.min(q.max, prog + amount);
   localStorage.setItem(q.key + '_prog', prog);
-  if (prog >= q.max) {
-    showNotification('🎯 Квест готов к сдаче: ' + q.name, 'levelup');
+  // v53 ФИКС ДУБЛЕЙ: уведомление показывалось на КАЖДЫЙ вызов после
+  // выполнения. Квест «пройти 500 метров» вызывается на каждом шаге —
+  // игрок получал десятки одинаковых плашек (видно на скриншоте: две
+  // подряд «Квест готов к сдаче»). Теперь только в момент перехода
+  // из «не выполнено» в «выполнено», и с защитой через localStorage,
+  // чтобы не повторялось после перезахода.
+  if (prog >= q.max && wasBelow) {
+    const readyKey = q.key + '_ready_shown';
+    if (!localStorage.getItem(readyKey)) {
+      localStorage.setItem(readyKey, '1');
+      showNotification('🎯 Квест готов к сдаче: ' + q.name, 'levelup');
+    }
   }
   renderFPQuests();
   updateFPPanel();
@@ -23131,6 +23199,8 @@ body.game-active canvas{touch-action:none}
 <script src="fz52-graphics.js?v=52"></script>
 <script src="fz52-cosmetics.js?v=52"></script>
 <script src="fz52-gameplay.js?v=52"></script>
+<!-- v53: живые анимации персонажа + управление яркостью -->
+<script src="fz53-anim.js?v=53"></script>
 <!-- ========== FZ: админ-панель + новости (новые) ========== -->
 <style>
 #fzNews{position:fixed;inset:0;background:rgba(5,8,18,.82);display:none;align-items:center;justify-content:center;z-index:9500;backdrop-filter:blur(8px)}

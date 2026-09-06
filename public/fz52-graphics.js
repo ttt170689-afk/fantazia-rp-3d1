@@ -21,23 +21,44 @@
   //  Мягкий заполняющий свет + полусферический ambient дают объём
   //  почти бесплатно, в отличие от SSAO/bloom, которые убивают телефон.
   // ─────────────────────────────────────────────────────────────────────────
+  //  v53 ИСПРАВЛЕНО: в v52 здесь добавлялись ЕЩЁ ОДИН hemisphere-свет
+  //  и заполняющий direct — поверх тех, что игра уже создаёт в
+  //  initThreeJS (ambient 0.42 + sun 1.12 + hemi 0.55 + rim 0.45).
+  //  Суммарная яркость выросла с 2.54 до 3.37, плюс экспозиция
+  //  0.85 → 1.05. Итог: картинка стала светлее в 1.64 раза и всё
+  //  выцвело добела — ровно то, что игрок увидел на скриншоте.
+  //
+  //  Теперь НЕ добавляем источники, а аккуратно балансируем те,
+  //  что уже есть: приглушаем заливку и добавляем контраста.
   GFX.improveLighting = function () {
     try {
       if (!window.scene) return false;
       if (GFX._litDone) return true;
 
-      // Полусферический свет: небо сверху, отражение земли снизу.
-      // Один такой источник заменяет 3-4 точечных и стоит дешевле.
-      var hemi = new T.HemisphereLight(0xbfd4ff, 0x2a2418, 0.55);
-      hemi.position.set(0, 60, 0);
-      hemi.name = 'FZ52_HEMI';
-      scene.add(hemi);
+      // Сначала убираем возможные остатки прошлой версии,
+      // иначе при горячей перезагрузке свет копится.
+      var stale = [];
+      scene.traverse(function (o) {
+        if (o.name === 'FZ52_HEMI' || o.name === 'FZ52_FILL') stale.push(o);
+      });
+      stale.forEach(function (o) { if (o.parent) o.parent.remove(o); });
 
-      // Мягкая подсветка спереди, чтобы лица не проваливались в тень.
-      var fill = new T.DirectionalLight(0xffeedd, 0.28);
-      fill.position.set(-40, 35, 40);
-      fill.name = 'FZ52_FILL';
-      scene.add(fill);
+      // Балансируем существующий свет: город должен читаться объёмно,
+      // а не быть залитым равномерной белизной.
+      scene.traverse(function (o) {
+        if (!o.isLight) return;
+        if (o.isAmbientLight) {
+          // заливка не должна съедать тени
+          o.intensity = Math.min(o.intensity, 0.30);
+          o.color.setHex(0x4a5578);
+        } else if (o.isHemisphereLight) {
+          o.intensity = Math.min(o.intensity, 0.38);
+        } else if (o.isDirectionalLight) {
+          // солнце оставляем главным источником, но без пересвета
+          if (o.intensity >= 0.9) o.intensity = 0.95;
+          else o.intensity = Math.min(o.intensity, 0.34);
+        }
+      });
 
       GFX._litDone = true;
       return true;
@@ -53,7 +74,10 @@
     try {
       if (!window.renderer) return false;
       renderer.toneMapping = T.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = mobile ? 0.95 : 1.05;
+      // v53: было 0.95/1.05 — пересвет. В игре изначально стояло 0.85
+      // с комментарием «не пересвечено» — возвращаем к нему и делаем
+      // чуть темнее, картинка получает глубину.
+      renderer.toneMappingExposure = mobile ? 0.80 : 0.84;
       if (T.sRGBEncoding !== undefined && 'outputEncoding' in renderer) {
         renderer.outputEncoding = T.sRGBEncoding;
       }
