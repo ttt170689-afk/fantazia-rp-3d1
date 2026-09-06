@@ -2170,6 +2170,22 @@ button:active { transform: scale(.95); }
 #fzCineTop { top: 0; transform: translateY(-100%); }
 #fzCineBot { bottom: 0; transform: translateY(100%); }
 #fzCineTop.on, #fzCineBot.on { transform: none; }
+/* v30: кнопка «Пропустить» — поверх кинематографических полос */
+#fzSkipBtn {
+  position: fixed; right: 24px; bottom: 42px; z-index: 3000;
+  display: none; padding: 12px 22px; border-radius: 30px;
+  background: rgba(0,0,0,0.62); border: 2px solid rgba(255,255,255,0.55);
+  color: #fff; font-size: 15px; font-weight: 800; letter-spacing: 1.5px;
+  cursor: pointer; backdrop-filter: blur(6px);
+  transition: background 0.15s, transform 0.1s;
+  -webkit-user-select: none; user-select: none; touch-action: manipulation;
+}
+#fzSkipBtn:hover { background: rgba(255,255,255,0.22); }
+#fzSkipBtn:active { transform: scale(0.93); }
+#fzSkipBtn.on { display: block; }
+@media (max-width: 900px) {
+  #fzSkipBtn { right: 14px; bottom: 96px; padding: 14px 20px; font-size: 14px; }
+}
 #fzCineCaption {
   position: fixed; bottom: 14vh; left: 50%; transform: translateX(-50%);
   z-index: 941; color: #ffd9d9; font: 800 20px/1.3 'Segoe UI',sans-serif; letter-spacing: 2px;
@@ -2228,6 +2244,8 @@ button:active { transform: scale(.95); }
 @media (max-width: 600px) { #guideList { grid-template-columns: 1fr; } }
 </style>
 <style>
+/* v30: ивент Jason Day удалён — прячем весь его UI */
+#jasonDayPortal, #jasonEggHUD, #questsPanel, #questsDot { display: none !important; }
 @keyframes jasonPulse {
   0%,100%{text-shadow:0 0 60px #ff440099,0 0 120px #ff440044;}
   50%{text-shadow:0 0 100px #ff6600cc,0 0 180px #ff440077;}
@@ -2425,9 +2443,9 @@ button:active { transform: scale(.95); }
     <div class="ls-sec-inner">
       <div class="ls-tag">🎃 События</div>
       <div class="ls-sec-title">Сезонные <em>ивенты</em></div>
-      <div class="ls-sec-desc">Участвуй в уникальных игровых событиях — выживание, Jason Day, ежедневные награды. Каждый сезон что-то новое.</div>
+      <div class="ls-sec-desc">Участвуй в уникальных игровых событиях — выживание, ежедневные награды. Каждый сезон что-то новое.</div>
       <div class="ls-cards ls-cards-3">
-        <div class="ls-card"><div class="ls-card-ico">🪓</div><div class="ls-card-h">Jason Day</div><div class="ls-card-p">Собирай яйца Джейсона или охоться на выживших. Выполняй задания и получай редкие награды.</div></div>
+
         <div class="ls-card"><div class="ls-card-ico">⚔️</div><div class="ls-card-h">Выживание</div><div class="ls-card-p">Режим выживания с уникальными персонажами-убийцами. Выбери роль и борись за победу.</div></div>
         <div class="ls-card"><div class="ls-card-ico">🎁</div><div class="ls-card-h">Ежедневки</div><div class="ls-card-p">Заходи каждый день и получай монеты, аксессуары и особые привилегии.</div></div>
       </div>
@@ -2874,7 +2892,7 @@ document.getElementById('serverModal').addEventListener('click',function(e){if(e
       <div class="side-btn" onclick="togglePanel('cars')" title="Выбор авто">🚗</div>
       <div class="side-btn" onclick="toggleVoice()" title="Голос (V)" id="voiceBtn">🎙️</div>
       <div class="side-btn" onclick="openRewardModal()" title="Ежедневная награда" id="rewardBtn" style="position:relative">🎁<span id="rewardDot" style="position:absolute;top:4px;right:4px;width:8px;height:8px;background:#e74c3c;border-radius:50%;display:none"></span></div>
-      <div class="side-btn" onclick="openQuestsPanel()" title="Задания ивента Jason Day" style="position:relative;">📋<span id="questsDot" style="position:absolute;top:4px;right:4px;width:8px;height:8px;background:#ff9800;border-radius:50%;display:none;"></span></div>
+      <!-- v30: кнопка заданий ивента Jason Day удалена -->
       <div class="side-btn" onclick="openGuidePanel()" title="Путеводитель [G]">🧭</div>
       <div class="side-btn" onclick="fzOpenNews();document.exitPointerLock&&document.exitPointerLock()" title="Новости">✨</div>
       <div class="side-btn" onclick="loadSettingsUI();document.getElementById('settingsModal').classList.add('show');document.exitPointerLock()" title="Настройки">⚙️</div>
@@ -6073,7 +6091,22 @@ function buildCity() {
   // поэтому на телефоне заметно легче старого города.
   // GRAND MALL сохраняем — на него завязан квест (записки/топор/босс).
   if (window.FZ_NEWCITY && typeof FZ_NEWCITY.build === 'function') {
-    const ok = FZ_NEWCITY.build();
+    // ВАЖНО: buildings/interactables/streetColliders/sitSpots объявлены через
+    // let — они живут в лексической области и НЕ видны как window.*.
+    // Без этого моста модуль падал на window.buildings.push и город
+    // молча откатывался на старый. Массивы передаются по ссылке,
+    // поэтому push из модуля попадает в те же самые массивы.
+    window.buildings = buildings;
+    window.interactables = interactables;
+    window.streetColliders = streetColliders;
+    window.sitSpots = sitSpots;
+    let ok = false;
+    try {
+      ok = FZ_NEWCITY.build();
+    } catch (e) {
+      console.error('[CITY] ошибка сборки нового города:', e);
+      ok = false;
+    }
     if (ok) {
       buildGrandMall();      // ТЦ на прежнем месте (85, -85)
       buildNPCPopulation();  // жители
@@ -9073,12 +9106,29 @@ function fzLiftCamStart(fromY, toY) {
   window.fzTEASER.camPos = LIFT_CAM.pos;
   window.fzTEASER.look = LIFT_CAM.look;
   if (localPlayer.mesh) localPlayer.mesh.visible = false;
+  if (typeof fzShowSkip === 'function') fzShowSkip(true);
+}
+
+// v30: безопасный пропуск поездки в лифте.
+// Сама поездка — цепочка setInterval/колбэков (закрытие дверей → движение →
+// открытие → выход). Оборвать её нельзя: игрок останется между этажами,
+// интерьер не перестроится. Поэтому мы только возвращаем камеру игроку,
+// а механика доезжает в фоне и корректно завершится сама.
+function fzLiftSkipToEnd() {
+  fzLiftCamEnd();
+  if (window.camera) camera.rotation.z = 0;
+  if (localPlayer && localPlayer.mesh && window.cameraMode !== 'first') {
+    localPlayer.mesh.visible = true;
+  }
+  // подсказка, что этаж всё-таки сменится
+  try { showNotification('⏩ Ролик пропущен — лифт довезёт', 'info'); } catch (e) {}
 }
 
 function fzLiftCamEnd() {
   LIFT_CAM.active = false;
   if (window.fzTEASER) window.fzTEASER.active = false;
   if (localPlayer.mesh && window.cameraMode !== 'first') localPlayer.mesh.visible = true;
+  if (typeof fzShowSkip === 'function') fzShowSkip(false);
 }
 
 // вызывается каждый кадр из основного цикла
@@ -13900,6 +13950,7 @@ function fzPlayTeaser() {
   scene.background = new THREE.Color(0x050508);
   document.getElementById('fzCineTop').classList.add('on');
   document.getElementById('fzCineBot').classList.add('on');
+  fzShowSkip(true);            // v30: даём возможность пропустить
   fzSfx(42, 2.4, 'sine', 0.22); // низкий гул
 }
 
@@ -13992,6 +14043,288 @@ function fzCineCaption(text) {
   el.classList.add('on');
 }
 
+// ═══════════════════════════════════════════════════════════════════
+//  v30: КИНЕМАТИК ПЕРЕСТРОЙКИ МИРА
+//  Камера улетает вверх → вспышка → старый город удаляется из сцены
+//  → строится новый → камера возвращается к игроку.
+//  Запускается автоматически один раз, если игрок ещё в старом мире.
+// ═══════════════════════════════════════════════════════════════════
+window.FZ_REBUILD = null;
+
+// v30: если игрок зашёл, а город всё ещё старый (модуль не сработал при
+// инициализации) — автоматически проигрываем перестройку мира один раз.
+(function fzAutoRebuild() {
+  let fired = false;
+  const iv = setInterval(function () {
+    if (fired) { clearInterval(iv); return; }
+    if (!window.scene || !window.localPlayer || !localPlayer.mesh) return;
+    if (!document.body.classList.contains('game-active')) return;
+    if (isInsideBuilding) return;
+    if (window.FZ_REBUILD) return;
+    // город уже новый — ничего не делаем
+    if (window.FZ_NEWCITY && FZ_NEWCITY.root) { fired = true; clearInterval(iv); return; }
+    if (!window.FZ_NEWCITY) return;   // модуль ещё грузится
+    fired = true;
+    clearInterval(iv);
+    setTimeout(function () {
+      try { fzWorldRebuild(true); } catch (e) { console.warn('[REBUILD]', e); }
+    }, 1200);
+  }, 700);
+})();
+
+
+function fzWorldRebuild(force) {
+  if (window.FZ_REBUILD) return;
+  if (!window.FZ_NEWCITY || typeof FZ_NEWCITY.build !== 'function') {
+    showNotification('❌ Модуль нового города не загружен', 'error');
+    return;
+  }
+  if (FZ_NEWCITY.root && !force) {
+    showNotification('🌆 Новый город уже построен', 'info');
+    return;
+  }
+  if (isInsideBuilding) {
+    showNotification('🌆 Выйди на улицу — мир перестраивается снаружи', 'error');
+    return;
+  }
+  document.exitPointerLock && document.exitPointerLock();
+
+  const start = localPlayer && localPlayer.mesh
+    ? localPlayer.mesh.position.clone()
+    : new THREE.Vector3(0, 0, 0);
+
+  window.FZ_REBUILD = {
+    active: true, t: 0, phase: 'up', done: false,
+    start: start,
+    camPos: new THREE.Vector3(),
+    look: new THREE.Vector3(),
+    savedFog: scene.fog, savedBg: scene.background
+  };
+  // перехватываем камеру тем же механизмом, что тизер
+  window.fzTEASER = window.fzTEASER || {};
+  window.fzTEASER.active = true;
+  window.fzTEASER.camPos = FZ_REBUILD.camPos;
+  window.fzTEASER.look = FZ_REBUILD.look;
+
+  document.getElementById('fzCineTop').classList.add('on');
+  document.getElementById('fzCineBot').classList.add('on');
+  if (localPlayer && localPlayer.mesh) localPlayer.mesh.visible = false;
+  fzShowSkip(true);
+  fzCineCaption('ФАНТАЗИЯ ПЕРЕСТРАИВАЕТСЯ...');
+  try { fzSfx(52, 2.2, 'sine', 0.2); } catch (e) {}
+}
+
+// ─── удаление старого мира ───────────────────────────────────────
+function fzWipeOldWorld() {
+  // 1) всё, что построил старый генератор, лежит прямо в scene
+  const keep = new Set();
+  if (localPlayer && localPlayer.mesh) keep.add(localPlayer.mesh);
+  Object.values(remotePlayers || {}).forEach(rp => { if (rp.mesh) keep.add(rp.mesh); });
+  if (window._fzTeaserRoom) keep.add(window._fzTeaserRoom);
+
+  const doomed = [];
+  scene.children.forEach(o => {
+    if (keep.has(o)) return;
+    if (o.isLight || o.type === 'AmbientLight' ||
+        o.type === 'DirectionalLight' || o.type === 'HemisphereLight') return;
+    if (o.name === 'FZ_NEWCITY') return;   // новый город не трогаем
+    doomed.push(o);
+  });
+  doomed.forEach(o => {
+    scene.remove(o);
+    o.traverse && o.traverse(c => {
+      if (c.geometry) c.geometry.dispose && c.geometry.dispose();
+      if (c.material) {
+        const mm = Array.isArray(c.material) ? c.material : [c.material];
+        mm.forEach(m => m && m.dispose && m.dispose());
+      }
+    });
+  });
+
+  // 2) чистим игровые реестры старого мира
+  buildings.length = 0;
+  interactables.length = 0;
+  streetColliders.length = 0;
+  sitSpots.length = 0;
+  if (window._fzCars) { window._fzCars.length = 0; }
+  if (window._fzPeds) { window._fzPeds.length = 0; }
+  if (window._fzBots) { window._fzBots.length = 0; }
+  if (window.cars) { cars.length = 0; }
+  window._fzCity2 = null; window._fzCity3 = null;
+  window._fzGrid = null; window._fzGridSig = '';
+
+  // 3) заново земля и небо
+  const groundGeo = new THREE.PlaneGeometry(CONFIG.WORLD_SIZE, CONFIG.WORLD_SIZE, 1, 1);
+  const ground = new THREE.Mesh(groundGeo,
+    new THREE.MeshLambertMaterial({ color: 0x4a7c3f }));
+  ground.rotation.x = -Math.PI / 2;
+  scene.add(ground);
+
+  console.log('[REBUILD] старый мир удалён:', doomed.length, 'объектов');
+  return doomed.length;
+}
+
+// ─── постройка нового мира ───────────────────────────────────────
+function fzBuildNewWorld() {
+  window.buildings = buildings;
+  window.interactables = interactables;
+  window.streetColliders = streetColliders;
+  window.sitSpots = sitSpots;
+  try {
+    if (FZ_NEWCITY.root) {
+      scene.remove(FZ_NEWCITY.root);
+      FZ_NEWCITY.root = null;
+    }
+    FZ_NEWCITY.stats = { buildings: 0, draws: 0, instanced: 0 };
+    const ok = FZ_NEWCITY.build();
+    if (!ok) throw new Error('build вернул false');
+    buildGrandMall();
+    buildQuestNotes();
+    buildTraffic();
+    buildPedestrians();
+    buildGasStation();
+    console.log('[REBUILD] новый город готов');
+    return true;
+  } catch (e) {
+    console.error('[REBUILD] ошибка:', e);
+    showNotification('❌ Не удалось построить новый мир', 'error');
+    return false;
+  }
+}
+
+// ─── покадровая анимация перехода ────────────────────────────────
+function fzRebuildAnim(dt) {
+  const R = window.FZ_REBUILD;
+  if (!R || !R.active) return;
+  R.t += dt;
+  const t = R.t;
+  const sx = R.start.x, sz = R.start.z;
+  const ease = (a, b, t0, t1) => {
+    const k = Math.max(0, Math.min(1, (t - t0) / (t1 - t0)));
+    return a + (b - a) * (k * k * (3 - 2 * k));
+  };
+
+  if (R.phase === 'up') {
+    // взлёт: 0…3.2с
+    const y = ease(6, 320, 0, 3.2);
+    const back = ease(10, 90, 0, 3.2);
+    R.camPos.set(sx, y, sz + back);
+    R.look.set(sx, 0, sz);
+    if (t > 1.2) fzCineCaption('СТАРЫЙ МИР УХОДИТ...');
+    if (t >= 3.2) {
+      R.phase = 'wipe'; R.t = 0;
+      fzCineCaption('');
+      // вспышка
+      const fl = document.getElementById('fzRebuildFlash');
+      if (fl) { fl.style.transition = 'none'; fl.style.opacity = '1'; }
+      fzWipeOldWorld();
+      try { fzSfx(120, 0.5, 'sine', 0.25); } catch (e) {}
+    }
+    return;
+  }
+
+  if (R.phase === 'wipe') {
+    // пустая земля, вспышка гаснет: 0…1.0с
+    R.camPos.set(sx, 320, sz + 90);
+    R.look.set(sx, 0, sz);
+    const fl = document.getElementById('fzRebuildFlash');
+    if (fl && R.t > 0.05) {
+      fl.style.transition = 'opacity 0.8s';
+      fl.style.opacity = '0';
+    }
+    if (R.t > 0.5 && !R.done) {
+      R.done = true;
+      fzCineCaption('РОЖДАЕТСЯ НОВЫЙ ГОРОД');
+      fzBuildNewWorld();
+    }
+    if (R.t >= 1.6) { R.phase = 'down'; R.t = 0; }
+    return;
+  }
+
+  if (R.phase === 'down') {
+    // снижение к игроку: 0…3.4с
+    const y = ease(320, 6, 0, 3.4);
+    const back = ease(90, 10, 0, 3.4);
+    R.camPos.set(sx, y, sz + back);
+    R.look.set(sx, 0, sz);
+    if (R.t > 1.0) fzCineCaption('ДОБРО ПОЖАЛОВАТЬ В НОВУЮ ФАНТАЗИЮ');
+    if (R.t >= 3.4) fzRebuildEnd();
+    return;
+  }
+}
+
+function fzRebuildEnd() {
+  const R = window.FZ_REBUILD;
+  if (!R) return;
+  // ставим игрока на свободную площадь в центре
+  if (localPlayer && localPlayer.mesh) {
+    localPlayer.mesh.position.set(0, 0.035, 24);
+    localPlayer.mesh.visible = (window.cameraMode !== 'first');
+  }
+  scene.fog = R.savedFog;
+  scene.background = R.savedBg;
+  document.getElementById('fzCineTop').classList.remove('on');
+  document.getElementById('fzCineBot').classList.remove('on');
+  fzCineCaption(null);
+  fzShowSkip(false);
+  if (window.fzTEASER) window.fzTEASER.active = false;
+  window.FZ_REBUILD = null;
+  try {
+    showNotification('🌆 Новый город построен! Топор теперь в офисном центре', 'success');
+  } catch (e) {}
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  v30: ПРОПУСК РОЛИКОВ
+//  Одна кнопка на оба кинематика: вступительный тизер и поездку в лифте.
+//  Лифт нельзя просто оборвать — надо доехать, иначе игрок останется
+//  между этажами, поэтому его доигрываем мгновенно.
+// ═══════════════════════════════════════════════════════════════════
+function fzShowSkip(on) {
+  const b = document.getElementById('fzSkipBtn');
+  if (b) b.classList.toggle('on', !!on);
+}
+
+function fzSkipCinematic() {
+  // 0) перестройка мира — доводим до конца мгновенно, мир должен смениться
+  const R = window.FZ_REBUILD;
+  if (R && R.active) {
+    if (R.phase === 'up') { fzWipeOldWorld(); fzBuildNewWorld(); }
+    else if (R.phase === 'wipe' && !R.done) { fzBuildNewWorld(); }
+    const fl = document.getElementById('fzRebuildFlash');
+    if (fl) { fl.style.transition = 'opacity 0.3s'; fl.style.opacity = '0'; }
+    fzRebuildEnd();
+    return;
+  }
+  // 1) вступительный тизер — просто завершаем
+  if (window.fzTEASER && window.fzTEASER.active && !LIFT_CAM.active) {
+    fzTeaserEnd();
+    fzShowSkip(false);
+    return;
+  }
+  // 2) поездка в лифте — доводим до конца, чтобы игрок вышел на этаже
+  if (LIFT_CAM.active) {
+    try {
+      if (typeof fzLiftSkipToEnd === 'function') fzLiftSkipToEnd();
+      else fzLiftCamEnd();
+    } catch (e) { fzLiftCamEnd(); }
+    fzShowSkip(false);
+    return;
+  }
+  fzShowSkip(false);
+}
+
+// Escape тоже пропускает
+document.addEventListener('keydown', function (e) {
+  if (e.code !== 'Escape' && e.code !== 'Space' && e.code !== 'Enter') return;
+  if ((window.fzTEASER && window.fzTEASER.active) || LIFT_CAM.active ||
+      (window.FZ_REBUILD && window.FZ_REBUILD.active)) {
+    e.preventDefault();
+    e.stopPropagation();
+    fzSkipCinematic();
+  }
+}, true);
+
 function fzTeaserEnd() {
   const T = window.fzTEASER;
   if (!T) return;
@@ -14001,6 +14334,7 @@ function fzTeaserEnd() {
   document.getElementById('fzCineTop').classList.remove('on');
   document.getElementById('fzCineBot').classList.remove('on');
   fzCineCaption(null);
+  fzShowSkip(false);
   window.fzTEASER = null;
 }
 
@@ -17161,6 +17495,9 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
   // --- v26: кинематографическая поездка в лифте (обновляем ДО перехвата) ---
   try { fzLiftCamUpdate(delta); } catch (e) {}
 
+  // v30: кинематик перестройки мира
+  if (window.FZ_REBUILD && window.FZ_REBUILD.active) fzRebuildAnim(delta);
+
   // --- V3.7: перехват камеры на время тизера / лифта ---
   if (window.fzTEASER && window.fzTEASER.active) {
     camera.position.copy(window.fzTEASER.camPos);
@@ -17255,7 +17592,7 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
   fzChipsTick();
   updateNPCs(delta);
   // Jason Day eggs
-  if (window.jasonDayRole === 'survivor') checkJasonEggCollection();
+  // v30: сбор яиц Jason Day удалён
 
   // --- Мигающие огни у полицейских (каждые 4 кадра) ---
   if (_npcUpdateFrame % 4 === 0) {
@@ -17423,11 +17760,7 @@ function refreshServers() {
 
 function joinSelectedServer() {
   if (!selectedServer) { alert('Выберите сервер!'); return; }
-  if (selectedServer.id === 'temka') {
-    document.getElementById('serverScreen').style.display = 'none';
-    showJasonDayPortal();
-    return;
-  }
+  // v30: ивент Jason Day удалён — портал больше не открывается.
   if (selectedServer.id === 'survival') {
     document.getElementById('serverScreen').style.display = 'none';
     showSurvivalPortal();
@@ -18086,7 +18419,12 @@ function createServer() {
 // ===== JASON DAY PORTAL ANIMATION =====
 let jasonPortalAnimId = null;
 
-function showJasonDayPortal() {
+// ═══ v30: ИВЕНТ JASON DAY УДАЛЁН ═══
+// Функции оставлены пустыми заглушками, чтобы старые вызовы/сохранённые
+// состояния не роняли игру. Ничего не отображают и не спавнят.
+window.jasonDayRole = null;
+function showJasonDayPortal() { return; }
+function _fzJasonRemoved_showJasonDayPortal() {
   const el = document.getElementById('jasonDayPortal');
   el.style.display = 'flex';
   startJasonPortalAnim();
@@ -18262,7 +18600,8 @@ function chooseJasonDayRole(role) {
 
 // ===== JASON EGGS ON MAP =====
 const jasonEggObjects = [];
-function spawnJasonEggsOnMap() {
+function spawnJasonEggsOnMap() { return; }
+function _fzJasonRemoved_spawnJasonEggsOnMap() {
   if (!window.scene) return;
   // Remove old eggs
   jasonEggObjects.forEach(e => scene.remove(e));
@@ -18300,7 +18639,8 @@ function spawnJasonEggsOnMap() {
 }
 
 // Check egg collection in game loop — call from animate()
-function checkJasonEggCollection() {
+function checkJasonEggCollection() { return; }
+function _fzJasonRemoved_checkJasonEggCollection() {
   if (!localPlayer || !localPlayer.mesh || window.jasonDayRole !== 'survivor') return;
   const playerPos = localPlayer.mesh.position;
   for (let i = jasonEggObjects.length-1; i >= 0; i--) {
@@ -18339,6 +18679,10 @@ const JASON_QUESTS = [
 ];
 
 function openQuestsPanel() {
+  // v30: панель заданий ивента Jason Day удалена
+  return;
+}
+function _fzJasonRemoved_openQuestsPanel() {
   const panel = document.getElementById('questsPanel');
   panel.style.display = 'block';
   document.getElementById('questsDot').style.display = 'none';
@@ -21047,6 +21391,10 @@ window.addEventListener('DOMContentLoaded', function() {
 </div>
 <div id="fzCineTop" class="fzCineBar"></div>
 <div id="fzCineBot" class="fzCineBar"></div>
+<!-- v30: белая вспышка на момент подмены мира -->
+<div id="fzRebuildFlash" style="position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:2900;"></div>
+<!-- v30: кнопка пропуска роликов (тизер и поездка в лифте) -->
+<div id="fzSkipBtn" onclick="fzSkipCinematic()">ПРОПУСТИТЬ ▶▶</div>
 <div id="fzCineCaption"></div>
 
 <div id="bossBar"><div class="bb-name">♟ ХРАНИТЕЛЬ ПАРКА ФАНТАЗИИ</div><div class="bb-track"><div class="bb-fill" id="bossFill"></div></div></div>
