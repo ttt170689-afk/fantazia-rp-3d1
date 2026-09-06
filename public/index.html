@@ -4742,6 +4742,21 @@ const CONFIG = {
 // =================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ===================
 let socket, scene, camera, renderer, clock;
 let localPlayer = null;
+// v32: зеркалим localPlayer в window — внешние модули проверяют window.localPlayer,
+// а `let` в window не попадает. Обновляем зеркало при каждом присваивании.
+(function () {
+  let _lp = null;
+  try {
+    Object.defineProperty(window, 'localPlayer', {
+      get() { return _lp; },
+      set(v) { _lp = v; },
+      configurable: true
+    });
+  } catch (e) {}
+  setInterval(function () {
+    try { if (window.localPlayer !== localPlayer) window.localPlayer = localPlayer; } catch (e) {}
+  }, 250);
+})();
 let remotePlayers = {};
 let buildings = [];
 let streetColliders = []; // { x, z, r } — круглые коллайдеры уличных объектов
@@ -5387,6 +5402,11 @@ function startGame() {
 function initThreeJS() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x87CEEB);
+  // v32 КРИТИЧНО: scene/camera/renderer/localPlayer объявлены через `let`
+  // (стр. 4743-4744) и потому НЕ являются свойствами window. Внешние модули
+  // (newcity.js, небо, порталы, автозапуск) проверяют именно window.scene —
+  // и получали undefined, из-за чего новый город молча не строился.
+  window.scene = scene;
 
   // ── ОПТИМИЗАЦИЯ: туман скрывает дальние объекты (на ПК дальше — красивее) ──
   const _isMob = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || ('ontouchstart' in window && window.innerWidth < 1024);
@@ -5396,11 +5416,13 @@ function initThreeJS() {
 
   // ── ОПТИМИЗАЦИЯ: camera far = FOG_FAR, ничего дальше не рендерится ──
   camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 900);
+  window.camera = camera;
   camera.position.set(0, 10, 15);
 
   // ── СУПЕР-ГРАФИКА: antialias на ПК, полный pixelRatio до 2 ──
   const optPixelRatio = _isMob ? Math.min(window.devicePixelRatio, 1) : Math.min(window.devicePixelRatio, 2);
   renderer = new THREE.WebGLRenderer({ antialias: !_isMob, powerPreference: _isMob ? 'low-power' : 'high-performance' });
+  window.renderer = renderer;
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(optPixelRatio);
   // ── Мягкие тени на ПК (1024 — баланс качества и скорости) ──
@@ -6145,6 +6167,12 @@ function buildCity() {
     window.interactables = interactables;
     window.streetColliders = streetColliders;
     window.sitSpots = sitSpots;
+    // КРИТИЧНО: scene/camera/renderer тоже объявлены через let (стр. 4743),
+    // поэтому window.scene был undefined и модуль выходил с
+    // «нет scene/THREE», молча откатывая игру на старый город.
+    window.scene = scene;
+    window.camera = camera;
+    window.renderer = renderer;
     let ok = false;
     try {
       ok = FZ_NEWCITY.build();
@@ -14091,24 +14119,56 @@ function fzCineCaption(text) {
 // ═══════════════════════════════════════════════════════════════════
 window.FZ_REBUILD = null;
 
-// v30: если игрок зашёл, а город всё ещё старый (модуль не сработал при
-// инициализации) — автоматически проигрываем перестройку мира один раз.
+// v32: КАТ-СЦЕНА ПРИ ЗАХОДЕ.
+// Раньше этот автозапуск ждал window.scene / window.localPlayer, которых
+// не существовало (объявлены через let) — поэтому кат-сцена НИКОГДА
+// не проигрывалась. Теперь мосты есть.
+// Логика: город старый → полная перестройка (улетаем, стираем, строим).
+//         город уже новый → кинематографичный ПРОЛЁТ-ПРИБЫТИЕ.
+function fzPlayArrival() {
+  if (window.FZ_REBUILD) return;
+  if (!window.scene || !localPlayer || !localPlayer.mesh) return;
+  document.exitPointerLock && document.exitPointerLock();
+  const start = localPlayer.mesh.position.clone();
+  window.FZ_REBUILD = {
+    active: true, t: 0, phase: 'down', done: true,   // done=true → мир не пересобираем
+    arrival: true,
+    start: start,
+    camPos: new THREE.Vector3(),
+    look: new THREE.Vector3(),
+    savedFog: scene.fog, savedBg: scene.background
+  };
+  window.fzTEASER = window.fzTEASER || {};
+  window.fzTEASER.active = true;
+  window.fzTEASER.camPos = FZ_REBUILD.camPos;
+  window.fzTEASER.look = FZ_REBUILD.look;
+  document.getElementById('fzCineTop').classList.add('on');
+  document.getElementById('fzCineBot').classList.add('on');
+  if (localPlayer.mesh) localPlayer.mesh.visible = false;
+  fzShowSkip(true);
+  fzCineCaption('ФАНТАЗИЯ · НОВЫЙ ГОРОД');
+  try { fzSfx(64, 2.0, 'sine', 0.16); } catch (e) {}
+}
+window.fzPlayArrival = fzPlayArrival;
+
 (function fzAutoRebuild() {
   let fired = false;
   const iv = setInterval(function () {
     if (fired) { clearInterval(iv); return; }
-    if (!window.scene || !window.localPlayer || !localPlayer.mesh) return;
+    if (!window.scene || !localPlayer || !localPlayer.mesh) return;
     if (!document.body.classList.contains('game-active')) return;
-    if (isInsideBuilding) return;
+    if (typeof isInsideBuilding !== 'undefined' && isInsideBuilding) return;
     if (window.FZ_REBUILD) return;
-    // город уже новый — ничего не делаем
-    if (window.FZ_NEWCITY && FZ_NEWCITY.root) { fired = true; clearInterval(iv); return; }
     if (!window.FZ_NEWCITY) return;   // модуль ещё грузится
     fired = true;
     clearInterval(iv);
+    const isNew = !!FZ_NEWCITY.root;
     setTimeout(function () {
-      try { fzWorldRebuild(true); } catch (e) { console.warn('[REBUILD]', e); }
-    }, 1200);
+      try {
+        if (isNew) fzPlayArrival();       // пролёт над новым городом
+        else fzWorldRebuild(true);        // полная перестройка мира
+      } catch (e) { console.warn('[REBUILD]', e); }
+    }, 1400);
   }, 700);
 })();
 
@@ -14282,13 +14342,26 @@ function fzRebuildAnim(dt) {
   }
 
   if (R.phase === 'down') {
-    // снижение к игроку: 0…3.4с
-    const y = ease(320, 6, 0, 3.4);
-    const back = ease(90, 10, 0, 3.4);
-    R.camPos.set(sx, y, sz + back);
+    // снижение к игроку. Для «прибытия» (arrival) — облёт с орбитой,
+    // для перестройки мира — прямое снижение с высоты.
+    const DUR = R.arrival ? 6.0 : 3.4;
+    const y0 = R.arrival ? 150 : 320;
+    const y = ease(y0, 6, 0, DUR);
+    const back = ease(R.arrival ? 130 : 90, 10, 0, DUR);
+    if (R.arrival) {
+      // мягкая дуга вокруг точки старта — видно новый город
+      const k = Math.min(1, R.t / DUR);
+      const ang = -0.9 * (1 - k) * (1 - k);
+      R.camPos.set(sx + Math.sin(ang) * back, y, sz + Math.cos(ang) * back);
+    } else {
+      R.camPos.set(sx, y, sz + back);
+    }
     R.look.set(sx, 0, sz);
-    if (R.t > 1.0) fzCineCaption('ДОБРО ПОЖАЛОВАТЬ В НОВУЮ ФАНТАЗИЮ');
-    if (R.t >= 3.4) fzRebuildEnd();
+    if (R.t > 1.0 && R.t < DUR - 0.6) {
+      fzCineCaption(R.arrival ? 'ДОБРО ПОЖАЛОВАТЬ В ФАНТАЗИЮ'
+                              : 'ДОБРО ПОЖАЛОВАТЬ В НОВУЮ ФАНТАЗИЮ');
+    }
+    if (R.t >= DUR) fzRebuildEnd();
     return;
   }
 }
@@ -14296,9 +14369,10 @@ function fzRebuildAnim(dt) {
 function fzRebuildEnd() {
   const R = window.FZ_REBUILD;
   if (!R) return;
-  // ставим игрока на свободную площадь в центре
+  // при полной перестройке ставим игрока на новую площадь;
+  // при «прибытии» он остаётся там, где стоял
   if (localPlayer && localPlayer.mesh) {
-    localPlayer.mesh.position.set(0, 0.035, 24);
+    if (!R.arrival) localPlayer.mesh.position.set(0, 0.035, 24);
     localPlayer.mesh.visible = (window.cameraMode !== 'first');
   }
   scene.fog = R.savedFog;
@@ -14310,7 +14384,9 @@ function fzRebuildEnd() {
   if (window.fzTEASER) window.fzTEASER.active = false;
   window.FZ_REBUILD = null;
   try {
-    showNotification('🌆 Новый город построен! Топор теперь в офисном центре', 'success');
+    showNotification(R.arrival
+      ? '🌆 Добро пожаловать! Топор — в офисном центре'
+      : '🌆 Новый город построен! Топор теперь в офисном центре', 'success');
   } catch (e) {}
 }
 
