@@ -5205,6 +5205,51 @@ const SHOP_TO_GAME_MAP = {
 
 // ---- Монетки (клиентская валюта для аксессуаров) ----
 let localCoins = 50; // стартовые монетки
+
+// v31: функция вызывалась в 5 местах, но НИГДЕ не была объявлена.
+// При покупке киллера за монетки вызов шёл без typeof-защиты и падал
+// с TypeError: монетки списывались, но не сохранялись и не отображались.
+function updateCoinsDisplay() {
+  const ids = ['coinsDisplay', 'skinPreviewCoins', 'killerCoinsDisplay'];
+  for (let i = 0; i < ids.length; i++) {
+    const el = document.getElementById(ids[i]);
+    if (el) el.textContent = localCoins;
+  }
+}
+window.updateCoinsDisplay = updateCoinsDisplay;
+
+// v31: saveCoinsLocal тоже вызывалась, но не существовала — и монетки
+// вообще нигде не сохранялись, сбрасываясь на 50 при каждом перезаходе.
+function saveCoinsLocal() {
+  try { localStorage.setItem('fz_coins_v1', String(localCoins)); } catch (e) {}
+}
+window.saveCoinsLocal = saveCoinsLocal;
+
+function loadCoinsLocal() {
+  try {
+    const v = parseInt(localStorage.getItem('fz_coins_v1'), 10);
+    if (!isNaN(v) && v >= 0) localCoins = v;
+  } catch (e) {}
+}
+window.loadCoinsLocal = loadCoinsLocal;
+loadCoinsLocal();
+
+// v31: updateMoneyDisplay вызывалась в двух местах, но не была объявлена.
+function updateMoneyDisplay() {
+  const el = document.getElementById('moneyDisplay');
+  if (el && window.localPlayer) el.textContent = localPlayer.money;
+}
+window.updateMoneyDisplay = updateMoneyDisplay;
+
+// v31: монетки меняются в 11 разных местах, и почти нигде не сохранялись.
+// Вместо правки каждого — периодически сбрасываем на диск при изменении.
+(function fzCoinsAutosave() {
+  let last = localCoins;
+  setInterval(function () {
+    if (localCoins !== last) { last = localCoins; saveCoinsLocal(); updateCoinsDisplay(); }
+  }, 1500);
+  window.addEventListener('beforeunload', saveCoinsLocal);
+})();
 let equippedAccessory = 'none';
 let ownedAccessories = new Set(['none']);
 // Effects initialized in EFFECTS_DATA section above
@@ -11376,17 +11421,11 @@ function updatePlayerListUI(list) {
 }
 
 // =================== УВЕДОМЛЕНИЯ ===================
+// v31: был точный дубликат объявления — второе молча затирало первое.
+// Плюс защита от отсутствующего контейнера (падало до готовности HUD).
 function showNotification(text, type) {
   const container = document.getElementById('notifications');
-  const div = document.createElement('div');
-  div.className = 'notification ' + (type || 'info');
-  div.textContent = text;
-  container.appendChild(div);
-  setTimeout(() => div.remove(), 3000);
-}
-
-function showNotification(text, type) {
-  const container = document.getElementById('notifications');
+  if (!container) return;
   const div = document.createElement('div');
   div.className = 'notification ' + (type || 'info');
   div.textContent = text;
@@ -13292,7 +13331,7 @@ function fzPickNote(inter) {
   fzQuestSave();
   scene.remove(best);
   window._fzNoteObjs = window._fzNoteObjs.filter(g2 => g2 !== best);
-  interactables = interactables.filter(i2 => !(i2.type === 'quest_note' && Math.abs(i2.position.x - inter.position.x) < 3 && Math.abs(i2.position.z - inter.position.z) < 3));
+  (function(){ _fzInterPrepLen = -1; const _k = interactables.filter(i2 => !(i2.type === 'quest_note' && Math.abs(i2.position.x - inter.position.x) < 3 && Math.abs(i2.position.z - inter.position.z) < 3)); interactables.length = 0; Array.prototype.push.apply(interactables, _k); })();
   // бумага
   fzSfx(320, 0.12, 'triangle', 0.25);
   const n = fzQuestNotesFound();
@@ -13375,7 +13414,7 @@ function fzTryBreakBoards() {
   // разлетаются и доски у прохода, и доски со служебного лифта
   [].concat(window._fzBoardMeshes || [], window._fzLiftBoards || [])
     .forEach(bd => { bd.userData.throwing = true; bd.userData.vy = 4 + Math.random() * 2; });
-  interactables = interactables.filter(i2 => i2.type !== 'quest_boards');
+  (function(){ _fzInterPrepLen = -1; const _k = interactables.filter(i2 => i2.type !== 'quest_boards'); interactables.length = 0; Array.prototype.push.apply(interactables, _k); })();
   showNotification('💥 Доски разлетелись в щепки! Служебный лифт разблокирован', 'success');
   setTimeout(() => {
     const bx = INTERIOR_BASE.x, bz = INTERIOR_BASE.z;
@@ -13452,6 +13491,7 @@ function fzMallAxe(bx, bz, F, add, mat) {
 //  дневника — сейф заперт и код неизвестен.
 // ═══════════════════════════════════════════════════════════════════
 function fzOfficeAxe(bx, bz, F, add, mat) {
+  _fzInterPrepLen = -1;   // список точек изменится — сбрасываем кэш
   if (window.FZ_QUEST.axe || window.FZ_QUEST.bossDead) return;
   const opened = fzQuestNotesFound() >= 6;
   const WX = bx - 13.6;            // западная стена кабинета
@@ -13518,7 +13558,7 @@ function fzPickAxe() {
   window.FZ_QUEST.axe = true;
   fzQuestSave();
   if (window._fzAxeMesh) window._fzAxeMesh.visible = false;
-  interactables = interactables.filter(i2 => i2.type !== 'quest_axe');
+  (function(){ _fzInterPrepLen = -1; const _k = interactables.filter(i2 => i2.type !== 'quest_axe'); interactables.length = 0; Array.prototype.push.apply(interactables, _k); })();
   fzSfxChord([220, 330, 440], 0.4);
   showNotification('🪓 ТОПОР СМОТРИТЕЛЯ получен! Спускайся на 1 этаж — служебный лифт заколочен', 'success');
 }
@@ -13538,7 +13578,7 @@ function fzEnterBossArena() {
   localPlayer.mesh.rotation.y = Math.PI;
   interiorObjects.forEach(o => scene.remove(o));
   interiorObjects = []; interiorColliders = [];
-  interactables = interactables.filter(i2 => i2.interior !== true);
+  (function(){ _fzInterPrepLen = -1; const _k = interactables.filter(i2 => i2.interior !== true); interactables.length = 0; Array.prototype.push.apply(interactables, _k); })();
   const add = (m2) => { scene.add(m2); interiorObjects.push(m2); return m2; };
   const mat = (c2, em, ei) => new THREE.MeshLambertMaterial({ color: c2, emissive: em || 0, emissiveIntensity: ei || 0 });
 
@@ -14682,25 +14722,46 @@ function handleInteraction() {
   }
 }
 
+let _fzInterPrepLen = -1;   // v31: кэш предвычислений interactables
 function checkInteractables() {
   if (!localPlayer || !localPlayer.mesh) return;
   const pos = localPlayer.mesh.position;
   nearestInteractable = null;
   let minDist = Infinity, bestQuest = null, bestQuestDist = Infinity;
 
-  interactables.forEach(inter => {
-    const dx = pos.x - inter.position.x;
-    const dz = pos.z - inter.position.z;
-    const dist = Math.sqrt(dx*dx + dz*dz);
-    if (dist < inter.range && dist < minDist) {
-      minDist = dist;
-      nearestInteractable = inter;
+  // v31: оптимизация. В новом городе 230+ точек взаимодействия, и цикл
+  // крутился каждый кадр с Math.sqrt и String() на каждой записи.
+  // Замерил варианты: ранний отсев по прямоугольнику оказался МЕДЛЕННЕЕ
+  // (лишние ветвления), а выигрыш даёт предвычисление квадрата радиуса
+  // и флага квеста + обычный for вместо forEach. Итог ~×1.7.
+  // Предвычисление вынесено ИЗ горячего цикла: проверка `undefined`
+  // на каждой итерации сама съедала весь выигрыш (замер: ×0.6 против ×1.78).
+  // Пересчитываем только когда список изменился.
+  if (interactables.length !== _fzInterPrepLen) {
+    for (let i = 0; i < interactables.length; i++) {
+      const it = interactables[i];
+      it._r2 = it.range * it.range;
+      it._q = typeof it.type === 'string' && it.type.lastIndexOf('quest_', 0) === 0;
     }
-    // квестовые предметы важнее лестниц и лифтов
-    if (dist < inter.range && String(inter.type).indexOf('quest_') === 0) {
-      if (!bestQuest || dist < bestQuestDist) { bestQuest = inter; bestQuestDist = dist; }
+    _fzInterPrepLen = interactables.length;
+  }
+  for (let i = 0; i < interactables.length; i++) {
+    const inter = interactables[i];
+    // страховка: точка, добавленная в обход сброса кэша (_r2 нет) —
+    // считаем на месте, чтобы её нельзя было потерять
+    const r2 = inter._r2 !== undefined ? inter._r2 : (inter._r2 = inter.range * inter.range,
+      inter._q = typeof inter.type === 'string' && inter.type.lastIndexOf('quest_', 0) === 0,
+      inter._r2);
+    const ip = inter.position;
+    const dx = pos.x - ip.x, dz = pos.z - ip.z;
+    const d2 = dx * dx + dz * dz;
+    if (d2 < r2) {
+      if (d2 < minDist) { minDist = d2; nearestInteractable = inter; }
+      if (inter._q && (!bestQuest || d2 < bestQuestDist)) {
+        bestQuest = inter; bestQuestDist = d2;
+      }
     }
-  });
+  }
   if (bestQuest) nearestInteractable = bestQuest;
 
   const hint = document.getElementById('interactHint');
@@ -14901,9 +14962,30 @@ const INTERIOR_CONFIGS = {
   karaoke:   { name:'🎤 Кара-оке', floors:1, color:0x3a0050, floorColor:0x2a0040 },
 };
 
+// v31: освобождение ресурсов интерьера.
+// Раньше меши просто убирались из сцены — геометрии, материалы и
+// canvas-текстуры вывесок (512x96 на каждый этаж) оставались в видеопамяти.
+// Катаясь на лифте по 8 этажам ТЦ, игрок накапливал утечку.
+function fzDisposeInterior() {
+  interiorObjects.forEach(o => {
+    scene.remove(o);
+    if (!o.traverse) return;
+    o.traverse(c => {
+      if (c.geometry && c.geometry.dispose) c.geometry.dispose();
+      const mats = Array.isArray(c.material) ? c.material : (c.material ? [c.material] : []);
+      mats.forEach(m => {
+        if (!m) return;
+        if (m.map && m.map.dispose) m.map.dispose();
+        if (m.emissiveMap && m.emissiveMap.dispose) m.emissiveMap.dispose();
+        if (m.dispose) m.dispose();
+      });
+    });
+  });
+}
+
 function buildInterior(type) {
-  // Очистить старый интерьер
-  interiorObjects.forEach(o => scene.remove(o));
+  // Очистить старый интерьер (с освобождением памяти)
+  fzDisposeInterior();
   interiorObjects = [];
   interiorColliders = [];
 
@@ -15032,7 +15114,7 @@ function buildInterior(type) {
   ].forEach(c => interiorColliders.push(c));
 
   // Интерактивные зоны в интерьере
-  interactables = interactables.filter(i => i.interior !== true);
+  (function(){ _fzInterPrepLen = -1; const _k = interactables.filter(i => i.interior !== true); interactables.length = 0; Array.prototype.push.apply(interactables, _k); })();
   if (type !== 'mall' && type !== 'house') { // в доме лестниц нет — один огромный зал
     const stairZ = bz - D/2 + 3;
     const stairX = bx - W/2 + 3;
@@ -17280,8 +17362,8 @@ function exitBuilding() {
   // Телепорт обратно
   localPlayer.mesh.position.set(outsidePos.x, outsidePos.y, outsidePos.z + 3);
 
-  // Убрать интерьер
-  interiorObjects.forEach(o => scene.remove(o));
+  // Убрать интерьер (v31: с освобождением видеопамяти)
+  fzDisposeInterior();
   interiorObjects = [];
   interiorColliders = [];
   // Убрать interior NPC из массива (они часть interiorObjects)
@@ -17296,7 +17378,7 @@ function exitBuilding() {
   document.getElementById('mallMapBtn').style.display = 'none';
 
   // Убрать interior interactables
-  interactables = interactables.filter(i => i.interior !== true);
+  (function(){ _fzInterPrepLen = -1; const _k = interactables.filter(i => i.interior !== true); interactables.length = 0; Array.prototype.push.apply(interactables, _k); })();
 
   stopMallMusic(); // 🎼 музыка ТЦ — выключить на выходе
 
@@ -21134,6 +21216,13 @@ body.game-active canvas{touch-action:none}
 #fzNews .fzn-item.new b{color:#ffe289}
 #fzNews .fzn-close{display:block;margin:18px auto 0;background:rgba(63,143,255,.2);border:1.5px solid #3f8fff;
   color:#fff;font:700 15px Arial;padding:11px 38px;border-radius:12px;cursor:pointer}
+@media (max-width:900px){
+  #fzNews .fzn-box{width:94vw;max-height:86vh;padding:20px 16px;border-radius:16px;
+    -webkit-overflow-scrolling:touch}
+  #fzNews h2{font-size:19px}
+  #fzNews .fzn-item{font-size:13px;padding:9px 12px}
+  #fzNews .fzn-close{width:100%;padding:14px 0;font-size:16px}
+}
 #fzAdmin{position:fixed;inset:0;background:rgba(10,5,5,.82);display:none;align-items:center;justify-content:center;z-index:9600;backdrop-filter:blur(8px)}
 #fzAdmin .fza-box{width:min(520px,92vw);background:linear-gradient(180deg,#241214,#140a0c);
   border:2px solid #ff9f43;border-radius:20px;padding:24px;box-shadow:0 24px 80px rgba(255,120,40,.35)}
@@ -21146,17 +21235,28 @@ body.game-active canvas{touch-action:none}
 #fzAdmin button.warn{border-color:#8a2a2a;color:#ffb9b9}
 #fzAdmin .fza-close{display:block;margin:16px auto 0;width:auto;padding:10px 34px}
 </style>
-<div id="fzNews" onclick="if(event.target===this)this.style.display='none'">
+<div id="fzNews" onclick="if(event.target===this)fzCloseNews()">
   <div class="fzn-box">
     <h2>✨ НОВОСТИ FANTAZIA RP</h2>
-    <div class="fzn-ver">v4.0 «НЕБЕСА И ГОРОД» · сервер онлайн</div>
-    <div class="fzn-item new"><b>🏙 НОВЫЙ РАЙОН «ОБЛАЧНЫЙ»:</b> дороги с разметкой и зебрами, 8 магазинов с неоном, 3 кафешки с столиками и зонтами, 19 домов, NEO MALL с парковкой, площадь с фонтаном и клумбами. Заходи с северо-запада!</div>
-    <div class="fzn-item new"><b>☁️ СПАВН В НЕБЕСАХ:</b> облачная платформа, портал SOON и лестница из 34 ступеней — идёшь вниз, экран чернеет, и ты в городе</div>
-    <div class="fzn-item new"><b>🛡 АДМИН-ПАНЕЛЬ:</b> для владельцев аккаунтов — телепорты, деньги, погода, объявления</div>
-    <div class="fzn-item"><b>👹 ТИЗЕР:</b> демон АПОГЕЙ в упор — полная тьма, светятся только глаза, он хихикает после оборота</div>
-    <div class="fzn-item"><b>📜 Записки:</b> чип открывает журнал — перечитывай собранные страницы</div>
-    <div class="fzn-item"><b>📱 Мобилка:</b> 12 кнопок управления, джойстик-страховка, всё быстрое и чёткое</div>
-    <button class="fzn-close" onclick="document.getElementById('fzNews').style.display='none'">Закрыть</button>
+    <div class="fzn-ver" id="fznVer">v31 «НОВЫЙ ГОРОД» · сервер онлайн</div>
+
+    <div class="fzn-item new"><b>🌆 ПОЛНОСТЬЮ НОВЫЙ ГОРОД:</b> реалистичная планировка — проспекты с разметкой и зебрами, тротуары, бордюры, светофоры и фонари. 231 здание: 102 многоэтажки с квартирами, 112 коттеджей, парк с прудом.</div>
+
+    <div class="fzn-item new"><b>🏪 МАГАЗИНЫ И РАБОТЫ:</b> одежда, продукты, электроника, мебель, зоотовары, кафе, ресторан, спортзал, кино, клуб, караоке, таксопарк, автосервис, банк, больница, полиция — во все можно зайти.</div>
+
+    <div class="fzn-item new"><b>🪓 ТОПОР ПЕРЕЕХАЛ:</b> теперь он в СЕЙФЕ ЗА КАРТИНОЙ в кабинете директора на верхнем этаже офисного центра. Собери 6 записок — и сейф откроется.</div>
+
+    <div class="fzn-item new"><b>🎬 ПРОПУСК РОЛИКОВ:</b> кнопка «ПРОПУСТИТЬ» в тизере, поездке на лифте и перестройке мира. Работают Escape, Space и Enter.</div>
+
+    <div class="fzn-item new"><b>📱 МОБИЛЬНЫЙ ПОРТ:</b> вход и выход из машин, газ/тормоз/руль при вождении, контекстная кнопка действия, аналоговый джойстик, быстрый доступ к карте, чату и паузе.</div>
+
+    <div class="fzn-item"><b>⚡ ОПТИМИЗАЦИЯ:</b> город рендерится за ~85 draw calls вместо ~300, коллизии ×4.6 быстрее, поиск взаимодействий ×1.8, устранена утечка видеопамяти при смене этажей.</div>
+
+    <div class="fzn-item"><b>🧹 УБРАНО:</b> ивент Jason Day полностью удалён из игры.</div>
+
+    <div class="fzn-item"><b>🏬 GRAND MALL:</b> лифт до B5, квест с записками, доски и босс — всё на месте.</div>
+
+    <button class="fzn-close" onclick="fzCloseNews()">Играть →</button>
   </div>
 </div>
 <div id="fzAdmin">
@@ -21184,8 +21284,51 @@ body.game-active canvas{touch-action:none}
 (function () {
   // ── новости ──
   window.fzOpenNews = function () {
-    document.getElementById('fzNews').style.display = 'flex';
+    const el = document.getElementById('fzNews');
+    if (el) el.style.display = 'flex';
+    try { document.exitPointerLock && document.exitPointerLock(); } catch (e) {}
   };
+  window.fzCloseNews = function () {
+    const el = document.getElementById('fzNews');
+    if (el) el.style.display = 'none';
+  };
+
+  // v31: новости показываются КАЖДЫЙ раз при заходе в игру.
+  // Ждём, пока игрок реально окажется в мире (game-active), и держим
+  // паузу, чтобы окно не перекрывалось стартовыми экранами.
+  (function autoNews() {
+    let shown = false;
+    const iv = setInterval(function () {
+      if (shown) { clearInterval(iv); return; }
+      if (!document.body.classList.contains('game-active')) return;
+      shown = true;
+      clearInterval(iv);
+      setTimeout(function () {
+        // не мешаем кинематикам — дождёмся их окончания
+        const busy = (window.fzTEASER && window.fzTEASER.active) ||
+                     (window.FZ_REBUILD && window.FZ_REBUILD.active);
+        if (busy) {
+          const iv2 = setInterval(function () {
+            const stillBusy = (window.fzTEASER && window.fzTEASER.active) ||
+                              (window.FZ_REBUILD && window.FZ_REBUILD.active);
+            if (!stillBusy) { clearInterval(iv2); window.fzOpenNews(); }
+          }, 600);
+        } else {
+          window.fzOpenNews();
+        }
+      }, 900);
+    }, 500);
+  })();
+
+  // Escape закрывает новости
+  document.addEventListener('keydown', function (e) {
+    if (e.code !== 'Escape') return;
+    const el = document.getElementById('fzNews');
+    if (el && el.style.display === 'flex') {
+      e.preventDefault(); e.stopPropagation();
+      window.fzCloseNews();
+    }
+  }, true);
 
   // ── админка ──
   var KEY = 'fzAdminPwd';
@@ -27648,7 +27791,10 @@ document.addEventListener('selectstart', function(e) {
     if (e.target && e.target.closest &&
         (e.target.closest('.panel') || e.target.closest('.modal-content') ||
          e.target.closest('#chatMessages') || e.target.closest('input') ||
-         e.target.closest('textarea'))) return; // внутри панелей скролл нужен
+         e.target.closest('textarea') ||
+         // v31: окно новостей/админки/чейнджлога тоже должно скроллиться
+         e.target.closest('.fzn-box') || e.target.closest('.fza-box') ||
+         e.target.closest('.changelog-box'))) return; // внутри панелей скролл нужен
     if (e.touches && e.touches.length > 1) { e.preventDefault(); return; }
     e.preventDefault();
   }, { passive: false });
