@@ -6152,43 +6152,385 @@ function buildFantaziaCityV3() {
     '| объектов:', scene.children.length, '| лавочек:', sitSpots.length);
 }
 
-function buildCity() {
-  // ═══ v29: НОВЫЙ ГОРОД ═══
-  // Реалистичная сеточная застройка из newcity.js. Инстансинг + LOD,
-  // поэтому на телефоне заметно легче старого города.
-  // GRAND MALL сохраняем — на него завязан квест (записки/топор/босс).
-  if (window.FZ_NEWCITY && typeof FZ_NEWCITY.build === 'function') {
-    // ВАЖНО: buildings/interactables/streetColliders/sitSpots объявлены через
-    // let — они живут в лексической области и НЕ видны как window.*.
-    // Без этого моста модуль падал на window.buildings.push и город
-    // молча откатывался на старый. Массивы передаются по ссылке,
-    // поэтому push из модуля попадает в те же самые массивы.
-    window.buildings = buildings;
-    window.interactables = interactables;
-    window.streetColliders = streetColliders;
-    window.sitSpots = sitSpots;
-    // КРИТИЧНО: scene/camera/renderer тоже объявлены через let (стр. 4743),
-    // поэтому window.scene был undefined и модуль выходил с
-    // «нет scene/THREE», молча откатывая игру на старый город.
-    window.scene = scene;
-    window.camera = camera;
-    window.renderer = renderer;
-    let ok = false;
-    try {
-      ok = FZ_NEWCITY.build();
-    } catch (e) {
-      console.error('[CITY] ошибка сборки нового города:', e);
-      ok = false;
-    }
-    if (ok) {
-      buildGrandMall();      // ТЦ на прежнем месте (85, -85)
-      buildNPCPopulation();  // жители
-      return;
-    }
-    console.warn('[CITY] newcity не собрался — откат на старый город');
+// ═══════════════════════════════════════════════════════════════════════
+//  v33: СЛОЙ УЛУЧШЕНИЙ СТАРОГО ГОРОДА
+//  Город остаётся прежним — мы доводим его до ума поверх:
+//  свет, атмосфера, материалы, детали улиц и роскошный вход в GRAND MALL.
+//  Всё массовое идёт через InstancedMesh, чтобы не просадить телефон.
+// ═══════════════════════════════════════════════════════════════════════
+function fzPolishCity() {
+  const MOB = (typeof window.IS_MOBILE === 'boolean')
+    ? window.IS_MOBILE
+    : /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+  const LOD = MOB ? 0.55 : 1;
+
+  // общий батчер: одна геометрия + один материал = один draw call
+  function batch(geo, mat, items, parent) {
+    if (!items.length) return null;
+    const im = new THREE.InstancedMesh(geo, mat, items.length);
+    const d = new THREE.Object3D();
+    items.forEach((it, i) => {
+      d.position.set(it[0], it[1], it[2]);
+      d.rotation.set(it[3] || 0, it[4] || 0, it[5] || 0);
+      d.scale.set(it[6] === undefined ? 1 : it[6],
+                  it[7] === undefined ? 1 : it[7],
+                  it[8] === undefined ? 1 : it[8]);
+      d.updateMatrix();
+      im.setMatrixAt(i, d.matrix);
+    });
+    im.instanceMatrix.needsUpdate = true;
+    im.castShadow = false; im.receiveShadow = false;
+    (parent || scene).add(im);
+    return im;
   }
 
-  // ── ЗАПАСНОЙ ВАРИАНТ: старый город, если модуль не загрузился ──
+  // ─── 1. СВЕТ И АТМОСФЕРА ────────────────────────────────────────
+  // Было плоско и синевато: ambient 0.6 + hemi 0.4 «съедали» объём.
+  // Делаем мягче заливку и добавляем тёплый контровой свет — фасады
+  // получают градиент, город перестаёт выглядеть картонным.
+  scene.traverse(o => {
+    if (o.isAmbientLight) { o.intensity = 0.42; o.color.setHex(0x5566aa); }
+    if (o.isHemisphereLight) { o.intensity = 0.55; }
+    if (o.isDirectionalLight && o.intensity >= 0.9) o.intensity = 1.12;
+  });
+  const rim = new THREE.DirectionalLight(0xffd9a8, 0.45);
+  rim.position.set(-140, 90, -120);
+  rim.castShadow = false;
+  scene.add(rim);
+
+  // дальний туман по цвету неба — горизонт растворяется, а не обрывается
+  if (scene.fog) { scene.fog.near = MOB ? 140 : 190; scene.fog.far = MOB ? 460 : 640; }
+
+  // ─── 2. УЛИЧНАЯ РАЗМЕТКА ────────────────────────────────────────
+  // Дороги были голым асфальтом. Добавляем осевую прерывистую линию
+  // и белые кромки — сразу читается как настоящая проезжая часть.
+  const lineMat = new THREE.MeshBasicMaterial({ color: 0xf0f0e8 });
+  const dashGeo = new THREE.PlaneGeometry(0.28, 3.2);
+  const dashes = [];
+  const ROADS = [0, 50, -50, 100, -100, 150, -150];
+  const STEP = LOD < 1 ? 20 : 11;
+  ROADS.forEach(p => {
+    for (let t = -190; t <= 190; t += STEP) {
+      if (ROADS.some(q => Math.abs(t - q) < 9)) continue;  // не рисуем в перекрёстке
+      dashes.push([p, 0.045, t, -Math.PI / 2, 0, 0]);
+      dashes.push([t, 0.045, p, -Math.PI / 2, 0, Math.PI / 2]);
+    }
+  });
+  batch(dashGeo, lineMat, dashes);
+
+  // зебры на подходах к перекрёсткам
+  const zebra = [];
+  const zGeo = new THREE.PlaneGeometry(0.55, 3.6);
+  ROADS.forEach(a => ROADS.forEach(b => {
+    for (let k = -3; k <= 3; k++) {
+      zebra.push([a + k * 0.95, 0.05, b - 7.5, -Math.PI / 2, 0, 0]);
+      zebra.push([a + k * 0.95, 0.05, b + 7.5, -Math.PI / 2, 0, 0]);
+      zebra.push([a - 7.5, 0.05, b + k * 0.95, -Math.PI / 2, 0, Math.PI / 2]);
+      zebra.push([a + 7.5, 0.05, b + k * 0.95, -Math.PI / 2, 0, Math.PI / 2]);
+    }
+  }));
+  batch(zGeo, lineMat, zebra);
+
+  // ─── 3. БОРДЮРЫ ─────────────────────────────────────────────────
+  // Тонкая ступенька вдоль дорог: город обретает «слои» и глубину.
+  const curbMat = new THREE.MeshLambertMaterial({ color: 0xa9aeb5 });
+  const curbGeo = new THREE.BoxGeometry(1, 0.16, 1);
+  const curbs = [];
+  ROADS.forEach(p => {
+    [-6.6, 6.6].forEach(o => {
+      curbs.push([p + o, 0.08, 0, 0, 0, 0, 0.5, 1, 380]);
+      curbs.push([0, 0.08, p + o, 0, 0, 0, 380, 1, 0.5]);
+    });
+  });
+  batch(curbGeo, curbMat, curbs);
+
+  console.log('[POLISH] улицы: разметка', dashes.length, '| зебры', zebra.length);
+
+  // ─── 4. ДЕТАЛИ: окна, крыши, урны ───────────────────────────────
+  try { fzPolishDetails(MOB); } catch (e) { console.warn('[POLISH details]', e); }
+
+  // ─── 5. КРАСИВЫЙ ВХОД В GRAND MALL ──────────────────────────────
+  fzGrandMallEntrance(MOB);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  v33: ПАРАДНЫЙ ВХОД В GRAND MALL
+//  Раньше это были 5 цилиндров-колонн, плоский козырёк и вывеска-плашка.
+//  Теперь: стеклянный портал с аркой, широкая гранитная лестница,
+//  неоновая вывеска, световые пилоны, ковровая дорожка и пальмы в кадках.
+//  Молл стоит в (85,-85), фасад входа смотрит на +Z.
+// ═══════════════════════════════════════════════════════════════════════
+function fzGrandMallEntrance(MOB) {
+  const MX = 85, MZ = -85, MW = 120, MH = 55, MD = 100;
+  const FZ = MZ + MD / 2;          // плоскость фасада
+  const G = new THREE.Group();
+  G.name = 'FZ_MALL_ENTRANCE';
+
+  const M = (c, o) => new THREE.MeshLambertMaterial(
+    Object.assign({ color: c }, o || {}));
+  const MB = (c, o) => new THREE.MeshBasicMaterial(
+    Object.assign({ color: c }, o || {}));
+  const add = (m, x, y, z, ry) => { m.position.set(x, y, z); if (ry) m.rotation.y = ry; G.add(m); return m; };
+
+  // ── ГРАНИТНАЯ ПЛОЩАДКА ПЕРЕД ВХОДОМ ──
+  const plaza = new THREE.Mesh(new THREE.PlaneGeometry(56, 30), M(0x8e9298));
+  plaza.rotation.x = -Math.PI / 2;
+  add(plaza, MX, 0.02, FZ + 15);
+  // светлая инкрустация-полоса по центру
+  const inlay = new THREE.Mesh(new THREE.PlaneGeometry(12, 30), M(0xc3c7cc));
+  inlay.rotation.x = -Math.PI / 2;
+  add(inlay, MX, 0.035, FZ + 15);
+
+  // ── ШИРОКАЯ ЛЕСТНИЦА (4 ступени) ──
+  for (let i = 0; i < 4; i++) {
+    const w = 34 - i * 1.6;
+    const st = new THREE.Mesh(new THREE.BoxGeometry(w, 0.28, 1.5), M(0xb9bec4));
+    add(st, MX, 0.14 + i * 0.28, FZ + 5.6 - i * 1.5);
+  }
+  // ковровая дорожка по ступеням
+  const carpet = new THREE.Mesh(new THREE.BoxGeometry(7, 0.06, 7.2), M(0x7d2b3a));
+  carpet.rotation.x = -0.19;
+  add(carpet, MX, 0.72, FZ + 2.6);
+
+  // ── СТЕКЛЯННЫЙ ПОРТАЛ: рама + витраж ──
+  const frameMat = M(0x2f3439);
+  // боковые пилоны рамы
+  [-11, 11].forEach(o => {
+    add(new THREE.Mesh(new THREE.BoxGeometry(1.6, 15, 2.2), frameMat), MX + o, 7.5, FZ + 0.9);
+  });
+  // верхняя балка
+  add(new THREE.Mesh(new THREE.BoxGeometry(24, 1.4, 2.4), frameMat), MX, 15.2, FZ + 0.9);
+  // витражное остекление
+  const glass = MB(0x9fd4ff, { transparent: true, opacity: 0.34 });
+  for (let gx = -9.4; gx <= 9.4; gx += 3.15) {
+    add(new THREE.Mesh(new THREE.PlaneGeometry(2.9, 14), glass), MX + gx, 7.4, FZ + 1.85);
+  }
+  // импосты между стёклами
+  for (let gx = -11; gx <= 11; gx += 3.15) {
+    add(new THREE.Mesh(new THREE.BoxGeometry(0.22, 14.2, 0.3), frameMat), MX + gx, 7.4, FZ + 1.95);
+  }
+  // горизонтальная перемычка
+  add(new THREE.Mesh(new THREE.BoxGeometry(22.6, 0.22, 0.3), frameMat), MX, 7.4, FZ + 1.95);
+
+  // ── АРКА НАД ПОРТАЛОМ (полукольцо из сегментов) ──
+  const archMat = M(0xd8b25a);
+  const AR = 12.4;
+  for (let i = 0; i <= 16; i++) {
+    const a = Math.PI * (i / 16);
+    const seg = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.9, 1.8), archMat);
+    seg.position.set(MX + Math.cos(a) * AR, 15.2 + Math.sin(a) * AR * 0.52, FZ + 0.9);
+    seg.rotation.z = a - Math.PI / 2;
+    G.add(seg);
+  }
+
+  // ── КОЗЫРЁК-НАВЕС ──
+  const canopy = new THREE.Mesh(new THREE.BoxGeometry(30, 0.5, 8), M(0x3a4149));
+  add(canopy, MX, 9.4, FZ + 5.2);
+  const canopyGlass = new THREE.Mesh(new THREE.PlaneGeometry(29, 7.6),
+    MB(0xbfe4ff, { transparent: true, opacity: 0.26 }));
+  canopyGlass.rotation.x = -Math.PI / 2;
+  add(canopyGlass, MX, 9.68, FZ + 5.2);
+  // подкосы навеса
+  [-13, 13].forEach(o => {
+    const br = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.34, 9), M(0x2f3439));
+    br.rotation.x = 0.52;
+    add(br, MX + o, 11.6, FZ + 3.4);
+  });
+  // тёплая подсветка под навесом
+  const strip = new THREE.Mesh(new THREE.PlaneGeometry(28, 6.6), MB(0xffe6b8, { transparent: true, opacity: 0.5 }));
+  strip.rotation.x = Math.PI / 2;
+  add(strip, MX, 9.1, FZ + 5.2);
+  if (!MOB) {
+    const pl = new THREE.PointLight(0xffd9a0, 1.1, 34);
+    pl.position.set(MX, 8.2, FZ + 5);
+    G.add(pl);
+  }
+
+  // ── НЕОНОВАЯ ВЫВЕСКА GRAND MALL ──
+  const cv = document.createElement('canvas');
+  cv.width = 1024; cv.height = 224;
+  const c = cv.getContext('2d');
+  c.clearRect(0, 0, 1024, 224);
+  // подложка
+  c.fillStyle = 'rgba(10,8,26,0.92)';
+  c.beginPath();
+  if (c.roundRect) c.roundRect(8, 8, 1008, 208, 26); else c.rect(8, 8, 1008, 208);
+  c.fill();
+  // золотая рамка
+  c.strokeStyle = '#e8c069'; c.lineWidth = 5; c.stroke();
+  // текст с неоновым свечением
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.shadowColor = '#7b5cff'; c.shadowBlur = 42;
+  c.fillStyle = '#ffffff';
+  c.font = 'bold 104px Arial';
+  c.fillText('GRAND MALL', 512, 96);
+  c.shadowBlur = 0;
+  c.fillStyle = '#e8c069';
+  c.font = 'bold 34px Arial';
+  c.fillText('★  ТОРГОВЫЙ ЦЕНТР  ★', 512, 176);
+  const signTex = new THREE.CanvasTexture(cv);
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(30, 6.6),
+    new THREE.MeshBasicMaterial({ map: signTex, transparent: true }));
+  add(sign, MX, 21.5, FZ + 1.4);
+  // гало вокруг вывески
+  const halo = new THREE.Mesh(new THREE.PlaneGeometry(34, 9),
+    MB(0x7b5cff, { transparent: true, opacity: 0.16 }));
+  add(halo, MX, 21.5, FZ + 1.2);
+
+  // ── СВЕТОВЫЕ ПИЛОНЫ ПО СТОРОНАМ ──
+  [-20, 20].forEach(o => {
+    add(new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.6, 2.2), M(0x2b3036)), MX + o, 0.3, FZ + 7);
+    add(new THREE.Mesh(new THREE.BoxGeometry(1.5, 13, 1.5), M(0x3c434b)), MX + o, 6.8, FZ + 7);
+    // светящаяся вставка
+    add(new THREE.Mesh(new THREE.PlaneGeometry(1.1, 11), MB(0x9ad8ff, { transparent: true, opacity: 0.85 })),
+        MX + o, 6.8, FZ + 7.78);
+    add(new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.5, 2.4), M(0xd8b25a)), MX + o, 13.6, FZ + 7);
+    streetColliders.push({ x: MX + o, z: FZ + 7, r: 1.3 });
+  });
+
+  // ── ПАЛЬМЫ В КАДКАХ ──
+  [-15, 15].forEach(o => {
+    const potX = MX + o, potZ = FZ + 11;
+    add(new THREE.Mesh(new THREE.CylinderGeometry(1.15, 0.9, 1.5, 10), M(0x9c6b45)), potX, 0.75, potZ);
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.3, 5, 8), M(0x6b5138)), potX, 4, potZ);
+    for (let k = 0; k < 6; k++) {
+      const a = (k / 6) * Math.PI * 2;
+      const leaf = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.16, 0.9), M(0x3f8f4a));
+      leaf.position.set(potX + Math.cos(a) * 1.7, 6.5, potZ + Math.sin(a) * 1.7);
+      leaf.rotation.y = -a; leaf.rotation.z = 0.32;
+      G.add(leaf);
+    }
+    streetColliders.push({ x: potX, z: potZ, r: 1.3 });
+  });
+
+  // ── ФОНАРИ-ТОРШЕРЫ ВДОЛЬ ПОДХОДА ──
+  [-24, 24].forEach(o => {
+    for (let i = 0; i < 3; i++) {
+      const lz = FZ + 12 + i * 7;
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.2, 5.4, 8), M(0x33383e)), MX + o, 2.7, lz);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.55, 10, 8), MB(0xfff2cc)), MX + o, 5.7, lz);
+      streetColliders.push({ x: MX + o, z: lz, r: 0.4 });
+    }
+  });
+
+  // ── ВРАЩАЮЩИЕСЯ ДВЕРИ (визуально) ──
+  const doorFrame = M(0x9aa0a7);
+  add(new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 4.6, 16, 1, true),
+    MB(0xcfe9ff, { transparent: true, opacity: 0.3, side: THREE.DoubleSide })), MX, 2.3, FZ + 1.2);
+  for (let k = 0; k < 4; k++) {
+    const a = (k / 4) * Math.PI * 2;
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(2.5, 4.5, 0.1), doorFrame);
+    blade.position.set(MX + Math.cos(a) * 1.25, 2.3, FZ + 1.2 + Math.sin(a) * 1.25);
+    blade.rotation.y = -a;
+    G.add(blade);
+  }
+
+  scene.add(G);
+  window._fzMallEntrance = G;
+
+  // Точку входа подвигаем на площадку перед лестницей, чтобы
+  // «Войти» срабатывало там, где игрок реально стоит у дверей.
+  for (let i = 0; i < interactables.length; i++) {
+    const it = interactables[i];
+    if (it.type === 'mall' && Math.abs(it.position.x - MX) < 40) {
+      it.position.z = FZ + 6.5;
+      it.range = 8;
+      it._r2 = undefined;   // сбросить кэш быстрой проверки
+    }
+  }
+  if (typeof _fzInterPrepLen !== 'undefined') _fzInterPrepLen = -1;
+
+  console.log('[POLISH] вход GRAND MALL готов:', G.children.length, 'элементов');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  v33: ВТОРОЙ СЛОЙ УЛУЧШЕНИЙ — детали, оживляющие старый город
+// ═══════════════════════════════════════════════════════════════════════
+function fzPolishDetails(MOB) {
+  const LOD = MOB ? 0.5 : 1;
+  const inst = (geo, mat, items) => {
+    if (!items.length) return;
+    const im = new THREE.InstancedMesh(geo, mat, items.length);
+    const d = new THREE.Object3D();
+    items.forEach((it, i) => {
+      d.position.set(it[0], it[1], it[2]);
+      d.rotation.set(it[3] || 0, it[4] || 0, it[5] || 0);
+      d.scale.set(it[6] === undefined ? 1 : it[6], it[7] === undefined ? 1 : it[7], it[8] === undefined ? 1 : it[8]);
+      d.updateMatrix(); im.setMatrixAt(i, d.matrix);
+    });
+    im.instanceMatrix.needsUpdate = true;
+    im.castShadow = false; im.receiveShadow = false;
+    scene.add(im);
+  };
+
+  // ── СВЕТЯЩИЕСЯ ОКНА ──
+  // Главная причина, почему город выглядел «картонным»: у зданий были
+  // плоские стены без единого окна. Раскидываем тёплые окна по фасадам
+  // реально существующих домов — вечером город оживает.
+  const winLit = new THREE.MeshBasicMaterial({ color: 0xffdc9a });
+  const winDark = new THREE.MeshBasicMaterial({ color: 0x2c3a4e });
+  const wGeo = new THREE.PlaneGeometry(1.1, 1.4);
+  const lit = [], dark = [];
+  let seed = 1337;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) & 0x7fffffff; return seed / 0x7fffffff; };
+
+  const src = buildings.slice(0, MOB ? 90 : 220);
+  src.forEach(b => {
+    if (!b || !b.w || !b.h || b.h < 6) return;
+    if (b.type === 'mall') return;                 // у молла своё остекление
+    const floors = Math.min(Math.floor((b.h - 2) / 3.6), MOB ? 6 : 12);
+    const cols = Math.min(Math.floor((b.w - 2) / 2.8), 6);
+    if (floors < 1 || cols < 1) return;
+    for (let f = 0; f < floors; f++) {
+      const y = 2.4 + f * 3.6;
+      if (y > b.h - 1.2) break;
+      for (let c2 = 0; c2 < cols; c2++) {
+        const ox = -b.w / 2 + 1.4 + c2 * ((b.w - 2.8) / Math.max(1, cols - 1 || 1));
+        const on = rnd() < 0.42;
+        (on ? lit : dark).push([b.x + ox, y, b.z + b.d / 2 + 0.06]);
+        if (rnd() < 0.7) (rnd() < 0.42 ? lit : dark).push([b.x + ox, y, b.z - b.d / 2 - 0.06, 0, Math.PI, 0]);
+      }
+    }
+  });
+  inst(wGeo, winLit, lit);
+  inst(wGeo, winDark, dark);
+
+  // ── КРЫШИ: парапеты и вентиляция ──
+  const roofMat = new THREE.MeshLambertMaterial({ color: 0x5a6068 });
+  const acMat = new THREE.MeshLambertMaterial({ color: 0x8a9099 });
+  const par = [], acs = [];
+  src.forEach(b => {
+    if (!b || !b.w || b.h < 8 || b.type === 'mall') return;
+    par.push([b.x, b.h + 0.35, b.z, 0, 0, 0, b.w + 0.5, 1, b.d + 0.5]);
+    if (b.h > 14 && rnd() < 0.7) {
+      acs.push([b.x + (rnd() - 0.5) * (b.w - 3), b.h + 1.1, b.z + (rnd() - 0.5) * (b.d - 3)]);
+    }
+  });
+  inst(new THREE.BoxGeometry(1, 0.7, 1), roofMat, par);
+  inst(new THREE.BoxGeometry(1.6, 0.9, 1.6), acMat, acs);
+
+  // ── УРНЫ И ЛАВОЧКИ ВДОЛЬ ДОРОГ ──
+  const binMat = new THREE.MeshLambertMaterial({ color: 0x2f4f3a });
+  const bins = [];
+  const ROADS = [0, 50, -50, 100, -100];
+  ROADS.forEach(p => {
+    for (let t = -140; t <= 140; t += (LOD < 1 ? 60 : 34)) {
+      if (ROADS.some(q => Math.abs(t - q) < 12)) continue;
+      bins.push([p + 8.4, 0.55, t]);
+      bins.push([t, 0.55, p + 8.4]);
+    }
+  });
+  inst(new THREE.CylinderGeometry(0.42, 0.34, 1.1, 8), binMat, bins);
+
+  console.log('[POLISH] детали: окон', lit.length + dark.length,
+              '| парапетов', par.length, '| урн', bins.length);
+}
+
+function buildCity() {
+  // ═══ v33: СТАРЫЙ ГОРОД (родная застройка) ═══
+  // Возврат по просьбе игрока: newcity.js больше не используется.
+  // Вместо него старый город доводится до ума слоем улучшений
+  // fzPolishCity() — освещение, материалы, детали, красивый вход в ТЦ.
   buildRoads();
   buildCentralPlaza();
   buildShoppingDistrict();
@@ -6213,6 +6555,9 @@ function buildCity() {
   addStreetLights();
   addTrees();
   addDecorations();
+
+  // ── СЛОЙ УЛУЧШЕНИЙ (v33) ──
+  try { fzPolishCity(); } catch (e) { console.warn('[POLISH]', e); }
 }
 
 function createBuilding(x, z, w, h, d, color, name, type) {
@@ -6673,27 +7018,15 @@ function buildGrandMall() {
   const roof = new THREE.Mesh(new THREE.BoxGeometry(MW+2, 0.6, MD+2), roofMat);
   roof.position.set(MX, MH+0.3, MZ); scene.add(roof);
 
-  // Entrance columns
-  const colMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
-  [-8,-4,0,4,8].forEach(cx => {
-    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.4,MH,8), colMat);
-    col.position.set(MX+cx, MH/2, MZ+MD/2+0.5); scene.add(col);
+  // v33: примитивные колонны/козырёк/вывеска убраны —
+  // парадный вход строит fzGrandMallEntrance() (стеклянный портал,
+  // арка, лестница, неон). Оставляем только колонны по краям фасада,
+  // чтобы здание не выглядело голым по бокам от портала.
+  const colMat = new THREE.MeshLambertMaterial({ color: 0xe8e4dc });
+  [-46, -34, 34, 46].forEach(cx => {
+    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, MH, 10), colMat);
+    col.position.set(MX+cx, MH/2, MZ+MD/2+0.6); scene.add(col);
   });
-
-  // Entrance canopy
-  const canopy = new THREE.Mesh(new THREE.BoxGeometry(22, 0.4, 3), new THREE.MeshLambertMaterial({ color:0x6c5ce7, transparent:true, opacity:0.85 }));
-  canopy.position.set(MX, 5, MZ+MD/2+1.5); scene.add(canopy);
-
-  // Sign
-  const signCanvas = document.createElement('canvas');
-  signCanvas.width = 1024; signCanvas.height = 128;
-  const sc = signCanvas.getContext('2d');
-  sc.fillStyle = 'rgba(15,12,41,0.9)'; sc.fillRect(0,0,1024,128);
-  sc.fillStyle = '#a29bfe'; sc.font = 'bold 72px Arial'; sc.textAlign = 'center';
-  sc.fillText('✨ GRAND MALL ✨', 512, 88);
-  const signTex = new THREE.CanvasTexture(signCanvas);
-  const signMesh = new THREE.Mesh(new THREE.PlaneGeometry(22,2.5), new THREE.MeshBasicMaterial({ map:signTex, transparent:true }));
-  signMesh.position.set(MX, MH+1.5, MZ+MD/2+0.2); scene.add(signMesh);
 
   // Parking lot lines
   const pMat = new THREE.MeshBasicMaterial({ color:0xffffff });
@@ -6717,9 +7050,22 @@ function buildGrandMall() {
   }
   // Больше стеклянных панелей на фасаде
   for(let gx = -MW/2+2; gx < MW/2-2; gx += 4) {
-    const g = new THREE.Mesh(new THREE.PlaneGeometry(3.5, MH-1), new THREE.MeshBasicMaterial({color:0xaaccff, transparent:true, opacity:0.6}));
-    g.position.set(MX+gx, MH/2, MZ+MD/2+0.15); scene.add(g);
-    const g2 = g.clone(); g2.position.z = MZ-MD/2-0.15; g2.rotation.y = Math.PI; scene.add(g2);
+    // v33: центральный проём (|gx| < 17) оставляем пустым — там стоит
+    // парадный портал. Иначе стекло перекрывало вход и арку.
+    const inPortal = Math.abs(gx) < 17;
+    if (!inPortal) {
+      const g = new THREE.Mesh(new THREE.PlaneGeometry(3.5, MH-1), new THREE.MeshBasicMaterial({color:0xaaccff, transparent:true, opacity:0.6}));
+      g.position.set(MX+gx, MH/2, MZ+MD/2+0.15); scene.add(g);
+    }
+    // задний фасад остекляем полностью
+    const g2 = new THREE.Mesh(new THREE.PlaneGeometry(3.5, MH-1), new THREE.MeshBasicMaterial({color:0xaaccff, transparent:true, opacity:0.6}));
+    g2.position.set(MX+gx, MH/2, MZ-MD/2-0.15); g2.rotation.y = Math.PI; scene.add(g2);
+  }
+  // v33: над порталом — витраж от арки до крыши, чтобы фасад не зиял
+  for (let gx = -16; gx <= 16; gx += 4) {
+    const gt = new THREE.Mesh(new THREE.PlaneGeometry(3.5, MH-27),
+      new THREE.MeshBasicMaterial({color:0xaaccff, transparent:true, opacity:0.6}));
+    gt.position.set(MX+gx, 27 + (MH-27)/2, MZ+MD/2+0.15); scene.add(gt);
   }
   // Большой центральный атриум — открытый зал
   const atrium = new THREE.Mesh(new THREE.BoxGeometry(MW*0.6, MH*0.3, MD*0.5), new THREE.MeshLambertMaterial({color:0xffffff, transparent:true, opacity:0.15}));
@@ -14159,15 +14505,12 @@ window.fzPlayArrival = fzPlayArrival;
     if (!document.body.classList.contains('game-active')) return;
     if (typeof isInsideBuilding !== 'undefined' && isInsideBuilding) return;
     if (window.FZ_REBUILD) return;
-    if (!window.FZ_NEWCITY) return;   // модуль ещё грузится
     fired = true;
     clearInterval(iv);
-    const isNew = !!FZ_NEWCITY.root;
+    // v33: город больше не подменяется — играем только кинематографичное
+    // ПРИБЫТИЕ (облёт города), без стирания и пересборки мира.
     setTimeout(function () {
-      try {
-        if (isNew) fzPlayArrival();       // пролёт над новым городом
-        else fzWorldRebuild(true);        // полная перестройка мира
-      } catch (e) { console.warn('[REBUILD]', e); }
+      try { fzPlayArrival(); } catch (e) { console.warn('[ARRIVAL]', e); }
     }, 1400);
   }, 700);
 })();
@@ -21276,7 +21619,7 @@ body.game-active canvas{touch-action:none}
 })();
 </script>
 
-<script src="newcity.js?v=29"></script>
+<!-- v33: newcity.js отключён — вернули старый город -->
 <script src="city2.js?v=1"></script>
 <!-- ========== FZ: админ-панель + новости (новые) ========== -->
 <style>
@@ -21314,23 +21657,21 @@ body.game-active canvas{touch-action:none}
 <div id="fzNews" onclick="if(event.target===this)fzCloseNews()">
   <div class="fzn-box">
     <h2>✨ НОВОСТИ FANTAZIA RP</h2>
-    <div class="fzn-ver" id="fznVer">v31 «НОВЫЙ ГОРОД» · сервер онлайн</div>
+    <div class="fzn-ver" id="fznVer">v33 «РОДНОЙ ГОРОД» · сервер онлайн</div>
 
-    <div class="fzn-item new"><b>🌆 ПОЛНОСТЬЮ НОВЫЙ ГОРОД:</b> реалистичная планировка — проспекты с разметкой и зебрами, тротуары, бордюры, светофоры и фонари. 231 здание: 102 многоэтажки с квартирами, 112 коттеджей, парк с прудом.</div>
+    <div class="fzn-item new"><b>🏙 СТАРЫЙ ГОРОД ВЕРНУЛСЯ:</b> родная застройка на месте — все районы, небоскрёбы, пустыня, пещеры, мосты и дальние города. Ничего не потеряно.</div>
 
-    <div class="fzn-item new"><b>🏪 МАГАЗИНЫ И РАБОТЫ:</b> одежда, продукты, электроника, мебель, зоотовары, кафе, ресторан, спортзал, кино, клуб, караоке, таксопарк, автосервис, банк, больница, полиция — во все можно зайти.</div>
+    <div class="fzn-item new"><b>✨ ГОРОД ДОВЕДЁН ДО УМА:</b> переработано освещение (мягкая заливка + тёплый контровой свет), 1200+ светящихся окон на фасадах, парапеты и вентиляция на крышах, урны вдоль улиц.</div>
 
-    <div class="fzn-item new"><b>🪓 ТОПОР ПЕРЕЕХАЛ:</b> теперь он в СЕЙФЕ ЗА КАРТИНОЙ в кабинете директора на верхнем этаже офисного центра. Собери 6 записок — и сейф откроется.</div>
+    <div class="fzn-item new"><b>🛣 УЛИЦЫ КАК НАСТОЯЩИЕ:</b> осевая прерывистая разметка, зебры на всех перекрёстках, бордюрные камни вдоль дорог.</div>
 
-    <div class="fzn-item new"><b>🎬 ПРОПУСК РОЛИКОВ:</b> кнопка «ПРОПУСТИТЬ» в тизере, поездке на лифте и перестройке мира. Работают Escape, Space и Enter.</div>
+    <div class="fzn-item new"><b>🏬 ПАРАДНЫЙ ВХОД В GRAND MALL:</b> стеклянный портал с золотой аркой, широкая гранитная лестница с ковровой дорожкой, неоновая вывеска, световые пилоны, пальмы в кадках и вращающиеся двери.</div>
 
-    <div class="fzn-item new"><b>📱 МОБИЛЬНЫЙ ПОРТ:</b> вход и выход из машин, газ/тормоз/руль при вождении, контекстная кнопка действия, аналоговый джойстик, быстрый доступ к карте, чату и паузе.</div>
+    <div class="fzn-item"><b>🎬 КАТ-СЦЕНА:</b> при заходе — кинематографичный облёт города с высоты. Пропускается кнопкой или Escape.</div>
 
-    <div class="fzn-item"><b>⚡ ОПТИМИЗАЦИЯ:</b> город рендерится за ~85 draw calls вместо ~300, коллизии ×4.6 быстрее, поиск взаимодействий ×1.8, устранена утечка видеопамяти при смене этажей.</div>
+    <div class="fzn-item"><b>🪓 КВЕСТ:</b> 6 записок → топор в сейфе за картиной в кабинете директора офисного центра → доски у лифта → босс под ТЦ.</div>
 
-    <div class="fzn-item"><b>🧹 УБРАНО:</b> ивент Jason Day полностью удалён из игры.</div>
-
-    <div class="fzn-item"><b>🏬 GRAND MALL:</b> лифт до B5, квест с записками, доски и босс — всё на месте.</div>
+    <div class="fzn-item"><b>📱 МОБИЛКА:</b> вход/выход из машин, газ-тормоз-руль, контекстная кнопка действия, аналоговый джойстик.</div>
 
     <button class="fzn-close" onclick="fzCloseNews()">Играть →</button>
   </div>
