@@ -9851,7 +9851,10 @@ function fzLiftCamStart(fromY, toY) {
   // v47: рабочий лифт переехал — теперь это грузовой лифт «B1» из
   // тизера у восточной стены. Камера обязана смотреть на ЕГО проём,
   // иначе катсцена показывала бы пустое место, где стоял старый лифт.
-  LIFT_CAM.doorX = bx + 21.0 - 1.8;   // чуть западнее створок
+  // Плоскость створок и ось проёма. Лифт смотрит НА ЗАПАД, поэтому
+  // игрок заходит вдоль оси X (с меньших x), а не вдоль Z, как было
+  // у старого лифта.
+  LIFT_CAM.doorX = bx + 20.7;         // плоскость створок
   LIFT_CAM.doorZ = bz - 2.0;          // ось проёма грузового лифта
   LIFT_CAM.y0 = fromY; LIFT_CAM.y1 = toY;
   LIFT_CAM.active = true;
@@ -9892,24 +9895,27 @@ function fzLiftCamUpdate(dt) {
   LIFT_CAM.t += dt;
   const L = LIFT_CAM;
   const EYE = 1.62;
-  // z: снаружи кабины (перед дверьми) → внутри кабины
-  const zOut = L.doorZ + 2.6;     // стоим перед лифтом
-  const zIn  = L.doorZ - 1.5;     // внутри кабины
-  let camZ = zIn, camY = L.y0 + EYE, lookZ = L.doorZ, sway = 0, rollZ = 0;
+  // v48: лифт «B1» стоит у ВОСТОЧНОЙ стены и смотрит на запад, поэтому
+  // весь проход идёт вдоль оси X. Раньше камера ездила вдоль Z (от
+  // старого лифта) — игрок «уходил налево» мимо кабины и потом
+  // «выходил направо» сквозь стену.
+  const xOut = L.doorX - 2.6;     // стоим перед лифтом (западнее)
+  const xIn  = L.doorX + 1.5;     // внутри кабины (восточнее створок)
+  let camX = xIn, camY = L.y0 + EYE, lookX = L.doorX, sway = 0, rollZ = 0;
 
   if (L.phase === 'enter') {
     // 0..1.1с — заходим внутрь, камера плавно вплывает в кабину
     const k = Math.min(1, L.t / 1.1);
     const e = k * k * (3 - 2 * k);
-    camZ = zOut + (zIn - zOut) * e;
+    camX = xOut + (xIn - xOut) * e;
     camY = L.y0 + EYE + Math.abs(Math.sin(L.t * 7)) * 0.035;   // шаги
-    lookZ = L.doorZ - 3.0;        // смотрим вглубь кабины
+    lookX = L.doorX + 3.0;        // смотрим вглубь кабины (на восток)
   } else if (L.phase === 'turn') {
-    // разворот лицом к дверям
+    // разворот лицом к дверям (на запад)
     const k = Math.min(1, L.t / 0.7);
     const e = k * k * (3 - 2 * k);
     camY = L.y0 + EYE;
-    lookZ = (L.doorZ - 3.0) + ((L.doorZ + 4.0) - (L.doorZ - 3.0)) * e;
+    lookX = (L.doorX + 3.0) + ((L.doorX - 4.0) - (L.doorX + 3.0)) * e;
   } else if (L.phase === 'ride') {
     // едем: лёгкий крен на старте, вибрация, просадка на торможении
     const k = Math.min(1, L.t / Math.max(0.001, L.dur));
@@ -9921,21 +9927,23 @@ function fzLiftCamUpdate(dt) {
     camY += dir * (k < 0.5 ? -0.05 : 0.05) * g;
     sway = Math.sin(L.t * 13) * 0.012 * g;      // вибрация кабины
     rollZ = Math.sin(L.t * 9) * 0.004 * g;
-    lookZ = L.doorZ + 4.0;
+    lookX = L.doorX - 4.0;                      // смотрим на двери
   } else if (L.phase === 'open') {
     camY = L.y1 + EYE;
-    lookZ = L.doorZ + 4.0;
+    lookX = L.doorX - 4.0;
   } else if (L.phase === 'exit') {
-    // выходим наружу
+    // выходим наружу — на запад, в зал
     const k = Math.min(1, L.t / 1.2);
     const e = k * k * (3 - 2 * k);
-    camZ = zIn + (zOut - zIn) * e;
+    camX = xIn + (xOut - xIn) * e;
     camY = L.y1 + EYE + Math.abs(Math.sin(L.t * 7)) * 0.035;
-    lookZ = L.doorZ + 6.0;
+    lookX = L.doorX - 6.0;
   }
 
-  L.pos.set(L.doorX + sway, camY, camZ);
-  L.look.set(L.doorX + sway * 2, camY - 0.06, lookZ);
+  // Движение идёт по X, ось проёма (Z) постоянна — покачивание вбок
+  // добавляем именно по Z, иначе тряска гоняла бы камеру вперёд-назад.
+  L.pos.set(camX, camY, L.doorZ + sway);
+  L.look.set(lookX, camY - 0.06, L.doorZ + sway * 2);
   camera.rotation.z = rollZ;
 }
 
@@ -10030,7 +10038,10 @@ function startElevatorRide(targetFloor) {
               camera.rotation.z = 0;
               // поставить игрока перед лифтом на новом этаже
               const bx2 = INTERIOR_BASE.x, bz2 = INTERIOR_BASE.z;
-              if (localPlayer.mesh) localPlayer.mesh.position.set(bx2 + 16, toY, bz2 - 8 + 0.6);
+              // v48: ставим игрока ПЕРЕД новым лифтом (западнее створок).
+              // Раньше здесь были координаты удалённого лифта (16, -8),
+              // из-за чего после поездки игрока телепортировало в сторону.
+              if (localPlayer.mesh) localPlayer.mesh.position.set(bx2 + 18.6, toY, bz2 - 2.0);
               document.getElementById('elevatorStatus').textContent = '';
               document.getElementById('elevatorModal').style.display = 'none';
             }, 1250);
