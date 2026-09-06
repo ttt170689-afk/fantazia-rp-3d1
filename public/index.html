@@ -14110,42 +14110,55 @@ function fzServiceDoor(bx, bz, F, FH, add, mat, B, colp, liftX, LWALLZ) {
   const dX = liftX - 7.6;              // заметно левее лифта
   const DW = 1.3, DH = 2.6;
   const Z = LWALLZ;
+  // v36: как и лифт — дверь УТОПЛЕНА в стену, а не приклеена снаружи.
+  const WALLF = Z + 0.25;              // лицевая плоскость стены
+  const LEAFZ = WALLF - 0.26;          // полотно в глубине проёма
+  const JAMBZ = WALLF + 0.03;          // наличник заподлицо
   const broken = window.FZ_QUEST.boardsBroken || window.FZ_QUEST.bossDead;
 
-  // ── стеновая ниша + стальная рама ──
-  B(DW * 2 + 1.3, DH + 1.0, 0.34, 0x9aa2ad, dX, (DH + 1.0) / 2, Z + 0.18, 0);
-  B(DW * 2 + 0.6, DH + 0.34, 0.14, 0x2f363d, dX, (DH + 0.34) / 2, Z + 0.3, 0);
+  // ── проём в стене: боковые простенки + перемычка ──
+  const SW2 = 1.1;
   [-1, 1].forEach(sx => {
-    B(0.2, DH + 0.34, 0.22, 0x454e57, dX + sx * (DW + 0.24), (DH + 0.34) / 2, Z + 0.36, 0);
+    B(SW2, DH + 1.0, 0.5, 0x9aa2ad, dX + sx * (DW + 0.14 + SW2 / 2), (DH + 1.0) / 2, Z, 0);
   });
-  B(DW * 2 + 0.6, 0.2, 0.24, 0x454e57, dX, DH + 0.32, Z + 0.36, 0);
+  B(DW * 2 + 0.28, 0.9, 0.5, 0x9aa2ad, dX, DH + 0.55, Z, 0);
+  // тёмные щёки ниши
+  B(DW * 2 + 0.28, DH + 0.1, 0.1, 0x0b0e13, dX, (DH + 0.1) / 2, Z - 0.18, 0);
+  [-1, 1].forEach(sx => {
+    B(0.09, DH + 0.1, 0.55, 0x14181f, dX + sx * (DW + 0.09), (DH + 0.1) / 2, Z + 0.02, 0);
+  });
+  // стальной наличник заподлицо со стеной
+  [-1, 1].forEach(sx => {
+    B(0.14, DH + 0.34, 0.1, 0x454e57, dX + sx * (DW + 0.1), (DH + 0.34) / 2, JAMBZ, 0);
+  });
+  B(DW * 2 + 0.42, 0.16, 0.1, 0x454e57, dX, DH + 0.22, JAMBZ, 0);
 
   if (broken) {
     // ── ПРОЁМ ОТКРЫТ: тёмный ход вниз ──
-    B(DW * 2, DH, 0.1, 0x07090c, dX, DH / 2, Z + 0.4, 0);
+    B(DW * 2, DH, 0.1, 0x07090c, dX, DH / 2, LEAFZ, 0);
     const gl = new THREE.PointLight(0x66ccff, 0.5, 8);
-    gl.position.set(bx + dX, F + 1.6, bz + Z + 1.2); add(gl);
-    addInteriorSign('🕳 СЛУЖЕБНЫЙ ХОД', bx + dX, F + DH + 0.95, bz + Z + 0.45, add);
+    gl.position.set(bx + dX, F + 1.6, bz + WALLF + 0.8); add(gl);
+    addInteriorSign('🕳 СЛУЖЕБНЫЙ ХОД', bx + dX, F + DH + 0.62, bz + JAMBZ + 0.05, add);
     return;
   }
 
   // ── ЗАКРЫТАЯ МЕТАЛЛИЧЕСКАЯ ДВЕРЬ ──
   const doorMat = mat(0x6f4a2c, 0x1a1008, 0.06);
   const door = new THREE.Mesh(new THREE.BoxGeometry(DW * 2, DH, 0.12), doorMat);
-  door.position.set(bx + dX, F + DH / 2, bz + Z + 0.42); add(door);
+  door.position.set(bx + dX, F + DH / 2, bz + LEAFZ); add(door);
   // филёнки и ручка
   [-0.62, 0.62].forEach(o => {
-    B(DW * 0.82, DH * 0.38, 0.03, 0x8a5c36, dX + o * DW * 0.5, DH / 2 + (o > 0 ? 0.52 : -0.52), Z + 0.49, 0);
+    B(DW * 0.82, DH * 0.38, 0.03, 0x8a5c36, dX + o * DW * 0.5, DH / 2 + (o > 0 ? 0.52 : -0.52), LEAFZ + 0.07, 0);
   });
-  B(0.14, 0.14, 0.1, 0x2a2f36, dX + DW * 0.72, DH * 0.48, Z + 0.52, 0);
+  B(0.14, 0.14, 0.1, 0x2a2f36, dX + DW * 0.72, DH * 0.48, LEAFZ + 0.09, 0);
   // табличка «служебное»
-  B(0.72, 0.3, 0.03, 0xc9a227, dX, DH * 0.78, Z + 0.5, 0);
+  B(0.72, 0.3, 0.03, 0xc9a227, dX, DH * 0.78, LEAFZ + 0.07, 0);
 
   // ── ДОСКИ КРЕСТ-НАКРЕСТ ──
   window._fzLiftBoards = [];
   const plank = (px, py, w2, rz) => {
     const bd = new THREE.Mesh(new THREE.BoxGeometry(w2, 0.4, 0.14), mat(0x7a5433));
-    bd.position.set(bx + dX + px, F + py, bz + Z + 0.58);
+    bd.position.set(bx + dX + px, F + py, bz + LEAFZ + 0.16);
     bd.rotation.z = rz;
     bd.userData = { isBoard: true, vy: 0, vr: (Math.random() - 0.5) * 8, throwing: false };
     add(bd); window._fzLiftBoards.push(bd);
@@ -14155,7 +14168,7 @@ function fzServiceDoor(bx, bz, F, FH, add, mat, B, colp, liftX, LWALLZ) {
       nail.rotation.x = Math.PI / 2;
       nail.position.set(bd.position.x + n * (w2 / 2 - 0.22) * Math.cos(rz),
                         bd.position.y + n * (w2 / 2 - 0.22) * Math.sin(rz),
-                        bz + Z + 0.67);
+                        bz + LEAFZ + 0.25);
       add(nail);
     }
   };
@@ -14165,10 +14178,10 @@ function fzServiceDoor(bx, bz, F, FH, add, mat, B, colp, liftX, LWALLZ) {
   plank(0, DH * 0.24,  DW * 2 + 0.7, 0); // горизонталь низ
   plank(0, DH * 0.88,  DW * 2 + 0.7, 0); // горизонталь верх
 
-  addInteriorSign('⛔ СЛУЖЕБНЫЙ ВХОД ЗАКОЛОЧЕН', bx + dX, F + DH + 1.15, bz + Z + 0.6, add);
-  colp(dX, Z + 0.5, DW * 2 + 1.0, 0.5);
+  addInteriorSign('⛔ СЛУЖЕБНЫЙ ВХОД ЗАКОЛОЧЕН', bx + dX, F + DH + 0.62, bz + JAMBZ + 0.05, add);
+  colp(dX, WALLF, DW * 2 + 0.6, 0.4);
   interactables.push({
-    position: { x: bx + dX, y: F, z: bz + Z + 2.0 },
+    position: { x: bx + dX, y: F, z: bz + WALLF + 1.6 },
     type: 'quest_boards', name: '🪵 Заколоченный служебный вход',
     range: 3.0, interior: true
   });
@@ -15207,10 +15220,20 @@ function fzTeaserEnd() {
 function fzTeaserAnim(dt) {
   const T = window.fzTEASER;
   if (!T || !T.active) return;
+  // v36 КРИТИЧНО: window.fzTEASER — ОБЩИЙ механизм перехвата камеры.
+  // Его используют и тизер, и поездка в лифте (fzLiftCamStart), и
+  // кат-сцена прибытия (fzPlayArrival). Раньше эта функция сразу лезла
+  // к window._fzTeaserState.boss, которого при поездке в лифте не
+  // существует → каждый кадр падал TypeError «reading 'boss'», и
+  // кинематик лифта не отрабатывал (игрок просто ждал и выходил).
+  // Работаем только когда действительно идёт ролик тизера.
+  const st = window._fzTeaserState;
+  if (LIFT_CAM.active) return;                       // едет лифт — не наше дело
+  if (window.FZ_REBUILD && window.FZ_REBUILD.active) return;  // кат-сцена прибытия
+  if (!st || !st.boss) return;                       // комната тизера не построена
   T.t += dt;
   const t = T.t;
   const { x: TX, z: TZ } = FZ_TEASER_POS;
-  const st = window._fzTeaserState;
   const ease = (a, b, t0, t1) => { const k = Math.max(0, Math.min(1, (t - t0) / (t1 - t0))); return a + (b - a) * (k * k * (3 - 2 * k)); };
 
   // ── камера: пролёт через комнату ──
@@ -16148,47 +16171,70 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
   const LWALLZ = liftZ - 2.4;          // плоскость шахты
   const DOORW = 1.52, DOORH = 3.08;    // размеры створки (как в тизере)
 
-  // ── ниша шахты: тёмный короб позади створок ──
-  B(4.8, FH, 0.5, 0xc9c3b4, liftX, FH/2, LWALLZ, 0);
-  B(3.4, DOORH + 0.34, 0.16, 0x0b0e13, liftX, (DOORH + 0.34)/2, LWALLZ + 0.24, 0);
+  // ══ v36: ЛИФТ УТОПЛЕН В СТЕНУ, КАК В ТИЗЕРЕ ══
+  // Раньше вся конструкция стояла ПЕРЕД стеной (створки на +0.42,
+  // рама на +0.30) — лифт торчал из стены отдельной тумбой.
+  // В тизере проём вырезан в стене, а створки сидят В ГЛУБИНЕ ниши,
+  // и наружу выступает только тонкий стальной наличник.
+  const WALLF = LWALLZ + 0.25;   // лицевая плоскость стены
+  const DOORZ = WALLF - 0.30;    // створки утоплены на 30 см ВНУТРЬ
+  const JAMBZ = WALLF + 0.03;    // наличник — заподлицо со стеной
 
-  // ── портал: стальная рама вокруг проёма ──
-  const steelC = 0x39424e, steelLite = 0x59636f;
+  // ── стена с проёмом: три плиты вместо сплошной ──
+  // (простой куб перекрыл бы нишу, поэтому обходим проём)
+  const SIDEW = (4.8 - (DOORW * 2 + 0.36)) / 2;
   [-1, 1].forEach(sx => {
-    // пилон с рифлением
-    B(0.34, DOORH + 0.5, 0.3, steelC, liftX + sx * (DOORW + 0.17), (DOORH + 0.5)/2, LWALLZ + 0.3, 0);
-    for (let rr = 0; rr < 7; rr++)
-      B(0.38, 0.05, 0.34, steelLite, liftX + sx * (DOORW + 0.17), 0.4 + rr * 0.42, LWALLZ + 0.3, 0);
+    B(SIDEW, FH, 0.5, 0xc9c3b4,
+      liftX + sx * (DOORW + 0.18 + SIDEW / 2), FH / 2, LWALLZ, 0);
   });
-  // перемычка над проёмом
-  B(DOORW * 2 + 0.9, 0.4, 0.3, steelC, liftX, DOORH + 0.42, LWALLZ + 0.3, 0);
-  B(DOORW * 2 + 0.9, 0.07, 0.34, steelLite, liftX, DOORH + 0.66, LWALLZ + 0.3, 0);
-  // порог
-  B(DOORW * 2 + 0.5, 0.06, 0.42, 0x7c8794, liftX, 0.03, LWALLZ + 0.34, 0);
+  // перемычка над проёмом (от верха двери до потолка)
+  B(DOORW * 2 + 0.36, FH - (DOORH + 0.42), 0.5, 0xc9c3b4,
+    liftX, DOORH + 0.42 + (FH - (DOORH + 0.42)) / 2, LWALLZ, 0);
 
-  // ── СТВОРКИ: полноразмерные, точно смыкаются по центру ──
+  // ── глубина ниши: тёмные щёки и задник шахты ──
+  B(DOORW * 2 + 0.36, DOORH + 0.42, 0.12, 0x0b0e13, liftX, (DOORH + 0.42) / 2, LWALLZ - 0.2, 0);
+  [-1, 1].forEach(sx => {
+    B(0.1, DOORH + 0.42, 0.62, 0x14181f,
+      liftX + sx * (DOORW + 0.13), (DOORH + 0.42) / 2, LWALLZ + 0.02, 0);
+  });
+  B(DOORW * 2 + 0.36, 0.1, 0.62, 0x14181f, liftX, DOORH + 0.38, LWALLZ + 0.02, 0);
+
+  // ── СТВОРКИ: утоплены в нишу ──
   const doorMat = () => new THREE.MeshLambertMaterial({ color: 0xaeb6c0, emissive: 0x1a2028, emissiveIntensity: 0.18 });
   const dl = new THREE.Mesh(new THREE.BoxGeometry(DOORW, DOORH, 0.1), doorMat());
-  dl.position.set(bx + liftX - DOORW/2, F + DOORH/2, bz + LWALLZ + 0.42);
+  dl.position.set(bx + liftX - DOORW/2, F + DOORH/2, bz + DOORZ);
   dl.userData.isElevDoorL = true;
   dl.userData.homeX = bx + liftX - DOORW/2;   // закрытая позиция (для анимации)
   add(dl);
   const dr = new THREE.Mesh(new THREE.BoxGeometry(DOORW, DOORH, 0.1), doorMat());
-  dr.position.set(bx + liftX + DOORW/2, F + DOORH/2, bz + LWALLZ + 0.42);
+  dr.position.set(bx + liftX + DOORW/2, F + DOORH/2, bz + DOORZ);
   dr.userData.isElevDoorR = true;
   dr.userData.homeX = bx + liftX + DOORW/2;
   add(dr);
-  // вертикальный шов и накладки на створках
+  // вертикальный шов на створках
   [-1, 1].forEach(sx => {
-    B(0.05, DOORH - 0.2, 0.03, 0x8892a0, liftX + sx * DOORW * 0.55, DOORH/2, LWALLZ + 0.48, 0);
+    B(0.05, DOORH - 0.2, 0.03, 0x8892a0, liftX + sx * DOORW * 0.55, DOORH/2, DOORZ + 0.06, 0);
   });
+
+  // ── НАЛИЧНИК: тонкая стальная рамка заподлицо со стеной ──
+  const steelC = 0x39424e, steelLite = 0x59636f;
+  [-1, 1].forEach(sx => {
+    B(0.16, DOORH + 0.5, 0.1, steelC, liftX + sx * (DOORW + 0.1), (DOORH + 0.5)/2, JAMBZ, 0);
+    for (let rr = 0; rr < 7; rr++)
+      B(0.2, 0.04, 0.12, steelLite, liftX + sx * (DOORW + 0.1), 0.4 + rr * 0.42, JAMBZ, 0);
+  });
+  B(DOORW * 2 + 0.52, 0.18, 0.1, steelC, liftX, DOORH + 0.34, JAMBZ, 0);
+  B(DOORW * 2 + 0.52, 0.05, 0.12, steelLite, liftX, DOORH + 0.46, JAMBZ, 0);
+  // порог в полу проёма
+  B(DOORW * 2 + 0.3, 0.05, 0.5, 0x7c8794, liftX, 0.025, LWALLZ + 0.05, 0);
 
   // ── свет из щели над дверьми ──
   const slit = new THREE.Mesh(new THREE.PlaneGeometry(DOORW * 2, 0.09),
     mat(0xffe3ae, 0xffd48a, 0.9));
-  slit.position.set(bx + liftX, F + DOORH + 0.16, bz + LWALLZ + 0.5); add(slit);
+  // v36: щель света — в глубине ниши, над утопленными створками
+  slit.position.set(bx + liftX, F + DOORH + 0.16, bz + DOORZ + 0.06); add(slit);
   const slitL = new THREE.PointLight(0xffd9a0, 0.5, 7);
-  slitL.position.set(bx + liftX, F + DOORH + 0.1, bz + LWALLZ + 0.9); add(slitL);
+  slitL.position.set(bx + liftX, F + DOORH + 0.1, bz + WALLF + 0.5); add(slitL);
 
   // ── ЖИВОЕ ТАБЛО ЭТАЖА (canvas, как в тизере) ──
   const indCv = document.createElement('canvas');
@@ -16198,20 +16244,20 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
   window.mallLiftInd = { ctx: indCtx, tex: indTex };
   drawMallLiftInd(floorLabelOf(currentFloor));
   const indPanel = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.62, 0.1), mat(0x14181f));
-  indPanel.position.set(bx + liftX, F + DOORH + 0.78, bz + LWALLZ + 0.44); add(indPanel);
+  indPanel.position.set(bx + liftX, F + DOORH + 0.78, bz + JAMBZ + 0.02); add(indPanel);
   const indScr = new THREE.Mesh(new THREE.PlaneGeometry(1.34, 0.5),
     new THREE.MeshBasicMaterial({ map: indTex, transparent: true }));
-  indScr.position.set(bx + liftX, F + DOORH + 0.78, bz + LWALLZ + 0.5); add(indScr);
+  indScr.position.set(bx + liftX, F + DOORH + 0.78, bz + JAMBZ + 0.08); add(indScr);
 
   // ── ПАНЕЛЬ ВЫЗОВА сбоку ──
   const cpX = liftX + DOORW + 0.75;
-  B(0.42, 1.15, 0.12, 0x1b2028, cpX, 1.45, LWALLZ + 0.44, 0);
+  B(0.42, 1.15, 0.12, 0x1b2028, cpX, 1.45, JAMBZ + 0.02, 0);
   [[0.28, '▲'], [-0.16, '▼']].forEach(([oy], ci) => {
     const btn = new THREE.Mesh(new THREE.CircleGeometry(0.1, 14),
       mat(ci === 0 ? 0xffc95a : 0x4a5260, ci === 0 ? 0xff9c20 : 0, ci === 0 ? 0.8 : 0));
-    btn.position.set(bx + cpX, F + 1.45 + oy, bz + LWALLZ + 0.51); add(btn);
+    btn.position.set(bx + cpX, F + 1.45 + oy, bz + JAMBZ + 0.09); add(btn);
   });
-  addInteriorSign('🛗 ЛИФТ · B5…3', bx + liftX, F + FH - 0.4, bz + LWALLZ + 0.4, add);
+  addInteriorSign('🛗 ЛИФТ · B5…3', bx + liftX, F + FH - 0.4, bz + JAMBZ + 0.05, add);
   colp(liftX, LWALLZ, 4.8, 0.6);
 
   // ═══════════════════════════════════════════════════════════════════
@@ -22051,21 +22097,19 @@ body.game-active canvas{touch-action:none}
 <div id="fzNews" onclick="if(event.target===this)fzCloseNews()">
   <div class="fzn-box">
     <h2>✨ НОВОСТИ FANTAZIA RP</h2>
-    <div class="fzn-ver" id="fznVer">v35 «СЛУЖЕБНЫЙ ВХОД» · сервер онлайн</div>
+    <div class="fzn-ver" id="fznVer">v36 «КАТ-СЦЕНА ЛИФТА» · сервер онлайн</div>
 
-    <div class="fzn-item new"><b>🛗 ЛИФТ БОЛЬШЕ НЕ ЗАКОЛОЧЕН:</b> доски прибивались прямо на красивый лифт из тизера — он выглядел сломанным. Теперь лифт всегда чистый и рабочий.</div>
+    <div class="fzn-item new"><b>🎬 КАТ-СЦЕНА ЛИФТА ПОЧИНЕНА:</b> она падала с ошибкой на каждом кадре — поэтому игрок просто заходил, ждал и выходил. Теперь работают все фазы: вход в кабину, поворот, поездка, открытие дверей, выход.</div>
 
-    <div class="fzn-item new"><b>🚪 ОТДЕЛЬНЫЙ СЛУЖЕБНЫЙ ВХОД:</b> заколочена своя металлическая дверь слева от лифта — с филёнками, табличкой, досками крест-накрест и ржавыми гвоздями.</div>
+    <div class="fzn-item new"><b>🛗 ЛИФТ В СТЕНЕ, КАК В ТИЗЕРЕ:</b> раньше вся конструкция стояла ПЕРЕД стеной отдельной тумбой. Теперь проём вырезан в стене, створки утоплены на 30 см вглубь, наружу выступает только тонкий стальной наличник.</div>
 
-    <div class="fzn-item new"><b>🧹 УБРАН ВТОРОЙ ЛИФТ:</b> в зале ТЦ строился ещё один, обычный лифт поверх лифта из тизера — два лифта в одном месте. Лишний удалён.</div>
+    <div class="fzn-item new"><b>🚪 СЛУЖЕБНЫЙ ВХОД ТОЖЕ В СТЕНЕ:</b> дверь утоплена в нишу с тёмными щёками и наличником заподлицо — как лифт в тизере.</div>
 
-    <div class="fzn-item new"><b>🧹 УБРАНА ВТОРАЯ «ЗАКОЛОЧКА»:</b> у восточной стены висел дублирующий заколоченный проход. Теперь заколочен ровно один вход, там же и дверь к боссу.</div>
+    <div class="fzn-item"><b>⏭ ПРОПУСК:</b> кнопка «ПРОПУСТИТЬ» и Escape работают во всех роликах.</div>
 
-    <div class="fzn-item new"><b>🎬 ТИЗЕР ПИШЕТСЯ В ВИДЕО:</b> в тизере появилась кнопка «● ЗАПИСАТЬ ВИДЕО» (или клавиша R). Пишет картинку со звуком в MP4 и сохраняет файл. Ссылка teaser.html?rec=1 стартует запись автоматически.</div>
+    <div class="fzn-item"><b>🎥 ТИЗЕР В ВИДЕО:</b> кнопка «● ЗАПИСАТЬ ВИДЕО» или клавиша R — пишет MP4 со звуком.</div>
 
-    <div class="fzn-item"><b>🌉 ГОРОД:</b> вантовые мосты, 30 автобусных остановок, 50 светофоров, тротуары с бордюрами, скамейки и клумбы.</div>
-
-    <div class="fzn-item"><b>🏬 GRAND MALL:</b> парадный вход — стеклянный портал, золотая арка, гранитная лестница, неоновая вывеска.</div>
+    <div class="fzn-item"><b>🌉 ГОРОД:</b> вантовые мосты, остановки, светофоры, тротуары, парадный вход в GRAND MALL.</div>
 
     <button class="fzn-close" onclick="fzCloseNews()">Играть →</button>
   </div>
