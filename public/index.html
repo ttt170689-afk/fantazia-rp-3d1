@@ -1936,7 +1936,7 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
   .mob-btn:active{transform:scale(0.85)!important;background:rgba(108,92,231,0.6)!important}
   #mobEnter{border-color:rgba(74,222,128,0.5)!important}
   .mob-btn.sprint-active{background:rgba(231,76,60,0.55)!important;border-color:#e74c3c!important}
-  body.game-active #touchCameraZone{display:block!important;position:fixed!important;top:0!important;right:0!important;width:50%!important;height:calc(100dvh - 220px)!important;z-index:145!important;touch-action:none!important}
+  body.game-active #touchCameraZone{display:block!important;position:fixed!important;top:0!important;right:0!important;width:52%!important;height:calc(100dvh - 230px)!important;z-index:140!important;touch-action:none!important}
   body.game-active #mobileTopBtns{display:flex!important}
 }
 /* Верхние кнопки */
@@ -16785,14 +16785,29 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
 
     // ===== УПРАВЛЕНИЕ =====
     let direction = new THREE.Vector3();
-    if (keys['w'] || keys['KeyW']) direction.add(forward);
-    if (keys['s'] || keys['KeyS']) direction.sub(forward);
-    if (keys['a'] || keys['KeyA']) direction.sub(right);
-    if (keys['d'] || keys['KeyD']) direction.add(right);
+    // v27: на мобиле джойстик даёт АНАЛОГОВЫЙ вектор — идём точно туда,
+    // куда наклонён стик, и со скоростью, пропорциональной наклону.
+    let analogK = 1;
+    if (typeof joystickActive !== 'undefined' && joystickActive &&
+        typeof joystickDelta !== 'undefined') {
+      const jx = joystickDelta.x || 0, jy = joystickDelta.y || 0;
+      const mag = Math.min(1, Math.sqrt(jx * jx + jy * jy));
+      if (mag > 0.001) {
+        direction.add(forward.clone().multiplyScalar(-jy));
+        direction.add(right.clone().multiplyScalar(jx));
+        // лёгкое сглаживание у края мёртвой зоны, чтобы не дёргалось
+        analogK = Math.min(1, mag * 1.15);
+      }
+    } else {
+      if (keys['w'] || keys['KeyW']) direction.add(forward);
+      if (keys['s'] || keys['KeyS']) direction.sub(forward);
+      if (keys['a'] || keys['KeyA']) direction.sub(right);
+      if (keys['d'] || keys['KeyD']) direction.add(right);
+    }
 
     if (direction.length() > 0) {
       direction.normalize();
-      const move = direction.clone().multiplyScalar(speed);
+      const move = direction.clone().multiplyScalar(speed * analogK);
       const newX = mesh.position.x + move.x;
       const newZ = mesh.position.z + move.z;
       if (window.isAdminNoclip || !checkCollision(newX, mesh.position.z)) {
@@ -16804,8 +16819,9 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
       // Поворот персонажа в сторону движения
       const angle = Math.atan2(direction.x, direction.z);
       mesh.rotation.y = angle;
-      if (window.fzQP) window.fzQP('walk', speed * (delta || 0.016));
-      localPlayer.currentAnimation = isSprint ? 'run' : 'walk';
+      if (window.fzQP) window.fzQP('walk', speed * analogK * (delta || 0.016));
+      // v27: при слабом наклоне стика — шаг, при сильном — бег
+      localPlayer.currentAnimation = (isSprint || analogK > 0.92) ? 'run' : 'walk';
     } else {
       localPlayer.currentAnimation = 'idle';
     }
@@ -20175,7 +20191,10 @@ body.game-active canvas{touch-action:none}
       setTimeout(function () {
         var base = document.getElementById('joystickBase');
         var knob = document.getElementById('joystickKnob');
-        if (!base || !knob || base.dataset.fzJoy) return;
+        // v27 ФИКС: аналоговый джойстик (initAnalogJoystick) уже висит на этой
+        // же базе. Два обработчика на один элемент = дёрганое движение и
+        // залипание клавиш. Страховка срабатывает ТОЛЬКО если основной не встал.
+        if (!base || !knob || base.dataset.fzJoy || base.dataset.fzAnalog) return;
         base.dataset.fzJoy = '1';
         var tid = null;
         function apply(x, y) {
@@ -21127,6 +21146,62 @@ if (window.IS_MOBILE) {
   document.addEventListener('touchstart', function() {}, { passive: true });
 }
 
+// ─── 6a. v27: ЕДИНОЕ ОПРЕДЕЛЕНИЕ МОБИЛЬНОГО УСТРОЙСТВА ─────────────────
+// Раньше в коде жили ТРИ разных проверки (ширина<768, ширина<=768,
+// ширина<1024 + UA). На планшетах и в альбомной ориентации они давали
+// разный ответ: джойстик показывался, а обработчики не вешались.
+// Теперь один источник истины.
+(function fzUnifyMobile() {
+  function detect() {
+    const ua = /Android|iPhone|iPad|iPod|IEMobile|Opera Mini/i.test(navigator.userAgent || '');
+    const touch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    const small = Math.min(window.innerWidth, window.innerHeight) <= 900;
+    return ua || (touch && small);
+  }
+  const m = detect();
+  window.IS_MOBILE = m;
+  window.FZ_IS_MOBILE = m;
+  try { if (typeof TOUCH !== 'undefined') window.TOUCH = m; } catch (e) {}
+  // при повороте экрана пересчитываем, но НЕ выключаем управление на телефоне
+  window.addEventListener('orientationchange', function () {
+    setTimeout(function () {
+      if (detect()) { window.IS_MOBILE = true; window.FZ_IS_MOBILE = true; }
+    }, 250);
+  });
+})();
+
+// ─── 6b. v27: ФИКС ДВОЙНОГО СРАБАТЫВАНИЯ МОБИЛЬНЫХ КНОПОК ──────────────
+// Кнопки висят на inline ontouchstart. Браузер после touchstart шлёт ещё и
+// синтетический click — панель успевала открыться и тут же закрыться
+// (togglePanel вызывался дважды). Гасим клик и лишние касания.
+(function fzFixMobButtons() {
+  function harden(el) {
+    if (!el || el.dataset.fzHard) return;
+    el.dataset.fzHard = '1';
+    // синтетический click после тапа — глушим
+    el.addEventListener('click', function (e) {
+      if (window.IS_MOBILE) { e.preventDefault(); e.stopPropagation(); }
+    }, true);
+    // защита от «дребезга»: два тапа быстрее 250мс = один
+    el.addEventListener('touchstart', function (e) {
+      const now = Date.now();
+      if (el._fzLastTap && now - el._fzLastTap < 250) {
+        e.preventDefault(); e.stopImmediatePropagation();
+        return;
+      }
+      el._fzLastTap = now;
+      e.preventDefault(); // без этого прилетает призрачный click + зум
+    }, { passive: false, capture: true });
+  }
+  function scan() {
+    document.querySelectorAll('.mob-btn, .mob-top-btn').forEach(harden);
+  }
+  scan();
+  window.addEventListener('load', scan);
+  setTimeout(scan, 500);
+  setTimeout(scan, 2000);
+})();
+
 // ─── 7. Блокируем нежелательный зум страницы при двойном тапе ──────────
 document.addEventListener('dblclick', function(e) {
   if (window.IS_MOBILE) e.preventDefault();
@@ -21158,6 +21233,7 @@ document.addEventListener('selectstart', function(e) {
   const base  = document.getElementById('joystickBase');
   const knob  = document.getElementById('joystickKnob');
   if (!base || !knob) return;
+  base.dataset.fzAnalog = '1';   // v27: метка для страховочного обработчика
 
   const RADIUS = 42; // макс. смещение ручки
   const DEAD   = 0.18; // мёртвая зона
@@ -21172,11 +21248,19 @@ document.addEventListener('selectstart', function(e) {
       if (window._mobileKeys) window._mobileKeys[k] = false;
       mobilePressKey(k, false);
     });
+    // v27: гасим аналоговый вектор, иначе персонаж «уезжает» сам
+    joystickDelta.x = 0; joystickDelta.y = 0;
+    joystickActive = false;
+    dx = 0; dy = 0;
   }
 
   function applyDelta(nx, ny) {
     dx = nx; dy = ny;
-    const ax = Math.abs(nx), ay = Math.abs(ny);
+    // v27: помимо клавиш отдаём АНАЛОГОВЫЙ вектор — движение плавное,
+    // а не «полный газ / стоп». Читается в цикле движения игрока.
+    joystickDelta.x = nx;
+    joystickDelta.y = ny;
+    joystickActive = (Math.abs(nx) > DEAD || Math.abs(ny) > DEAD);
     mobilePressKey('KeyW', ny < -DEAD);
     mobilePressKey('KeyS', ny >  DEAD);
     mobilePressKey('KeyA', nx < -DEAD);
@@ -21221,6 +21305,31 @@ document.addEventListener('selectstart', function(e) {
     knob.style.transform = 'translate(-50%,-50%)';
     releaseAll();
   }, { passive: false });
+
+  // v27 ФИКС ЗАЛИПАНИЯ: если приложение свернули, пришёл звонок или палец
+  // ушёл за край экрана — touchend может не прийти вовсе, и персонаж бежит
+  // бесконечно. Страхуемся всеми доступными событиями.
+  ['blur', 'visibilitychange', 'pagehide', 'contextmenu'].forEach(ev => {
+    window.addEventListener(ev, () => {
+      if (!active && !joystickActive) return;
+      active = false; touchId = null;
+      knob.style.transform = 'translate(-50%,-50%)';
+      releaseAll();
+    }, { passive: true });
+  });
+  // сторож: палец пропал, но флаг висит — снимаем через 150мс без касаний
+  let lastTouchTs = 0;
+  document.addEventListener('touchmove', () => { lastTouchTs = Date.now(); }, { passive: true });
+  setInterval(() => {
+    if (active && lastTouchTs && Date.now() - lastTouchTs > 1500) {
+      const anyTouch = (window.event && window.event.touches && window.event.touches.length);
+      if (!anyTouch) {
+        active = false; touchId = null;
+        knob.style.transform = 'translate(-50%,-50%)';
+        releaseAll();
+      }
+    }
+  }, 500);
 
   function moveTo(cx, cy) {
     let rx = cx - ox, ry = cy - oy;
@@ -23738,10 +23847,16 @@ document.addEventListener('selectstart', function(e) {
         keys['KeyA'] = mx < -0.1; keys['a'] = mx < -0.1;
         keys['KeyD'] = mx > 0.1;  keys['d'] = mx > 0.1;
         if (FZI.btn.sprint) { keys['ShiftLeft'] = true; keys['shift'] = true; }
-        // пишем в джойстик для плавной анимации ходьбы
-        if (typeof joystickDelta !== 'undefined' && act) {
-          joystickDelta.x = mx;
-          joystickDelta.y = my;
+        // v27: геймпад тоже даёт аналог — и корректно гасится при отпускании,
+        // иначе персонаж продолжал «ехать» на остаточном векторе.
+        if (typeof joystickDelta !== 'undefined') {
+          if (act) {
+            joystickDelta.x = mx; joystickDelta.y = my;
+            if (typeof joystickActive !== 'undefined') joystickActive = true;
+          } else {
+            joystickDelta.x = 0; joystickDelta.y = 0;
+            if (typeof joystickActive !== 'undefined') joystickActive = false;
+          }
         }
       }
     } catch (e) {}
