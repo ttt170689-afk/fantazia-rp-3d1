@@ -9848,8 +9848,11 @@ const LIFT_CAM = {
 function fzLiftCamStart(fromY, toY) {
   // геометрия лифта в интерьере ТЦ (см. buildMallInterior: liftX=16, liftZ=-8)
   const bx = INTERIOR_BASE.x, bz = INTERIOR_BASE.z;
-  LIFT_CAM.doorX = bx + 16;
-  LIFT_CAM.doorZ = bz - 8 - 2.4;      // плоскость шахты
+  // v47: рабочий лифт переехал — теперь это грузовой лифт «B1» из
+  // тизера у восточной стены. Камера обязана смотреть на ЕГО проём,
+  // иначе катсцена показывала бы пустое место, где стоял старый лифт.
+  LIFT_CAM.doorX = bx + 21.0 - 1.8;   // чуть западнее створок
+  LIFT_CAM.doorZ = bz - 2.0;          // ось проёма грузового лифта
   LIFT_CAM.y0 = fromY; LIFT_CAM.y1 = toY;
   LIFT_CAM.active = true;
   LIFT_CAM.t = 0;
@@ -10064,15 +10067,30 @@ function animateElevatorDoors(direction, duration, callback) {
     const t = Math.min(elapsed / duration, 1);
     const k = opening ? t : 1 - t;
     const e = k * k * (3 - 2 * k);           // smoothstep — мягкий ход без рывка
+    // v47: створки могут ездить вдоль X (старый лифт) или вдоль Z
+    // (грузовой лифт из тизера — его портал смотрит на запад).
+    // Ось берём из userData.axis, по умолчанию X — как было раньше.
     if (L) {
-      const home = (L.userData.homeX !== undefined) ? L.userData.homeX : L.position.x;
-      L.userData.homeX = home;
-      L.position.x = home - SLIDE * e;
+      if (L.userData.axis === 'z') {
+        const home = (L.userData.homeZ !== undefined) ? L.userData.homeZ : L.position.z;
+        L.userData.homeZ = home;
+        L.position.z = home - SLIDE * e;
+      } else {
+        const home = (L.userData.homeX !== undefined) ? L.userData.homeX : L.position.x;
+        L.userData.homeX = home;
+        L.position.x = home - SLIDE * e;
+      }
     }
     if (R) {
-      const home = (R.userData.homeX !== undefined) ? R.userData.homeX : R.position.x;
-      R.userData.homeX = home;
-      R.position.x = home + SLIDE * e;
+      if (R.userData.axis === 'z') {
+        const home = (R.userData.homeZ !== undefined) ? R.userData.homeZ : R.position.z;
+        R.userData.homeZ = home;
+        R.position.z = home + SLIDE * e;
+      } else {
+        const home = (R.userData.homeX !== undefined) ? R.userData.homeX : R.position.x;
+        R.userData.homeX = home;
+        R.position.x = home + SLIDE * e;
+      }
     }
     if (t >= 1) { clearInterval(interval); if (callback) callback(); }
   }, 50);
@@ -16117,9 +16135,13 @@ function buildInterior(type) {
     if (currentFloor > 0)
       interactables.push({ position:{x:stairX+3, y:currentFloor*FH, z:stairZ}, type:'stairs_down', name:'⬇️ Спуститься', range:3, interior:true });
   }
-  if (cfg.floors > 1) {
-    const elevX = type === 'mall' ? bx + 16 : bx + W/2 - 3;
-    const elevZ = type === 'mall' ? bz - 5.5 : bz - D/2 + 3;
+  // v47: для ТЦ точку вызова лифта здесь БОЛЬШЕ НЕ СТАВИМ — она была
+  // привязана к старому лифту на (16, -5.5), который удалён. Рабочий
+  // лифт («B1» из тизера) регистрирует свою точку сам, в fzFreightLift.
+  // Для остальных зданий всё как было.
+  if (cfg.floors > 1 && type !== 'mall') {
+    const elevX = bx + W/2 - 3;
+    const elevZ = bz - D/2 + 3;
     interactables.push({ position:{x:elevX, y:currentFloor*FH, z:elevZ}, type:'elevator', name:'🛗 Лифт', range:3, interior:true });
   }
   // Save elevator door refs for animation
@@ -16300,176 +16322,135 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
   }
 
   // ═══════════════════════════════════════════════════════════════════
-  // 🛗 ЛИФТ ИЗ ТИЗЕРА (v25) — старый плоский лифт удалён.
-  // Портал из teaser.html: стальной портал с рифлёными пилонами,
-  // полноразмерные створки без щелей, живое табло этажа (canvas),
-  // панель вызова с индикатором и стрелками, свет из щели над дверьми.
+  // 🛗 ЛИФТ v47: СОБСТВЕННЫЙ ЛИФТ ИГРЫ УДАЛЁН.
+  // Игрок выбрал рабочим лифтом ГРУЗОВОЙ ЛИФТ ИЗ ТИЗЕРА — тот, что
+  // с табло «B1» у восточной стены (mall-teaser.js, fx=21.4, fz=-24;
+  // после сдвига группы это x≈21, z≈-2 в координатах зала).
+  // Здесь раньше строился второй лифт на (16, -8) с вывеской
+  // «ЛИФТ · B5…3» — он и попал под удаление вместе со служебной
+  // дверью, заколоченной досками.
+  //
+  // Створки грузового лифта регистрируются ниже как isElevDoorL/R,
+  // чтобы работали анимация открытия, катсцена и смена этажей.
   // ═══════════════════════════════════════════════════════════════════
-  const liftX = 16, liftZ = -8;
-  const LWALLZ = liftZ - 2.4;          // плоскость шахты
-  const DOORW = 1.52, DOORH = 3.08;    // размеры створки (как в тизере)
+  const liftX = 16, liftZ = -8;        // оставлено: на эти константы
+  const LWALLZ = liftZ - 2.4;          // ссылаются LIFT_CAM и утилиты
+  const DOORW = 1.52, DOORH = 3.08;
 
-  // ══ v36: ЛИФТ УТОПЛЕН В СТЕНУ, КАК В ТИЗЕРЕ ══
-  // Раньше вся конструкция стояла ПЕРЕД стеной (створки на +0.42,
-  // рама на +0.30) — лифт торчал из стены отдельной тумбой.
-  // В тизере проём вырезан в стене, а створки сидят В ГЛУБИНЕ ниши,
-  // и наружу выступает только тонкий стальной наличник.
-  const WALLF = LWALLZ + 0.25;   // лицевая плоскость стены
-  const DOORZ = WALLF - 0.30;    // створки утоплены на 30 см ВНУТРЬ
-  const JAMBZ = WALLF + 0.03;    // наличник — заподлицо со стеной
+  // Координаты грузового лифта тизера в системе зала.
+  // В mall-teaser.js он стоит на (fx=21.4, fz=-24), группа сдвинута
+  // на bz + MD/2 + 4 = +22 по z, значит в зале это (21.4, -2).
+  const FREIGHT = { x: 21.0, z: -2.0 };
+  // ═══════════════════════════════════════════════════════════════════
+  //  🛗 РАБОЧИЙ ЛИФТ v47 — ЭТО ГРУЗОВОЙ ЛИФТ «B1» ИЗ ТИЗЕРА
+  //  Игрок выбрал его на скриншоте: «сделай на 2 фотке лифтом где
+  //  написано B1». Сам портал, створки и табло рисует mall-teaser.js
+  //  (buildServiceComplex, fx=21.4 fz=-24 в локальных координатах).
+  //  Здесь мы делаем его ИГРОВЫМ: точка вызова, регистрация створок
+  //  для анимации и координаты для катсцены.
+  //
+  //  ВАЖНО ПРО НАПРАВЛЕНИЕ: створки грузового лифта стоят в плоскости
+  //  YZ (портал смотрит на запад) и разъезжаются вдоль Z, тогда как
+  //  animateElevatorDoors двигает их вдоль X. Поэтому створки здесь
+  //  НЕ помечаются isElevDoorL/R — вместо этого мы строим собственные
+  //  тонкие створки-дублёры в плоскости XY, а оригинальные прячем.
+  // ═══════════════════════════════════════════════════════════════════
+  (function fzFreightLift() {
+    const FR = FREIGHT;                     // {x, z} в координатах зала
+    // портал: тёмная стальная рама вокруг проёма
+    const PW = 1.5, PH = 3.0;               // проём: ширина/высота
+    B(0.5, PH + 0.7, 0.5, 0x2e3238, FR.x, (PH + 0.7) / 2, FR.z - (PW + 0.5), 0);
+    B(0.5, PH + 0.7, 0.5, 0x2e3238, FR.x, (PH + 0.7) / 2, FR.z + (PW + 0.5), 0);
+    B(0.5, 0.6, PW * 2 + 1.5, 0x2e3238, FR.x, PH + 0.55, FR.z, 0);
+    // ниша шахты — чтобы за створками была темнота, а не стена зала
+    B(0.14, PH, PW * 2, 0x05070a, FR.x - 0.45, PH / 2, FR.z, 0);
+    // порог
+    B(0.9, 0.07, PW * 2, 0x4a5058, FR.x - 0.25, 0.035, FR.z, 0);
 
-  // ── стена с проёмом: три плиты вместо сплошной ──
-  // (простой куб перекрыл бы нишу, поэтому обходим проём)
-  // v46: пилоны и перемычка шахты — серо-стальные, как обшивка
-  // грузового лифта тизера. Бежевый 0xc9c3b4 выбивался из общей
-  // «служебной» гаммы, на которую указал игрок.
-  const SIDEW = (4.8 - (DOORW * 2 + 0.36)) / 2;
-  [-1, 1].forEach(sx => {
-    B(SIDEW, FH, 0.5, 0x8a9199,
-      liftX + sx * (DOORW + 0.18 + SIDEW / 2), FH / 2, LWALLZ, 0);
-  });
-  // перемычка над проёмом (от верха двери до потолка)
-  B(DOORW * 2 + 0.36, FH - (DOORH + 0.42), 0.5, 0x8a9199,
-    liftX, DOORH + 0.42 + (FH - (DOORH + 0.42)) / 2, LWALLZ, 0);
+    // ── СТВОРКИ: серо-стальные, с рёбрами и окном, как на фото ──
+    const leafMat = () => new THREE.MeshLambertMaterial({ color: 0x6a7078 });
+    const mkLeaf = (side) => {
+      const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.12, PH, PW), leafMat());
+      leaf.position.set(bx + FR.x - 0.3, F + PH / 2, bz + FR.z + side * PW / 2);
+      // три вертикальных ребра жёсткости
+      for (let r = 0; r < 3; r++) {
+        const rib = new THREE.Mesh(new THREE.BoxGeometry(0.05, PH - 0.2, 0.1),
+          new THREE.MeshLambertMaterial({ color: 0x4a5058 }));
+        rib.position.set(-0.08, 0, -PW / 2 + PW * (r + 0.5) / 3);
+        leaf.add(rib);
+      }
+      // тёмное окно-визир
+      const win = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.42, PW * 0.55),
+        new THREE.MeshBasicMaterial({ color: 0x0c1210 }));
+      win.position.set(-0.08, PH * 0.26, 0);
+      leaf.add(win);
+      add(leaf);
+      return leaf;
+    };
+    const fl = mkLeaf(-1), fr = mkLeaf(1);
 
-  // ── откосы проёма (щёки и притолока) ──
-  // v37: плоский задник УБРАН — за проёмом теперь объёмная кабина,
-  // раньше эта плита превращала лифт в «наклейку» на стене.
-  [-1, 1].forEach(sx => {
-    B(0.1, DOORH + 0.42, 0.62, 0x14181f,
-      liftX + sx * (DOORW + 0.13), (DOORH + 0.42) / 2, LWALLZ + 0.02, 0);
-  });
-  B(DOORW * 2 + 0.36, 0.1, 0.62, 0x14181f, liftX, DOORH + 0.38, LWALLZ + 0.02, 0);
+    // Помечаем для анимации. Створки ездят вдоль Z, поэтому кладём
+    // им homeZ и разворачиваем группу — см. animateElevatorDoors,
+    // которая с v47 умеет двигать двери по оси из userData.axis.
+    fl.userData.isElevDoorL = true;
+    fl.userData.axis = 'z';
+    fl.userData.homeZ = fl.position.z;
+    fr.userData.isElevDoorR = true;
+    fr.userData.axis = 'z';
+    fr.userData.homeZ = fr.position.z;
 
-  // ── ОБЪЁМНАЯ КАБИНА ЗА ПРОЁМОМ ──
-  fzLiftCabin(bx, bz, F, FH, add, mat, B, liftX, LWALLZ, DOORW, DOORH);
+    // ── ТАБЛО ЭТАЖА над проёмом (то самое «B1» с фото) ──
+    const indCv = document.createElement('canvas');
+    indCv.width = 256; indCv.height = 96;
+    const indCtx2 = indCv.getContext('2d');
+    const indTex2 = new THREE.CanvasTexture(indCv);
+    window.mallLiftInd = { ctx: indCtx2, tex: indTex2 };
+    const indBox = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.62, 1.5), mat(0x0a0d12));
+    indBox.position.set(bx + FR.x - 0.3, F + PH + 0.52, bz + FR.z);
+    add(indBox);
+    const indScr = new THREE.Mesh(new THREE.PlaneGeometry(1.34, 0.5),
+      new THREE.MeshBasicMaterial({ map: indTex2, transparent: true }));
+    indScr.position.set(bx + FR.x - 0.38, F + PH + 0.52, bz + FR.z);
+    indScr.rotation.y = -Math.PI / 2;
+    add(indScr);
+    try { drawMallLiftInd(floorLabelOf(floor), 0); } catch (e) {}
 
-  // ── СТВОРКИ: утоплены в нишу ──
-  // v43: цвет створок — как в тизере (0xb8b8c0, светлый металлик),
-  // раньше был темнее и с синеватой подсветкой.
-  // v46: створки в стиле ГРУЗОВОГО ЛИФТА ИЗ ТИЗЕРА (игрок показал его
-  // на фото и сказал «он и будет лифтом»). Там полотно серо-стальное
-  // 0x6a7078 с тремя вертикальными рёбрами и тёмным окном-визиром.
-  const doorMat = () => new THREE.MeshLambertMaterial({ color: 0x6a7078 });
-  const dl = new THREE.Mesh(new THREE.BoxGeometry(DOORW, DOORH, 0.1), doorMat());
-  dl.position.set(bx + liftX - DOORW/2, F + DOORH/2, bz + DOORZ);
-  dl.userData.isElevDoorL = true;
-  dl.userData.homeX = bx + liftX - DOORW/2;   // закрытая позиция (для анимации)
-  add(dl);
-  const dr = new THREE.Mesh(new THREE.BoxGeometry(DOORW, DOORH, 0.1), doorMat());
-  dr.position.set(bx + liftX + DOORW/2, F + DOORH/2, bz + DOORZ);
-  dr.userData.isElevDoorR = true;
-  dr.userData.homeX = bx + liftX + DOORW/2;
-  add(dr);
+    // ── ПАНЕЛЬ ВЫЗОВА ──
+    B(0.12, 1.1, 0.42, 0x1b2028, FR.x - 0.32, 1.45, FR.z + PW + 0.75, 0);
+    [[0.28, 0xffc95a], [-0.16, 0x4a5260]].forEach(([oy, cc], ci) => {
+      const btn = new THREE.Mesh(new THREE.CircleGeometry(0.1, 14),
+        mat(cc, ci === 0 ? 0xff9c20 : 0, ci === 0 ? 0.8 : 0));
+      btn.position.set(bx + FR.x - 0.4, F + 1.45 + oy, bz + FR.z + PW + 0.75);
+      btn.rotation.y = -Math.PI / 2;
+      add(btn);
+    });
+    // свет у лифта
+    const fLight = new THREE.PointLight(0xffd9a0, 0.5, 8);
+    fLight.position.set(bx + FR.x - 1.6, F + PH - 0.3, bz + FR.z);
+    add(fLight);
 
-  // ── ДЕТАЛИ СТВОРОК КАК В ТИЗЕРЕ ──
-  // Важно: рёбра и окна делаем ДОЧЕРНИМИ мешами створок, иначе они
-  // останутся висеть в воздухе, когда двери разъедутся.
-  [[-1, dl], [1, dr]].forEach(([side, leaf]) => {
-    // три вертикальных ребра жёсткости (в тизере — 3 полосы на створку)
-    for (let r = 0; r < 3; r++) {
-      const rib = new THREE.Mesh(
-        new THREE.BoxGeometry(0.1, DOORH - 0.18, 0.04),
-        new THREE.MeshLambertMaterial({ color: 0x4a5058 }));
-      rib.position.set(-DOORW / 2 + DOORW * (r + 0.5) / 3, 0, 0.07);
-      leaf.add(rib);
-    }
-    // тёмное окно-визир в верхней части полотна
-    const win = new THREE.Mesh(
-      new THREE.BoxGeometry(DOORW * 0.62, 0.42, 0.03),
-      new THREE.MeshBasicMaterial({ color: 0x0c1210 }));
-    win.position.set(0, DOORH * 0.26, 0.07);
-    leaf.add(win);
-    // кромка притвора по центру проёма
-    const edge = new THREE.Mesh(
-      new THREE.BoxGeometry(0.05, DOORH - 0.1, 0.05),
-      new THREE.MeshLambertMaterial({ color: 0x39424e }));
-    edge.position.set(side * (DOORW / 2 - 0.03), 0, 0.06);
-    leaf.add(edge);
-  });
+    // ── КОЛЛАЙДЕР: сам портал непроходим, подход к дверям открыт ──
+    colp(FR.x + 0.15, FR.z, 0.7, PW * 2 + 1.6);
 
-  // ── НАЛИЧНИК: тонкая стальная рамка заподлицо со стеной ──
-  // v46: портал — ТЁМНАЯ СТАЛЬ, как у грузового лифта тизера (steelD
-  // 0x2e3238 / steelM 0x4a5058). Бежево-золотую раму из v43 игрок
-  // забраковал: «правильный лифт» на его фото — серо-стальной.
-  const steelC = 0x2e3238, steelLite = 0x4a5058;
-  [-1, 1].forEach(sx => {
-    B(0.22, DOORH + 0.55, 0.14, steelC, liftX + sx * (DOORW + 0.12), (DOORH + 0.55)/2, JAMBZ, 0);
-    // болты по стойке (в тизере стойки клёпаные)
-    for (let rr = 0; rr < 7; rr++)
-      B(0.1, 0.06, 0.16, steelLite, liftX + sx * (DOORW + 0.12), 0.4 + rr * 0.42, JAMBZ, 0);
-  });
-  B(DOORW * 2 + 0.6, 0.26, 0.14, steelC, liftX, DOORH + 0.38, JAMBZ, 0);
-  B(DOORW * 2 + 0.6, 0.06, 0.16, steelLite, liftX, DOORH + 0.53, JAMBZ, 0);
-  // порог в полу проёма — рифлёная стальная плита
-  B(DOORW * 2 + 0.3, 0.06, 0.5, 0x4a5058, liftX, 0.03, LWALLZ + 0.05, 0);
-
-  // ── свет из щели над дверьми ──
-  const slit = new THREE.Mesh(new THREE.PlaneGeometry(DOORW * 2, 0.09),
-    mat(0xffe3ae, 0xffd48a, 0.9));
-  // v36: щель света — в глубине ниши, над утопленными створками
-  slit.position.set(bx + liftX, F + DOORH + 0.16, bz + DOORZ + 0.06); add(slit);
-  const slitL = new THREE.PointLight(0xffd9a0, 0.5, 7);
-  slitL.position.set(bx + liftX, F + DOORH + 0.1, bz + WALLF + 0.5); add(slitL);
-
-  // ── ЖИВОЕ ТАБЛО ЭТАЖА (canvas, как в тизере) ──
-  const indCv = document.createElement('canvas');
-  indCv.width = 256; indCv.height = 96;
-  const indCtx = indCv.getContext('2d');
-  const indTex = new THREE.CanvasTexture(indCv);
-  window.mallLiftInd = { ctx: indCtx, tex: indTex };
-  drawMallLiftInd(floorLabelOf(currentFloor));
-  const indPanel = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.62, 0.1), mat(0x14181f));
-  indPanel.position.set(bx + liftX, F + DOORH + 0.78, bz + JAMBZ + 0.02); add(indPanel);
-  const indScr = new THREE.Mesh(new THREE.PlaneGeometry(1.34, 0.5),
-    new THREE.MeshBasicMaterial({ map: indTex, transparent: true }));
-  indScr.position.set(bx + liftX, F + DOORH + 0.78, bz + JAMBZ + 0.08); add(indScr);
-
-  // ── ЗОЛОТАЯ ВЫВЕСКА «ЛИФТ» (v43: как в тизере) ──
-  // В тизере над лифтом висит табличка ЛИФТ золотом по тёмному
-  // (tMesh('ЛИФТ', ... '#5a4a3a', '#c8a060')). В игре её не было.
-  (function fzLiftSign() {
-    const cv = document.createElement('canvas');
-    cv.width = 512; cv.height = 128;
-    const g = cv.getContext('2d');
-    if (!g) return;
-    g.fillStyle = '#5a4a3a';
-    g.fillRect(0, 0, 512, 128);
-    g.strokeStyle = '#c8a060'; g.lineWidth = 6;
-    g.strokeRect(7, 7, 498, 114);
-    g.fillStyle = '#c8a060';
-    g.font = '800 74px Arial';
-    g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.shadowColor = '#ffd9a0'; g.shadowBlur = 16;
-    g.fillText('ЛИФТ', 256, 68);
-    const tex = new THREE.CanvasTexture(cv);
-    const pl = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.4),
-      new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
-    pl.position.set(bx + liftX, F + DOORH + 1.32, bz + JAMBZ + 0.08);
-    add(pl);
+    // ── ТОЧКА ВЫЗОВА ЛИФТА ──
+    interactables.push({
+      position: { x: bx + FR.x - 2.0, y: F, z: bz + FR.z },
+      type: 'elevator', name: '🛗 Лифт', range: 3, interior: true
+    });
   })();
 
-  // ── ПАНЕЛЬ ВЫЗОВА сбоку ──
-  const cpX = liftX + DOORW + 0.75;
-  B(0.42, 1.15, 0.12, 0x1b2028, cpX, 1.45, JAMBZ + 0.02, 0);
-  [[0.28, '▲'], [-0.16, '▼']].forEach(([oy], ci) => {
-    const btn = new THREE.Mesh(new THREE.CircleGeometry(0.1, 14),
-      mat(ci === 0 ? 0xffc95a : 0x4a5260, ci === 0 ? 0xff9c20 : 0, ci === 0 ? 0.8 : 0));
-    btn.position.set(bx + cpX, F + 1.45 + oy, bz + JAMBZ + 0.09); add(btn);
-  });
-  addInteriorSign('🛗 ЛИФТ · B5…3', bx + liftX, F + FH - 0.4, bz + JAMBZ + 0.05, add);
-  colp(liftX, LWALLZ, 4.8, 0.6);
-
   // ═══════════════════════════════════════════════════════════════════
-  // v35: СЛУЖЕБНЫЙ ВХОД — ОТДЕЛЬНАЯ ДВЕРЬ, НЕ ЛИФТ.
-  // Раньше доски прибивались прямо на пассажирский лифт из тизера:
-  // красивый портал выглядел сломанным, а лифт — заколоченным.
-  // Теперь лифт всегда чистый и рабочий, а заколочена отдельная
-  // служебная дверь в стене слева от него.
+  // v47: ЗАКОЛОЧЕННЫЙ СЛУЖЕБНЫЙ ВХОД УДАЛЁН по просьбе игрока.
+  // Дверь с досками и вывеской «СЛУЖЕБНЫЙ ВХОД ЗАКОЛОЧЕН» стояла
+  // слева от старого лифта. Роль служебного входа теперь целиком
+  // играют броневорота «СЛУЖЕБНЫЙ ВХОД · B1» из тизера у восточной
+  // стены — они остаются на месте (это то, что на фото 2).
+  //
+  // Квест не сломан: доски были одним из способов открыть путь к
+  // боссу, а fzTryBreakBoards корректно отрабатывает пустой список
+  // _fzLiftBoards. Проём к боссу по-прежнему строит fzBossDoorway.
   // ═══════════════════════════════════════════════════════════════════
-  if (!bsm && sf === 0) {
-    fzServiceDoor(bx, bz, F, FH, add, mat, B, colp, liftX, LWALLZ);
-  }
+  window._fzLiftBoards = window._fzLiftBoards || [];
 
   // ═══ КОНТЕНТ (минимум, без хлама) ═══
   if (sf === 0) {
@@ -16489,6 +16470,29 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
                                         { noFountain: true, noLift: true });
         // регистрируем группу целиком, чтобы fzDisposeInterior её выгрузил
         if (tg) interiorObjects.push(tg);
+
+        // ── УБИРАЕМ ДУБЛЬ ГРУЗОВОГО ЛИФТА ──
+        // Наш рабочий лифт стоит на (21.0, -2.0) — ровно там же, где
+        // декоративный лифт тизера. Без этого видны ДВЕ пары дверей
+        // в 30 см друг от друга. Прячем именно тизерные створки и
+        // портальные стойки; всё остальное (ворота B1, комната босса,
+        // табло) остаётся. Делать это можно только ЗДЕСЬ: в момент
+        // сборки лифта группы тизера ещё не существует.
+        if (tg) {
+          scene.updateMatrixWorld(true);
+          if (tg.freight) {
+            ['doorL', 'doorR'].forEach(k => {
+              if (tg.freight[k]) tg.freight[k].visible = false;
+            });
+          }
+          const wp = new THREE.Vector3();
+          tg.traverse(o => {
+            if (!o.isMesh) return;
+            o.getWorldPosition(wp);
+            const lx = wp.x - bx, lz = wp.z - bz;
+            if (lx > 20.9 && lx < 21.8 && lz > -4.4 && lz < 0.4) o.visible = false;
+          });
+        }
       } catch (e) { console.warn('[MALL] тизер-молл не собрался:', e); }
     } else {
       console.warn('[MALL] mall-teaser.js не загружен — зал будет пустым');
