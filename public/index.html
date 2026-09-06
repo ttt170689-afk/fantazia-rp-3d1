@@ -359,7 +359,45 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
   opacity:var(--o,.4);
 }
 @keyframes lsTwink{from{opacity:var(--o);transform:scale(1)}to{opacity:calc(var(--o)*.15);transform:scale(.3)}}
-.ls-hero-inner{position:relative;z-index:2;text-align:center;padding:0 20px;}
+.ls-hero-inner{position:relative;z-index:3;text-align:center;padding:0 20px;}
+/* v51: неоновый город на canvas позади заголовка */
+.ls-city{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;opacity:.9;}
+/* индикатор «сервер онлайн» */
+.ls-live{
+  display:inline-flex;align-items:center;gap:9px;
+  padding:7px 18px;border-radius:100px;margin-bottom:22px;
+  background:rgba(20,240,140,.09);border:1px solid rgba(20,240,140,.34);
+  font-size:11px;letter-spacing:3px;color:#7dffc0;text-transform:uppercase;
+  animation:lsFadeUp .8s ease .1s both;
+}
+.ls-live-dot{
+  width:8px;height:8px;border-radius:50%;background:#25ff9b;
+  box-shadow:0 0 12px #25ff9b;animation:lsPulseDot 1.5s ease-in-out infinite;
+}
+@keyframes lsPulseDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+/* кнопки */
+.ls-btn-row{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:40px;
+  animation:lsFadeUp .8s ease 1.05s both;}
+.ls-play-main{font-size:clamp(16px,2.5vw,24px);padding:20px 60px;letter-spacing:6px;}
+.ls-play-ghost{
+  font-size:clamp(12px,1.6vw,15px);padding:20px 34px;letter-spacing:3px;
+  background:transparent!important;border:1.5px solid rgba(162,155,254,.45)!important;
+  color:rgba(214,210,255,.85)!important;box-shadow:none!important;
+}
+.ls-play-ghost:hover{border-color:rgba(162,155,254,.9)!important;background:rgba(108,92,231,.14)!important;}
+/* счётчики */
+.ls-stats{display:flex;gap:44px;justify-content:center;flex-wrap:wrap;margin-top:46px;
+  animation:lsFadeUp .8s ease 1.25s both;}
+.ls-stat{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.ls-stat b{font-family:'Orbitron',sans-serif;font-size:clamp(24px,3.6vw,40px);color:#fff;
+  text-shadow:0 0 26px rgba(162,155,254,.65);line-height:1;}
+.ls-stat span{font-size:10px;letter-spacing:2.5px;color:rgba(162,155,254,.55);text-transform:uppercase;}
+@media(max-width:600px){
+  .ls-stats{gap:26px;margin-top:32px}
+  .ls-btn-row{gap:11px;margin-top:30px}
+  .ls-play-main{padding:17px 40px}
+  .ls-play-ghost{padding:17px 24px}
+}
 .ls-hero-bolt{
   font-size:80px;display:block;margin-bottom:12px;
   filter:drop-shadow(0 0 40px rgba(162,155,254,.9));
@@ -2366,16 +2404,26 @@ button:active { transform: scale(.95); }
     <button id="changelogBtn" onclick="fzOpenNews()">✨ Новости</button>
   </div>
 
-  <!-- ══════════ HERO ══════════ -->
+  <!-- ══════════ HERO (v51: живой фон + статус + счётчики) ══════════ -->
   <section class="ls-hero">
     <div class="ls-hero-bg"></div>
+    <canvas id="lsCity" class="ls-city"></canvas>
     <div class="ls-stars" id="lsStars"></div>
     <div class="ls-hero-inner">
+      <div class="ls-live"><span class="ls-live-dot"></span><span id="lsLiveTxt">СЕРВЕР ОНЛАЙН</span></div>
       <span class="ls-hero-bolt">⚡</span>
       <div class="ls-hero-title">FANTAZIA <em>RP</em></div>
       <div class="ls-hero-sub">3 D &nbsp;·&nbsp; O N L I N E</div>
       <div class="ls-hero-tagline">Открытый мир · Живые игроки · Твои правила</div>
-      <button class="ls-play-btn" onclick="openServerModal()" style="margin-top:40px;font-size:clamp(16px,2.5vw,24px);padding:20px 60px;letter-spacing:6px;">▶ &nbsp;ИГРАТЬ</button>
+      <div class="ls-btn-row">
+        <button class="ls-play-btn ls-play-main" onclick="openServerModal()">▶ &nbsp;ИГРАТЬ</button>
+        <button class="ls-play-btn ls-play-ghost" onclick="document.getElementById('sec-world').scrollIntoView({behavior:'smooth'})">УЗНАТЬ БОЛЬШЕ</button>
+      </div>
+      <div class="ls-stats">
+        <div class="ls-stat"><b data-count="8">0</b><span>этажей ТЦ</span></div>
+        <div class="ls-stat"><b data-count="230">0</b><span>зданий в городе</span></div>
+        <div class="ls-stat"><b data-count="24">0</b><span>часа онлайн</span></div>
+      </div>
     </div>
     <div class="ls-scroll-cue" onclick="document.getElementById('sec-world').scrollIntoView({behavior:'smooth'})">
       <span>Листай вниз</span>
@@ -2732,6 +2780,146 @@ button:active { transform: scale(.95); }
     c.appendChild(s);
   }
 })();
+
+// ═══════════════════════════════════════════════════════════════════
+//  v51: ЖИВОЙ НЕОНОВЫЙ ГОРОД НА ФОНЕ ГЛАВНОГО МЕНЮ
+//  Три слоя силуэтов с параллаксом, бегущие огни окон, прожекторы
+//  и отражение в мокром асфальте. Рисуется на canvas, без картинок.
+// ═══════════════════════════════════════════════════════════════════
+(function lsCityBg(){
+  var cv=document.getElementById('lsCity');
+  if(!cv) return;
+  var q=cv.getContext('2d');
+  if(!q) return;
+  var W,H,DPR=Math.min(window.devicePixelRatio||1,2),L1,L2,L3,wins;
+  function rnd(a,b){return a+Math.random()*(b-a);}
+  function mk(hMin,hMax,wMin,wMax){
+    var a=[],x=-90;
+    while(x<3400){var w=rnd(wMin,wMax),h=rnd(hMin,hMax);a.push({x:x,w:w,h:h});x+=w+rnd(5,17);}
+    return a;
+  }
+  function rs(){
+    W=cv.clientWidth||window.innerWidth; H=cv.clientHeight||window.innerHeight;
+    cv.width=W*DPR; cv.height=H*DPR;
+    q.setTransform(DPR,0,0,DPR,0,0);
+    L1=mk(H*0.20,H*0.42,56,132);
+    L2=mk(H*0.13,H*0.29,44,104);
+    L3=mk(H*0.07,H*0.19,64,158);
+    wins=[];
+    for(var i=0;i<L3.length;i++)
+      for(var r=0;r<8;r++)
+        for(var c2=0;c2<4;c2++)
+          if(Math.random()<0.26)
+            wins.push({b:i,ox:9+c2*13,oy:13+r*17,p:rnd(0,6.28)});
+  }
+  rs();
+  window.addEventListener('resize',rs);
+  var t=0,last=0,raf=0;
+  function layer(arr,off,par,top,bot,hy){
+    for(var i=0;i<arr.length;i++){
+      var b=arr[i],x=b.x-off*par;
+      x=((x%3400)+3400)%3400-90;
+      if(x>W+70||x+b.w<-70){b._sx=undefined;continue;}
+      var g=q.createLinearGradient(0,hy-b.h,0,hy);
+      g.addColorStop(0,top); g.addColorStop(1,bot);
+      q.fillStyle=g; q.fillRect(x,hy-b.h,b.w,b.h+130);
+      b._sx=x;
+    }
+  }
+  function draw(ts){
+    if(!last) last=ts;
+    t+=Math.min(0.05,(ts-last)/1000); last=ts;
+    // если меню скрыто — не тратим кадры
+    var host=document.getElementById('serverScreen');
+    if(host && host.style.display==='none'){ raf=requestAnimationFrame(draw); return; }
+    q.clearRect(0,0,W,H);
+    var hy=H*0.88, off=t*22;
+    layer(L1,off,0.20,'rgba(30,24,66,0.85)','rgba(10,8,26,0.9)',hy-H*0.05);
+    layer(L2,off,0.45,'rgba(24,19,54,0.92)','rgba(8,6,20,0.95)',hy-H*0.02);
+    layer(L3,off,0.85,'rgba(16,12,38,1)','rgba(5,4,14,1)',hy);
+    // окна
+    for(var i=0;i<wins.length;i++){
+      var wI=wins[i],b=L3[wI.b];
+      if(!b||b._sx===undefined) continue;
+      var a=0.20+0.55*Math.abs(Math.sin(t*0.8+wI.p));
+      var wx=b._sx+wI.ox, wy=hy-b.h+wI.oy;
+      if(wx<-8||wx>W+8||wy>hy-9) continue;
+      q.fillStyle='rgba(190,150,255,'+a.toFixed(3)+')';
+      q.fillRect(wx,wy,4,7);
+    }
+    // прожекторы
+    for(var pj=-1;pj<=1;pj+=2){
+      q.save();
+      q.translate(W/2+pj*W*0.24,hy-H*0.16);
+      q.rotate(Math.sin(t*0.5+pj)*0.28+(pj<0?-0.2:0.2));
+      var lg=q.createLinearGradient(0,0,0,-H*0.6);
+      lg.addColorStop(0,'rgba(150,110,255,0.13)');
+      lg.addColorStop(1,'rgba(150,110,255,0)');
+      q.fillStyle=lg;
+      q.beginPath();q.moveTo(-8,0);q.lineTo(8,0);
+      q.lineTo(70,-H*0.6);q.lineTo(-70,-H*0.6);q.closePath();q.fill();
+      q.restore();
+    }
+    // мокрый асфальт с отражением
+    var rg=q.createLinearGradient(0,hy,0,H);
+    rg.addColorStop(0,'rgba(22,16,46,0.9)');
+    rg.addColorStop(1,'rgba(4,3,12,1)');
+    q.fillStyle=rg; q.fillRect(0,hy,W,H-hy);
+    q.globalAlpha=0.13;
+    for(i=0;i<L3.length;i++){
+      var nb=L3[i];
+      if(nb._sx===undefined) continue;
+      q.fillStyle='rgba(160,120,255,0.55)';
+      q.fillRect(nb._sx,hy,nb.w,Math.min(nb.h*0.4,H-hy));
+    }
+    q.globalAlpha=1;
+    raf=requestAnimationFrame(draw);
+  }
+  raf=requestAnimationFrame(draw);
+})();
+
+// ── v51: счётчики в главном меню «накручиваются» при появлении ──
+(function lsCounters(){
+  function run(){
+    var els=document.querySelectorAll('.ls-stat b[data-count]');
+    if(!els.length) return;
+    els.forEach(function(el){
+      if(el.dataset.done) return;
+      el.dataset.done='1';
+      var to=parseInt(el.dataset.count,10)||0, cur=0;
+      var step=Math.max(1,Math.round(to/38));
+      var iv=setInterval(function(){
+        cur+=step;
+        if(cur>=to){cur=to;clearInterval(iv);}
+        el.textContent=cur;
+      },26);
+    });
+  }
+  if(document.readyState==='loading')
+    document.addEventListener('DOMContentLoaded',function(){setTimeout(run,700);});
+  else setTimeout(run,700);
+})();
+
+// ── v51: живой статус сервера в шапке меню ──
+(function lsLiveStatus(){
+  function upd(){
+    var el=document.getElementById('lsLiveTxt');
+    if(!el) return;
+    // v51: без fetch (старые движки, WebView) — просто оставляем
+    // надпись по умолчанию, иначе падает ReferenceError и ломается
+    // весь последующий инлайн-скрипт меню.
+    if(typeof fetch!=='function') return;
+    fetch('/api/health').then(function(r){return r.json();}).then(function(d){
+      if(d&&d.ok){
+        var n=(typeof d.online==='number')?d.online:0;
+        el.textContent = n>0 ? ('ОНЛАЙН · '+n+' В ИГРЕ') : 'СЕРВЕР ОНЛАЙН';
+      }
+    }).catch(function(){ el.textContent='СЕРВЕР ОНЛАЙН'; });
+  }
+  setTimeout(upd,900);
+  setInterval(upd,15000);
+})();
+
 function openServerModal(){
   var m=document.getElementById('serverModal');
   m.style.display='flex';m.classList.add('show');
@@ -9872,7 +10060,8 @@ function fzLiftCamStart(fromY, toY) {
   // стоит на месте. Теперь он реально заходит в кабину и выходит:
   // позицию ведёт fzLiftCamUpdate, а камера смотрит на него со спины.
   if (localPlayer.mesh) {
-    localPlayer.mesh.visible = true;
+    // v51: вид от первого лица — модель прячем, камера идёт «из глаз».
+    localPlayer.mesh.visible = false;
     LIFT_CAM.startPos = localPlayer.mesh.position.clone();
     if (localPlayer.mesh.userData.model) {
       try { localPlayer.mesh.userData.model.setState('walk'); } catch (e) {}
@@ -9985,12 +10174,16 @@ function fzLiftCamUpdate(dt) {
     localPlayer.currentAnimation = moving ? 'walk' : 'idle';
   }
 
-  // Камера снимает персонажа СО СПИНЫ, с небольшим отступом и выше
-  // головы — иначе она стояла бы у него внутри и мы бы его не увидели.
-  const BACK = 2.5, UP = 0.55;
-  const dirX = (lookX >= camX) ? 1 : -1;     // куда смотрим по X
-  L.pos.set(camX - dirX * BACK, camY + UP, L.doorZ + sway);
-  L.look.set(lookX, camY - 0.1, L.doorZ + sway * 2);
+  // ── v51: КАТСЦЕНА ОТ ПЕРВОГО ЛИЦА ──
+  // Игрок попросил вид «из глаз». Камера стоит на уровне глаз ровно
+  // там, где персонаж, и смотрит по ходу движения. Модель при этом
+  // скрываем: иначе затылок собственного персонажа перекрыл бы обзор.
+  if (pm) pm.visible = false;
+  const bob = (L.phase === 'enter' || L.phase === 'exit')
+    ? Math.abs(Math.sin(L.t * 7)) * 0.045      // покачивание при ходьбе
+    : 0;
+  L.pos.set(camX, camY + bob, L.doorZ + sway);
+  L.look.set(lookX, camY - 0.06 + bob, L.doorZ + sway * 2);
   camera.rotation.z = rollZ;
 }
 
@@ -10117,7 +10310,11 @@ let elevatorDoorLeft = null, elevatorDoorRight = null;
 function animateElevatorDoors(direction, duration, callback) {
   const L = elevatorDoorLeft, R = elevatorDoorRight;
   if (!L && !R) { if (callback) callback(); return; }
-  const SLIDE = 1.42;                       // насколько уезжает каждая створка
+  // v51: створка уезжает на свою полную ширину (проём стал шире).
+  // Значение берём из userData.slide, которое кладёт билдер лифта;
+  // 1.42 остаётся запасным для старых дверей.
+  const _dSrc = (elevatorDoorLeft || elevatorDoorRight);
+  const SLIDE = (_dSrc && _dSrc.userData && _dSrc.userData.slide) || 1.42;
   const opening = direction !== 'close';
   let elapsed = 0;
   const interval = setInterval(() => {
@@ -16437,7 +16634,9 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
   (function fzFreightLift() {
     const FR = FREIGHT;                     // {x, z} в координатах зала
     // портал: тёмная стальная рама вокруг проёма
-    const PW = 1.5, PH = 3.0;               // проём: ширина/высота
+    // v51: БОЛЬШОЙ ЛИФТ. Было PW=1.5 (проём 3 м) и PH=3.0 — тесно.
+    // Стало 2.1 (проём 4.2 м) и 3.6: грузовой лифт должен быть просторным.
+    const PW = 2.1, PH = 3.6;               // полустворка / высота проёма
     B(0.5, PH + 0.7, 0.5, 0x2e3238, FR.x, (PH + 0.7) / 2, FR.z - (PW + 0.5), 0);
     B(0.5, PH + 0.7, 0.5, 0x2e3238, FR.x, (PH + 0.7) / 2, FR.z + (PW + 0.5), 0);
     B(0.5, 0.6, PW * 2 + 1.5, 0x2e3238, FR.x, PH + 0.55, FR.z, 0);
@@ -16456,7 +16655,7 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
     // направляющие и передняя стенка кабины, иначе между дверьми и
     // кабиной остаётся щель и сквозь неё видно пустоту.
     const DXp = FR.x - 0.3;
-    const SLIDE_MAX = 1.42;            // столько уезжает створка (animateElevatorDoors)
+    const SLIDE_MAX = PW - 0.06;       // столько уезжает створка (animateElevatorDoors)
 
     // ── КАРМАНЫ, куда прячутся створки ──
     // Без них открытая дверь торчала бы из-за косяка прямо в зал.
@@ -16509,9 +16708,11 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
     fl.userData.isElevDoorL = true;
     fl.userData.axis = 'z';
     fl.userData.homeZ = fl.position.z;
+    fl.userData.slide = PW - 0.06;     // уезжает почти на свою ширину
     fr.userData.isElevDoorR = true;
     fr.userData.axis = 'z';
     fr.userData.homeZ = fr.position.z;
+    fr.userData.slide = PW - 0.06;
 
     // ── ТАБЛО ЭТАЖА над проёмом (то самое «B1» с фото) ──
     const indCv = document.createElement('canvas');
@@ -16550,7 +16751,7 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
     //  в тизере: тёмные стальные панели, плафон, поручни, панель
     //  кнопок по этажам и живое табло над ней.
     // ═══════════════════════════════════════════════════════════════
-    const CD2 = 3.0;                    // глубина кабины (вдоль X)
+    const CD2 = 4.6;                    // глубина кабины (вдоль X) — было 3.0
     const CW2 = PW * 2;                 // ширина (вдоль Z)
     // v50: кабина придвинута ВПЛОТНУЮ к створкам. Раньше её передняя
     // стенка была на 21.3, а двери на 20.7 — между ними зияла щель
@@ -16581,8 +16782,20 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
           CX + i * (CD2 / 3.3), CH2 / 2 + 0.15, FR.z + sz2 * (CW2 / 2 - 0.13), 0);
       }
     });
-    // зеркало на задней стенке
-    B(0.04, 1.5, CW2 - 0.9, 0x8fb3c9, CX + CD2 / 2 - 0.14, 1.85, FR.z, 0);
+    // ── ЗАДНЯЯ СТЕНКА: раньше была голой серой плитой (жалоба игрока
+    //    «что за серая стена в лифте»). Теперь полноценная отделка.
+    const backX = CX + CD2 / 2 - 0.14;
+    // тёмный низ + светлый верх, разделённые молдингом
+    B(0.05, 1.0, CW2 - 0.24, 0x1d2229, backX, 0.5, FR.z, 0);
+    B(0.06, 0.07, CW2 - 0.24, 0xc8a060, backX, 1.03, FR.z, 0);   // золотой молдинг
+    B(0.05, CH2 - 1.15, CW2 - 0.24, 0x39414a, backX, 1.03 + (CH2 - 1.15) / 2, FR.z, 0);
+    // большое зеркало по центру
+    B(0.04, 1.7, CW2 - 1.3, 0x8fb3c9, backX - 0.03, 1.95, FR.z, 0);
+    B(0.05, 1.78, CW2 - 1.22, 0x2a3038, backX - 0.01, 1.95, FR.z, 0);  // рамка
+    // вертикальные рёбра по краям
+    [-1, 1].forEach(sz3 => {
+      B(0.06, CH2 - 0.4, 0.1, 0x4a5058, backX - 0.03, (CH2 - 0.4) / 2, FR.z + sz3 * (CW2 / 2 - 0.35), 0);
+    });
 
     // поручни
     B(0.07, 0.07, CW2 - 0.4, 0xb0b8c2, CX + CD2 / 2 - 0.2, 1.05, FR.z, 0);
@@ -18794,9 +19007,9 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
     // Персонаж поворачивается вслед за камерой (другие игроки видят куда ты смотришь)
     mesh.rotation.y = cameraAngleH;
     // Скрыть тело в 1-м лице.
-    // v49: но НЕ во время катсцены лифта — там мы специально показываем
-    // персонажа со стороны, иначе он снова «пропадёт».
-    mesh.visible = !!(LIFT_CAM && LIFT_CAM.active);
+    // v51: катсцена лифта теперь ТОЖЕ от первого лица, поэтому тело
+    // скрываем всегда — иначе собственный затылок закрывал бы обзор.
+    mesh.visible = false;
   } else {
     mesh.visible = true;
     camera.position.x = mesh.position.x + Math.sin(cameraAngleH) * camDist * Math.cos(cameraAngleV);
@@ -21812,6 +22025,10 @@ body.game-active{-webkit-touch-callout:none;-webkit-user-select:none;user-select
 #fzFade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:2147482000;transition:opacity .5s linear}
 body.game-active canvas{touch-action:none}
 #mobileTopBtns{flex-wrap:wrap!important;justify-content:center!important;max-width:72vw}
+/* v51: альбомная ориентация — кнопки не наезжают на джойстик */
+#mobileControls.fz-landscape #mobileRightBtns{bottom:12px!important;right:12px!important}
+#mobileControls.fz-landscape #mobileJoystick{bottom:12px!important;left:12px!important}
+#mobileControls.fz-landscape #mobileTopBtns{top:4px!important;max-width:58vw}
 @media(pointer:coarse){
   body.game-active .mob-btn{width:66px!important;height:66px!important;font-size:27px!important}
   body.game-active #joystickBase{width:150px!important;height:150px!important}
@@ -22082,14 +22299,17 @@ body.game-active canvas{touch-action:none}
     clearInterval(waitTimer);
     buildSky();
     npcSweep();
-    if (!landed2) {
-      buildHeaven();
-      fzBuildPortal();
-      try { sessionStorage.setItem('fzLanded', '1'); } catch (e) {}
-      inHeaven = true;
-      window.localPlayer.mesh.position.set(SX, SKY_Y, SZ);
-      if (hint) hint.style.display = 'block';
-    }
+    // ── v51: НЕБЕСА И СПУСК ПО ЛЕСТНИЦЕ ОТКЛЮЧЕНЫ ──
+    // Игрок просил убрать появление «с небес» и ходьбу по лестнице
+    // вниз: раньше старт игры закидывал персонажа на платформу
+    // в облаках (y = 112), и приходилось спускаться в город пешком.
+    // Теперь он сразу стоит на земле, у входа в дом.
+    // Небесная геометрия (buildHeaven/fzBuildPortal) больше не строится,
+    // inHeaven остаётся false — вся ветка спуска ниже просто не
+    // выполняется. buildSky() и npcSweep() работают как раньше.
+    try { sessionStorage.setItem('fzLanded', '1'); } catch (e) {}
+    inHeaven = false;
+    if (hint) hint.style.display = 'none';
   }, 350);
 
   // ── мобилка: страховка джойстика ──
@@ -22263,6 +22483,148 @@ body.game-active canvas{touch-action:none}
   requestAnimationFrame(loop);
 })();
 </script>
+<script>
+
+// ═══════════════════════════════════════════════════════════════════════
+//  v51: МОБИЛЬНЫЙ ПОРТ — СУПЕР-ФИКС
+//  Проблемы, которые чинит этот блок:
+//   1. Все 10 кнопок висели ТОЛЬКО на ontouchstart. Без preventDefault
+//      браузер после касания шлёт ещё и click — действие срабатывало
+//      дважды (двойной прыжок, панель открылась и сразу закрылась).
+//   2. На устройствах с мышью и тачем (ноут с сенсором, эмулятор,
+//      планшет с клавиатурой) кнопки не работали вовсе — click не был
+//      подключён.
+//   3. Двойной тап по кнопке зумил страницу.
+//   4. Долгое нажатие вызывало контекстное меню и выделение текста.
+//   5. Кнопки-удержания (прыжок) могли «залипнуть», если палец увели
+//      за пределы кнопки — touchend прилетал не туда.
+// ═══════════════════════════════════════════════════════════════════════
+(function fzMobileSuperFix() {
+  function ready(fn) {
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      setTimeout(fn, 0);
+    } else {
+      document.addEventListener('DOMContentLoaded', fn);
+    }
+  }
+
+  ready(function () {
+    // ── 1. Убираем зум по двойному тапу ──
+    var lastTouchEnd = 0;
+    document.addEventListener('touchend', function (e) {
+      var now = Date.now();
+      if (now - lastTouchEnd <= 320) {
+        // второй тап подряд — гасим только если это НЕ поле ввода
+        var tg = e.target;
+        var isInput = tg && (tg.tagName === 'INPUT' || tg.tagName === 'TEXTAREA' ||
+                             tg.tagName === 'SELECT' || tg.isContentEditable);
+        if (!isInput) e.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, { passive: false });
+
+    // ── 2. Перевешиваем ВСЕ мобильные кнопки на единый обработчик ──
+    // Разбираем инлайновые ontouchstart/ontouchend и вешаем их заново
+    // через pointer-события: они одинаково работают и для пальца, и
+    // для мыши, и не дублируются.
+    var sel = '.mob-btn, .mob-top-btn, #mobileTopBtns > div, #mobileRightBtns > div';
+    var btns = document.querySelectorAll(sel);
+
+    btns.forEach(function (b) {
+      if (b.dataset.fzFixed) return;
+      b.dataset.fzFixed = '1';
+
+      // сохраняем то, что было в инлайновых атрибутах
+      var downSrc = b.getAttribute('ontouchstart') || b.getAttribute('onclick') || '';
+      var upSrc   = b.getAttribute('ontouchend') || '';
+
+      // снимаем инлайн — иначе сработает дважды
+      b.removeAttribute('ontouchstart');
+      b.removeAttribute('ontouchend');
+      b.removeAttribute('ontouchcancel');
+      b.removeAttribute('onclick');
+
+      var downFn = downSrc ? new Function(downSrc) : null;
+      var upFn   = upSrc   ? new Function(upSrc)   : null;
+
+      // визуальный отклик + вибрация
+      function press() {
+        b.style.transform = 'scale(0.88)';
+        b.style.filter = 'brightness(1.35)';
+        if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) {} }
+      }
+      function release() {
+        b.style.transform = '';
+        b.style.filter = '';
+      }
+
+      b.addEventListener('pointerdown', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        // ловим палец на этой кнопке: даже если увести за край,
+        // pointerup придёт сюда и кнопка не залипнет
+        if (b.setPointerCapture && e.pointerId !== undefined) {
+          try { b.setPointerCapture(e.pointerId); } catch (err) {}
+        }
+        press();
+        if (downFn) { try { downFn.call(b); } catch (err) { console.warn('[MOB]', err); } }
+      }, { passive: false });
+
+      function endHandler(e) {
+        e.preventDefault();
+        release();
+        if (upFn) { try { upFn.call(b); } catch (err) { console.warn('[MOB]', err); } }
+      }
+      b.addEventListener('pointerup', endHandler, { passive: false });
+      b.addEventListener('pointercancel', endHandler, { passive: false });
+
+      // запрет выделения и контекстного меню на кнопке
+      b.style.touchAction = 'none';
+      b.style.userSelect = 'none';
+      b.style.webkitUserSelect = 'none';
+      b.style.webkitTapHighlightColor = 'transparent';
+      b.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    });
+
+    // ── 3. Джойстик: запрет прокрутки страницы пальцем по нему ──
+    var jb = document.getElementById('joystickBase');
+    var jz = document.getElementById('mobileJoystick');
+    [jb, jz].forEach(function (el) {
+      if (!el) return;
+      el.style.touchAction = 'none';
+      el.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    });
+
+    // ── 4. Зона камеры: не даём странице скроллиться при обзоре ──
+    var tz = document.getElementById('touchCameraZone');
+    if (tz) {
+      tz.style.touchAction = 'none';
+      tz.addEventListener('touchmove', function (e) { e.preventDefault(); }, { passive: false });
+    }
+
+    // ── 5. Общий запрет «оттягивания» страницы (pull-to-refresh) ──
+    document.body.style.overscrollBehavior = 'none';
+    document.documentElement.style.overscrollBehavior = 'none';
+
+    // ── 6. Страховка: если панель ушла за пределы экрана после
+    //      поворота телефона — пересчитываем раскладку ──
+    function relayout() {
+      var mc = document.getElementById('mobileControls');
+      if (!mc) return;
+      // на альбомной ориентации кнопки не должны лезть на джойстик
+      var land = window.innerWidth > window.innerHeight;
+      mc.classList.toggle('fz-landscape', land);
+    }
+    window.addEventListener('resize', relayout);
+    window.addEventListener('orientationchange', function () {
+      setTimeout(relayout, 250);
+    });
+    relayout();
+  });
+})();
+
+</script>
+
 <!-- ========== FZ: катсцена при заходе на сайт ========== -->
 <style>
 #fzIntro{position:fixed;inset:0;background:#000;z-index:2147483000;display:none;overflow:hidden}
