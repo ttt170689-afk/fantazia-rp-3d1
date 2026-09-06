@@ -16192,7 +16192,10 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
   }
 
   // ── Колонны ──
-  [[-15, -9], [0, -9], [15, -9], [-15, 9], [0, 9], [15, 9]].forEach(([cx, cz]) => {
+  // v45: колонна [15, -9] УБРАНА — её коллайдер (14.45..15.55) вместе с
+  // радиусом игрока 0.5 перекрывал подход к лифту на (16, -8):
+  // игрок упирался в неё ровно перед створками и не мог войти.
+  [[-15, -9], [0, -9], [-15, 9], [0, 9], [15, 9]].forEach(([cx, cz]) => {
     const col = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.5, FH, 10), mat(bsm ? 0x55585e : 0xf4efe4));
     col.position.set(bx + cx, F + FH/2, bz + cz); add(col);
     B(1.2, 0.22, 1.2, bsm ? 0x494c51 : 0xe6dfd2, cx, FH - 0.11, cz, 0);
