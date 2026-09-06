@@ -16362,69 +16362,33 @@ function buildMallInterior(bx, bz, floor, FH, add, mat) {
 
   // ═══ КОНТЕНТ (минимум, без хлама) ═══
   if (sf === 0) {
-    // 4 открытых бутика вдоль северной стены
-    [['👑 LUXE', 0xffd700], ['👟 STREET', 0x00b4d8], ['👗 CHIC', 0xff6b9d], ['🧢 URBAN', 0x2ecc71]].forEach(([n, c], i) => {
-      const sx = -15 + i * 10;
-      B(7, 3.2, 0.4, c, sx, 1.6, -MD/2 + 0.3, 0);                        // задняя панель
-      for (let c2 = 0; c2 < 6; c2++) B(0.5, 0.9, 0.12, [0xe74c3c,0x3498db,0x2ecc71,0xf39c12,0x9b59b6,0xecf0f1][c2], sx - 2.5 + c2, 1.7, -MD/2 + 0.75, 0);
-      B(0.6, 0.06, 0.6, 0x8a8f98, sx, 0.03, -MD/2 + 2.2, 0);            // подиум-витрина
-      B(0.45, 0.75, 0.45, c, sx, 0.45, -MD/2 + 2.2, 0);
-      addInteriorSign(n, bx + sx, F + 3.6, bz - MD/2 + 0.5, add);
-      colp(sx, -MD/2 + 0.3, 7, 0.6);
-    });
-    // ⛲ ФОНТАН УДАЛЁН (v25) — на его месте зона отдыха с диванами и медиа-стойкой
-    (function loungeInsteadOfFountain() {
-      const lx = 7.5, lz = -4;
-      // подиум-ковёр
-      const rug = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 5.4), mat(0x3f4a5c));
-      rug.rotation.x = -Math.PI/2; rug.position.set(bx + lx, F + 0.03, bz + lz); add(rug);
-      // два дивана друг напротив друга
-      [-1.7, 1.7].forEach(oz => {
-        B(4.2, 0.5, 1.2, 0x2f3b52, lx, 0.3, lz + oz, 0);
-        B(4.2, 0.85, 0.25, 0x27324a, lx, 0.85, lz + oz + (oz > 0 ? 0.48 : -0.48), 0);
-        colp(lx, lz + oz, 4.4, 1.4);
-      });
-      // журнальный стол со стеклом
-      B(1.9, 0.1, 1.1, 0x9ad4ff, lx, 0.55, lz, 0, 0x66c6ff, 0.1);
-      B(0.14, 0.5, 0.14, 0x39424e, lx, 0.27, lz, 0);
-      // информационная медиа-стойка
-      B(1.3, 2.4, 0.35, 0x1b2130, lx + 3.4, 1.2, lz, 0);
-      const mScr = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1.5), mat(0x00e5ff, 0x00e5ff, 0.75));
-      mScr.position.set(bx + lx + 3.4, F + 1.6, bz + lz - 0.19); add(mScr);
-      colp(lx + 3.4, lz, 1.5, 0.6);
-      addInteriorSign('🛋 ЗОНА ОТДЫХА', bx + lx, F + 3.2, bz + lz, add);
-    })();
-    const carousel = new THREE.Group();
-    const plat = new THREE.Mesh(new THREE.CylinderGeometry(2.7, 2.7, 0.35, 18), mat(0xd4a05a));
-    plat.position.y = 0.18; carousel.add(plat);
-    const cupola = new THREE.Mesh(new THREE.ConeGeometry(2.9, 1.3, 18), mat(0xc0392b, 0xff4d5e, 0.25));
-    cupola.position.y = 4.4; carousel.add(cupola);
-    for (let k = 0; k < 6; k++) {
-      const a = k / 6 * Math.PI * 2;
-      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 3.8, 8), mat(0xd8d8d8, 0xfff6c0, 0.3));
-      pole.position.set(Math.cos(a) * 2.1, 2.1, Math.sin(a) * 2.1); carousel.add(pole);
-      const horse = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.5, 0.35), mat([0xf4f0e8, 0xa23b3b, 0x3b6ba2, 0x3ba25a, 0xa2893b, 0x6b3ba2][k]));
-      horse.position.set(Math.cos(a) * 2.1, 1.05 + (k % 2) * 0.4, Math.sin(a) * 2.1);
-      horse.rotation.y = -a + Math.PI / 2; carousel.add(horse);
+    // ═══ v38: ТОРГОВЫЙ ЗАЛ ЦЕЛИКОМ ВЗЯТ ИЗ ТИЗЕРА ═══
+    // Просьба игрока: «возьми GRAND MALL из тизера и перенеси в игру всё,
+    // в тизере всё аккуратно стоит». public/mall-teaser.js — дословная копия
+    // buildMALL() из teaser.html вместе с палитрой материалов NM.
+    // Замер реальных габаритов тизера: x∈[-22,22] (ровно MW=44),
+    // z∈[-40,-4] (ровно MD=36), фасад-вход на z=-4.
+    // Игровой зал: центр (bx,bz), z∈[bz-18, bz+18].
+    // Значит сдвиг по z = MD/2 + 4 = 22, тогда фасад ляжет на южную стену.
+    if (window.FZ_TEASER_MALL) {
+      try {
+        // noFountain — фонтан игрок просил убрать;
+        // noLift — на этом месте стоит настоящий рабочий лифт с катсценой.
+        const tg = FZ_TEASER_MALL.build(scene, bx, F, bz + MD / 2 + 4,
+                                        { noFountain: true, noLift: true });
+        // регистрируем группу целиком, чтобы fzDisposeInterior её выгрузил
+        if (tg) interiorObjects.push(tg);
+      } catch (e) { console.warn('[MALL] тизер-молл не собрался:', e); }
+    } else {
+      console.warn('[MALL] mall-teaser.js не загружен — зал будет пустым');
     }
-    carousel.position.set(bx + 7.5, F, bz + 4);
-    carousel.userData = { isCarousel: true };
-    add(carousel); colp(7.5, 4, 5.8, 5.8);
-    addInteriorSign('🎠 КАРУСЕЛЬ', bx + 7.5, F + 5.1, bz + 4, add);
-    // киоск мороженого
-    const kiosk = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 2.8, 10), mat(0xff9f43));
-    kiosk.position.set(bx - 16, F + 1.4, bz + MD/2 - 3.4); add(kiosk);
-    const kRoof = new THREE.Mesh(new THREE.ConeGeometry(1.8, 1, 10), mat(0xe17055));
-    kRoof.position.set(bx - 16, F + 3.3, bz + MD/2 - 3.4); add(kRoof);
-    addInteriorSign('🍦 МОРОЖЕНОЕ', bx - 16, F + 2.1, bz + MD/2 - 1.9, add);
-    colp(-16, MD/2 - 3.4, 2.8, 2);
+
+    // ── NPC (в тизере их нет, это игровая часть) ──
     spawnInteriorNPC(bx + 18, F, bz + 12, 'guard', add);
     spawnInteriorNPC(bx - 8, F, bz + 6, 'shopper', add);
     spawnInteriorNPC(bx + 3, F, bz - 1, 'shopper', add);
-    // v35: второй заколоченный проход у восточной стены УБРАН —
-    // он дублировал служебный вход и путал игрока (две «заколочки»).
-    // Остался один служебный вход у лифта (fzServiceDoor).
-    // Дверь босса появляется здесь только после того, как доски сбиты.
+
+    // Дверь босса появляется только после того, как доски сбиты.
     fzBossDoorway(bx, bz, F, add, mat);
   }
 
@@ -22150,6 +22114,9 @@ body.game-active canvas{touch-action:none}
 
 <!-- v33: newcity.js отключён — вернули старый город -->
 <script src="city2.js?v=1"></script>
+<!-- v38: GRAND MALL, дословно перенесённый из тизера (buildMALL + палитра NM).
+     Определяет window.FZ_TEASER_MALL; используется в buildMallInterior (sf===0). -->
+<script src="mall-teaser.js?v=38"></script>
 <!-- ========== FZ: админ-панель + новости (новые) ========== -->
 <style>
 #fzNews{position:fixed;inset:0;background:rgba(5,8,18,.82);display:none;align-items:center;justify-content:center;z-index:9500;backdrop-filter:blur(8px)}
