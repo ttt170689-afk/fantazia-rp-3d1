@@ -37,11 +37,9 @@ namespace Fantazia.UI
 
         void Start()
         {
-            bool mobile = Application.isMobilePlatform;
-#if UNITY_EDITOR
-            mobile = true;   // в редакторе показываем, чтобы можно было настроить
-#endif
-            gameObject.SetActive(mobile);
+            // Только реальные мобильные платформы — на ПК скрипт
+            // выключает сам себя.
+            gameObject.SetActive(Application.isMobilePlatform);
             if (player == null) player = FindObjectOfType<PlayerController>();
         }
 

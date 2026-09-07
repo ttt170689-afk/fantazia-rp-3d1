@@ -53,12 +53,15 @@ namespace Fantazia.Player
 
         void BuildMaterials()
         {
-            mSkin = M(skin, 0f, 0.25f);
-            mShirt = M(shirt, 0f, 0.35f);
-            mPants = M(pants, 0f, 0.3f);
-            mHair = M(hair, 0f, 0.4f);
-            mShoes = M(shoes, 0.1f, 0.5f);
-            mEye = M(Color.black, 0f, 0.8f);
+            // Кожа матовая, ткань почти без бликов, волосы чуть глянцевее,
+            // обувь блестит сильнее всего. Раньше всё было с одинаковой
+            // гладкостью и выглядело пластмассовым.
+            mSkin  = M(skin,  0f,   0.12f);
+            mShirt = M(shirt, 0f,   0.18f);
+            mPants = M(pants, 0f,   0.14f);
+            mHair  = M(hair,  0f,   0.32f);
+            mShoes = M(shoes, 0.15f, 0.55f);
+            mEye   = M(new Color(0.06f, 0.05f, 0.08f), 0f, 0.85f);
         }
 
         Material M(Color c, float metal, float smooth)
@@ -116,6 +119,24 @@ namespace Fantazia.Player
             // талия — сужение между грудью и тазом
             Part("Waist", torso, new Vector3(0f, -0.02f, 0f),
                  new Vector3(0.30f, 0.14f, 0.20f), mShirt, PrimitiveType.Capsule);
+
+            // ── ДЕТАЛИ ОДЕЖДЫ ──
+            // Без них персонаж читается как манекен: нужен воротник,
+            // планка с пуговицами и пояс на стыке рубашки и брюк.
+            var mDark = M(new Color(shirt.r * 0.62f, shirt.g * 0.62f, shirt.b * 0.62f), 0f, 0.2f);
+            Part("CollarL", torso, new Vector3(-0.06f, 0.37f, 0.09f),
+                 new Vector3(0.10f, 0.06f, 0.05f), mDark);
+            Part("CollarR", torso, new Vector3(0.06f, 0.37f, 0.09f),
+                 new Vector3(0.10f, 0.06f, 0.05f), mDark);
+            Part("Placket", torso, new Vector3(0f, 0.16f, 0.115f),
+                 new Vector3(0.035f, 0.36f, 0.02f), mDark);
+            for (int b = 0; b < 3; b++)
+                Part("Button" + b, torso, new Vector3(0f, 0.28f - b * 0.11f, 0.126f),
+                     new Vector3(0.022f, 0.022f, 0.012f), mShoes, PrimitiveType.Sphere);
+            Part("Belt", hips, new Vector3(0f, 0.055f, 0f),
+                 new Vector3(0.345f, 0.055f, 0.245f), mShoes);
+            Part("Buckle", hips, new Vector3(0f, 0.055f, 0.12f),
+                 new Vector3(0.05f, 0.04f, 0.02f), M(new Color(0.78f, 0.65f, 0.25f), 0.85f, 0.7f));
 
             // ── ШЕЯ И ГОЛОВА ──
             neck = Bone("Neck", torso, new Vector3(0f, 0.42f, 0f));
@@ -191,6 +212,10 @@ namespace Fantazia.Player
                  new Vector3(0.095f, 0.09f, 0.095f), mSkin, PrimitiveType.Sphere);
             Part("Forearm", elbow, new Vector3(0f, -0.13f, 0f),
                  new Vector3(0.09f, 0.14f, 0.09f), mSkin, PrimitiveType.Capsule);
+
+            // манжет рубашки на границе рукава и кисти
+            Part("Cuff", elbow, new Vector3(0f, -0.235f, 0f),
+                 new Vector3(0.095f, 0.035f, 0.095f), mShirt, PrimitiveType.Capsule);
 
             var hand = Bone(side < 0 ? "HandL" : "HandR", elbow, new Vector3(0f, -0.27f, 0f));
             Part("Palm", hand, Vector3.zero,

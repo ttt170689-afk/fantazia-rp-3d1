@@ -310,11 +310,13 @@ namespace Fantazia.Core
         // ── МОБИЛЬНЫЙ ИНТЕРФЕЙС ────────────────────────────────────────────
         void BuildMobileUI()
         {
-            bool touch = Application.isMobilePlatform || Input.touchSupported;
-#if UNITY_EDITOR
-            touch = true;   // в редакторе показываем, чтобы можно было настроить
-#endif
-            if (!touch) return;
+            // ТОЛЬКО настоящие телефоны и планшеты.
+            // Раньше здесь стояло touch = true под UNITY_EDITOR — из-за
+            // этого джойстик и кнопки лезли на экран в редакторе и на ПК,
+            // перекрывая обзор. Input.touchSupported тоже не годится:
+            // он true на ноутбуках с сенсорным экраном.
+            bool mobile = Application.isMobilePlatform;
+            if (!mobile) { Debug.Log("[Mobile] ПК — мобильное управление не создаётся"); return; }
 
             var go = new GameObject("MobileCanvas");
             var canvas = go.AddComponent<Canvas>();

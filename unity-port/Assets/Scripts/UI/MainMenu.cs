@@ -32,6 +32,8 @@ namespace Fantazia.UI
         // фон: силуэты города, которые медленно едут
         readonly List<RectTransform> skyline = new List<RectTransform>();
         readonly List<Image> stars = new List<Image>();
+        Text titleText;
+        RectTransform playBtnRt;
 
         void Awake()
         {
@@ -150,12 +152,25 @@ namespace Fantazia.UI
         // на UI-элементах: рисовать canvas-текстуру в рантайме дороже.
         void BuildBackground()
         {
+            // Фон градиентом: плоская заливка выглядела дёшево.
+            // Слоями от почти чёрного верха к фиолетовому низу.
             Panel("BG", root.transform, Vector2.zero, Vector2.one,
-                  Vector2.zero, Vector2.zero, new Color(0.02f, 0.01f, 0.06f, 1f));
+                  Vector2.zero, Vector2.zero, new Color(0.015f, 0.01f, 0.04f, 1f));
 
-            // фиолетовое зарево снизу
-            Panel("Glow", root.transform, new Vector2(0f, 0f), new Vector2(1f, 0.55f),
-                  Vector2.zero, Vector2.zero, new Color(0.42f, 0.24f, 0.9f, 0.13f));
+            for (int i = 0; i < 6; i++)
+            {
+                float t = i / 5f;
+                var g = Panel("Grad" + i, root.transform,
+                    new Vector2(0f, t * 0.5f), new Vector2(1f, t * 0.5f + 0.14f),
+                    Vector2.zero, Vector2.zero,
+                    new Color(0.28f + t * 0.16f, 0.13f, 0.55f + t * 0.18f, 0.05f + t * 0.05f));
+                g.raycastTarget = false;
+            }
+
+            // зарево у горизонта
+            Panel("Glow", root.transform, new Vector2(0f, 0.06f), new Vector2(1f, 0.42f),
+                  Vector2.zero, Vector2.zero, new Color(0.45f, 0.22f, 0.95f, 0.11f))
+                .raycastTarget = false;
 
             // звёзды
             for (int i = 0; i < 90; i++)
@@ -212,13 +227,30 @@ namespace Fantazia.UI
             Label("Bolt", root.transform, "⚡", 88, new Color(0.75f, 0.72f, 1f),
                   TextAnchor.MiddleCenter, new Vector2(0f, 300f), new Vector2(200f, 120f));
 
-            // FANTAZIA RP — двойной слой даёт неоновое свечение
-            Label("TitleGlow", root.transform, "FANTAZIA RP", 96,
-                  new Color(0.55f, 0.42f, 1f, 0.45f), TextAnchor.MiddleCenter,
-                  new Vector2(0f, 186f), new Vector2(1400f, 150f), FontStyle.Bold);
-            Label("Title", root.transform, "FANTAZIA RP", 92, Color.white,
+            // Титул тремя слоями: два размытых ореола разного цвета
+            // и чёткий белый текст сверху. Один слой давал плоскую надпись.
+            Label("TitleGlow2", root.transform, "FANTAZIA RP", 104,
+                  new Color(0.85f, 0.25f, 0.55f, 0.22f), TextAnchor.MiddleCenter,
+                  new Vector2(3f, 184f), new Vector2(1500f, 160f), FontStyle.Bold);
+            Label("TitleGlow1", root.transform, "FANTAZIA RP", 99,
+                  new Color(0.42f, 0.55f, 1f, 0.38f), TextAnchor.MiddleCenter,
+                  new Vector2(-3f, 188f), new Vector2(1500f, 160f), FontStyle.Bold);
+            titleText = Label("Title", root.transform, "FANTAZIA RP", 94, Color.white,
                   TextAnchor.MiddleCenter, new Vector2(0f, 190f),
-                  new Vector2(1400f, 150f), FontStyle.Bold);
+                  new Vector2(1500f, 160f), FontStyle.Bold);
+
+            // Тонкие линии по бокам подписи «3D · ONLINE».
+            // Размер задаём явно: у Panel с одинаковыми якорями
+            // sizeDelta по умолчанию нулевой, и элемент не виден.
+            foreach (float lx in new[] { -300f, 300f })
+            {
+                var ln = Panel("Line", root.transform,
+                    new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                    Vector2.zero, Vector2.zero, new Color(0.6f, 0.55f, 1f, 0.32f));
+                ln.rectTransform.anchoredPosition = new Vector2(lx, 116f);
+                ln.rectTransform.sizeDelta = new Vector2(210f, 2f);
+                ln.raycastTarget = false;
+            }
 
             Label("Sub", root.transform, "3 D   ·   O N L I N E", 22,
                   new Color(0.64f, 0.61f, 1f, 0.75f), TextAnchor.MiddleCenter,
@@ -264,9 +296,18 @@ namespace Fantazia.UI
 
         void BuildButtons()
         {
-            Btn("▶   И Г Р А Т Ь", root.transform, new Vector2(0f, -40f),
-                new Vector2(420f, 82f),
-                new Color(0.42f, 0.36f, 0.91f, 1f), Color.white, 30, StartGame);
+            var play = Btn("▶   И Г Р А Т Ь", root.transform, new Vector2(0f, -40f),
+                new Vector2(460f, 92f),
+                new Color(0.45f, 0.33f, 0.95f, 1f), Color.white, 32, StartGame);
+            playBtnRt = play.GetComponent<RectTransform>();
+            // светящаяся рамка вокруг кнопки
+            var halo = Panel("PlayHalo", root.transform,
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                Vector2.zero, Vector2.zero, new Color(0.6f, 0.45f, 1f, 0.16f));
+            halo.rectTransform.anchoredPosition = new Vector2(0f, -40f);
+            halo.rectTransform.sizeDelta = new Vector2(490f, 118f);
+            halo.raycastTarget = false;
+            halo.transform.SetSiblingIndex(play.transform.GetSiblingIndex());
 
             Btn("НАСТРОЙКИ", root.transform, new Vector2(-140f, -122f),
                 new Vector2(260f, 54f),
@@ -592,6 +633,19 @@ namespace Fantazia.UI
                 var c = stars[i].color;
                 c.a = 0.18f + 0.42f * Mathf.Abs(Mathf.Sin(t2 * 1.1f + i * 0.7f));
                 stars[i].color = c;
+            }
+
+            // титул мягко дышит, кнопка ИГРАТЬ пульсирует —
+            // статичное меню выглядит мёртвым
+            if (titleText != null)
+            {
+                float k = 1f + Mathf.Sin(t2 * 1.4f) * 0.012f;
+                titleText.transform.localScale = new Vector3(k, k, 1f);
+            }
+            if (playBtnRt != null)
+            {
+                float k = 1f + Mathf.Sin(t2 * 2.2f) * 0.022f;
+                playBtnRt.localScale = new Vector3(k, k, 1f);
             }
 
             // статус сервера
