@@ -170,7 +170,11 @@ namespace Fantazia.Player
             Vector3 right = Quaternion.Euler(0f, yaw, 0f) * Vector3.right;
             Vector3 dir = (fwd * input.z + right * input.x);
 
-            bool sprint = (Input.GetKey(KeyCode.LeftShift) || MobileSprint) && !isCrouching;
+            // Бег требует выносливости: на нуле Shift не работает,
+            // иначе можно было бежать бесконечно.
+            bool wantSprint = (Input.GetKey(KeyCode.LeftShift) || MobileSprint) && !isCrouching;
+            bool sprint = wantSprint &&
+                (Fantazia.UI.Stamina.I == null || Fantazia.UI.Stamina.I.CanSprint);
             float speed = sprint ? sprintSpeed : moveSpeed;
             if (isCrouching) speed *= 0.45f;
 

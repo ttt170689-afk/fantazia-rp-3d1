@@ -291,6 +291,14 @@ namespace Fantazia.Core
                 var go = new GameObject("HUD");
                 go.AddComponent<HUD>();
             }
+            // миникарта, компас, FPS, подсказки
+            if (Extras.I == null)
+            {
+                var ex = new GameObject("Extras");
+                ex.AddComponent<Extras>();
+                ex.AddComponent<Stamina>();
+            }
+
             // ── МОБИЛЬНОЕ УПРАВЛЕНИЕ ──
             // Скрипт был написан, но его НИКТО не создавал — на телефоне
             // не появлялось ни джойстика, ни кнопок. Строим UI кодом,

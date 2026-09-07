@@ -233,6 +233,7 @@ namespace Fantazia.World
             }
 
             BuildColliders(cols, floor, type);
+            BuildShell(floor, type);        // стены, потолок, дверь, свет
             BuildFloorPlane(floor, type);
             RegisterInteractables(ints);
 
@@ -333,6 +334,172 @@ namespace Fantazia.World
             }
         }
 
+        // ═══════════════════════════════════════════════════════════════
+        //  СТЕНЫ, ПОТОЛОК И ДВЕРЬ ВЫХОДА
+        //
+        //  В веб-версии интерьеры домов — это пол-плоскость плюс мебель.
+        //  Стен и потолка в захваченных данных НЕТ (проверено: у дома
+        //  0 стен из 197 мешей), поэтому игрок видел «комнату» посреди
+        //  пустоты и мог уйти за её край.
+        //  Строим коробку сами, по размерам зала и цветам из
+        //  INTERIOR_CONFIGS веб-версии.
+        // ═══════════════════════════════════════════════════════════════
+        struct RoomStyle
+        {
+            public Color wall, ceiling, floor;
+            public float w, d, h;
+        }
+
+        RoomStyle GetStyle(string type)
+        {
+            // Цвета взяты из INTERIOR_CONFIGS в index.html.
+            switch (type)
+            {
+                case "mall":      return New(0xbdbbbb, 0xf5f5f5, 44f, 36f, 5.5f);
+                case "house":     return New(0xc9a87c, 0xe8d5b7, 40f, 30f, 4.2f);
+                case "apartment": return New(0x8a9bb0, 0xd4cfc7, 30f, 24f, 3.6f);
+                case "office":    return New(0x6b8cae, 0xe0e8f0, 30f, 24f, 3.8f);
+                case "club":      return New(0x1a0030, 0x1a0030, 30f, 24f, 4.5f);
+                case "bank":      return New(0x1c2e40, 0xc8b8a0, 30f, 24f, 4.2f);
+                case "hospital":  return New(0xf0f0f0, 0xffffff, 30f, 24f, 3.8f);
+                case "police":    return New(0x2a3a55, 0xd8dce4, 30f, 24f, 3.8f);
+                case "shop":      return New(0xa8b0bd, 0xeeeae2, 30f, 24f, 3.6f);
+                default:          return New(0x9aa0a8, 0xe4e0d8, 30f, 24f, 3.8f);
+            }
+        }
+
+        RoomStyle New(int wall, int floorCol, float w, float d, float h)
+        {
+            return new RoomStyle
+            {
+                wall = WorldBuilder.HexColor(wall),
+                floor = WorldBuilder.HexColor(floorCol),
+                ceiling = WorldBuilder.HexColor(wall) * 1.15f,
+                w = w, d = d, h = h
+            };
+        }
+
+        void BuildShell(int floor, string type)
+        {
+            var st = GetStyle(type);
+            float y = (type == "mall") ? FloorY(floor) : 0f;
+            float hw = st.w * 0.5f, hd = st.d * 0.5f;
+
+            var shell = new GameObject("Shell");
+            shell.transform.SetParent(root.transform, false);
+
+            var wallMat = SolidMat(st.wall, 0.08f);
+            var ceilMat = SolidMat(st.ceiling, 0.05f);
+            var floorMat = SolidMat(st.floor, 0.12f);
+
+            // ── ПОЛ ──
+            Slab(shell.transform, new Vector3(0f, y - 0.06f, 0f),
+                 new Vector3(st.w, 0.12f, st.d), floorMat, true);
+
+            // ── ПОТОЛОК ──
+            Slab(shell.transform, new Vector3(0f, y + st.h, 0f),
+                 new Vector3(st.w, 0.12f, st.d), ceilMat, true);
+
+            // ── ЧЕТЫРЕ СТЕНЫ ──
+            // В южной стене оставляем проём под дверь, поэтому она
+            // собирается из двух кусков и перемычки.
+            const float doorW = 3.2f, doorH = 2.8f;
+
+            Slab(shell.transform, new Vector3(0f, y + st.h * 0.5f, -hd),
+                 new Vector3(st.w, st.h, 0.3f), wallMat, true);                 // север
+            Slab(shell.transform, new Vector3(-hw, y + st.h * 0.5f, 0f),
+                 new Vector3(0.3f, st.h, st.d), wallMat, true);                 // запад
+            Slab(shell.transform, new Vector3(hw, y + st.h * 0.5f, 0f),
+                 new Vector3(0.3f, st.h, st.d), wallMat, true);                 // восток
+
+            float side = (st.w - doorW) * 0.5f;
+            Slab(shell.transform, new Vector3(-(doorW * 0.5f + side * 0.5f), y + st.h * 0.5f, hd),
+                 new Vector3(side, st.h, 0.3f), wallMat, true);
+            Slab(shell.transform, new Vector3(doorW * 0.5f + side * 0.5f, y + st.h * 0.5f, hd),
+                 new Vector3(side, st.h, 0.3f), wallMat, true);
+            Slab(shell.transform, new Vector3(0f, y + doorH + (st.h - doorH) * 0.5f, hd),
+                 new Vector3(doorW, st.h - doorH, 0.3f), wallMat, true);
+
+            // ── ДВЕРЬ ВЫХОДА ──
+            // Заметная зелёная рамка со светом: раньше выйти было
+            // вообще нечем — точки exit не существовало ни на одном этаже.
+            var frameMat = SolidMat(new Color(0.18f, 0.55f, 0.32f), 0.3f, true);
+            Slab(shell.transform, new Vector3(0f, y + doorH * 0.5f, hd - 0.16f),
+                 new Vector3(doorW, 0.14f, 0.12f), frameMat, false);
+            Slab(shell.transform, new Vector3(0f, y + doorH, hd - 0.16f),
+                 new Vector3(doorW, 0.16f, 0.12f), frameMat, false);
+            foreach (float sx in new[] { -doorW * 0.5f, doorW * 0.5f })
+                Slab(shell.transform, new Vector3(sx, y + doorH * 0.5f, hd - 0.16f),
+                     new Vector3(0.16f, doorH, 0.12f), frameMat, false);
+
+            var exitLight = new GameObject("ExitLight");
+            exitLight.transform.SetParent(shell.transform, false);
+            exitLight.transform.localPosition = new Vector3(0f, y + doorH + 0.4f, hd - 1.2f);
+            var el = exitLight.AddComponent<Light>();
+            el.type = LightType.Point;
+            el.color = new Color(0.4f, 1f, 0.6f);
+            el.range = 9f;
+            el.intensity = 1.4f;
+            el.shadows = LightShadows.None;
+
+            // ── ОСВЕЩЕНИЕ ЗАЛА ──
+            // Без него интерьер чёрный: свет города сюда не достаёт.
+            int lampsX = Mathf.Max(2, Mathf.RoundToInt(st.w / 14f));
+            int lampsZ = Mathf.Max(2, Mathf.RoundToInt(st.d / 14f));
+            for (int ix = 0; ix < lampsX; ix++)
+                for (int iz = 0; iz < lampsZ; iz++)
+                {
+                    float lx = -hw + st.w * (ix + 0.5f) / lampsX;
+                    float lz = -hd + st.d * (iz + 0.5f) / lampsZ;
+                    var lampGO = new GameObject("Lamp");
+                    lampGO.transform.SetParent(shell.transform, false);
+                    lampGO.transform.localPosition = new Vector3(lx, y + st.h - 0.4f, lz);
+                    var l = lampGO.AddComponent<Light>();
+                    l.type = LightType.Point;
+                    l.color = new Color(1f, 0.95f, 0.85f);
+                    l.range = 20f;
+                    l.intensity = Application.isMobilePlatform ? 1.1f : 1.5f;
+                    l.shadows = LightShadows.None;
+                }
+
+            // ── ТОЧКА ВЫХОДА ──
+            exitPoint = new InterRec
+            {
+                x = 0f, y = y, z = hd - 2.2f,
+                type = "exit", name = "🚪 Выйти на улицу", range = 3.4f
+            };
+        }
+
+        InterRec exitPoint;
+
+        // Плита с коллайдером: используется для стен, пола и потолка.
+        void Slab(Transform parent, Vector3 pos, Vector3 size, Material mat, bool collide)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.name = "Slab";
+            var col = go.GetComponent<Collider>();
+            if (!collide && col != null) Destroy(col);
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = pos;
+            go.transform.localScale = size;
+            go.GetComponent<MeshRenderer>().sharedMaterial = mat;
+        }
+
+        Material SolidMat(Color c, float smooth, bool glow = false)
+        {
+            var m = new Material(litShader);
+            if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", c);
+            if (m.HasProperty("_Color")) m.SetColor("_Color", c);
+            if (m.HasProperty("_Smoothness")) m.SetFloat("_Smoothness", smooth);
+            if (m.HasProperty("_Metallic")) m.SetFloat("_Metallic", 0f);
+            if (glow)
+            {
+                m.EnableKeyword("_EMISSION");
+                if (m.HasProperty("_EmissionColor")) m.SetColor("_EmissionColor", c * 1.6f);
+            }
+            return m;
+        }
+
         // Пол: без него игрок провалится — коллайдеры есть только у стен.
         void BuildFloorPlane(int floor, string type)
         {
@@ -342,6 +509,7 @@ namespace Fantazia.World
             go.transform.localPosition = new Vector3(0f, y - 0.5f, 0f);
             var bc = go.AddComponent<BoxCollider>();
             bc.size = new Vector3(60f, 1f, 50f);
+            go.transform.localPosition = new Vector3(0f, y - 0.9f, 0f);  // ниже настоящего пола
 
             // и потолок-ограничитель, чтобы не улететь на этаж выше
             var ceil = new GameObject("Ceiling");
@@ -359,6 +527,10 @@ namespace Fantazia.World
         {
             active.Clear();
             if (ints != null) active.AddRange(ints);
+            // Точка выхода добавляется ВСЕГДА. В захваченных данных её
+            // не было ни на одном этаже — игрок заходил в здание и
+            // не мог выбраться иначе как кнопкой в углу экрана.
+            if (exitPoint != null) active.Add(exitPoint);
         }
 
         void Clear()
