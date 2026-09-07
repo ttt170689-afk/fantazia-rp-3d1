@@ -85,6 +85,16 @@ namespace Fantazia.World
         public int chunksBuilt;
         public bool Done { get; private set; }
 
+        // Сколько объектов создаём за один кадр. 7045 подряд подвешивали
+        // игру на несколько секунд — выглядело как «игра не работает».
+        // 250 за кадр даёт ~28 кадров загрузки при 60 FPS: полсекунды,
+        // и всё это время крутится полоса прогресса.
+        [Tooltip("Объектов за кадр при загрузке города")]
+        public int spawnPerFrame = 250;
+
+        public float Progress { get; private set; }
+        int totalToBuild = 1;
+
         readonly Dictionary<int, Material> matCache = new Dictionary<int, Material>();
         readonly Dictionary<Vector2Int, GameObject> chunks = new Dictionary<Vector2Int, GameObject>();
         readonly List<InterRec> interactables = new List<InterRec>();
@@ -103,6 +113,10 @@ namespace Fantazia.World
         void Start()
         {
             if (Application.isMobilePlatform) viewDistance = 200f;
+            // применяем сохранённую настройку дальности
+            if (PlayerPrefs.HasKey("fz_viewdist"))
+                viewDistance = PlayerPrefs.GetFloat("fz_viewdist");
+            if (Application.isMobilePlatform) spawnPerFrame = 150;
             StartCoroutine(BuildAll());
         }
 
@@ -119,15 +133,20 @@ namespace Fantazia.World
                 });
 
                 int parts = idx != null ? idx.parts : 1;
+                totalToBuild = idx != null && idx.total > 0 ? idx.total : 1;
+
                 for (int p = 0; p < parts; p++)
                 {
+                    MeshRec[] recs = null;
                     yield return Read($"city_part{p}.json", txt =>
                     {
                         if (string.IsNullOrEmpty(txt)) return;
                         var list = JsonUtility.FromJson<MeshList>("{\"items\":" + txt + "}");
-                        if (list?.items != null) SpawnBatch(list.items);
+                        recs = list?.items;
                     });
-                    yield return null;   // отдаём кадр, чтобы не подвесить игру
+                    if (recs == null) continue;
+                    // строим порциями, отдавая кадр — иначе игра замирает
+                    yield return SpawnStreamed(recs);
                 }
             }
 
@@ -150,6 +169,7 @@ namespace Fantazia.World
 
             if (combineMeshes) CombineChunks();
 
+            Progress = 1f;
             Done = true;
             float dt = Time.realtimeSinceStartup - t0;
             Debug.Log($"[World] Город построен: {meshesBuilt} мешей, {chunksBuilt} чанков, " +
@@ -157,6 +177,31 @@ namespace Fantazia.World
         }
 
         // ── СОЗДАНИЕ МЕШЕЙ ─────────────────────────────────────────────────
+        // Порциями с паузой на кадр: 7045 объектов за раз замораживали
+        // игру, и это читалось как «ничего не работает».
+        IEnumerator SpawnStreamed(MeshRec[] recs)
+        {
+            int inFrame = 0;
+            for (int i = 0; i < recs.Length; i++)
+            {
+                var r = recs[i];
+                var chunk = GetChunk(r.x, r.z);
+                var go = MakePrimitive(r);
+                if (go != null)
+                {
+                    go.transform.SetParent(chunk.transform, true);
+                    meshesBuilt++;
+                }
+                Progress = Mathf.Clamp01(meshesBuilt / (float)totalToBuild);
+
+                if (++inFrame >= spawnPerFrame)
+                {
+                    inFrame = 0;
+                    yield return null;
+                }
+            }
+        }
+
         void SpawnBatch(MeshRec[] recs)
         {
             foreach (var r in recs)

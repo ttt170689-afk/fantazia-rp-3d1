@@ -33,6 +33,10 @@ namespace Fantazia.Core
         public string serverHost = "localhost";
         public int serverPort = 3000;
 
+        [Header("Меню")]
+        [Tooltip("Показать главное меню при запуске. Выключите, чтобы сразу в игру.")]
+        public bool showMainMenu = true;
+
         [Header("Тест косметики")]
         [Tooltip("Наденет предмет по id при старте, например crown_god")]
         public string testCosmetic = "";
@@ -51,12 +55,27 @@ namespace Fantazia.Core
 
         void Start()
         {
+            // Свет, земля и игрок — дёшево, создаём сразу.
             if (spawnLights) BuildLights();
             if (spawnGround) BuildGround();
             if (spawnPlayer) BuildPlayer();
-            if (buildWorld) BuildWorldSystems();
-            if (spawnUI) BuildUI();
-            if (connectToServer) BuildNet();
+
+            if (showMainMenu)
+            {
+                // Мир НЕ строим, пока не нажали ИГРАТЬ: 7045 объектов
+                // на старте давали несколько секунд чёрного экрана.
+                var menuGO = new GameObject("MainMenu");
+                menuGO.AddComponent<UI.MainMenu>();
+                // игрока замораживаем, чтобы он не падал под меню
+                if (player != null)
+                {
+                    var pc0 = player.GetComponent<PlayerController>();
+                    if (pc0 != null) pc0.enabled = false;
+                }
+                return;
+            }
+
+            BeginWorld();
 
             if (!string.IsNullOrEmpty(testCosmetic) && player != null)
             {
@@ -65,6 +84,32 @@ namespace Fantazia.Core
                 else GameData.I.OnReady += EquipTest;
             }
         }
+
+        // Вызывается из меню по кнопке ИГРАТЬ.
+        public void BeginWorld()
+        {
+            if (worldStarted) return;
+            worldStarted = true;
+
+            if (buildWorld) BuildWorldSystems();
+            if (spawnUI) BuildUI();
+            if (connectToServer) BuildNet();
+
+            // возвращаем управление игроку
+            if (player != null)
+            {
+                var pc1 = player.GetComponent<PlayerController>();
+                if (pc1 != null) pc1.enabled = true;
+            }
+
+            if (!string.IsNullOrEmpty(testCosmetic) && player != null && GameData.I != null)
+            {
+                if (GameData.I.Ready) EquipTest();
+                else GameData.I.OnReady += EquipTest;
+            }
+        }
+
+        bool worldStarted;
 
         void EquipTest()
         {
