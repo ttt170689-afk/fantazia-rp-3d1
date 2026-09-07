@@ -291,7 +291,7 @@ namespace Fantazia.Core
             crt.sizeDelta = new Vector2(240, 48);
             btn.AddComponent<Image>().color = new Color(0.3f, 0.22f, 0.14f);
             var b = btn.AddComponent<Button>();
-            b.onClick.AddListener(() => { Destroy(noteUI); Cursor.lockState = CursorLockMode.Locked; });
+            b.onClick.AddListener(() => { Destroy(noteUI); UIState.Close("note"); });
 
             var bt = new GameObject("Label");
             bt.transform.SetParent(btn.transform, false);
@@ -302,7 +302,7 @@ namespace Fantazia.Core
             lt.font = t.font; lt.fontSize = 20; lt.color = Color.white;
             lt.text = "Закрыть"; lt.alignment = TextAnchor.MiddleCenter;
 
-            Cursor.lockState = CursorLockMode.None;
+            UIState.Open("note");
         }
 
         // ── СОХРАНЕНИЕ ─────────────────────────────────────────────────────

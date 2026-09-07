@@ -242,12 +242,23 @@ namespace Fantazia.World
 
         void Spawn(MeshRec r, Transform parent)
         {
+            if (r.k == "cone")
+            {
+                var cone = new GameObject("Cone");
+                cone.transform.SetParent(parent, false);
+                cone.AddComponent<MeshFilter>().sharedMesh = WorldBuilder.GetConeMeshPublic();
+                cone.AddComponent<MeshRenderer>().sharedMaterial = GetMat(r);
+                cone.transform.localPosition = new Vector3(r.x, r.y, r.z);
+                cone.transform.localEulerAngles = new Vector3(r.rx, r.ry, r.rz);
+                cone.transform.localScale = new Vector3(r.sx, r.sy, r.sz);
+                return;
+            }
+
             PrimitiveType pt;
             switch (r.k)
             {
                 case "sphere": pt = PrimitiveType.Sphere; break;
                 case "cylinder":
-                case "cone":
                 case "torus": pt = PrimitiveType.Cylinder; break;
                 default: pt = PrimitiveType.Cube; break;
             }

@@ -297,8 +297,10 @@ namespace Fantazia.Core
             // потому что префабы снаружи редактора не сделать.
             if (FindObjectOfType<MobileControls>() == null)
                 BuildMobileUI();
-            // чат общий с веб-игроками — они на том же сервере
-            if (connectToServer && ChatUI.I == null)
+            // Чат создаём ВСЕГДА, а не только при подключении к серверу:
+            // раньше при выключенном Connect To Server его просто не было.
+            // Без сервера он работает как локальная консоль сообщений.
+            if (ChatUI.I == null)
             {
                 var go = new GameObject("Chat");
                 go.AddComponent<ChatUI>();

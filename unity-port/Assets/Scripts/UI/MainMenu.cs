@@ -366,8 +366,7 @@ namespace Fantazia.UI
             yield return new WaitForSeconds(0.35f);
 
             loadingPanel.SetActive(false);
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            Core.UIState.CloseAll();   // мир загружен — отдаём управление
         }
 
         void SetProgress(float p, string text)
@@ -379,77 +378,181 @@ namespace Fantazia.UI
 
         // ── НАСТРОЙКИ ──────────────────────────────────────────────────────
         GameObject settingsPanel;
+        readonly List<Image> qualityBtns = new List<Image>();
+        readonly List<Image> distBtns = new List<Image>();
+        Text qualityHint;
 
+        // Настройки строятся на canvas, а НЕ внутри root: root скрывается
+        // при запуске игры, и панель вместе с ним исчезала — из-за этого
+        // «графику нельзя было выбрать» после старта.
         void ToggleSettings()
         {
             if (settingsPanel != null)
             {
-                settingsPanel.SetActive(!settingsPanel.activeSelf);
+                bool on = !settingsPanel.activeSelf;
+                settingsPanel.SetActive(on);
+                Core.UIState.Toggle("settings", on);
+                if (on) RefreshSettingsUI();
                 return;
             }
+            BuildSettings();
+            Core.UIState.Open("settings");
+            RefreshSettingsUI();
+        }
 
-            var p = Panel("Settings", root.transform,
+        void BuildSettings()
+        {
+            var p = Panel("Settings", canvas.transform,
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                Vector2.zero, Vector2.zero, new Color(0.04f, 0.03f, 0.1f, 0.97f));
-            p.rectTransform.sizeDelta = new Vector2(560f, 400f);
+                Vector2.zero, Vector2.zero, new Color(0.04f, 0.03f, 0.1f, 0.98f));
+            p.rectTransform.sizeDelta = new Vector2(640f, 520f);
             settingsPanel = p.gameObject;
 
-            Label("SetTitle", p.transform, "НАСТРОЙКИ", 28, Color.white,
-                  TextAnchor.MiddleCenter, new Vector2(0f, 158f),
-                  new Vector2(500f, 50f), FontStyle.Bold);
+            Label("SetTitle", p.transform, "НАСТРОЙКИ", 30, Color.white,
+                  TextAnchor.MiddleCenter, new Vector2(0f, 216f),
+                  new Vector2(560f, 50f), FontStyle.Bold);
 
-            // качество: главный рычаг для слабых телефонов
-            Label("QLabel", p.transform, "Качество графики", 18,
-                  new Color(0.78f, 0.76f, 1f), TextAnchor.MiddleLeft,
-                  new Vector2(-110f, 92f), new Vector2(300f, 34f));
+            // ── КАЧЕСТВО ──
+            Label("QLabel", p.transform, "Качество графики", 19,
+                  new Color(0.78f, 0.76f, 1f), TextAnchor.MiddleCenter,
+                  new Vector2(0f, 152f), new Vector2(560f, 34f));
 
             string[] q = { "Низкое", "Среднее", "Высокое" };
+            qualityBtns.Clear();
             for (int i = 0; i < 3; i++)
             {
                 int lvl = i;
-                Btn(q[i], p.transform, new Vector2(-150f + i * 150f, 46f),
-                    new Vector2(140f, 44f),
-                    QualitySettings.GetQualityLevel() == lvl
-                        ? new Color(0.42f, 0.36f, 0.91f) : new Color(0.15f, 0.14f, 0.26f),
-                    Color.white, 17, () => SetQuality(lvl));
+                var b = Btn(q[i], p.transform, new Vector2(-170f + i * 170f, 104f),
+                    new Vector2(158f, 50f), new Color(0.15f, 0.14f, 0.26f),
+                    Color.white, 18, () => SetQuality(lvl));
+                qualityBtns.Add(b.targetGraphic as Image);
             }
 
-            Label("VLabel", p.transform, "Дальность прорисовки", 18,
-                  new Color(0.78f, 0.76f, 1f), TextAnchor.MiddleLeft,
-                  new Vector2(-110f, -14f), new Vector2(300f, 34f));
+            qualityHint = Label("QHint", p.transform, "", 15,
+                  new Color(0.6f, 0.6f, 0.75f), TextAnchor.MiddleCenter,
+                  new Vector2(0f, 64f), new Vector2(580f, 30f));
+
+            // ── ДАЛЬНОСТЬ ──
+            Label("VLabel", p.transform, "Дальность прорисовки", 19,
+                  new Color(0.78f, 0.76f, 1f), TextAnchor.MiddleCenter,
+                  new Vector2(0f, 16f), new Vector2(560f, 34f));
 
             string[] v = { "Близко", "Средне", "Далеко" };
             float[] dist = { 140f, 240f, 380f };
+            distBtns.Clear();
             for (int i = 0; i < 3; i++)
             {
                 float d = dist[i];
-                Btn(v[i], p.transform, new Vector2(-150f + i * 150f, -60f),
-                    new Vector2(140f, 44f),
-                    new Color(0.15f, 0.14f, 0.26f), Color.white, 17,
-                    () => SetViewDistance(d));
+                var b = Btn(v[i], p.transform, new Vector2(-170f + i * 170f, -32f),
+                    new Vector2(158f, 50f), new Color(0.15f, 0.14f, 0.26f),
+                    Color.white, 18, () => SetViewDistance(d));
+                distBtns.Add(b.targetGraphic as Image);
             }
 
-            Btn("ЗАКРЫТЬ", p.transform, new Vector2(0f, -152f),
-                new Vector2(240f, 48f), new Color(0.22f, 0.2f, 0.34f),
-                Color.white, 18, () => settingsPanel.SetActive(false));
+            // ── ТЕНИ ──
+            Label("SLabel", p.transform, "Тени", 19,
+                  new Color(0.78f, 0.76f, 1f), TextAnchor.MiddleCenter,
+                  new Vector2(-150f, -104f), new Vector2(220f, 34f));
+            Btn("ВКЛ / ВЫКЛ", p.transform, new Vector2(120f, -104f),
+                new Vector2(220f, 46f), new Color(0.2f, 0.18f, 0.32f),
+                Color.white, 17, ToggleShadows);
+
+            Btn("ЗАКРЫТЬ", p.transform, new Vector2(0f, -196f),
+                new Vector2(280f, 52f), new Color(0.32f, 0.28f, 0.5f),
+                Color.white, 19, () => { settingsPanel.SetActive(false);
+                                         Core.UIState.Close("settings"); });
+        }
+
+        // Подсветка выбранного варианта: без неё непонятно, сработало ли
+        // нажатие — именно поэтому казалось, что «графика не выбирается».
+        void RefreshSettingsUI()
+        {
+            int lvl = PlayerPrefs.GetInt("fz_quality", QualitySettings.GetQualityLevel());
+            for (int i = 0; i < qualityBtns.Count; i++)
+                if (qualityBtns[i] != null)
+                    qualityBtns[i].color = (i == lvl)
+                        ? new Color(0.42f, 0.36f, 0.91f)
+                        : new Color(0.15f, 0.14f, 0.26f);
+
+            float d = PlayerPrefs.GetFloat("fz_viewdist", 240f);
+            int di = d < 180f ? 0 : (d < 310f ? 1 : 2);
+            for (int i = 0; i < distBtns.Count; i++)
+                if (distBtns[i] != null)
+                    distBtns[i].color = (i == di)
+                        ? new Color(0.42f, 0.36f, 0.91f)
+                        : new Color(0.15f, 0.14f, 0.26f);
+
+            if (qualityHint != null)
+            {
+                string[] hints = {
+                    "Тени выключены, дальность меньше — для слабых телефонов",
+                    "Баланс качества и скорости",
+                    "Тени и полная детализация — для ПК"
+                };
+                qualityHint.text = hints[Mathf.Clamp(lvl, 0, 2)];
+            }
         }
 
         void SetQuality(int level)
         {
-            QualitySettings.SetQualityLevel(level, true);
+            level = Mathf.Clamp(level, 0, 2);
             PlayerPrefs.SetInt("fz_quality", level);
-            // на низком качестве отключаем тени — это самое дорогое
+            PlayerPrefs.Save();
+
+            // Уровни Unity могут не совпадать по числу с нашими тремя,
+            // поэтому применяем настройки руками, а не полагаемся на
+            // QualitySettings.SetQualityLevel.
+            int count = QualitySettings.names.Length;
+            if (count > 0)
+                QualitySettings.SetQualityLevel(
+                    Mathf.Clamp(Mathf.RoundToInt(level / 2f * (count - 1)), 0, count - 1), true);
+
+            // тени — самое дорогое на мобильных
             foreach (var l in FindObjectsOfType<Light>())
                 if (l.type == LightType.Directional)
-                    l.shadows = level == 0 ? LightShadows.None : LightShadows.Soft;
+                    l.shadows = level == 0 ? LightShadows.None
+                              : level == 1 ? LightShadows.Hard
+                                           : LightShadows.Soft;
+
+            QualitySettings.shadowDistance = level == 0 ? 0f : (level == 1 ? 40f : 90f);
+            QualitySettings.pixelLightCount = level == 0 ? 1 : (level == 1 ? 2 : 4);
+            QualitySettings.antiAliasing = level == 2 ? 2 : 0;
+            QualitySettings.vSyncCount = 0;
+            Application.targetFrameRate = level == 0 ? 30 : 60;
+
+            // разрешение рендера: главный рычаг для слабых телефонов
+            float scale = level == 0 ? 0.75f : (level == 1 ? 1f : 1f);
+            if (Application.isMobilePlatform)
+                Screen.SetResolution(Mathf.RoundToInt(Screen.width * scale),
+                                     Mathf.RoundToInt(Screen.height * scale), true);
+
+            RefreshSettingsUI();
+            Core.PlayerProfile.Notify("Качество: " +
+                (level == 0 ? "низкое" : level == 1 ? "среднее" : "высокое"));
         }
 
         void SetViewDistance(float d)
         {
             PlayerPrefs.SetFloat("fz_viewdist", d);
+            PlayerPrefs.Save();
             var wb = Fantazia.World.WorldBuilder.I;
             if (wb != null) wb.viewDistance = d;
             RenderSettings.fogEndDistance = d;
+            RenderSettings.fogStartDistance = d * 0.35f;
+            if (Camera.main != null) Camera.main.farClipPlane = d + 120f;
+            RefreshSettingsUI();
+            Core.PlayerProfile.Notify("Дальность: " + Mathf.RoundToInt(d) + " м");
+        }
+
+        void ToggleShadows()
+        {
+            bool on = PlayerPrefs.GetInt("fz_shadows", 1) == 1;
+            on = !on;
+            PlayerPrefs.SetInt("fz_shadows", on ? 1 : 0);
+            foreach (var l in FindObjectsOfType<Light>())
+                if (l.type == LightType.Directional)
+                    l.shadows = on ? LightShadows.Soft : LightShadows.None;
+            Core.PlayerProfile.Notify("Тени: " + (on ? "включены" : "выключены"));
         }
 
         void Quit()
@@ -465,6 +568,10 @@ namespace Fantazia.UI
         float t2;
         void Update()
         {
+            // Esc во время игры открывает настройки — иначе после старта
+            // до них было не добраться вообще.
+            if (GameStarted && Input.GetKeyDown(KeyCode.F1)) ToggleSettings();
+
             if (GameStarted && (loadingPanel == null || !loadingPanel.activeSelf)) return;
 
             t2 += Time.deltaTime;

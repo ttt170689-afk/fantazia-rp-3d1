@@ -94,9 +94,10 @@ namespace Fantazia.Player
 
         void Update()
         {
-            // пока игрок печатает в чат — не двигаемся и не крутим камеру,
-            // иначе набор текста уводит персонажа в стену
-            if (Fantazia.Core.ChatUI.I != null && Fantazia.Core.ChatUI.I.IsTyping)
+            // пока открыто любое окно (магазин, лифт, квесты, чат) —
+            // не двигаемся и не крутим камеру
+            if (Fantazia.Core.UIState.AnyOpen ||
+                (Fantazia.Core.ChatUI.I != null && Fantazia.Core.ChatUI.I.IsTyping))
             {
                 MobileMove = Vector2.zero;
                 MobileLook = Vector2.zero;
@@ -133,11 +134,18 @@ namespace Fantazia.Player
 
             if (Input.GetKeyDown(KeyCode.V)) firstPerson = !firstPerson;
 
-            // захват курсора по клику, освобождение по Escape
-            if (Input.GetMouseButtonDown(0) && !Application.isMobilePlatform)
+            // v2: курсором управляет ТОЛЬКО UIState.
+            // Раньше здесь стоял захват на любой клик — и когда игрок
+            // тыкал в кнопку этажа или в магазин, курсор запирался
+            // прямо посреди нажатия. Теперь захват происходит лишь
+            // когда все окна закрыты.
+            if (Input.GetMouseButtonDown(0) && !Application.isMobilePlatform
+                && !Fantazia.Core.UIState.AnyOpen
+                && !UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+            {
                 Cursor.lockState = CursorLockMode.Locked;
-            if (Input.GetKeyDown(KeyCode.Escape))
-                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = false;
+            }
         }
 
         // ── ДВИЖЕНИЕ ───────────────────────────────────────────────────────

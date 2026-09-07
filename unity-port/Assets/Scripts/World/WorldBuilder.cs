@@ -214,14 +214,65 @@ namespace Fantazia.World
             }
         }
 
+
+        // ── КОНУС ──
+        // У Unity нет примитива-конуса, а в городе это крыши, ёлки и
+        // дорожные конусы — цилиндром они выглядели неправильно.
+        // Строим меш один раз и переиспользуем.
+        static Mesh coneMesh;
+        public static Mesh GetConeMeshPublic() { return GetConeMesh(); }
+
+        static Mesh GetConeMesh()
+        {
+            if (coneMesh != null) return coneMesh;
+            const int seg = 12;
+            var verts = new List<Vector3>();
+            var tris = new List<int>();
+
+            verts.Add(new Vector3(0f, 0.5f, 0f));          // вершина
+            for (int i = 0; i < seg; i++)
+            {
+                float a = i / (float)seg * Mathf.PI * 2f;
+                verts.Add(new Vector3(Mathf.Cos(a) * 0.5f, -0.5f, Mathf.Sin(a) * 0.5f));
+            }
+            verts.Add(new Vector3(0f, -0.5f, 0f));          // центр донышка
+            int centerIdx = verts.Count - 1;
+
+            for (int i = 0; i < seg; i++)
+            {
+                int a = 1 + i, b = 1 + (i + 1) % seg;
+                tris.Add(0); tris.Add(b); tris.Add(a);           // бок
+                tris.Add(centerIdx); tris.Add(a); tris.Add(b);   // низ
+            }
+
+            coneMesh = new Mesh();
+            coneMesh.SetVertices(verts);
+            coneMesh.SetTriangles(tris, 0);
+            coneMesh.RecalculateNormals();
+            coneMesh.RecalculateBounds();
+            return coneMesh;
+        }
+
         GameObject MakePrimitive(MeshRec r)
         {
+            // конус собираем своим мешем
+            if (r.k == "cone")
+            {
+                var cone = new GameObject("Cone");
+                cone.AddComponent<MeshFilter>().sharedMesh = GetConeMesh();
+                cone.AddComponent<MeshRenderer>().sharedMaterial = GetMat(r);
+                cone.transform.position = new Vector3(r.x, r.y, r.z);
+                cone.transform.eulerAngles = new Vector3(r.rx, r.ry, r.rz);
+                cone.transform.localScale = new Vector3(r.sx, r.sy, r.sz);
+                cone.isStatic = true;
+                return cone;
+            }
+
             PrimitiveType pt;
             switch (r.k)
             {
                 case "sphere": pt = PrimitiveType.Sphere; break;
                 case "cylinder": pt = PrimitiveType.Cylinder; break;
-                case "cone": pt = PrimitiveType.Cylinder; break;   // конус = сужённый цилиндр
                 case "torus": pt = PrimitiveType.Cylinder; break;  // тор приблизим диском
                 default: pt = PrimitiveType.Cube; break;           // box и plane
             }

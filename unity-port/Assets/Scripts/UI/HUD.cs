@@ -258,7 +258,7 @@ namespace Fantazia.UI
             if (elevatorPanel == null) return;
             bool on = !elevatorPanel.gameObject.activeSelf;
             elevatorPanel.gameObject.SetActive(on);
-            Cursor.lockState = on ? CursorLockMode.None : CursorLockMode.Locked;
+            Core.UIState.Toggle("elevator", on);
         }
 
         // ── МАГАЗИН КОСМЕТИКИ (206 предметов) ──────────────────────────────
@@ -353,7 +353,7 @@ namespace Fantazia.UI
             bool on = !shopPanel.gameObject.activeSelf;
             shopPanel.gameObject.SetActive(on);
             if (on) FillShop();
-            Cursor.lockState = on ? CursorLockMode.None : CursorLockMode.Locked;
+            Core.UIState.Toggle("shop", on);
         }
 
         // ── КВЕСТЫ ─────────────────────────────────────────────────────────
@@ -420,6 +420,7 @@ namespace Fantazia.UI
             bool on = !questPanel.gameObject.activeSelf;
             questPanel.gameObject.SetActive(on);
             if (on) FillQuests();
+            Core.UIState.Toggle("quests", on);
         }
 
         // ── ОБНОВЛЕНИЕ ─────────────────────────────────────────────────────

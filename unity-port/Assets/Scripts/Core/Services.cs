@@ -384,7 +384,7 @@ namespace Fantazia.Core
             input.textComponent = t;
             input.onEndEdit.AddListener(Send);
 
-            Add("Система", "Enter — написать в чат");
+            Add("Система", "Enter — написать. F1 — настройки графики");
         }
 
         public void Add(string who, string text)
@@ -397,11 +397,13 @@ namespace Fantazia.Core
         void Send(string text)
         {
             typing = false;
-            if (string.IsNullOrWhiteSpace(text)) return;
-            NetClient.I?.SendChat(text);
+            if (string.IsNullOrWhiteSpace(text)) { UIState.Close("chat"); return; }
+            // Без сервера сообщение всё равно показываем локально —
+            // иначе кажется, что чат сломан.
+            if (NetClient.I != null && NetClient.I.Connected) NetClient.I.SendChat(text);
             Add("Вы", text);
             input.text = "";
-            Cursor.lockState = CursorLockMode.Locked;
+            UIState.Close("chat");
         }
 
         void Update()
@@ -411,7 +413,7 @@ namespace Fantazia.Core
                 if (!typing)
                 {
                     typing = true;
-                    Cursor.lockState = CursorLockMode.None;
+                    UIState.Open("chat");
                     input.ActivateInputField();
                 }
             }
