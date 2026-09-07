@@ -234,22 +234,31 @@ namespace Fantazia.Core
             }
 
             // ── МАШИНЫ: садимся по F ──
+            // вынесено в TryCar(), чтобы то же самое работало
+            // с мобильной кнопки, а не только с клавиатуры
             // Отдельно от точек взаимодействия: машины двигаются, держать
             // их в общем списке пришлось бы обновлять каждый кадр.
-            if (Input.GetKeyDown(KeyCode.F) && CityLife.I != null &&
-                (InteriorManager.I == null || !InteriorManager.I.inside))
+            if (Input.GetKeyDown(KeyCode.F)) TryCar();
+        }
+
+        // Посадка в ближайшую машину. Публичный метод: вызывается и с
+        // клавиши F, и с мобильной кнопки.
+        public void TryCar()
+        {
+            if (CityLife.I == null) return;
+            if (InteriorManager.I != null && InteriorManager.I.inside) return;
+
+            var pc = FindObjectOfType<Fantazia.Player.PlayerController>();
+            if (pc == null || !pc.gameObject.activeSelf) return;
+
+            var car = CityLife.I.NearestCar(pc.transform.position, 4.5f);
+            if (car == null || car.Occupied)
             {
-                var pc = FindObjectOfType<Fantazia.Player.PlayerController>();
-                if (pc != null && pc.gameObject.activeSelf)
-                {
-                    var car = CityLife.I.NearestCar(pc.transform.position, 4.5f);
-                    if (car != null && !car.Occupied)
-                    {
-                        car.Enter(pc);
-                        PlayerProfile.I?.AddCoins(3, "поездка на машине", 30f);
-                    }
-                }
+                PlayerProfile.Notify("🚗 Рядом нет свободной машины");
+                return;
             }
+            car.Enter(pc);
+            PlayerProfile.I?.AddCoins(3, "поездка на машине", 30f);
         }
 
         void FindNearest()

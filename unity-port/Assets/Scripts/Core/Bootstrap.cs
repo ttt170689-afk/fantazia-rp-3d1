@@ -132,15 +132,21 @@ namespace Fantazia.Core
                 ? LightShadows.None : LightShadows.Soft;
             sunGO.transform.rotation = Quaternion.Euler(48f, -30f, 0f);
 
+            // Небо из веб-версии: там scene.background = 0x87CEEB.
+            // Стандартный серый скайбокс Unity делал картинку тусклой —
+            // именно это видно на скриншоте пользователя.
+            Color sky = new Color(0.53f, 0.81f, 0.92f);   // #87CEEB
+            RenderSettings.skybox = null;                 // сплошной цвет, как в вебе
+
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(0.42f, 0.47f, 0.62f);
-            RenderSettings.ambientEquatorColor = new Color(0.30f, 0.32f, 0.40f);
-            RenderSettings.ambientGroundColor = new Color(0.16f, 0.15f, 0.13f);
+            RenderSettings.ambientSkyColor = new Color(0.55f, 0.62f, 0.74f);
+            RenderSettings.ambientEquatorColor = new Color(0.42f, 0.44f, 0.50f);
+            RenderSettings.ambientGroundColor = new Color(0.22f, 0.21f, 0.19f);
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Linear;
-            RenderSettings.fogColor = new Color(0.55f, 0.60f, 0.72f);
-            RenderSettings.fogStartDistance = 120f;
-            RenderSettings.fogEndDistance = 420f;
+            RenderSettings.fogColor = sky;                // туман в цвет неба
+            RenderSettings.fogStartDistance = 150f;
+            RenderSettings.fogEndDistance = 460f;
         }
 
         // ── ЗЕМЛЯ ──────────────────────────────────────────────────────────
@@ -152,6 +158,9 @@ namespace Fantazia.Core
             var g = GameObject.CreatePrimitive(PrimitiveType.Plane);
             g.name = "Ground";
             g.transform.localScale = new Vector3(size / 10f, 1f, size / 10f);
+            // Чуть ниже нуля: дороги города лежат на y=0.01-0.02, и при
+            // совпадении высот они мерцали бы (z-fighting).
+            g.transform.position = new Vector3(0f, -0.05f, 0f);
             var mr = g.GetComponent<MeshRenderer>();
             var sh = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
             var mat = new Material(sh);
@@ -192,9 +201,15 @@ namespace Fantazia.Core
 
             // камера
             var camGO = Camera.main != null ? Camera.main.gameObject : new GameObject("Main Camera");
-            if (camGO.GetComponent<Camera>() == null) camGO.AddComponent<Camera>();
+            var camComp = camGO.GetComponent<Camera>();
+            if (camComp == null) camComp = camGO.AddComponent<Camera>();
             camGO.tag = "MainCamera";
             if (camGO.GetComponent<AudioListener>() == null) camGO.AddComponent<AudioListener>();
+
+            // Заливаем небо цветом, а не серым скайбоксом по умолчанию.
+            camComp.clearFlags = CameraClearFlags.SolidColor;
+            camComp.backgroundColor = new Color(0.53f, 0.81f, 0.92f);
+            camComp.farClipPlane = 600f;   // дальше всё равно скрыто туманом
 
             var pc = player.AddComponent<PlayerController>();
             pc.cameraRig = camGO.transform;
@@ -276,12 +291,139 @@ namespace Fantazia.Core
                 var go = new GameObject("HUD");
                 go.AddComponent<HUD>();
             }
+            // ── МОБИЛЬНОЕ УПРАВЛЕНИЕ ──
+            // Скрипт был написан, но его НИКТО не создавал — на телефоне
+            // не появлялось ни джойстика, ни кнопок. Строим UI кодом,
+            // потому что префабы снаружи редактора не сделать.
+            if (FindObjectOfType<MobileControls>() == null)
+                BuildMobileUI();
             // чат общий с веб-игроками — они на том же сервере
             if (connectToServer && ChatUI.I == null)
             {
                 var go = new GameObject("Chat");
                 go.AddComponent<ChatUI>();
             }
+        }
+
+        // ── МОБИЛЬНЫЙ ИНТЕРФЕЙС ────────────────────────────────────────────
+        void BuildMobileUI()
+        {
+            bool touch = Application.isMobilePlatform || Input.touchSupported;
+#if UNITY_EDITOR
+            touch = true;   // в редакторе показываем, чтобы можно было настроить
+#endif
+            if (!touch) return;
+
+            var go = new GameObject("MobileCanvas");
+            var canvas = go.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 120;
+            go.AddComponent<UnityEngine.UI.GraphicRaycaster>();
+
+            var scaler = go.AddComponent<UnityEngine.UI.CanvasScaler>();
+            scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+            scaler.matchWidthOrHeight = 0.5f;
+
+            var mc = go.AddComponent<MobileControls>();
+            mc.canvas = canvas;
+            mc.player = player != null ? player.GetComponent<PlayerController>() : null;
+
+            // ── ДЖОЙСТИК СЛЕВА ──
+            var baseGO = new GameObject("JoystickBase");
+            baseGO.transform.SetParent(go.transform, false);
+            var brt = baseGO.AddComponent<RectTransform>();
+            brt.anchorMin = brt.anchorMax = new Vector2(0f, 0f);
+            brt.anchoredPosition = new Vector2(230f, 230f);
+            brt.sizeDelta = new Vector2(260f, 260f);
+            var bimg = baseGO.AddComponent<UnityEngine.UI.Image>();
+            bimg.color = new Color(1f, 1f, 1f, 0.13f);
+            bimg.raycastTarget = false;
+
+            var knobGO = new GameObject("JoystickKnob");
+            knobGO.transform.SetParent(baseGO.transform, false);
+            var krt = knobGO.AddComponent<RectTransform>();
+            krt.anchorMin = krt.anchorMax = new Vector2(0.5f, 0.5f);
+            krt.sizeDelta = new Vector2(110f, 110f);
+            var kimg = knobGO.AddComponent<UnityEngine.UI.Image>();
+            kimg.color = new Color(0.55f, 0.48f, 1f, 0.62f);
+            kimg.raycastTarget = false;
+
+            mc.joystickBase = brt;
+            mc.joystickKnob = krt;
+            mc.joystickRadius = 120f;
+
+            // ── КНОПКИ СПРАВА ──
+            // Порядок и подписи как в веб-версии.
+            MobBtn(go.transform, "E",  new Vector2(-330f, 300f), 130f,
+                   new Color(0.25f, 0.55f, 0.35f, 0.75f),
+                   () => { var i = Interaction.I; if (i != null && i.Nearest != null) i.Activate(i.Nearest); });
+
+            MobBtn(go.transform, "↑",  new Vector2(-170f, 210f), 145f,
+                   new Color(0.3f, 0.35f, 0.7f, 0.75f),
+                   () => { if (mc.player != null) mc.player.MobileJumpPressed = true; });
+
+            MobBtn(go.transform, "F",  new Vector2(-330f, 155f), 130f,
+                   new Color(0.6f, 0.4f, 0.2f, 0.75f),
+                   () => { if (Interaction.I != null) Interaction.I.TryCar(); });
+
+            var sprintBtn = MobBtn(go.transform, "БЕГ", new Vector2(-170f, 380f), 130f,
+                   new Color(0.7f, 0.45f, 0.2f, 0.75f), null);
+            // бег — удержание, поэтому вешаем на нажатие и отпускание
+            var trig = sprintBtn.gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
+            var down = new UnityEngine.EventSystems.EventTrigger.Entry
+                { eventID = UnityEngine.EventSystems.EventTriggerType.PointerDown };
+            down.callback.AddListener(_ => { if (mc.player != null) mc.player.MobileSprint = true; });
+            trig.triggers.Add(down);
+            var up = new UnityEngine.EventSystems.EventTrigger.Entry
+                { eventID = UnityEngine.EventSystems.EventTriggerType.PointerUp };
+            up.callback.AddListener(_ => { if (mc.player != null) mc.player.MobileSprint = false; });
+            trig.triggers.Add(up);
+
+            MobBtn(go.transform, "B",  new Vector2(-90f, 560f), 110f,
+                   new Color(0.4f, 0.3f, 0.6f, 0.7f),
+                   () => { if (HUD.I != null) HUD.I.ToggleShop(); });
+            MobBtn(go.transform, "Q",  new Vector2(-215f, 560f), 110f,
+                   new Color(0.3f, 0.4f, 0.6f, 0.7f),
+                   () => { if (HUD.I != null) HUD.I.ToggleQuests(); });
+            MobBtn(go.transform, "👁", new Vector2(-340f, 560f), 110f,
+                   new Color(0.35f, 0.35f, 0.45f, 0.7f),
+                   () => { if (mc.player != null) mc.player.firstPerson = !mc.player.firstPerson; });
+
+            Debug.Log("[Mobile] управление создано: джойстик + 7 кнопок");
+        }
+
+        UnityEngine.UI.Button MobBtn(Transform parent, string label, Vector2 pos,
+                                     float size, Color color,
+                                     UnityEngine.Events.UnityAction onClick)
+        {
+            var go = new GameObject("Mob_" + label);
+            go.transform.SetParent(parent, false);
+            var rt = go.AddComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(1f, 0f);
+            rt.anchoredPosition = pos;
+            rt.sizeDelta = new Vector2(size, size);
+            var img = go.AddComponent<UnityEngine.UI.Image>();
+            img.color = color;
+            var b = go.AddComponent<UnityEngine.UI.Button>();
+            b.targetGraphic = img;
+            if (onClick != null) b.onClick.AddListener(onClick);
+
+            var txt = new GameObject("Label");
+            txt.transform.SetParent(go.transform, false);
+            var trt = txt.AddComponent<RectTransform>();
+            trt.anchorMin = Vector2.zero; trt.anchorMax = Vector2.one;
+            trt.offsetMin = Vector2.zero; trt.offsetMax = Vector2.zero;
+            var t = txt.AddComponent<UnityEngine.UI.Text>();
+            var f = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            if (f == null) f = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            t.font = f;
+            t.fontSize = Mathf.RoundToInt(size * 0.34f);
+            t.color = Color.white;
+            t.text = label;
+            t.alignment = TextAnchor.MiddleCenter;
+            t.raycastTarget = false;
+            return b;
         }
 
         // ── СЕТЬ ───────────────────────────────────────────────────────────

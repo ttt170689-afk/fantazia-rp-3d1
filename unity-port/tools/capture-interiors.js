@@ -67,7 +67,8 @@ setTimeout(() => {
           case 'ConeGeometry': kind='cone';
             dim={x:(par.radius||1)*2*S.x,y:(par.height||1)*S.y,z:(par.radius||1)*2*S.z}; break;
           case 'PlaneGeometry': kind='plane';
-            dim={x:(par.width||1)*S.x,y:0.02,z:(par.height||1)*S.z}; break;
+            // вертикальна в three.js: высота по Y, а не по Z
+            dim={x:(par.width||1)*S.x,y:(par.height||1)*S.y,z:0.04}; break;
           case 'TorusGeometry': kind='torus';
             dim={x:(par.radius||1)*2*S.x,y:(par.tube||0.1)*2*S.y,z:(par.radius||1)*2*S.z}; break;
           default: kind='box'; dim={x:S.x,y:S.y,z:S.z};

@@ -146,7 +146,7 @@
   {
    "index": 1,
    "label": "B4",
-   "meshes": 195,
+   "meshes": 197,
    "colliders": [
     {
      "minX": -15.55,
@@ -420,7 +420,7 @@
   {
    "index": 3,
    "label": "B2",
-   "meshes": 205,
+   "meshes": 201,
    "colliders": [
     {
      "minX": -15.55,
@@ -557,7 +557,7 @@
   {
    "index": 4,
    "label": "B1",
-   "meshes": 202,
+   "meshes": 206,
    "colliders": [
     {
      "minX": -15.55,

@@ -102,8 +102,13 @@ setTimeout(() => {
         dim = { x: (par.radius||1)*2*S.x, y: (par.height||1)*S.y, z: (par.radius||1)*2*S.z };
         break;
       case 'PlaneGeometry':
+        // ВАЖНО: в three.js PlaneGeometry ВЕРТИКАЛЬНА (лежит в плоскости XY),
+        // высота идёт по Y. Раньше я писал её как плоский блин по Z —
+        // из-за этого 3281 окно и вывеска ложились на землю плашмя.
+        // Теперь размеры честные: ширина по X, высота по Y, толщина по Z,
+        // а поворот доедет отдельно и поставит их как надо.
         kind = 'plane';
-        dim = { x: (par.width||1)*S.x, y: 0.02, z: (par.height||1)*S.z };
+        dim = { x: (par.width||1)*S.x, y: (par.height||1)*S.y, z: 0.04 };
         break;
       case 'TorusGeometry':
         kind = 'torus';
