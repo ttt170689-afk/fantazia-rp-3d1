@@ -55,12 +55,31 @@ setTimeout(() => {
 
   try { w.initThreeJS(); } catch (e) { console.log('initThreeJS:', e.message); }
 
-  // строим город целиком
-  const builders = ['buildCity', 'buildFantaziaCityV3', 'buildNewCityDistricts'];
+  // ── СТРОИМ ГОРОД ЦЕЛИКОМ ──
+  // Раньше вызывались только три функции, и часть города терялась:
+  // заправка, парковка, уличная мебель и записки квеста не попадали
+  // в захват. Теперь перечислены ВСЕ строители мира.
+  // buildCity внутри сам зовёт районы, поэтому его подфункции здесь
+  // не дублируем — иначе получились бы двойные здания.
+  const builders = [
+    'buildCity',              // 25 районов внутри
+    'buildFantaziaCityV3',    // новый центр
+    'buildNewCityDistricts',  // кольцевые кварталы
+    'buildGrandMall',         // здание ТЦ снаружи
+    'buildStreetFurniture',   // лавки, урны, фонари, светофоры
+    'buildGasStation',        // АЗС
+    'buildParkingLot',        // парковка
+    'buildQuestNotes'         // светящиеся записки сюжета
+  ];
   for (const b of builders) {
-    if (typeof w[b] === 'function') {
-      try { w[b](); console.log('  собрано:', b); }
-      catch (e) { console.log('  ' + b + ' →', e.message); }
+    if (typeof w[b] !== 'function') { console.log('  нет функции:', b); continue; }
+    let before = 0; w.scene.traverse(o => { if (o.isMesh) before++; });
+    try {
+      w[b]();
+      let after = 0; w.scene.traverse(o => { if (o.isMesh) after++; });
+      console.log('  ' + b.padEnd(24) + '+' + (after - before) + ' мешей');
+    } catch (e) {
+      console.log('  ' + b + ' → ОШИБКА: ' + e.message.slice(0, 60));
     }
   }
 
@@ -119,9 +138,11 @@ setTimeout(() => {
         dim = { x: S.x, y: S.y, z: S.z };
     }
 
-    // слишком мелкое или гигантское — пропускаем (мусор/подложки)
+    // Порог снижен до предела: раньше отсекались 10 мелких деталей
+    // (кнопки лифта, лампочки). Просили точь-в-точь — берём всё,
+    // кроме объектов нулевого размера, которые всё равно не видны.
     const vol = Math.abs(dim.x * dim.y * dim.z);
-    if (vol < 0.002) { skipped++; return; }
+    if (vol < 1e-7) { skipped++; return; }
 
     const m = Array.isArray(o.material) ? o.material[0] : o.material;
     let color = 0xcccccc, emissive = 0, opacity = 1, glow = 0;

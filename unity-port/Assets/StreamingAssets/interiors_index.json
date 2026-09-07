@@ -2,7 +2,7 @@
  "list": [
   {
    "type": "house",
-   "meshes": 191,
+   "meshes": 197,
    "colliders": [
     {
      "minX": 7.6,

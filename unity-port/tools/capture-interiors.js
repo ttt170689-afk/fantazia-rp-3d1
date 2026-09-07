@@ -73,7 +73,7 @@ setTimeout(() => {
             dim={x:(par.radius||1)*2*S.x,y:(par.tube||0.1)*2*S.y,z:(par.radius||1)*2*S.z}; break;
           default: kind='box'; dim={x:S.x,y:S.y,z:S.z};
         }
-        if (Math.abs(dim.x*dim.y*dim.z) < 0.002) return;
+        if (Math.abs(dim.x*dim.y*dim.z) < 1e-7) return;   // берём даже мелкие детали
         const m = Array.isArray(o.material) ? o.material[0] : o.material;
         let c=0xcccccc, em=0, op=1, gl=0;
         if (m) {
