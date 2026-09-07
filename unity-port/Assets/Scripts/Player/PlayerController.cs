@@ -217,11 +217,25 @@ namespace Fantazia.Player
 
             if (firstPerson)
             {
+                // ── ВИД ОТ ПЕРВОГО ЛИЦА ──
+                // Модель ОБЯЗАТЕЛЬНО прячем: иначе камера стоит внутри
+                // головы и весь экран занимает затылок изнутри.
+                SetModelVisible(false);
+
                 Vector3 eye = transform.position + Vector3.up * (1.62f - crouchLerp * 0.35f);
-                cameraRig.position = eye;
+                // покачивание головы при ходьбе — без него движение
+                // ощущается «скольжением на коньках»
+                float bobAmp = IsRunning ? 0.055f : (IsMoving ? 0.028f : 0f);
+                float bobFreq = IsRunning ? 11f : 7f;
+                float bob = Mathf.Abs(Mathf.Sin(Time.time * bobFreq)) * bobAmp;
+                float sway = Mathf.Sin(Time.time * bobFreq * 0.5f) * bobAmp * 0.5f;
+
+                cameraRig.position = eye + Vector3.up * bob
+                                   + cameraRig.right * sway;
                 cameraRig.rotation = Quaternion.Euler(pitch, yaw, 0f);
                 return;
             }
+            SetModelVisible(true);
 
             // третье лицо: орбита вокруг игрока
             Quaternion rot = Quaternion.Euler(pitch, yaw, 0f);
@@ -240,6 +254,25 @@ namespace Fantazia.Player
             float k = 1f - Mathf.Exp(-18f * Time.deltaTime);
             cameraRig.position = Vector3.Lerp(cameraRig.position, want, k);
             cameraRig.LookAt(focus);
+        }
+
+        // Прячем/показываем модель целиком, включая надетую косметику.
+        Renderer[] modelRenderers;
+        bool modelVisible = true;
+
+        void SetModelVisible(bool vis)
+        {
+            if (vis == modelVisible && modelRenderers != null) return;
+            modelVisible = vis;
+            // пересобираем список: косметику могли надеть только что
+            modelRenderers = GetComponentsInChildren<Renderer>(true);
+            foreach (var r in modelRenderers)
+            {
+                if (r == null) continue;
+                // ник над головой и UI не трогаем
+                if (r is UnityEngine.UI.Graphic) continue;
+                r.enabled = vis;
+            }
         }
 
         void TrackSpeed()

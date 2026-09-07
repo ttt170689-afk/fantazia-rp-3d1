@@ -97,31 +97,69 @@ namespace Fantazia.Player
         // ── СБОРКА СКЕЛЕТА ─────────────────────────────────────────────────
         void Build()
         {
-            // ТАЗ — корень всей иерархии
+            // ── ТАЗ ──
             hips = Bone("Hips", transform, new Vector3(0f, 0.92f, 0f));
-            Part("Pelvis", hips, Vector3.zero, new Vector3(0.34f, 0.22f, 0.22f), mPants);
+            Part("Pelvis", hips, Vector3.zero, new Vector3(0.33f, 0.24f, 0.23f),
+                 mPants, PrimitiveType.Capsule);
 
-            // ТОРС
+            // ── ТОРС ──
+            // Капсула вместо куба: грудная клетка скруглённая, силуэт
+            // перестаёт выглядеть набором коробок.
             torso = Bone("Torso", hips, new Vector3(0f, 0.18f, 0f));
-            Part("Chest", torso, new Vector3(0f, 0.16f, 0f),
-                 new Vector3(0.42f, 0.44f, 0.24f), mShirt);
-            // воротник и «плечевой пояс» — чтобы силуэт не был бруском
-            Part("Collar", torso, new Vector3(0f, 0.40f, 0f),
-                 new Vector3(0.30f, 0.08f, 0.22f), mShirt);
+            Part("Chest", torso, new Vector3(0f, 0.17f, 0f),
+                 new Vector3(0.40f, 0.26f, 0.25f), mShirt, PrimitiveType.Capsule);
+            // плечевой пояс — сфера, чтобы плечи были покатыми
+            Part("ShoulderL", torso, new Vector3(-0.20f, 0.34f, 0f),
+                 new Vector3(0.17f, 0.16f, 0.18f), mShirt, PrimitiveType.Sphere);
+            Part("ShoulderR", torso, new Vector3(0.20f, 0.34f, 0f),
+                 new Vector3(0.17f, 0.16f, 0.18f), mShirt, PrimitiveType.Sphere);
+            // талия — сужение между грудью и тазом
+            Part("Waist", torso, new Vector3(0f, -0.02f, 0f),
+                 new Vector3(0.30f, 0.14f, 0.20f), mShirt, PrimitiveType.Capsule);
 
-            // ШЕЯ И ГОЛОВА
-            neck = Bone("Neck", torso, new Vector3(0f, 0.44f, 0f));
-            Part("NeckMesh", neck, Vector3.zero, new Vector3(0.12f, 0.10f, 0.12f), mSkin);
+            // ── ШЕЯ И ГОЛОВА ──
+            neck = Bone("Neck", torso, new Vector3(0f, 0.42f, 0f));
+            Part("NeckMesh", neck, Vector3.zero,
+                 new Vector3(0.11f, 0.09f, 0.11f), mSkin, PrimitiveType.Capsule);
 
-            head = Bone("Head", neck, new Vector3(0f, 0.16f, 0f));
-            Part("Skull", head, Vector3.zero, new Vector3(0.28f, 0.30f, 0.27f), mSkin);
-            Part("Hair", head, new Vector3(0f, 0.13f, -0.01f),
-                 new Vector3(0.30f, 0.10f, 0.29f), mHair);
+            head = Bone("Head", neck, new Vector3(0f, 0.15f, 0f));
+            // череп — сфера, слегка вытянутая назад, как настоящая голова
+            Part("Skull", head, Vector3.zero,
+                 new Vector3(0.26f, 0.29f, 0.27f), mSkin, PrimitiveType.Sphere);
+            // подбородок и скулы
+            Part("Jaw", head, new Vector3(0f, -0.09f, 0.02f),
+                 new Vector3(0.20f, 0.13f, 0.21f), mSkin, PrimitiveType.Sphere);
+            // нос — мелочь, но лицо сразу читается
+            Part("Nose", head, new Vector3(0f, -0.01f, 0.135f),
+                 new Vector3(0.045f, 0.055f, 0.05f), mSkin, PrimitiveType.Sphere);
+            // уши
+            Part("EarL", head, new Vector3(-0.132f, 0f, 0f),
+                 new Vector3(0.03f, 0.075f, 0.055f), mSkin, PrimitiveType.Sphere);
+            Part("EarR", head, new Vector3(0.132f, 0f, 0f),
+                 new Vector3(0.03f, 0.075f, 0.055f), mSkin, PrimitiveType.Sphere);
+            // волосы — полусфера сверху и сзади
+            Part("Hair", head, new Vector3(0f, 0.085f, -0.015f),
+                 new Vector3(0.275f, 0.22f, 0.285f), mHair, PrimitiveType.Sphere);
+            Part("HairBack", head, new Vector3(0f, 0.01f, -0.10f),
+                 new Vector3(0.24f, 0.22f, 0.14f), mHair, PrimitiveType.Sphere);
+            // брови
+            Part("BrowL", head, new Vector3(-0.07f, 0.075f, 0.125f),
+                 new Vector3(0.06f, 0.018f, 0.02f), mHair);
+            Part("BrowR", head, new Vector3(0.07f, 0.075f, 0.125f),
+                 new Vector3(0.06f, 0.018f, 0.02f), mHair);
             // глаза — отдельные кости, чтобы моргать масштабом
-            eyeL = Bone("EyeL", head, new Vector3(-0.07f, 0.03f, 0.135f));
-            Part("EyeLM", eyeL, Vector3.zero, new Vector3(0.05f, 0.05f, 0.02f), mEye);
-            eyeR = Bone("EyeR", head, new Vector3(0.07f, 0.03f, 0.135f));
-            Part("EyeRM", eyeR, Vector3.zero, new Vector3(0.05f, 0.05f, 0.02f), mEye);
+            // Глаз = белок + зрачок. Один тёмный кубик выглядел мёртвым.
+            var mWhite = M(new Color(0.97f, 0.97f, 0.98f), 0f, 0.6f);
+            eyeL = Bone("EyeL", head, new Vector3(-0.062f, 0.025f, 0.118f));
+            Part("EyeWhiteL", eyeL, Vector3.zero,
+                 new Vector3(0.055f, 0.045f, 0.03f), mWhite, PrimitiveType.Sphere);
+            Part("PupilL", eyeL, new Vector3(0f, 0f, 0.016f),
+                 new Vector3(0.026f, 0.028f, 0.02f), mEye, PrimitiveType.Sphere);
+            eyeR = Bone("EyeR", head, new Vector3(0.062f, 0.025f, 0.118f));
+            Part("EyeWhiteR", eyeR, Vector3.zero,
+                 new Vector3(0.055f, 0.045f, 0.03f), mWhite, PrimitiveType.Sphere);
+            Part("PupilR", eyeR, new Vector3(0f, 0f, 0.016f),
+                 new Vector3(0.026f, 0.028f, 0.02f), mEye, PrimitiveType.Sphere);
 
             // РУКИ: плечо → локоть → кисть → пальцы
             armL = BuildArm(-1);
@@ -141,17 +179,22 @@ namespace Fantazia.Player
         Transform BuildArm(int side)
         {
             var shoulder = Bone(side < 0 ? "ArmL" : "ArmR", torso,
-                                new Vector3(side * 0.26f, 0.34f, 0f));
-            Part("UpperArm", shoulder, new Vector3(0f, -0.14f, 0f),
-                 new Vector3(0.11f, 0.30f, 0.11f), mShirt);
+                                new Vector3(side * 0.235f, 0.32f, 0f));
+            // плечо и предплечье — капсулы: у них скруглённые торцы,
+            // поэтому в локте нет щели между сегментами
+            Part("UpperArm", shoulder, new Vector3(0f, -0.15f, 0f),
+                 new Vector3(0.105f, 0.16f, 0.105f), mShirt, PrimitiveType.Capsule);
 
             var elbow = Bone(side < 0 ? "ElbowL" : "ElbowR", shoulder,
                              new Vector3(0f, -0.30f, 0f));
+            Part("ElbowJoint", elbow, Vector3.zero,
+                 new Vector3(0.095f, 0.09f, 0.095f), mSkin, PrimitiveType.Sphere);
             Part("Forearm", elbow, new Vector3(0f, -0.13f, 0f),
-                 new Vector3(0.095f, 0.26f, 0.095f), mSkin);
+                 new Vector3(0.09f, 0.14f, 0.09f), mSkin, PrimitiveType.Capsule);
 
-            var hand = Bone(side < 0 ? "HandL" : "HandR", elbow, new Vector3(0f, -0.28f, 0f));
-            Part("Palm", hand, Vector3.zero, new Vector3(0.09f, 0.10f, 0.05f), mSkin);
+            var hand = Bone(side < 0 ? "HandL" : "HandR", elbow, new Vector3(0f, -0.27f, 0f));
+            Part("Palm", hand, Vector3.zero,
+                 new Vector3(0.085f, 0.10f, 0.045f), mSkin, PrimitiveType.Capsule);
 
             // пальцы: четыре + большой. Мелочь, но силуэт руки читается.
             for (int i = 0; i < 4; i++)
@@ -167,17 +210,22 @@ namespace Fantazia.Player
 
         Transform BuildLeg(int side)
         {
-            var hip = Bone(side < 0 ? "LegL" : "LegR", hips, new Vector3(side * 0.11f, -0.08f, 0f));
+            var hip = Bone(side < 0 ? "LegL" : "LegR", hips, new Vector3(side * 0.105f, -0.09f, 0f));
             Part("Thigh", hip, new Vector3(0f, -0.20f, 0f),
-                 new Vector3(0.14f, 0.40f, 0.14f), mPants);
+                 new Vector3(0.135f, 0.21f, 0.135f), mPants, PrimitiveType.Capsule);
 
             var knee = Bone(side < 0 ? "KneeL" : "KneeR", hip, new Vector3(0f, -0.40f, 0f));
+            Part("KneeJoint", knee, Vector3.zero,
+                 new Vector3(0.115f, 0.11f, 0.115f), mPants, PrimitiveType.Sphere);
             Part("Shin", knee, new Vector3(0f, -0.18f, 0f),
-                 new Vector3(0.12f, 0.36f, 0.12f), mPants);
+                 new Vector3(0.115f, 0.19f, 0.115f), mPants, PrimitiveType.Capsule);
 
             var foot = Bone(side < 0 ? "FootL" : "FootR", knee, new Vector3(0f, -0.36f, 0f));
-            Part("Shoe", foot, new Vector3(0f, -0.03f, 0.04f),
-                 new Vector3(0.14f, 0.08f, 0.24f), mShoes);
+            // ботинок: подошва плюс скруглённый носок
+            Part("Shoe", foot, new Vector3(0f, -0.035f, 0.045f),
+                 new Vector3(0.13f, 0.075f, 0.24f), mShoes);
+            Part("ShoeToe", foot, new Vector3(0f, -0.035f, 0.15f),
+                 new Vector3(0.125f, 0.07f, 0.09f), mShoes, PrimitiveType.Sphere);
 
             if (side < 0) { kneeL = knee; footL = foot; }
             else { kneeR = knee; footR = foot; }

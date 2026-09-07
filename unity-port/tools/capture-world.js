@@ -61,15 +61,19 @@ setTimeout(() => {
   // в захват. Теперь перечислены ВСЕ строители мира.
   // buildCity внутри сам зовёт районы, поэтому его подфункции здесь
   // не дублируем — иначе получились бы двойные здания.
+  // ВАЖНО: buildCity ВНУТРИ САМ зовёт buildStreetFurniture, buildGasStation
+  // и другие. Если вызвать их ещё раз снаружи — здания построятся ДВАЖДЫ
+  // в одних координатах. Именно так на скриншоте игрока появились
+  // гигантские дома посреди дорог: два одинаковых объекта в одной точке.
+  //
+  // Поэтому: сначала buildCity (он тянет свои 25 подфункций), затем
+  // ТОЛЬКО те строители, которых он не вызывает. Список проверен по коду.
   const builders = [
-    'buildCity',              // 25 районов внутри
-    'buildFantaziaCityV3',    // новый центр
-    'buildNewCityDistricts',  // кольцевые кварталы
-    'buildGrandMall',         // здание ТЦ снаружи
-    'buildStreetFurniture',   // лавки, урны, фонари, светофоры
-    'buildGasStation',        // АЗС
-    'buildParkingLot',        // парковка
-    'buildQuestNotes'         // светящиеся записки сюжета
+    'buildCity',              // внутри: районы, дороги, мебель, АЗС, парковка
+    'buildFantaziaCityV3',    // новый центр — отдельно
+    'buildNewCityDistricts',  // кольцевые кварталы — отдельно
+    'buildGrandMall',         // здание ТЦ снаружи — отдельно
+    'buildQuestNotes'         // записки сюжета — отдельно
   ];
   for (const b of builders) {
     if (typeof w[b] !== 'function') { console.log('  нет функции:', b); continue; }
@@ -186,6 +190,29 @@ setTimeout(() => {
       type: i.type, name: i.name, range: i.range
     }));
   } catch (e) { console.log('  interactables:', e.message); }
+
+  // ── СТРАХОВКА ОТ ДУБЛЕЙ ──
+  // Даже при правильном списке строителей игра могла создать два меша
+  // в одной точке. Такие пары дают z-fighting (мерцание граней) и
+  // лишнюю нагрузку, поэтому схлопываем их.
+  {
+    const seen = new Set();
+    const uniq = [];
+    for (const o of objs) {
+      // Ключ БЕЗ поворота и цвета: два меша в одной точке с одинаковыми
+      // габаритами — это дубль, даже если он повёрнут иначе или чуть
+      // другого оттенка. Именно такие пары давали мерцание граней.
+      const key = o.k + '|' + o.x + '|' + o.y + '|' + o.z + '|' +
+                  o.sx + '|' + o.sy + '|' + o.sz;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      uniq.push(o);
+    }
+    const removed = objs.length - uniq.length;
+    if (removed > 0) console.log('  убрано дублей:', removed);
+    objs.length = 0;
+    Array.prototype.push.apply(objs, uniq);
+  }
 
   console.log('\nЗАХВАЧЕНО:');
   console.log('  мешей города :', objs.length, '(пропущено мелких:', skipped + ')');
