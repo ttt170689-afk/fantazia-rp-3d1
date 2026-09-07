@@ -131,46 +131,19 @@ namespace Fantazia.Core
             cc.slopeLimit = 50f;
             cc.stepOffset = 0.4f;
 
-            // Простейшая видимая модель из примитивов. Заменяется на свою:
-            // достаточно повесить меш и переназначить якоря косметики.
-            var body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            body.name = "Body";
-            Destroy(body.GetComponent<Collider>());
-            body.transform.SetParent(player.transform, false);
-            body.transform.localPosition = new Vector3(0f, 0.9f, 0f);
-            body.transform.localScale = new Vector3(0.6f, 0.55f, 0.6f);
-            Paint(body, new Color(0.36f, 0.62f, 0.82f));
-
-            var head = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            head.name = "Head";
-            Destroy(head.GetComponent<Collider>());
-            head.transform.SetParent(player.transform, false);
-            head.transform.localPosition = new Vector3(0f, 1.62f, 0f);
-            head.transform.localScale = Vector3.one * 0.34f;
-            Paint(head, new Color(0.94f, 0.80f, 0.68f));
-
-            // якоря для косметики
-            var headAnchor = new GameObject("HeadAnchor").transform;
-            headAnchor.SetParent(player.transform, false);
-            headAnchor.localPosition = new Vector3(0f, 1.62f, 0f);
-
-            var bodyAnchor = new GameObject("BodyAnchor").transform;
-            bodyAnchor.SetParent(player.transform, false);
-            bodyAnchor.localPosition = new Vector3(0f, 1.0f, 0f);
-
-            var backAnchor = new GameObject("BackAnchor").transform;
-            backAnchor.SetParent(player.transform, false);
-            backAnchor.localPosition = new Vector3(0f, 1.15f, -0.14f);
-
-            var handAnchor = new GameObject("HandAnchor").transform;
-            handAnchor.SetParent(player.transform, false);
-            handAnchor.localPosition = new Vector3(0.3f, 1.0f, 0.05f);
+            // ── ДЕТАЛИЗИРОВАННАЯ МОДЕЛЬ ──
+            // Раньше здесь была капсула. Теперь настоящий скелет:
+            // плечо → локоть → кисть → пальцы, бедро → колено → стопа.
+            // Косметика цепляется к костям и едет вместе с телом.
+            var modelGO = new GameObject("Model");
+            modelGO.transform.SetParent(player.transform, false);
+            var model = modelGO.AddComponent<PlayerModel>();
 
             var cos = player.AddComponent<CosmeticBuilder>();
-            cos.headAnchor = headAnchor;
-            cos.bodyAnchor = bodyAnchor;
-            cos.backAnchor = backAnchor;
-            cos.handAnchor = handAnchor;
+            cos.headAnchor = model.headAnchor;
+            cos.bodyAnchor = model.bodyAnchor;
+            cos.backAnchor = model.backAnchor;
+            cos.handAnchor = model.handAnchor;
 
             // камера
             var camGO = Camera.main != null ? Camera.main.gameObject : new GameObject("Main Camera");
@@ -205,6 +178,12 @@ namespace Fantazia.Core
             {
                 var go = new GameObject("Interiors");
                 go.AddComponent<InteriorManager>();
+            }
+            // жизнь города: машины, фонари, смена суток
+            if (CityLife.I == null)
+            {
+                var go = new GameObject("CityLife");
+                go.AddComponent<CityLife>();
             }
             // профиль, квесты, взаимодействие
             if (PlayerProfile.I == null)

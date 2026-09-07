@@ -221,6 +221,24 @@ namespace Fantazia.Core
             if (timer >= checkInterval) { timer = 0f; FindNearest(); }
 
             if (Nearest != null && Input.GetKeyDown(KeyCode.E)) Activate(Nearest);
+
+            // ── МАШИНЫ: садимся по F ──
+            // Отдельно от точек взаимодействия: машины двигаются, держать
+            // их в общем списке пришлось бы обновлять каждый кадр.
+            if (Input.GetKeyDown(KeyCode.F) && CityLife.I != null &&
+                (InteriorManager.I == null || !InteriorManager.I.inside))
+            {
+                var pc = FindObjectOfType<Fantazia.Player.PlayerController>();
+                if (pc != null && pc.gameObject.activeSelf)
+                {
+                    var car = CityLife.I.NearestCar(pc.transform.position, 4.5f);
+                    if (car != null && !car.Occupied)
+                    {
+                        car.Enter(pc);
+                        PlayerProfile.I?.AddCoins(3, "поездка на машине", 30f);
+                    }
+                }
+            }
         }
 
         void FindNearest()

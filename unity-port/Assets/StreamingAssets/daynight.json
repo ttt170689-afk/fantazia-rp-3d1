@@ -1,0 +1,10 @@
+{
+ "speed": 0.01,
+ "skyNight": 657962,
+ "skyDay": 8900331,
+ "sunNight": 4474026,
+ "sunDay": 16774625,
+ "sunMin": 0.3,
+ "sunMax": 1,
+ "nightThreshold": 0.45
+}

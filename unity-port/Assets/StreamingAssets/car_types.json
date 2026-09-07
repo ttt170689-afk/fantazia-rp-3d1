@@ -1,0 +1,72 @@
+[
+ {
+  "id": "sedan",
+  "name": "Седан",
+  "color": 15158332,
+  "price": 0,
+  "speed": 1
+ },
+ {
+  "id": "sport",
+  "name": "Спорткар",
+  "color": 15965202,
+  "price": 0,
+  "speed": 1
+ },
+ {
+  "id": "suv",
+  "name": "Внедорожник",
+  "color": 3066993,
+  "price": 0,
+  "speed": 1
+ },
+ {
+  "id": "truck",
+  "name": "Грузовик",
+  "color": 3447003,
+  "price": 0,
+  "speed": 1
+ },
+ {
+  "id": "taxi",
+  "name": "Такси",
+  "color": 15844367,
+  "price": 0,
+  "speed": 1
+ },
+ {
+  "id": "police",
+  "name": "Полицейская",
+  "color": 1718894,
+  "price": 0,
+  "speed": 1
+ },
+ {
+  "id": "limo",
+  "name": "Лимузин",
+  "color": 1710618,
+  "price": 0,
+  "speed": 1
+ },
+ {
+  "id": "van",
+  "name": "Фургон",
+  "color": 10181046,
+  "price": 0,
+  "speed": 1
+ },
+ {
+  "id": "coupe",
+  "name": "Купе",
+  "color": 14702333,
+  "price": 0,
+  "speed": 1
+ },
+ {
+  "id": "pickup",
+  "name": "Пикап",
+  "color": 8359053,
+  "price": 0,
+  "speed": 1
+ }
+]
