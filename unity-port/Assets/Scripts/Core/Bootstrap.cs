@@ -14,6 +14,8 @@ using UnityEngine;
 using Fantazia.Player;
 using Fantazia.Cosmetics;
 using Fantazia.Net;
+using Fantazia.World;
+using Fantazia.UI;
 
 namespace Fantazia.Core
 {
@@ -23,6 +25,8 @@ namespace Fantazia.Core
         public bool spawnPlayer = true;
         public bool spawnGround = true;
         public bool spawnLights = true;
+        public bool buildWorld = true;         // город из захваченных данных
+        public bool spawnUI = true;            // HUD, магазин, квесты, лифт
         public bool connectToServer = false;   // включите, когда сервер запущен
 
         [Header("Сервер")]
@@ -50,6 +54,8 @@ namespace Fantazia.Core
             if (spawnLights) BuildLights();
             if (spawnGround) BuildGround();
             if (spawnPlayer) BuildPlayer();
+            if (buildWorld) BuildWorldSystems();
+            if (spawnUI) BuildUI();
             if (connectToServer) BuildNet();
 
             if (!string.IsNullOrEmpty(testCosmetic) && player != null)
@@ -95,6 +101,8 @@ namespace Fantazia.Core
         // ── ЗЕМЛЯ ──────────────────────────────────────────────────────────
         void BuildGround()
         {
+            // Земля нужна как подложка: в захваченном городе она есть,
+            // но плоскость снизу страхует от проваливания на краях карты.
             float size = GameData.I != null ? GameData.I.World.worldSize : 1200f;
             var g = GameObject.CreatePrimitive(PrimitiveType.Plane);
             g.name = "Ground";
@@ -181,6 +189,47 @@ namespace Fantazia.Core
             if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", c);
             if (m.HasProperty("_Color")) m.SetColor("_Color", c);
             go.GetComponent<MeshRenderer>().sharedMaterial = m;
+        }
+
+        // ── МИР И СИСТЕМЫ ──────────────────────────────────────────────────
+        void BuildWorldSystems()
+        {
+            // город из JSON, снятого с работающей веб-версии
+            if (WorldBuilder.I == null)
+            {
+                var go = new GameObject("World");
+                go.AddComponent<WorldBuilder>();
+            }
+            // интерьеры: 8 этажей ТЦ и здания
+            if (InteriorManager.I == null)
+            {
+                var go = new GameObject("Interiors");
+                go.AddComponent<InteriorManager>();
+            }
+            // профиль, квесты, взаимодействие
+            if (PlayerProfile.I == null)
+            {
+                var go = new GameObject("Profile");
+                go.AddComponent<PlayerProfile>();
+            }
+            if (QuestSystem.I == null)
+            {
+                var go = new GameObject("Quests");
+                go.AddComponent<QuestSystem>();
+            }
+            if (Interaction.I == null)
+            {
+                var go = new GameObject("Interaction");
+                go.AddComponent<Interaction>();
+                go.AddComponent<ProgressTracker>();
+            }
+        }
+
+        void BuildUI()
+        {
+            if (HUD.I != null) return;
+            var go = new GameObject("HUD");
+            go.AddComponent<HUD>();
         }
 
         // ── СЕТЬ ───────────────────────────────────────────────────────────

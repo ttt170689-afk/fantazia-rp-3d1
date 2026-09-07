@@ -112,7 +112,6 @@ const world = {
   sprintSpeed: +(num(/SPRINT_SPEED:\s*([\d.]+)/, 0.28) * FPS).toFixed(2),
   jumpForce:   +(num(/JUMP_FORCE:\s*([\d.]+)/, 0.2) * FPS).toFixed(2),
   gravity:     +(num(/GRAVITY:\s*(-?[\d.]+)/, 0.008) * FPS * FPS).toFixed(2),
-  _note: 'скорости переведены из «на кадр» (60 FPS) в «в секунду» для Unity',
   cameraDistance: num(/CAMERA_DISTANCE:\s*([\d.]+)/, 8),
   cameraHeight:   num(/CAMERA_HEIGHT:\s*([\d.]+)/, 4),
   mallFloorHeight: num(/MALL_FH\s*=\s*([\d.]+)/, 5.5),

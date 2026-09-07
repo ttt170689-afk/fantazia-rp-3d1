@@ -1,0 +1,735 @@
+{
+ "list": [
+  {
+   "type": "house",
+   "meshes": 191,
+   "colliders": [
+    {
+     "minX": 7.6,
+     "maxX": 12.4,
+     "minZ": 3.5,
+     "maxZ": 5
+    },
+    {
+     "minX": 7.6,
+     "maxX": 12.4,
+     "minZ": 8.9,
+     "maxZ": 10.4
+    },
+    {
+     "minX": 12.9,
+     "maxX": 14.6,
+     "minZ": 4.6,
+     "maxZ": 8.2
+    },
+    {
+     "minX": 9,
+     "maxX": 11,
+     "minZ": 6.4,
+     "maxZ": 7.6
+    },
+    {
+     "minX": -9.5,
+     "maxX": -6.5,
+     "minZ": -6.5,
+     "maxZ": -3.5
+    },
+    {
+     "minX": 5.6,
+     "maxX": 10.4,
+     "minZ": -9,
+     "maxZ": -7
+    },
+    {
+     "minX": 6.2,
+     "maxX": 7,
+     "minZ": -6.8,
+     "maxZ": -6
+    },
+    {
+     "minX": 7.6,
+     "maxX": 8.4,
+     "minZ": -6.8,
+     "maxZ": -6
+    },
+    {
+     "minX": 9,
+     "maxX": 9.8,
+     "minZ": -6.8,
+     "maxZ": -6
+    },
+    {
+     "minX": 12.5,
+     "maxX": 15.2,
+     "minZ": -15,
+     "maxZ": -13.8
+    },
+    {
+     "minX": 2.2,
+     "maxX": 8.8,
+     "minZ": -15,
+     "maxZ": -14
+    },
+    {
+     "minX": 7.3,
+     "maxX": 10.7,
+     "minZ": -2.4,
+     "maxZ": -0.6
+    },
+    {
+     "minX": -15,
+     "maxX": -12,
+     "minZ": 7.6,
+     "maxZ": 11.8
+    },
+    {
+     "minX": -15.1,
+     "maxX": -11.9,
+     "minZ": 6.4,
+     "maxZ": 7.4
+    },
+    {
+     "minX": -19.95,
+     "maxX": -19.05,
+     "minZ": 6.8,
+     "maxZ": 10.2
+    },
+    {
+     "minX": -17.3,
+     "maxX": -15.9,
+     "minZ": -14.6,
+     "maxZ": -13.5
+    },
+    {
+     "minX": -16.9,
+     "maxX": -16.1,
+     "minZ": -13.1,
+     "maxZ": -12
+    },
+    {
+     "minX": -16.1,
+     "maxX": -14.3,
+     "minZ": -13.1,
+     "maxZ": -11.3
+    },
+    {
+     "minX": -6.5,
+     "maxX": -5.5,
+     "minZ": 11.5,
+     "maxZ": 14
+    },
+    {
+     "minX": -4.2,
+     "maxX": -1.8,
+     "minZ": 13.3,
+     "maxZ": 14.3
+    },
+    {
+     "minX": -2.1,
+     "maxX": -1.1,
+     "minZ": 11.1,
+     "maxZ": 12.1
+    },
+    {
+     "minX": -18.9,
+     "maxX": -17.9,
+     "minZ": -3,
+     "maxZ": -2
+    },
+    {
+     "minX": 17.7,
+     "maxX": 18.7,
+     "minZ": -3,
+     "maxZ": -2
+    },
+    {
+     "minX": 17,
+     "maxX": 18,
+     "minZ": 12.3,
+     "maxZ": 13.3
+    },
+    {
+     "minX": -3.1,
+     "maxX": -2.1,
+     "minZ": -14.3,
+     "maxZ": -13.3
+    },
+    {
+     "minX": -21,
+     "maxX": -19.5,
+     "minZ": -15,
+     "maxZ": 15
+    },
+    {
+     "minX": 19.5,
+     "maxX": 21,
+     "minZ": -15,
+     "maxZ": 15
+    },
+    {
+     "minX": -20,
+     "maxX": 20,
+     "minZ": -16,
+     "maxZ": -14.5
+    },
+    {
+     "minX": -20,
+     "maxX": 20,
+     "minZ": 14.5,
+     "maxZ": 16
+    }
+   ],
+   "interactables": []
+  },
+  {
+   "type": "office",
+   "meshes": 152,
+   "colliders": [
+    {
+     "minX": -9.2,
+     "maxX": -8.8,
+     "minZ": -12,
+     "maxZ": -5
+    },
+    {
+     "minX": -10.2,
+     "maxX": -7.8,
+     "minZ": -7.7,
+     "maxZ": -5.8
+    },
+    {
+     "minX": -4.2,
+     "maxX": -1.8,
+     "minZ": -7.7,
+     "maxZ": -5.8
+    },
+    {
+     "minX": 1.8,
+     "maxX": 4.2,
+     "minZ": -7.7,
+     "maxZ": -5.8
+    },
+    {
+     "minX": 7.8,
+     "maxX": 10.2,
+     "minZ": -7.7,
+     "maxZ": -5.8
+    },
+    {
+     "minX": -10.2,
+     "maxX": -7.8,
+     "minZ": -2.7,
+     "maxZ": -0.8
+    },
+    {
+     "minX": -4.2,
+     "maxX": -1.8,
+     "minZ": -2.7,
+     "maxZ": -0.8
+    },
+    {
+     "minX": 1.8,
+     "maxX": 4.2,
+     "minZ": -2.7,
+     "maxZ": -0.8
+    },
+    {
+     "minX": 7.8,
+     "maxX": 10.2,
+     "minZ": -2.7,
+     "maxZ": -0.8
+    },
+    {
+     "minX": 2.4,
+     "maxX": 9.6,
+     "minZ": -5.4,
+     "maxZ": -2.6
+    },
+    {
+     "minX": -13,
+     "maxX": -10,
+     "minZ": 5.5,
+     "maxZ": 6.5
+    },
+    {
+     "minX": 6.2,
+     "maxX": 9.8,
+     "minZ": 6.8,
+     "maxZ": 8.6
+    },
+    {
+     "minX": -16,
+     "maxX": -14.5,
+     "minZ": -12,
+     "maxZ": 12
+    },
+    {
+     "minX": 14.5,
+     "maxX": 16,
+     "minZ": -12,
+     "maxZ": 12
+    },
+    {
+     "minX": -15,
+     "maxX": 15,
+     "minZ": -13,
+     "maxZ": -11.5
+    },
+    {
+     "minX": -15,
+     "maxX": 15,
+     "minZ": 11.5,
+     "maxZ": 13
+    }
+   ],
+   "interactables": [
+    {
+     "x": -12,
+     "y": 0,
+     "z": -9,
+     "type": "stairs_up",
+     "name": "⬆️ Подняться",
+     "range": 3
+    },
+    {
+     "x": 12,
+     "y": 0,
+     "z": -9,
+     "type": "elevator",
+     "name": "🛗 Лифт",
+     "range": 3
+    }
+   ]
+  },
+  {
+   "type": "shop",
+   "meshes": 143,
+   "colliders": [
+    {
+     "minX": -9.2,
+     "maxX": -8.8,
+     "minZ": -12,
+     "maxZ": -5
+    },
+    {
+     "minX": -8.2,
+     "maxX": 8.2,
+     "minZ": -6.7,
+     "maxZ": -5.3
+    },
+    {
+     "minX": -8.2,
+     "maxX": 8.2,
+     "minZ": -1.7,
+     "maxZ": -0.3
+    },
+    {
+     "minX": -8.2,
+     "maxX": 8.2,
+     "minZ": 3.3,
+     "maxZ": 4.7
+    },
+    {
+     "minX": -3.5,
+     "maxX": 3.5,
+     "minZ": 7.9,
+     "maxZ": 9.1
+    },
+    {
+     "minX": -12.5,
+     "maxX": -8.5,
+     "minZ": 10,
+     "maxZ": 11
+    },
+    {
+     "minX": -16,
+     "maxX": -14.5,
+     "minZ": -12,
+     "maxZ": 12
+    },
+    {
+     "minX": 14.5,
+     "maxX": 16,
+     "minZ": -12,
+     "maxZ": 12
+    },
+    {
+     "minX": -15,
+     "maxX": 15,
+     "minZ": -13,
+     "maxZ": -11.5
+    },
+    {
+     "minX": -15,
+     "maxX": 15,
+     "minZ": 11.5,
+     "maxZ": 13
+    }
+   ],
+   "interactables": [
+    {
+     "x": -12,
+     "y": 0,
+     "z": -9,
+     "type": "stairs_up",
+     "name": "⬆️ Подняться",
+     "range": 3
+    },
+    {
+     "x": 12,
+     "y": 0,
+     "z": -9,
+     "type": "elevator",
+     "name": "🛗 Лифт",
+     "range": 3
+    }
+   ]
+  },
+  {
+   "type": "club",
+   "meshes": 97,
+   "colliders": [
+    {
+     "minX": -9.2,
+     "maxX": -8.8,
+     "minZ": -12,
+     "maxZ": -5
+    },
+    {
+     "minX": -3,
+     "maxX": 3,
+     "minZ": -9.3,
+     "maxZ": -7.7
+    },
+    {
+     "minX": 3.5,
+     "maxX": 12.5,
+     "minZ": 5.9,
+     "maxZ": 7.1
+    },
+    {
+     "minX": 11.9,
+     "maxX": 13.1,
+     "minZ": 0.5,
+     "maxZ": 6.5
+    },
+    {
+     "minX": -12.5,
+     "maxX": -5.5,
+     "minZ": 4.5,
+     "maxZ": 9.5
+    },
+    {
+     "minX": -16,
+     "maxX": -14.5,
+     "minZ": -12,
+     "maxZ": 12
+    },
+    {
+     "minX": 14.5,
+     "maxX": 16,
+     "minZ": -12,
+     "maxZ": 12
+    },
+    {
+     "minX": -15,
+     "maxX": 15,
+     "minZ": -13,
+     "maxZ": -11.5
+    },
+    {
+     "minX": -15,
+     "maxX": 15,
+     "minZ": 11.5,
+     "maxZ": 13
+    }
+   ],
+   "interactables": [
+    {
+     "x": -12,
+     "y": 0,
+     "z": -9,
+     "type": "stairs_up",
+     "name": "⬆️ Подняться",
+     "range": 3
+    }
+   ]
+  },
+  {
+   "type": "bank",
+   "meshes": 104,
+   "colliders": [
+    {
+     "minX": -9.2,
+     "maxX": -8.8,
+     "minZ": -12,
+     "maxZ": -5
+    },
+    {
+     "minX": -9.2,
+     "maxX": -4.8,
+     "minZ": -5.7,
+     "maxZ": -4.3
+    },
+    {
+     "minX": -2.2,
+     "maxX": 2.2,
+     "minZ": -5.7,
+     "maxZ": -4.3
+    },
+    {
+     "minX": 4.8,
+     "maxX": 9.2,
+     "minZ": -5.7,
+     "maxZ": -4.3
+    },
+    {
+     "minX": 10.4,
+     "maxX": 11.6,
+     "minZ": -8.7,
+     "maxZ": -7.3
+    },
+    {
+     "minX": 10.4,
+     "maxX": 11.6,
+     "minZ": -6.7,
+     "maxZ": -5.3
+    },
+    {
+     "minX": -13,
+     "maxX": -9,
+     "minZ": 8.6,
+     "maxZ": 10.6
+    },
+    {
+     "minX": -2,
+     "maxX": 2,
+     "minZ": 6.4,
+     "maxZ": 7.6
+    },
+    {
+     "minX": -16,
+     "maxX": -14.5,
+     "minZ": -12,
+     "maxZ": 12
+    },
+    {
+     "minX": 14.5,
+     "maxX": 16,
+     "minZ": -12,
+     "maxZ": 12
+    },
+    {
+     "minX": -15,
+     "maxX": 15,
+     "minZ": -13,
+     "maxZ": -11.5
+    },
+    {
+     "minX": -15,
+     "maxX": 15,
+     "minZ": 11.5,
+     "maxZ": 13
+    }
+   ],
+   "interactables": [
+    {
+     "x": -12,
+     "y": 0,
+     "z": -9,
+     "type": "stairs_up",
+     "name": "⬆️ Подняться",
+     "range": 3
+    },
+    {
+     "x": 12,
+     "y": 0,
+     "z": -9,
+     "type": "elevator",
+     "name": "🛗 Лифт",
+     "range": 3
+    }
+   ]
+  },
+  {
+   "type": "hospital",
+   "meshes": 102,
+   "colliders": [
+    {
+     "minX": -9.2,
+     "maxX": -8.8,
+     "minZ": -12,
+     "maxZ": -5
+    },
+    {
+     "minX": -4,
+     "maxX": 4,
+     "minZ": 8.9,
+     "maxZ": 10.1
+    },
+    {
+     "minX": -12.2,
+     "maxX": -7.4,
+     "minZ": 6.5,
+     "maxZ": 7.5
+    },
+    {
+     "minX": 9.4,
+     "maxX": 12.6,
+     "minZ": 6.5,
+     "maxZ": 7.5
+    },
+    {
+     "minX": -9.7,
+     "maxX": -8.3,
+     "minZ": -5.3,
+     "maxZ": -2.7
+    },
+    {
+     "minX": -2.7,
+     "maxX": -1.3,
+     "minZ": -5.3,
+     "maxZ": -2.7
+    },
+    {
+     "minX": 4.3,
+     "maxX": 5.7,
+     "minZ": -5.3,
+     "maxZ": -2.7
+    },
+    {
+     "minX": 7.8,
+     "maxX": 10.2,
+     "minZ": -7.6,
+     "maxZ": -6.4
+    },
+    {
+     "minX": -16,
+     "maxX": -14.5,
+     "minZ": -12,
+     "maxZ": 12
+    },
+    {
+     "minX": 14.5,
+     "maxX": 16,
+     "minZ": -12,
+     "maxZ": 12
+    },
+    {
+     "minX": -15,
+     "maxX": 15,
+     "minZ": -13,
+     "maxZ": -11.5
+    },
+    {
+     "minX": -15,
+     "maxX": 15,
+     "minZ": 11.5,
+     "maxZ": 13
+    }
+   ],
+   "interactables": [
+    {
+     "x": -12,
+     "y": 0,
+     "z": -9,
+     "type": "stairs_up",
+     "name": "⬆️ Подняться",
+     "range": 3
+    },
+    {
+     "x": 12,
+     "y": 0,
+     "z": -9,
+     "type": "elevator",
+     "name": "🛗 Лифт",
+     "range": 3
+    }
+   ]
+  },
+  {
+   "type": "police",
+   "meshes": 143,
+   "colliders": [
+    {
+     "minX": -9.2,
+     "maxX": -8.8,
+     "minZ": -12,
+     "maxZ": -5
+    },
+    {
+     "minX": -8.2,
+     "maxX": 8.2,
+     "minZ": -6.7,
+     "maxZ": -5.3
+    },
+    {
+     "minX": -8.2,
+     "maxX": 8.2,
+     "minZ": -1.7,
+     "maxZ": -0.3
+    },
+    {
+     "minX": -8.2,
+     "maxX": 8.2,
+     "minZ": 3.3,
+     "maxZ": 4.7
+    },
+    {
+     "minX": -3.5,
+     "maxX": 3.5,
+     "minZ": 7.9,
+     "maxZ": 9.1
+    },
+    {
+     "minX": -12.5,
+     "maxX": -8.5,
+     "minZ": 10,
+     "maxZ": 11
+    },
+    {
+     "minX": -16,
+     "maxX": -14.5,
+     "minZ": -12,
+     "maxZ": 12
+    },
+    {
+     "minX": 14.5,
+     "maxX": 16,
+     "minZ": -12,
+     "maxZ": 12
+    },
+    {
+     "minX": -15,
+     "maxX": 15,
+     "minZ": -13,
+     "maxZ": -11.5
+    },
+    {
+     "minX": -15,
+     "maxX": 15,
+     "minZ": 11.5,
+     "maxZ": 13
+    }
+   ],
+   "interactables": [
+    {
+     "x": -12,
+     "y": 0,
+     "z": -9,
+     "type": "stairs_up",
+     "name": "⬆️ Подняться",
+     "range": 3
+    },
+    {
+     "x": 12,
+     "y": 0,
+     "z": -9,
+     "type": "elevator",
+     "name": "🛗 Лифт",
+     "range": 3
+    }
+   ]
+  }
+ ]
+}
