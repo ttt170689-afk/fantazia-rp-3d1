@@ -1,37 +1,37 @@
 {
-  "taxi": {
-    "title": "Таксист",
-    "salary": 100,
-    "color": "#f1c40f"
-  },
-  "police": {
-    "title": "Полицейский",
-    "salary": 150,
-    "color": "#3498db"
-  },
-  "doctor": {
-    "title": "Доктор",
-    "salary": 170,
-    "color": "#e74c3c"
-  },
-  "mechanic": {
-    "title": "Механик",
-    "salary": 130,
-    "color": "#7f8c8d"
-  },
-  "seller": {
-    "title": "Продавец",
-    "salary": 90,
-    "color": "#2ecc71"
-  },
-  "dj": {
-    "title": "DJ",
-    "salary": 120,
-    "color": "#9b59b6"
-  },
-  "trainer": {
-    "title": "Тренер",
-    "salary": 110,
-    "color": "#e67e22"
-  }
+ "taxi": {
+  "title": "Таксист",
+  "salary": 100,
+  "color": "#f1c40f"
+ },
+ "police": {
+  "title": "Полицейский",
+  "salary": 150,
+  "color": "#3498db"
+ },
+ "doctor": {
+  "title": "Доктор",
+  "salary": 170,
+  "color": "#e74c3c"
+ },
+ "mechanic": {
+  "title": "Механик",
+  "salary": 130,
+  "color": "#7f8c8d"
+ },
+ "seller": {
+  "title": "Продавец",
+  "salary": 90,
+  "color": "#2ecc71"
+ },
+ "dj": {
+  "title": "DJ",
+  "salary": 120,
+  "color": "#9b59b6"
+ },
+ "trainer": {
+  "title": "Тренер",
+  "salary": 110,
+  "color": "#e67e22"
+ }
 }

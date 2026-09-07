@@ -1,0 +1,32 @@
+[
+ {
+  "type": "dog",
+  "name": "Собака",
+  "price": 200,
+  "color": "#8b5a2b"
+ },
+ {
+  "type": "cat",
+  "name": "Кошка",
+  "price": 180,
+  "color": "#d35400"
+ },
+ {
+  "type": "parrot",
+  "name": "Попугай",
+  "price": 250,
+  "color": "#2ecc71"
+ },
+ {
+  "type": "rabbit",
+  "name": "Кролик",
+  "price": 160,
+  "color": "#ffffff"
+ },
+ {
+  "type": "hamster",
+  "name": "Хомяк",
+  "price": 120,
+  "color": "#f5cba7"
+ }
+]

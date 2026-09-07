@@ -196,6 +196,26 @@ namespace Fantazia.Core
                 var go = new GameObject("Quests");
                 go.AddComponent<QuestSystem>();
             }
+            // сюжетная линия: 6 записок → топор → доски → босс
+            if (QuestChain.I == null)
+            {
+                var go = new GameObject("QuestChain");
+                go.AddComponent<QuestChain>();
+            }
+            // процедурный звук без единого аудиофайла
+            if (AudioFX.I == null)
+            {
+                var go = new GameObject("AudioFX");
+                go.AddComponent<AudioFX>();
+            }
+            // сервисы города: работа, питомцы, квартиры
+            if (JobService.I == null)
+            {
+                var go = new GameObject("Services");
+                go.AddComponent<JobService>();
+                go.AddComponent<PetService>();
+                go.AddComponent<ApartmentService>();
+            }
             if (Interaction.I == null)
             {
                 var go = new GameObject("Interaction");
@@ -206,9 +226,17 @@ namespace Fantazia.Core
 
         void BuildUI()
         {
-            if (HUD.I != null) return;
-            var go = new GameObject("HUD");
-            go.AddComponent<HUD>();
+            if (HUD.I == null)
+            {
+                var go = new GameObject("HUD");
+                go.AddComponent<HUD>();
+            }
+            // чат общий с веб-игроками — они на том же сервере
+            if (connectToServer && ChatUI.I == null)
+            {
+                var go = new GameObject("Chat");
+                go.AddComponent<ChatUI>();
+            }
         }
 
         // ── СЕТЬ ───────────────────────────────────────────────────────────
@@ -220,6 +248,8 @@ namespace Fantazia.Core
             net.serverHost = serverHost;
             net.serverPort = serverPort;
             net.autoConnect = true;
+            // отображение других игроков — включая тех, кто в браузере
+            go.AddComponent<Fantazia.Net.RemotePlayers>();
         }
 
         void Update()

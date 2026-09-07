@@ -1,0 +1,50 @@
+{
+ "elevatorBeep": {
+  "freq": 880,
+  "dur": 0.12,
+  "type": "sine",
+  "vol": 0.25
+ },
+ "elevatorDing": {
+  "freq": 1320,
+  "dur": 0.35,
+  "type": "sine",
+  "vol": 0.3
+ },
+ "buttonClick": {
+  "freq": 660,
+  "dur": 0.05,
+  "type": "square",
+  "vol": 0.15
+ },
+ "coinPickup": {
+  "freq": 1046,
+  "dur": 0.18,
+  "type": "triangle",
+  "vol": 0.2
+ },
+ "questComplete": {
+  "freq": 784,
+  "dur": 0.5,
+  "type": "sine",
+  "vol": 0.28
+ },
+ "doorOpen": {
+  "freq": 220,
+  "dur": 0.4,
+  "type": "sawtooth",
+  "vol": 0.18
+ },
+ "carEngine": {
+  "freq": 90,
+  "dur": 0,
+  "type": "sawtooth",
+  "vol": 0.12
+ },
+ "footstep": {
+  "freq": 160,
+  "dur": 0.06,
+  "type": "triangle",
+  "vol": 0.1
+ }
+}

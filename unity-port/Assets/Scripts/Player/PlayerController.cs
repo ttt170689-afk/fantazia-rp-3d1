@@ -94,6 +94,16 @@ namespace Fantazia.Player
 
         void Update()
         {
+            // пока игрок печатает в чат — не двигаемся и не крутим камеру,
+            // иначе набор текста уводит персонажа в стену
+            if (Fantazia.Core.ChatUI.I != null && Fantazia.Core.ChatUI.I.IsTyping)
+            {
+                MobileMove = Vector2.zero;
+                MobileLook = Vector2.zero;
+                UpdateCamera();
+                return;
+            }
+
             HandleLook();
             HandleMove();
             UpdateCamera();

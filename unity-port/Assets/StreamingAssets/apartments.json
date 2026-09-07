@@ -1,0 +1,182 @@
+[
+ {
+  "id": "apt_1",
+  "number": 1,
+  "floor": 1,
+  "price": 600
+ },
+ {
+  "id": "apt_2",
+  "number": 2,
+  "floor": 1,
+  "price": 600
+ },
+ {
+  "id": "apt_3",
+  "number": 3,
+  "floor": 1,
+  "price": 600
+ },
+ {
+  "id": "apt_4",
+  "number": 4,
+  "floor": 1,
+  "price": 600
+ },
+ {
+  "id": "apt_5",
+  "number": 5,
+  "floor": 1,
+  "price": 800
+ },
+ {
+  "id": "apt_6",
+  "number": 6,
+  "floor": 2,
+  "price": 800
+ },
+ {
+  "id": "apt_7",
+  "number": 7,
+  "floor": 2,
+  "price": 800
+ },
+ {
+  "id": "apt_8",
+  "number": 8,
+  "floor": 2,
+  "price": 800
+ },
+ {
+  "id": "apt_9",
+  "number": 9,
+  "floor": 2,
+  "price": 800
+ },
+ {
+  "id": "apt_10",
+  "number": 10,
+  "floor": 2,
+  "price": 1000
+ },
+ {
+  "id": "apt_11",
+  "number": 11,
+  "floor": 3,
+  "price": 1000
+ },
+ {
+  "id": "apt_12",
+  "number": 12,
+  "floor": 3,
+  "price": 1000
+ },
+ {
+  "id": "apt_13",
+  "number": 13,
+  "floor": 3,
+  "price": 1000
+ },
+ {
+  "id": "apt_14",
+  "number": 14,
+  "floor": 3,
+  "price": 1000
+ },
+ {
+  "id": "apt_15",
+  "number": 15,
+  "floor": 3,
+  "price": 1200
+ },
+ {
+  "id": "apt_16",
+  "number": 16,
+  "floor": 4,
+  "price": 1200
+ },
+ {
+  "id": "apt_17",
+  "number": 17,
+  "floor": 4,
+  "price": 1200
+ },
+ {
+  "id": "apt_18",
+  "number": 18,
+  "floor": 4,
+  "price": 1200
+ },
+ {
+  "id": "apt_19",
+  "number": 19,
+  "floor": 4,
+  "price": 1200
+ },
+ {
+  "id": "apt_20",
+  "number": 20,
+  "floor": 4,
+  "price": 1400
+ },
+ {
+  "id": "apt_21",
+  "number": 21,
+  "floor": 5,
+  "price": 1400
+ },
+ {
+  "id": "apt_22",
+  "number": 22,
+  "floor": 5,
+  "price": 1400
+ },
+ {
+  "id": "apt_23",
+  "number": 23,
+  "floor": 5,
+  "price": 1400
+ },
+ {
+  "id": "apt_24",
+  "number": 24,
+  "floor": 5,
+  "price": 1400
+ },
+ {
+  "id": "apt_25",
+  "number": 25,
+  "floor": 5,
+  "price": 1600
+ },
+ {
+  "id": "apt_26",
+  "number": 26,
+  "floor": 6,
+  "price": 1600
+ },
+ {
+  "id": "apt_27",
+  "number": 27,
+  "floor": 6,
+  "price": 1600
+ },
+ {
+  "id": "apt_28",
+  "number": 28,
+  "floor": 6,
+  "price": 1600
+ },
+ {
+  "id": "apt_29",
+  "number": 29,
+  "floor": 6,
+  "price": 1600
+ },
+ {
+  "id": "apt_30",
+  "number": 30,
+  "floor": 6,
+  "price": 1800
+ }
+]

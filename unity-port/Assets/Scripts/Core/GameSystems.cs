@@ -220,7 +220,18 @@ namespace Fantazia.Core
             timer += Time.deltaTime;
             if (timer >= checkInterval) { timer = 0f; FindNearest(); }
 
-            if (Nearest != null && Input.GetKeyDown(KeyCode.E)) Activate(Nearest);
+            if (Input.GetKeyDown(KeyCode.E))
+            {
+                // ── СЮЖЕТ: записки и топор лежат в мире, а не в списке
+                // точек — они появляются и исчезают по ходу квеста ──
+                if (QuestChain.I != null && player != null)
+                {
+                    int note = QuestChain.I.NearestNote(player.position, 2.6f);
+                    if (note >= 0) { QuestChain.I.PickNote(note); return; }
+                    if (QuestChain.I.NearAxe(player.position, 2.6f)) { QuestChain.I.PickAxe(); return; }
+                }
+                if (Nearest != null) Activate(Nearest);
+            }
 
             // ── МАШИНЫ: садимся по F ──
             // Отдельно от точек взаимодействия: машины двигаются, держать
@@ -281,6 +292,7 @@ namespace Fantazia.Core
             switch (it.type)
             {
                 case "elevator":
+                    AudioFX.Play("buttonClick");
                     if (UI.HUD.I != null) UI.HUD.I.ToggleElevator();
                     break;
 
@@ -298,6 +310,23 @@ namespace Fantazia.Core
 
                 case "exit":
                     InteriorManager.I?.Exit();
+                    break;
+
+                case "quest_boards":
+                    QuestChain.I?.TryBreakBoards();
+                    break;
+
+                case "quest_bossdoor":
+                    QuestChain.I?.EnterBoss();
+                    break;
+
+                case "quest_note":
+                    // записки в интерьере обрабатываются тем же путём
+                    if (QuestChain.I != null && player != null)
+                    {
+                        int idx = QuestChain.I.NearestNote(player.position, 3f);
+                        if (idx >= 0) QuestChain.I.PickNote(idx);
+                    }
                     break;
 
                 default:
