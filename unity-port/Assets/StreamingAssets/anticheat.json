@@ -1,0 +1,33 @@
+{
+  "maxSpeed": 34,
+  "maxJump": 60,
+  "worldMinX": -900,
+  "worldMaxX": 900,
+  "worldMinY": -60,
+  "worldMaxY": 400,
+  "worldMinZ": -900,
+  "worldMaxZ": 900,
+  "limits": {
+    "updatePosition": 20,
+    "sendChat": 700,
+    "buyItem": 250,
+    "useItem": 200,
+    "interact": 300,
+    "workout": 3000,
+    "getJob": 1000,
+    "quitJob": 1000,
+    "adoptPet": 1500,
+    "feedPet": 800,
+    "renamePet": 1500,
+    "buyApartment": 1000,
+    "sellApartment": 1000,
+    "addFriend": 600,
+    "removeFriend": 600,
+    "startDance": 400,
+    "stopDance": 400,
+    "voiceStart": 1500,
+    "voiceStop": 1500,
+    "pingCheck": 400,
+    "adminCommand": 300
+  }
+}

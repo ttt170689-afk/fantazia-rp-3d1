@@ -1,0 +1,91 @@
+{
+  "clothing": [
+    {
+      "id": "shirt_red",
+      "name": "Красная футболка",
+      "price": 50,
+      "type": "shirt",
+      "color": "#ff0000"
+    },
+    {
+      "id": "shirt_blue",
+      "name": "Синяя футболка",
+      "price": 50,
+      "type": "shirt",
+      "color": "#3498db"
+    },
+    {
+      "id": "pants_black",
+      "name": "Чёрные штаны",
+      "price": 60,
+      "type": "pants",
+      "color": "#111111"
+    },
+    {
+      "id": "pants_white",
+      "name": "Белые штаны",
+      "price": 60,
+      "type": "pants",
+      "color": "#eeeeee"
+    },
+    {
+      "id": "hat_gold",
+      "name": "Золотая шляпа",
+      "price": 120,
+      "type": "hat",
+      "color": "#f1c40f"
+    }
+  ],
+  "food": [
+    {
+      "id": "pizza",
+      "name": "Пицца",
+      "price": 15,
+      "heal": 20
+    },
+    {
+      "id": "burger",
+      "name": "Бургер",
+      "price": 12,
+      "heal": 15
+    },
+    {
+      "id": "cola",
+      "name": "Кола",
+      "price": 8,
+      "heal": 5
+    },
+    {
+      "id": "steak",
+      "name": "Стейк",
+      "price": 25,
+      "heal": 35
+    }
+  ],
+  "petfood": [
+    {
+      "id": "dog_food",
+      "name": "Корм для собак",
+      "price": 8,
+      "petHeal": 25
+    },
+    {
+      "id": "cat_food",
+      "name": "Корм для кошек",
+      "price": 8,
+      "petHeal": 25
+    },
+    {
+      "id": "bird_food",
+      "name": "Корм для птиц",
+      "price": 6,
+      "petHeal": 20
+    },
+    {
+      "id": "premium_pet_food",
+      "name": "Премиум корм",
+      "price": 16,
+      "petHeal": 45
+    }
+  ]
+}

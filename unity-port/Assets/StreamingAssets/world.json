@@ -1,0 +1,43 @@
+{
+  "worldSize": 1200,
+  "moveSpeed": 9,
+  "sprintSpeed": 16.8,
+  "jumpForce": 12,
+  "gravity": 28.8,
+  "_note": "скорости переведены из «на кадр» (60 FPS) в «в секунду» для Unity",
+  "cameraDistance": 5.2,
+  "cameraHeight": 2.7,
+  "mallFloorHeight": 5.5,
+  "mallGround": 5,
+  "interiorBaseX": 2000,
+  "interiorBaseZ": 2000,
+  "spawn": {
+    "x": 17,
+    "y": 0,
+    "z": 21
+  },
+  "mallFloors": [
+    "B5",
+    "B4",
+    "B3",
+    "B2",
+    "B1",
+    "1",
+    "2",
+    "3"
+  ],
+  "escalator": {
+    "xUp": [
+      -14,
+      -12
+    ],
+    "zBottom": 10,
+    "zTop": 0
+  },
+  "lift": {
+    "x": 21,
+    "z": -2,
+    "doorWidth": 2.1,
+    "doorHeight": 3.6
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "apartment": {
+    "name": "🏢 Жилой дом",
+    "floors": 9,
+    "color": 9083824,
+    "floorColor": 13946823
+  },
+  "house": {
+    "name": "🏡 КОТТЕДЖ",
+    "floors": 1,
+    "color": 13215868,
+    "floorColor": 15259063
+  },
+  "office": {
+    "name": "🏢 Офисный центр",
+    "floors": 8,
+    "color": 7048366,
+    "floorColor": 14739696
+  },
+  "cinema": {
+    "name": "🎬 Кинотеатр",
+    "floors": 2,
+    "color": 2899536,
+    "floorColor": 3947580
+  },
+  "club": {
+    "name": "🎵 Ночной клуб",
+    "floors": 1,
+    "color": 1703984,
+    "floorColor": 1703984
+  },
+  "restaurant": {
+    "name": "🍽️ Ресторан",
+    "floors": 1,
+    "color": 6040846,
+    "floorColor": 8014378
+  },
+  "gym": {
+    "name": "🏋️ Спортзал",
+    "floors": 1,
+    "color": 2968094,
+    "floorColor": 3815994
+  },
+  "bank": {
+    "name": "🏦 Банк",
+    "floors": 5,
+    "color": 1846848,
+    "floorColor": 13154464
+  },
+  "hospital": {
+    "name": "🏥 Больница",
+    "floors": 4,
+    "color": 15790320,
+    "floorColor": 16777215
+  },
+  "mall": {
+    "name": "🏬 GRAND MALL",
+    "floors": 8,
+    "color": 12434363,
+    "floorColor": 16119285
+  },
+  "karaoke": {
+    "name": "🎤 Кара-оке",
+    "floors": 1,
+    "color": 3801168,
+    "floorColor": 2752576
+  }
+}
