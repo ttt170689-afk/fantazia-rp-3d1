@@ -276,6 +276,19 @@ namespace Fantazia.Core
                 go.AddComponent<PetService>();
                 go.AddComponent<ApartmentService>();
             }
+            // системы второй волны: погода, танцы, лутбоксы, прогрессия,
+            // банк, спортзал, редактор внешности
+            if (WeatherSystem.I == null)
+            {
+                var go = new GameObject("Systems2");
+                go.AddComponent<WeatherSystem>();
+                go.AddComponent<DanceSystem>();
+                go.AddComponent<LootboxSystem>();
+                go.AddComponent<ProgressionSystem>();
+                go.AddComponent<BankSystem>();
+                go.AddComponent<GymSystem>();
+                go.AddComponent<AppearanceSystem>();
+            }
             if (Interaction.I == null)
             {
                 var go = new GameObject("Interaction");
@@ -291,6 +304,14 @@ namespace Fantazia.Core
                 var go = new GameObject("HUD");
                 go.AddComponent<HUD>();
             }
+            // игровое меню на Tab: персонаж, магазин, квесты, работа,
+            // питомцы, банк, пропуск — вместо кнопок по углам
+            if (GameMenu.I == null)
+            {
+                var gm = new GameObject("GameMenu");
+                gm.AddComponent<GameMenu>();
+            }
+
             // миникарта, компас, FPS, подсказки
             if (Extras.I == null)
             {

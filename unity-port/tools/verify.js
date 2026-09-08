@@ -36,6 +36,15 @@ for(const m of allCode.matchAll(/\bvoid\s+(\w+)\s*\(/g))declared.add(m[1]);
 for(const m of allCode.matchAll(/\bIEnumerator\s+(\w+)\s*\(/g))declared.add(m[1]);
 for(const m of allCode.matchAll(/\bpublic\s+event\s+[\w<>]+\s+(\w+)/g))declared.add(m[1]);
 for(const m of allCode.matchAll(/\benum\s+(\w+)/g))declared.add(m[1]);
+// значения enum: enum WeatherType { Sunny, Rain, ... } — каждое имя
+// внутри фигурных скобок тоже объявлено, иначе валидатор ругался
+// на WeatherType.Sunny как на несуществующий член
+for(const m of allCode.matchAll(/\benum\s+\w+\s*\{([^}]*)\}/g)){
+  m[1].split(',').forEach(v=>{
+    const name=v.trim().split(/[\s=]/)[0];
+    if(name)declared.add(name);
+  });
+}
 
 // ── 2. Проверяем обращения вида Класс.Член ──
 const known=new Set(['I','Instance','Count','Length','transform','gameObject','position',

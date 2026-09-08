@@ -239,6 +239,10 @@ namespace Fantazia.Core
             // Отдельно от точек взаимодействия: машины двигаются, держать
             // их в общем списке пришлось бы обновлять каждый кадр.
             if (Input.GetKeyDown(KeyCode.F)) TryCar();
+
+            // танцы на цифрах 1-6, как в веб-версии
+            for (int d = 0; d < 6; d++)
+                if (Input.GetKeyDown(KeyCode.Alpha1 + d)) DanceSystem.I?.Toggle(d);
         }
 
         // Посадка в ближайшую машину. Публичный метод: вызывается и с
