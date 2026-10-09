@@ -2178,6 +2178,30 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
 }
 @keyframes hellPulse{from{opacity:.55;transform:translate(-50%,-50%) scale(.92)}to{opacity:1;transform:translate(-50%,-50%) scale(1.06)}}
 </style>
+<style id="fzIntroStyle">
+#fzIntro{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#1d1140 0%,#08060f 75%);cursor:pointer;font-family:Arial,sans-serif;transition:opacity .7s ease}
+#fzIntro.out{opacity:0;pointer-events:none}
+#fzIntro .fzi-bolt{font-size:58px;filter:drop-shadow(0 0 18px #ff7a3c);animation:fziPop .9s cubic-bezier(.2,1.4,.4,1) both}
+#fzIntro .fzi-title{margin-top:14px;font:900 40px Orbitron,Arial,sans-serif;letter-spacing:8px;color:#a29bfe;text-shadow:0 0 22px #6c5ce7;animation:fziUp 1s ease .3s both}
+#fzIntro .fzi-by{margin-top:16px;color:#cfc9ff;font-size:16px;letter-spacing:1.5px;animation:fziUp 1s ease 1.1s both}
+#fzIntro .fzi-by b{color:#ffd76a;font-weight:700}
+#fzIntro .fzi-skip{position:absolute;bottom:26px;color:#6f6a92;font-size:12px;letter-spacing:1px}
+@keyframes fziPop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes fziUp{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+</style>
+<div id="fzIntro" onclick="fzIntroEnd()">
+  <div class="fzi-bolt">⚡</div>
+  <div class="fzi-title">FANTAZIA RP 3D</div>
+  <div class="fzi-by">создано <b>temka_play</b> в одиночку</div>
+  <div class="fzi-skip">нажмите, чтобы пропустить</div>
+</div>
+<script>
+function fzIntroEnd(){
+  const e = document.getElementById('fzIntro'); if (!e || e.dataset.gone) return;
+  e.dataset.gone = '1'; e.classList.add('out'); setTimeout(() => e.remove(), 750);
+}
+setTimeout(fzIntroEnd, 3800);
+</script>
 <div id="authScreen">
   <div class="auth-stars" id="authStars"></div>
 <canvas id="authNoise" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:.55;mix-blend-mode:screen"></canvas>
@@ -3315,211 +3339,51 @@ document.addEventListener('click', function(e){
 </div>
 
 <!-- ========== НАСТРОЙКИ ========== -->
+<style id="sxStyle">
+#settingsModal .modal{min-width:min(760px,94vw)!important;max-width:94vw;padding:0!important;overflow:hidden}
+.sx-head{padding:20px 26px 4px}
+.sx-head h2{margin:0 0 4px}
+.sx-sub{color:#8e8aa8;font:12px Arial}
+.sx-tabs{display:flex;gap:6px;padding:12px 18px 0;border-bottom:1px solid rgba(108,92,231,.3);overflow-x:auto}
+.sx-tab{flex:0 0 auto;padding:9px 14px;border-radius:10px 10px 0 0;background:transparent;border:1px solid transparent;border-bottom:none;color:#9b97c4;cursor:pointer;font:700 13px Arial;white-space:nowrap;transition:background .15s,color .15s}
+.sx-tab:hover{color:#fff;background:rgba(108,92,231,.12)}
+.sx-tab.on{color:#fff;background:rgba(108,92,231,.28);border-color:rgba(108,92,231,.5)}
+.sx-body{max-height:58vh;overflow-y:auto;padding:6px 26px 8px}
+.sx-pane{display:none}
+.sx-pane.on{display:block}
+.sx-group{color:#a29bfe;font:700 12px Arial;text-transform:uppercase;letter-spacing:1px;margin:16px 0 4px;padding-bottom:5px;border-bottom:1px solid rgba(108,92,231,.25)}
+.sx-row{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.sx-info{flex:1;min-width:0}
+.sx-name{color:#eee;font:600 14px Arial}
+.sx-desc{color:#8e8aa8;font:12px/1.45 Arial;margin-top:3px}
+.sx-ctrl{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.sx-ctrl select{background:#1b1a2e;color:#eee;border:1px solid rgba(108,92,231,.45);border-radius:8px;padding:6px 8px;font:13px Arial;min-width:190px;cursor:pointer}
+.sx-ctrl input[type=range]{width:160px;accent-color:#6c5ce7}
+.sx-ctrl .sx-val{color:#a29bfe;font:700 13px Arial;min-width:34px;text-align:right}
+.sx-ctrl .toggle-btn,.sx-presets .toggle-btn{padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);color:#bdb9d9;cursor:pointer;font:700 12px Arial;transition:background .15s,color .15s,border-color .15s}
+.sx-ctrl .toggle-btn{min-width:78px}
+.sx-ctrl .toggle-btn.on{background:rgba(0,184,148,.28);color:#7dffd6;border-color:rgba(0,184,148,.6)}
+.sx-presets .toggle-btn:hover{background:rgba(108,92,231,.3);color:#fff;border-color:#8c7cff}
+.sx-presets{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:330px}
+.sx-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 26px 0;border-top:1px solid rgba(108,92,231,.25)}
+.sx-foot span{color:#8e8aa8;font:12px/1.4 Arial}
+</style>
 <div class="modal-overlay" id="settingsModal">
-  <div class="modal" style="min-width:520px">
+  <div class="modal">
     <button class="modal-close" onclick="closeModal('settingsModal')">&times;</button>
-    <h2>⚙️ Настройки</h2>
-    <div class="settings-section">
-      <h3>🖥️ Графика</h3>
-      <div class="settings-row">
-        <label>Пресет качества</label>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="toggle-btn off" onclick="applyPreset('low')">Низкий</button><button class="toggle-btn off" onclick="applyPreset('medium')">Средний</button><button class="toggle-btn on" onclick="applyPreset('high')">Высокий</button><button class="toggle-btn off" onclick="applyPreset('ultra')">Ультра</button>
-        </div>
-      </div>
-      <div class="settings-row">
-        <label>Динамическое разрешение (держит FPS)</label>
-        <button id="set_dynRes" class="toggle-btn off" onclick="toggleSetting('dynRes')">ВЫКЛ</button>
-      </div>
-      <div class="settings-row">
-        <label>Режим оптимизации (макс. FPS)</label>
-        <button id="set_perf" class="toggle-btn off" onclick="toggleSetting('perf')">ВЫКЛ</button>
-      </div>
-      <div class="settings-row">
-        <label>Радар (мини-карта)</label>
-        <button id="set_radar" class="toggle-btn on" onclick="toggleSetting('radar')">ВКЛ</button>
-      </div>
-      <div class="settings-row">
-        <label>Мелкие детали города</label>
-        <button id="set_detail" class="toggle-btn on" onclick="toggleSetting('detail')">ВКЛ</button>
-      </div>
-      <div class="settings-row">
-        <label>Счётчик FPS</label>
-        <button id="set_fpsShow" class="toggle-btn off" onclick="toggleSetting('fpsShow')">ВЫКЛ</button>
-      </div>
-      <div class="settings-row">
-        <label>Качество теней</label>
-        <select id="set_shadowQuality" onchange="applySetting('shadowQuality',this.value)">
-          <option value="off">Выкл</option>
-          <option value="low">Низкое</option>
-          <option value="high" selected>Высокое</option>
-        </select>
-      </div>
-      <div class="settings-row">
-        <label>Туман</label>
-        <button id="set_fog" class="toggle-btn on" onclick="toggleSetting('fog')">ВКЛ</button>
-      </div>
-      <div class="settings-row">
-        <label>Антиалиасинг</label>
-        <button id="set_aa" class="toggle-btn on" onclick="toggleSetting('aa')">ВКЛ</button>
-      </div>
-      <div class="settings-row">
-        <label>Масштаб рендера</label>
-        <select id="set_renderScale" onchange="applySetting('renderScale',this.value)">
-          <option value="0.5">50% (быстро)</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.5">150%</option><option value="2" selected>200% (макс. качество)</option>
-        </select>
-      </div>
-      <div class="settings-row">
-        <label>Дальность прорисовки</label>
-        <select id="set_drawDist" onchange="applySetting('drawDist',this.value)">
-          <option value="150">Низкая</option><option value="260">Средняя</option><option value="420" selected>Высокая</option><option value="700">Ультра</option>
-        </select>
-      </div>
-      <div class="settings-row">
-        <label>Лимит FPS</label>
-        <select id="set_fpsCap" onchange="applySetting('fpsCap',this.value)">
-          <option value="0" selected>Без лимита</option><option value="144">144</option><option value="60">60</option><option value="30">30</option>
-        </select>
-      </div>
-      <div class="settings-row">
-        <label>Поле зрения (FOV)</label>
-        <div style="display:flex;align-items:center;gap:8px">
-          <input type="range" id="set_fov" min="50" max="100" value="60" oninput="applySetting('fov',this.value)">
-          <span id="set_fovVal" style="color:#a29bfe;font-size:13px;width:28px">60</span>
-        </div>
-      </div>
-      <div class="settings-row">
-        <label>Яркость</label>
-        <div style="display:flex;align-items:center;gap:8px">
-          <input type="range" id="set_exposure" min="5" max="15" value="9" oninput="applySetting('exposure',this.value)">
-          <span id="set_exposureVal" style="color:#a29bfe;font-size:13px;width:28px">9</span>
-        </div>
-      </div>
-      <div class="settings-row">
-        <label>Качество шейдеров (свет)</label>
-        <select id="set_shaderQuality" onchange="applySetting('shaderQuality',this.value)">
-          <option value="low">Низкое (4 лампы)</option><option value="medium">Среднее (8)</option><option value="high" selected>Высокое (12)</option><option value="ultra">Ультра (20)</option>
-        </select>
-      </div>
-      <div class="settings-row">
-        <label>Тональная компрессия</label>
-        <select id="set_toneMap" onchange="applySetting('toneMap',this.value)">
-          <option value="aces" selected>ACES Filmic (кино)</option><option value="reinhard">Reinhard (мягко)</option><option value="cineon">Cineon (контраст)</option><option value="linear">Линейная</option><option value="none">Выкл</option>
-        </select>
-      </div>
-      <div class="settings-row">
-        <label>Цветокоррекция</label>
-        <select id="set_colorGrade" onchange="applySetting('colorGrade',this.value)">
-          <option value="off" selected>Выкл</option><option value="cinematic">Кинематографичная</option><option value="vivid">Сочная</option><option value="warm">Тёплая</option><option value="cold">Холодная</option><option value="noir">Нуар (ч/б)</option>
-        </select>
-      </div>
-      <div class="settings-row">
-        <label>Анизотропная фильтрация</label>
-        <select id="set_aniso" onchange="applySetting('aniso',this.value)">
-          <option value="1">Выкл</option><option value="4" selected>4×</option><option value="8">8×</option><option value="16">16×</option>
-        </select>
-      </div>
-      <div class="settings-row">
-        <label>Фильтрация текстур</label>
-        <select id="set_texFilter" onchange="applySetting('texFilter',this.value)">
-          <option value="linear" selected>Сглаженная</option><option value="nearest">Пиксельная (ретро)</option>
-        </select>
-      </div>
-      <div class="settings-row">
-        <label>Резкость</label>
-        <div style="display:flex;align-items:center;gap:8px">
-          <input type="range" id="set_sharp" min="0" max="10" value="0" oninput="applySetting('sharp',this.value)">
-          <span id="set_sharpVal" style="color:#a29bfe;font-size:13px;width:28px">0</span>
-        </div>
-      </div>
-      <div class="settings-row">
-        <label>Виньетка</label>
-        <button id="set_vignette" class="toggle-btn off" onclick="toggleSetting('vignette')">ВЫКЛ</button>
-      </div>
-      <div class="settings-row">
-        <label>Зерно плёнки</label>
-        <button id="set_grain" class="toggle-btn off" onclick="toggleSetting('grain')">ВЫКЛ</button>
-      </div>
-      <div class="settings-row">
-        <label>Мимика персонажей</label>
-        <button id="set_faceAnim" class="toggle-btn on" onclick="toggleSetting('faceAnim')">ВКЛ</button>
-      </div>
-      <div class="settings-row">
-        <label>Облака и небо</label>
-        <button id="set_sky" class="toggle-btn on" onclick="toggleSetting('sky')">ВКЛ</button>
-      </div>
-      <div class="settings-row">
-        <label>Навигатор (стрелка к цели)</label>
-        <button id="set_nav" class="toggle-btn on" onclick="toggleSetting('nav')">ВКЛ</button>
-      </div>
-    </div>
-    <div class="settings-section">
-      <h3>🎮 Управление</h3>
-      <div class="settings-row">
-        <label>Чувствительность мыши</label>
-        <div style="display:flex;align-items:center;gap:8px">
-          <input type="range" id="set_mouseSens" min="1" max="10" value="4" oninput="applySetting('mouseSens',this.value)">
-          <span id="set_mouseSensVal" style="color:#a29bfe;font-size:13px;width:20px">4</span>
-        </div>
-      </div>
-      <div class="settings-row">
-        <label>Скорость камеры (колёсико)</label>
-        <div style="display:flex;align-items:center;gap:8px">
-          <input type="range" id="set_zoomSpeed" min="1" max="10" value="5" oninput="applySetting('zoomSpeed',this.value)">
-          <span id="set_zoomSpeedVal" style="color:#a29bfe;font-size:13px;width:20px">5</span>
-        </div>
-      </div>
-      <div class="settings-row">
-        <label>Режим камеры (F5)</label>
-        <select id="set_camMode" onchange="setCameraMode(this.value)">
-          <option value="third">3-е лицо</option>
-          <option value="first">1-е лицо</option>
-        </select>
-      </div>
-      <div class="settings-row">
-        <label>Поле зрения от 1-го лица (FOV)</label>
-        <div style="display:flex;align-items:center;gap:8px">
-          <input type="range" id="set_firstFov" min="60" max="110" value="78" oninput="applySetting('firstFov',this.value)">
-          <span id="set_firstFovVal" style="color:#a29bfe;font-size:13px;width:28px">78</span>
-        </div>
-      </div>
-      <div class="settings-row">
-        <label>Инверсия мыши по вертикали</label>
-        <button id="set_invertY" class="toggle-btn off" onclick="toggleSetting('invertY')">ВЫКЛ</button>
-      </div>
-      <div class="settings-row">
-        <label>Покачивание рук (инерция камеры)</label>
-        <button id="set_handSway" class="toggle-btn on" onclick="toggleSetting('handSway')">ВКЛ</button>
-      </div>
-    </div>
-    <div class="settings-section">
-      <h3>🔊 Звук</h3>
-      <div class="settings-row">
-        <label>Музыка лифта</label>
-        <button id="set_elevMusic" class="toggle-btn on" onclick="toggleSetting('elevMusic')">ВКЛ</button>
-      </div>
-      <div class="settings-row">
-        <label>Звуки интерфейса</label>
-        <button id="set_uiSounds" class="toggle-btn on" onclick="toggleSetting('uiSounds')">ВКЛ</button>
-      </div>
-    </div>
-    <div class="settings-section">
-      <h3>💬 Чат и соцсети</h3>
-      <div class="settings-row">
-        <label>Показывать имена игроков</label>
-        <button id="set_nameTags" class="toggle-btn on" onclick="toggleSetting('nameTags')">ВКЛ</button>
-      </div>
-      <div class="settings-row">
-        <label>Радиус местного чата</label>
-        <div style="display:flex;align-items:center;gap:8px">
-          <input type="range" id="set_localRange" min="10" max="80" value="30" oninput="applySetting('localRange',this.value)">
-          <span id="set_localRangeVal" style="color:#a29bfe;font-size:13px;width:30px">30</span>
-        </div>
-      </div>
-    </div>
-    <button class="modal-btn success" onclick="saveSettings()" style="width:100%;padding:12px;margin-top:4px">✅ Сохранить настройки</button>
+    <div class="sx-head"><h2>⚙️ Настройки</h2><div class="sx-sub">Наведите на настройку, чтобы понять, что она делает. Изменения применяются сразу.</div></div>
+    <div class="sx-tabs"><button class="sx-tab on" data-tab="graphics" onclick="sxTab('graphics')">🖥️ Графика</button><button class="sx-tab" data-tab="image" onclick="sxTab('image')">🎨 Изображение</button><button class="sx-tab" data-tab="controls" onclick="sxTab('controls')">🎮 Управление</button><button class="sx-tab" data-tab="ui" onclick="sxTab('ui')">🧭 Интерфейс</button><button class="sx-tab" data-tab="sound" onclick="sxTab('sound')">🔊 Звук и чат</button></div>
+    <div class="sx-body"><div class="sx-pane on" data-tab="graphics"><div class="sx-group">Быстрый выбор</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Пресет качества</div><div class="sx-desc">Готовый набор графики: тени, разрешение, дальность и свет сразу. Слабый ПК — «Низкий», мощный — «Ультра».</div></div><div class="sx-ctrl"><div class="sx-presets"><button class="toggle-btn off" onclick="applyPreset('low')">Низкий</button><button class="toggle-btn off" onclick="applyPreset('medium')">Средний</button><button class="toggle-btn off" onclick="applyPreset('high')">Высокий</button><button class="toggle-btn off" onclick="applyPreset('ultra')">Ультра</button></div></div></div><div class="sx-group">Качество картинки</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Масштаб рендера</div><div class="sx-desc">Внутреннее разрешение, в котором рисуется мир. 50% — заметно быстрее, но картинка мыльнее. 200% — максимальная чёткость, сильно нагружает видеокарту.</div></div><div class="sx-ctrl"><select id="set_renderScale" onchange="applySetting('renderScale',this.value)"><option value="0.5">50% (быстро)</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.5">150%</option><option value="2" selected>200% (макс. качество)</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Дальность прорисовки</div><div class="sx-desc">Насколько далеко видно город. Чем дальше, тем больше объектов рисуется одновременно.</div></div><div class="sx-ctrl"><select id="set_drawDist" onchange="applySetting('drawDist',this.value)"><option value="150">Низкая</option><option value="260">Средняя</option><option value="420" selected>Высокая</option><option value="700">Ультра</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Качество теней</div><div class="sx-desc">Детализация и мягкость теней от солнца. «Выкл» даёт заметный прирост FPS.</div></div><div class="sx-ctrl"><select id="set_shadowQuality" onchange="applySetting('shadowQuality',this.value)"><option value="off">Выкл</option><option value="low">Низкое</option><option value="high" selected>Высокое</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Количество источников света</div><div class="sx-desc">Сколько световых источников (фонари, неон, фонарик) освещают сцену одновременно. Больше — красивее, но тяжелее.</div></div><div class="sx-ctrl"><select id="set_shaderQuality" onchange="applySetting('shaderQuality',this.value)"><option value="low">Низкое (4 лампы)</option><option value="medium">Среднее (8)</option><option value="high" selected>Высокое (12)</option><option value="ultra">Ультра (20)</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Сглаживание (антиалиасинг)</div><div class="sx-desc">Убирает «лесенку» по краям предметов. Применяется сразу, но может ненадолго мигнуть экран.</div></div><div class="sx-ctrl"><button id="set_aa" class="toggle-btn on" onclick="toggleSetting('aa')">ВКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Анизотропная фильтрация</div><div class="sx-desc">Чёткость текстур на земле и стенах под углом. Почти не бьёт по FPS — обычно 8× или 16×.</div></div><div class="sx-ctrl"><select id="set_aniso" onchange="applySetting('aniso',this.value)"><option value="1">Выкл</option><option value="4" selected>4×</option><option value="8">8×</option><option value="16">16×</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Фильтрация текстур</div><div class="sx-desc">«Пиксельная» — ретро-вид без размытия текстур.</div></div><div class="sx-ctrl"><select id="set_texFilter" onchange="applySetting('texFilter',this.value)"><option value="linear" selected>Сглаженная</option><option value="nearest">Пиксельная (ретро)</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Туман</div><div class="sx-desc">Скрывает дальние объекты мягкой дымкой. Выключение показывает весь город, но нагрузка растёт.</div></div><div class="sx-ctrl"><button id="set_fog" class="toggle-btn on" onclick="toggleSetting('fog')">ВКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Облака и небо</div><div class="sx-desc">Небосвод, солнце и облака. Выключение экономит ресурсы.</div></div><div class="sx-ctrl"><button id="set_sky" class="toggle-btn on" onclick="toggleSetting('sky')">ВКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Мелкие детали города</div><div class="sx-desc">Клумбы, урны, гидранты, вывески и рекламные щиты. Отключите для роста FPS.</div></div><div class="sx-ctrl"><button id="set_detail" class="toggle-btn on" onclick="toggleSetting('detail')">ВКЛ</button></div></div><div class="sx-group">Производительность</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Лимит FPS</div><div class="sx-desc">Ограничивает частоту кадров. Удобно для экономии батареи и тихой работы ноутбука.</div></div><div class="sx-ctrl"><select id="set_fpsCap" onchange="applySetting('fpsCap',this.value)"><option value="0" selected>Без лимита</option><option value="144">144</option><option value="60">60</option><option value="30">30</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Динамическое разрешение</div><div class="sx-desc">Игра сама снижает масштаб рендера, если FPS падает ниже ~32, и возвращает его, когда станет лучше.</div></div><div class="sx-ctrl"><button id="set_dynRes" class="toggle-btn off" onclick="toggleSetting('dynRes')">ВЫКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Режим максимального FPS</div><div class="sx-desc">Отключает часть декоративных объектов, птиц и теней. Самый быстрый режим.</div></div><div class="sx-ctrl"><button id="set_perf" class="toggle-btn off" onclick="toggleSetting('perf')">ВЫКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Счётчик FPS</div><div class="sx-desc">Показывает количество кадров в секунду в верхней части экрана.</div></div><div class="sx-ctrl"><button id="set_fpsShow" class="toggle-btn off" onclick="toggleSetting('fpsShow')">ВЫКЛ</button></div></div></div><div class="sx-pane" data-tab="image"><div class="sx-group">Цвет и свет</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Тональная компрессия</div><div class="sx-desc">Как яркие и тёмные участки переводятся на экран. ACES — кинематографичный вид.</div></div><div class="sx-ctrl"><select id="set_toneMap" onchange="applySetting('toneMap',this.value)"><option value="aces" selected>ACES Filmic (кино)</option><option value="reinhard">Reinhard (мягко)</option><option value="cineon">Cineon (контраст)</option><option value="linear">Линейная</option><option value="none">Выкл</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Яркость</div><div class="sx-desc">Общая яркость картинки. Если на вашем мониторе всё тёмное — увеличьте.</div></div><div class="sx-ctrl"><input type="range" id="set_exposure" min="5" max="15" value="9" oninput="applySetting('exposure',this.value)"><span id="set_exposureVal" class="sx-val">9</span></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Цветокоррекция</div><div class="sx-desc">Цветовой фильтр: кинематографичный, сочный, тёплый, холодный или чёрно-белый нуар.</div></div><div class="sx-ctrl"><select id="set_colorGrade" onchange="applySetting('colorGrade',this.value)"><option value="off">Выкл</option><option value="cinematic" selected>Кинематографичная</option><option value="vivid">Сочная</option><option value="warm">Тёплая</option><option value="cold">Холодная</option><option value="noir">Нуар (ч/б)</option></select></div></div><div class="sx-group">Эффекты</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Резкость</div><div class="sx-desc">Добавляет контраста — картинка выглядит чётче, но может стать грубее.</div></div><div class="sx-ctrl"><input type="range" id="set_sharp" min="0" max="10" value="0" oninput="applySetting('sharp',this.value)"><span id="set_sharpVal" class="sx-val">0</span></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Виньетка</div><div class="sx-desc">Затемняет края экрана, фокусируя внимание на центре.</div></div><div class="sx-ctrl"><button id="set_vignette" class="toggle-btn off" onclick="toggleSetting('vignette')">ВЫКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Зерно плёнки</div><div class="sx-desc">Лёгкая зернистость, как на старой киноплёнке.</div></div><div class="sx-ctrl"><button id="set_grain" class="toggle-btn off" onclick="toggleSetting('grain')">ВЫКЛ</button></div></div></div><div class="sx-pane" data-tab="controls"><div class="sx-group">Мышь</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Чувствительность мыши</div><div class="sx-desc">Насколько сильно поворачивается камера при движении мыши.</div></div><div class="sx-ctrl"><input type="range" id="set_mouseSens" min="1" max="10" value="4" oninput="applySetting('mouseSens',this.value)"><span id="set_mouseSensVal" class="sx-val">4</span></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Инверсия мыши по вертикали</div><div class="sx-desc">Мышь вверх — камера смотрит вниз. Удобно тем, кто привык к полётным симуляторам.</div></div><div class="sx-ctrl"><button id="set_invertY" class="toggle-btn off" onclick="toggleSetting('invertY')">ВЫКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Скорость камеры (колёсико)</div><div class="sx-desc">Насколько быстро приближается и отдаляется камера колёсиком мыши.</div></div><div class="sx-ctrl"><input type="range" id="set_zoomSpeed" min="1" max="10" value="5" oninput="applySetting('zoomSpeed',this.value)"><span id="set_zoomSpeedVal" class="sx-val">5</span></div></div><div class="sx-group">Камера</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Режим камеры (F5)</div><div class="sx-desc">3-е лицо — персонаж виден целиком. 1-е лицо — глазами персонажа. Переключается также клавишей F5.</div></div><div class="sx-ctrl"><select id="set_camMode" onchange="applySetting('camMode',this.value)"><option value="third" selected>3-е лицо</option><option value="first">1-е лицо</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Поле зрения (3-е лицо)</div><div class="sx-desc">Ширина обзора. Больше — видно шире, но картинка сильнее искажается по краям.</div></div><div class="sx-ctrl"><input type="range" id="set_fov" min="50" max="100" value="60" oninput="applySetting('fov',this.value)"><span id="set_fovVal" class="sx-val">60</span></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Поле зрения (1-е лицо)</div><div class="sx-desc">То же для вида от первого лица. Обычно комфортно 70–85.</div></div><div class="sx-ctrl"><input type="range" id="set_firstFov" min="60" max="110" value="78" oninput="applySetting('firstFov',this.value)"><span id="set_firstFovVal" class="sx-val">78</span></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Покачивание рук</div><div class="sx-desc">Руки от первого лица отстают и плавно возвращаются, когда вы поворачиваете камеру.</div></div><div class="sx-ctrl"><button id="set_handSway" class="toggle-btn on" onclick="toggleSetting('handSway')">ВКЛ</button></div></div></div><div class="sx-pane" data-tab="ui"><div class="sx-group">HUD</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Радар (мини-карта)</div><div class="sx-desc">Карта города в углу экрана.</div></div><div class="sx-ctrl"><button id="set_radar" class="toggle-btn on" onclick="toggleSetting('radar')">ВКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Навигатор</div><div class="sx-desc">Стрелка, которая указывает на текущую цель задания.</div></div><div class="sx-ctrl"><button id="set_nav" class="toggle-btn on" onclick="toggleSetting('nav')">ВКЛ</button></div></div><div class="sx-group">Персонажи</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Имена игроков</div><div class="sx-desc">Показывать ники над головами других игроков.</div></div><div class="sx-ctrl"><button id="set_nameTags" class="toggle-btn on" onclick="toggleSetting('nameTags')">ВКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Мимика персонажей</div><div class="sx-desc">Лица персонажей меняют выражение: радость, страх, злость.</div></div><div class="sx-ctrl"><button id="set_faceAnim" class="toggle-btn on" onclick="toggleSetting('faceAnim')">ВКЛ</button></div></div></div><div class="sx-pane" data-tab="sound"><div class="sx-group">Звук</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Музыка в лифте</div><div class="sx-desc">Фоновая мелодия и сигналы во время поездки на лифте.</div></div><div class="sx-ctrl"><button id="set_elevMusic" class="toggle-btn on" onclick="toggleSetting('elevMusic')">ВКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Звуки интерфейса</div><div class="sx-desc">Щелчки и сигналы кнопок и уведомлений.</div></div><div class="sx-ctrl"><button id="set_uiSounds" class="toggle-btn on" onclick="toggleSetting('uiSounds')">ВКЛ</button></div></div><div class="sx-group">Чат</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Радиус местного чата</div><div class="sx-desc">На каком расстоянии слышны сообщения в режиме «📍 Местный».</div></div><div class="sx-ctrl"><input type="range" id="set_localRange" min="10" max="80" value="30" oninput="applySetting('localRange',this.value)"><span id="set_localRangeVal" class="sx-val">30</span></div></div></div></div>
+    <div class="sx-foot"><span>«Сохранить» запоминает настройки в этом браузере.</span><button class="modal-btn success" onclick="saveSettings()">✅ Сохранить</button></div>
   </div>
 </div>
+<script>
+function sxTab(name){
+  document.querySelectorAll('#settingsModal .sx-tab').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
+  document.querySelectorAll('#settingsModal .sx-pane').forEach(p => p.classList.toggle('on', p.dataset.tab === name));
+  const body = document.querySelector('#settingsModal .sx-body'); if (body) body.scrollTop = 0;
+}
+</script>
 
 <!-- ========== СКРИПТЫ ========== -->
 <script src="/socket.io/socket.io.js"></script>
