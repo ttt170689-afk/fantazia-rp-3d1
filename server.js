@@ -127,7 +127,16 @@ app.get('/api/admin/accounts', (req, res) => {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+// Отключаем кэш для html/js — иначе браузер показывает старую версию страницы
+app.use((req, res, next) => {
+  if (/\.(html|js|css)$/i.test(req.path) || req.path === '/') {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+  }
+  next();
+});
+app.use(express.static(path.join(__dirname, 'public'), { etag: false, lastModified: false, maxAge: 0 }));
 
 // Главная страница
 app.get('/', (req, res) => {
