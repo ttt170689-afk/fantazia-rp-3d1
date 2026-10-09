@@ -700,6 +700,35 @@ io.on('connection', (socket) => {
   // ----------------------------------------------------
   // Регистрация игрока
   // ----------------------------------------------------
+  // ----------------------------------------------------
+  // Косметика: белый список слотов и id (совпадает с клиентом, public/index.html → COSMETICS)
+  // ----------------------------------------------------
+  const COSMETIC_WHITELIST = {
+    head: ['hd_headphones', 'hd_ninja', 'hd_antenna', 'hd_hood'],
+    neck: ['nk_scarf', 'nk_chain', 'nk_bow', 'nk_collar'],
+    shoulders: ['sh_spikes', 'sh_neon', 'sh_gold', 'sh_cannons'],
+    back: ['bk_cape', 'bk_backpack', 'bk_jetpack', 'bk_wings'],
+    legs: ['lg_stripes', 'lg_cargo', 'lg_knee_pads', 'lg_led_knee']
+  };
+  const sanitizeCosmetics = (raw) => {
+    const out = {};
+    if (!raw || typeof raw !== 'object') return out;
+    Object.keys(COSMETIC_WHITELIST).forEach(slot => {
+      const id = raw[slot];
+      if (typeof id === 'string' && COSMETIC_WHITELIST[slot].includes(id)) out[slot] = id;
+    });
+    return out;
+  };
+
+  // Смена косметики: сохраняем в appearance (уйдёт в аккаунт) и рассылаем всем
+  socket.on('setCosmetics', (data = {}) => {
+    const player = players[socket.id];
+    if (!player) return;
+    player.appearance = player.appearance || {};
+    player.appearance.cosmetics = sanitizeCosmetics(data);
+    io.emit('cosmeticsUpdate', { id: socket.id, cosmetics: player.appearance.cosmetics });
+  });
+
   socket.on('registerPlayer', (data = {}) => {
     try {
       let playerName = sanitizeText(data.name) || `Player_${socket.id.slice(0, 4)}`;
@@ -747,7 +776,8 @@ io.on('connection', (socket) => {
           shirtColor: data.shirtColor || '#3498DB',
           pantsColor: data.pantsColor || '#2C3E50',
           hairColor: data.hairColor || '#4A2F1B',
-          hairStyle: Number.isInteger(data.hairStyle) ? data.hairStyle : 0
+          hairStyle: Number.isInteger(data.hairStyle) ? data.hairStyle : 0,
+          cosmetics: sanitizeCosmetics(savedData && savedData.appearance ? savedData.appearance.cosmetics : null)
         },
         job: null,
         dance: null,

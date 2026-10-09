@@ -15317,6 +15317,11 @@ function initSocket(name) {
   socket.on('registered', (data) => {
     localPlayer = data.player;
     gameData = data;
+    {
+      const srvC = (data.player && data.player.appearance && data.player.appearance.cosmetics) || {};
+      if (!Object.keys(_cosGet()).length && Object.keys(srvC).length) localStorage.setItem('fz_cosm', JSON.stringify(srvC));
+      socket.emit('setCosmetics', _cosGet());
+    }
 
     // Создание 3D персонажа
     const char3D = createCharacter(localPlayer.appearance, true);
@@ -15352,6 +15357,7 @@ function initSocket(name) {
       if (!remotePlayers[p.id]) {
         // Новый игрок
         const char3D = createCharacter(p.appearance, false);
+        char3D.userData.cosEq = (p.appearance && p.appearance.cosmetics) || {};
         char3D.position.set(p.position.x, p.position.y, p.position.z);
         scene.add(char3D);
         createNameTag(p.name, char3D);
@@ -15501,6 +15507,14 @@ function initSocket(name) {
 
   socket.on('appearanceUpdate', (appearance) => {
     localPlayer.appearance = appearance;
+  });
+
+  // Косметика других игроков
+  socket.on('cosmeticsUpdate', (data) => {
+    const rp = data && remotePlayers[data.id];
+    if (!rp || !rp.mesh) return;
+    rp.mesh.userData.cosEq = data.cosmetics || {};
+    cosSync(rp.mesh, true);
   });
 
   // Голосовой чат WebRTC
@@ -16094,9 +16108,13 @@ function _cosMesh(p, mirror) {
 }
 function _cosGet() { try { return JSON.parse(localStorage.getItem('fz_cosm')) || {}; } catch (e) { return {}; } }
 // Пересобирает косметику на модели персонажа (только если набор или кости изменились)
+function cosEqFor(mesh) {
+  if (localPlayer && localPlayer.mesh === mesh) return _cosGet();
+  return (mesh && mesh.userData.cosEq) || {};
+}
 function cosSync(mesh, force) {
   if (!mesh || !window.THREE || !window.COSMETICS) return;
-  const eq = _cosGet(), head = mesh.getObjectByName('head');
+  const eq = cosEqFor(mesh), head = mesh.getObjectByName('head');
   const sig = JSON.stringify(eq) + '|' + (head ? head.uuid : '-');
   if (!force && mesh.userData.cosSig === sig) return;
   mesh.userData.cosSig = sig;
@@ -16119,6 +16137,7 @@ function toggleCosmetic(id) {
   if (eq[item.slot] === id) delete eq[item.slot]; else eq[item.slot] = id;
   localStorage.setItem('fz_cosm', JSON.stringify(eq));
   if (localPlayer && localPlayer.mesh) cosSync(localPlayer.mesh, true);
+  if (typeof socket !== 'undefined' && socket && socket.connected) socket.emit('setCosmetics', eq);
 }
 function renderCosmeticTab(grid, detail, countEl) {
   const eq = _cosGet();
@@ -16141,7 +16160,10 @@ function showCosmeticDetail(item, detail) {
   detail.innerHTML = `<div style="text-align:center;padding:10px"><div style="font-size:40px">${item.emoji}</div><div style="font-weight:bold;margin:6px 0">${item.name}</div><div style="color:#a29bfe;font-size:12px;margin-bottom:10px">Слот: ${COSMETIC_SLOTS[item.slot]}</div><div style="color:#888;font-size:12px">${on ? 'Надето. Нажмите на карточку, чтобы снять.' : 'Нажмите на карточку, чтобы надеть (заменит предмет в этом слоте).'}</div></div>`;
 }
 // Синхронизация своей косметики раз в секунду (кости могут появиться после загрузки модели)
-setInterval(() => { if (localPlayer && localPlayer.mesh) cosSync(localPlayer.mesh); }, 1000);
+setInterval(() => {
+  if (localPlayer && localPlayer.mesh) cosSync(localPlayer.mesh);
+  Object.values(remotePlayers).forEach(rp => { if (rp && rp.mesh) cosSync(rp.mesh); });
+}, 1000);
 
 function setInvTab(tab) {
   currentInvTab = tab;
