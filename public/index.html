@@ -8133,6 +8133,95 @@ function selectHair(idx) {
   document.querySelectorAll('.hair-btn').forEach((b,i) => b.classList.toggle('active', i===idx));
 }
 
+// ─── ВСТУПЛЕНИЕ В МИРЕ: бег от первого лица → прыжок → падение в шахту → удар → вращение → temka_play ───
+// Работает на штатной системе катсцен (playCine): управление блокируется, камеру ведёт updateCine.
+function playFallIntro() {
+  if (window.cine || !localPlayer || !localPlayer.mesh || window._fallIntroDone) return false;
+  window._fallIntroDone = true;
+  const V = THREE.Vector3, m = localPlayer.mesh;
+  const prevCam = window.cameraMode;
+  const fwd = new V(0, 0, 1).applyAxisAngle(new V(0, 1, 0), m.rotation.y);   // куда смотрит игрок
+  const base = new V(m.position.x, 0.01, m.position.z);                       // где стоит сейчас
+  const hole = base.clone().addScaledVector(fwd, 9);                          // центр дыры: 9 м вперёд
+  const edge = hole.clone().addScaledVector(fwd, -3.0);                       // ближний край дыры
+  const FLOOR = -36, R = 2.4;
+
+  // ── дыра: чёрный провал на земле, неоновый обод, стены шахты, дно, подсветка ──
+  const pit = new THREE.Group(); pit.position.copy(hole); scene.add(pit);
+  const wall = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 40, 48, 1, true), new THREE.MeshPhongMaterial({ color: 0x1a1430, emissive: 0x120c26, side: THREE.BackSide, shininess: 30 }));
+  wall.position.y = -20; pit.add(wall);
+  const voidDisc = new THREE.Mesh(new THREE.CircleGeometry(R, 48), new THREE.MeshBasicMaterial({ color: 0x000000 }));
+  voidDisc.rotation.x = -Math.PI / 2; voidDisc.position.y = 0.03; pit.add(voidDisc);
+  const floorDisc = new THREE.Mesh(new THREE.CircleGeometry(R, 48), new THREE.MeshBasicMaterial({ color: 0x2a1f5a }));
+  floorDisc.rotation.x = -Math.PI / 2; floorDisc.position.y = FLOOR; pit.add(floorDisc);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(R + 0.1, 0.09, 8, 56), new THREE.MeshBasicMaterial({ color: 0x39e6ff }));
+  rim.rotation.x = Math.PI / 2; rim.position.y = 0.05; pit.add(rim);
+  for (let k = 1; k < 13; k++) { const r = new THREE.Mesh(new THREE.TorusGeometry(R, 0.05, 6, 48), new THREE.MeshBasicMaterial({ color: k % 2 ? 0x8f7bff : 0x39e6ff })); r.rotation.x = Math.PI / 2; r.position.y = -k * 3; pit.add(r); }
+  const glow = new THREE.PointLight(0x8f7bff, 1.8, 24); glow.position.set(0, -8, 0); pit.add(glow);
+
+  window.cameraMode = 'first';
+  // ── таймлайн (секунды) ──
+  const RUN = 2.2, JUMP = 0.45, FALL = 2.6, SPIN = 2.2, SHOW = 3.6;
+  let T0 = 0; const mark = () => { T0 = performance.now(); }; const el = () => (performance.now() - T0) / 1000;
+  const easeOut3 = p => 1 - Math.pow(1 - p, 3);
+  const headAt = (x, y, z) => new V(x, y, z);
+  let bodyHidden = false;
+
+  const steps = [
+    { // 1. бег к краю дыры
+      cut: true, dur: RUN, onStart: () => { mark(); localPlayer.currentAnimation = 'run'; },
+      pos: () => { const p = Math.min(1, el() / RUN); m.position.lerpVectors(base, edge, p); return headAt(m.position.x, 1.6 + Math.sin(el() * 13) * 0.07, m.position.z); },
+      look: () => new V(hole.x + fwd.x * 6, 0.4, hole.z + fwd.z * 6) },
+    { // 2. прыжок через край
+      dur: JUMP, onStart: () => { mark(); localPlayer.currentAnimation = 'jump'; },
+      pos: () => { const p = Math.min(1, el() / JUMP); return headAt(edge.x + fwd.x * p * 1.2, 1.6 + Math.sin(p * Math.PI) * 0.35, edge.z + fwd.z * p * 1.2); },
+      look: () => new V(hole.x, -3, hole.z) },
+    { // 3. падение в шахту: ускорение, стены проносятся мимо
+      dur: FALL, text: 'Ничего не видно…', onStart: () => { mark(); window.cineTickFall = true; },
+      pos: () => { const tau = Math.min(FALL, el()); const y = Math.max(FLOOR + 1.6, 1.6 - 5.34 * tau * tau); const k = Math.min(1, tau / 0.6);
+        return headAt(edge.x + (hole.x - edge.x) * k + Math.sin(tau * 3) * 0.18, y, edge.z + (hole.z - edge.z) * k + Math.cos(tau * 2.4) * 0.18); },
+      look: () => { const tau = Math.min(FALL, el()); const y = Math.max(FLOOR + 1.6, 1.6 - 5.34 * tau * tau); return new V(hole.x + fwd.x * 2, y - 5, hole.z + fwd.z * 2); } },
+    { // 4. удар о дно, тряска, мир вращается и замедляется
+      dur: SPIN, onStart: () => { mark(); if (typeof SFX !== 'undefined' && SFX.thud) SFX.thud(); },
+      pos: () => { const p = el() / SPIN, k = Math.max(0, 1 - p * 3); return headAt(hole.x + (Math.random() - 0.5) * 0.2 * k, FLOOR + 1.6 + (Math.random() - 0.5) * 0.15 * k, hole.z + (Math.random() - 0.5) * 0.2 * k); },
+      look: () => { const p = Math.min(1, el() / SPIN); const a = (1 - easeOut3(p)) * Math.PI * 4; return new V(hole.x + Math.sin(a) * 6, FLOOR + 1.2 - (1 - p) * 1.5, hole.z + Math.cos(a) * 6); },
+      shake: 0.06 },
+    { // 5. титры в шахте
+      dur: SHOW, text: 'создано temka_play в одиночку', onStart: () => { mark(); showFallTitle(true); },
+      pos: () => headAt(hole.x, FLOOR + 1.6, hole.z),
+      look: () => { const p = Math.min(1, el() / SHOW); return new V(hole.x, FLOOR + 6 + p * 4, hole.z); } },
+  ];
+
+  // ── заголовок поверх катсцены (как в заставке) ──
+  function showFallTitle(on) {
+    let e = document.getElementById('fallTitle');
+    if (!on) { if (e) { e.style.opacity = '0'; setTimeout(() => e.remove(), 700); } return; }
+    if (e) return;
+    e = document.createElement('div'); e.id = 'fallTitle';
+    e.style.cssText = 'position:fixed;left:0;right:0;top:34%;text-align:center;z-index:8700;pointer-events:none;transition:opacity .9s;opacity:0;font-family:Orbitron,Arial,sans-serif;font-weight:900;color:#e6e0ff;letter-spacing:.14em;text-shadow:0 0 24px #6c5ce7,0 0 60px #6c5ce7';
+    e.innerHTML = '<div style="font-size:clamp(20px,4.6vw,46px)">FANTAZIA RP 3D</div>';
+    document.body.appendChild(e); requestAnimationFrame(() => requestAnimationFrame(() => { e.style.opacity = '1'; }));
+  }
+
+  // ── конец: убрать дыру, поднять игрока на поверхность у старого места ──
+  playCine(steps, () => {
+    showFallTitle(false);
+    window.cameraMode = prevCam;
+    localPlayer.currentAnimation = 'idle';
+    m.position.set(base.x, 0.01, base.z);
+    scene.remove(pit);
+    window._fallIntroDone = true;
+  });
+  return true;
+}
+
+// ждём, пока игрок появится в мире и закроется окно награды
+function tryFallIntro(n = 0) {
+  const rw = document.getElementById('rewardModal');
+  const busy = (rw && rw.style.display !== 'none') || window.cine || !localPlayer || !localPlayer.mesh;
+  if (busy) { if (n < 90) setTimeout(() => tryFallIntro(n + 1), 1000); return; }
+  playFallIntro();
+}
 function startGame() {
   const name = document.getElementById('playerName').value.trim() || 'Player';
   document.getElementById('createScreen').style.display = 'none';
