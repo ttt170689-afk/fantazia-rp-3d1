@@ -3428,10 +3428,18 @@ document.addEventListener('click', function(e){
 </div>
 
 <!-- Друзья -->
+<div class="modal-overlay" id="hsRoomModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('hsRoomModal')">&times;</button>
+    <h2>🙈 Прятки с друзьями</h2>
+    <div id="hsRoomBody"></div>
+  </div>
+</div>
 <div class="modal-overlay" id="friendsModal">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('friendsModal')">&times;</button>
     <h2>👥 Друзья</h2>
+    <button onclick="openHsRoom()" style="margin:0 0 10px;padding:9px 14px;border-radius:10px;border:none;background:#6c5ce7;color:#fff;font-weight:bold;cursor:pointer">🙈 Прятки с друзьями</button>
     <div id="friendsList"></div>
   </div>
 </div>
@@ -22527,6 +22535,127 @@ document.addEventListener('keydown', e => { if (e.code === 'KeyP' && !(e.target 
       else if (left <= 0) finish(false);
     }
   }
+
+  // ===== Прятки с друзьями: раунд в комнате (роли и время — с сервера; позиции других — из обычной синхронизации) =====
+  let rs = null;   // состояние раунда в комнате
+  window._hsRoom = null;
+  window._hsRsState = () => rs;   // для проверок
+  function hsRoundEnd(msg) {
+    if (!rs) return;
+    clearInterval(rs.iv);
+    if (rs.cage) { scene.remove(rs.cage); rs.cage = null; }
+    const h = document.getElementById('hsHud'); if (h) h.remove();
+    rs = null;
+    if (typeof showNotification === 'function') showNotification(msg, 'levelup');
+  }
+  function hsTick() {
+    if (!rs || rs.done) return;
+    const p = localPlayer && localPlayer.mesh; if (!p) return;
+    const now = Date.now();
+    if (rs.phase === 'hide') {
+      if (!rs.isHider && Math.hypot(p.position.x - HOME.x, p.position.z - HOME.z) > 1.5) p.position.set(HOME.x, 0.01, HOME.z);
+      const left = HIDE_MS - (now - rs.t0);
+      hudEl().innerHTML = '<div style="font-size:12px;color:#aaa">ПРЯТКИ С ДРУЗЬЯМИ · ФАЗА 1</div><div style="font-size:20px;font-weight:bold">' + (rs.isHider ? '🙈 Прячься: ' : '🔒 В клетке, ждём: ') + fmt(left) + '</div>';
+      if (left <= 0) {
+        rs.phase = 'seek'; rs.t0 = now;
+        if (rs.cage) { scene.remove(rs.cage); rs.cage = null; }
+        if (typeof showNotification === 'function') showNotification(rs.isHider ? '🙈 Сиди тихо — ищут!' : '🔍 Ищи игрока!', 'levelup');
+      }
+      return;
+    }
+    const left = SEEK_MS - (now - rs.t0);
+    if (rs.isHider) {
+      hudEl().innerHTML = '<div style="font-size:12px;color:#aaa">ПРЯТКИ С ДРУЗЬЯМИ</div><div style="font-size:20px;font-weight:bold">🙈 Тебя ищут: ' + fmt(left) + '</div>';
+      if (left <= 0) { rs.done = true; socket.emit('hsEnd'); hsRoundEnd('🏆 Ты спрятался! Время вышло'); }
+      return;
+    }
+    const hider = remotePlayers[rs.hiderId];
+    let hint = '… игрок вне зоны связи';
+    if (hider && hider.mesh) {
+      const d = Math.hypot(p.position.x - hider.mesh.position.x, p.position.z - hider.mesh.position.z);
+      hint = hintFor(d);
+      if (d < FOUND_R) { rs.done = true; socket.emit('hsFound'); return; }
+    }
+    hudEl().innerHTML = '<div style="font-size:12px;color:#aaa">ПРЯТКИ С ДРУЗЬЯМИ · ИЩЕШЬ</div><div style="font-size:20px;font-weight:bold">⏱ ' + fmt(left) + '</div><div style="font-size:15px;color:#ffd76a">' + hint + '</div>';
+    if (left <= 0) { rs.done = true; socket.emit('hsEnd'); hsRoundEnd('💀 Время вышло — игрок не найден'); }
+  }
+  window.hsRoundStart = function (r) {
+    if (st || rs) return;
+    const list = spots();
+    if (!list.length || !localPlayer || !localPlayer.mesh) return;
+    const isHider = r.hiderId === socket.id;
+    const spot = list[(Number(r.seed) >>> 0) % list.length];   // одинаково у всех клиентов комнаты
+    rs = { rid: r.id, hiderId: r.hiderId, isHider, phase: 'hide', t0: Date.now(), done: false, cage: null, iv: null };
+    if (isHider) {
+      localPlayer.mesh.position.set(spot.x, 0.01, spot.z);
+      if (typeof showNotification === 'function') showNotification('🙈 Ты прячешься! 3 минуты', 'levelup');
+    } else {
+      rs.cage = makeCage(HOME.x, HOME.z);
+      localPlayer.mesh.position.set(HOME.x, 0.01, HOME.z);
+      if (typeof showNotification === 'function') showNotification('🔒 Ты в клетке — ждёшь, пока игрок спрячется', 'levelup');
+    }
+    rs.iv = setInterval(hsTick, 250);
+  };
+  function hsBindSocket() {
+    if (typeof socket === 'undefined' || !socket || socket._hsBound) return false;
+    socket._hsBound = true;
+    socket.on('hsRoom', (r) => {
+      window._hsRoom = r;
+      renderHsRoom();
+      if (r && r.started && !rs) window.hsRoundStart(r);
+      if ((!r || !r.started) && rs && !rs.done) hsRoundEnd('Раунд прерван: комната закрыта или игрок вышел');
+    });
+    socket.on('hsInvite', (d) => {
+      if (confirm(d.from + ' приглашает тебя в прятки. Принять?')) socket.emit('hsAccept', d.roomId);
+    });
+    socket.on('hsRoundOver', (d) => {
+      if (rs) { rs.done = true; hsRoundEnd('🏆 ' + d.winnerName + ' нашёл игрока!'); }
+      else if (typeof showNotification === 'function') showNotification('🏆 ' + d.winnerName + ' нашёл игрока!', 'levelup');
+    });
+    socket.on('hsNotify', (msg) => { if (typeof showNotification === 'function') showNotification(msg, 'info'); });
+    return true;
+  }
+  const _hsBindIv = setInterval(() => { try { if (hsBindSocket()) clearInterval(_hsBindIv); } catch (e) { } }, 500);
+
+  function hsBtn(text, fn) {
+    const b = document.createElement('button'); b.textContent = text;
+    b.style.cssText = 'margin:4px 6px 4px 0;padding:9px 14px;border-radius:10px;border:none;background:#6c5ce7;color:#fff;font-weight:bold;cursor:pointer';
+    b.onclick = fn; return b;
+  }
+  function renderHsRoom() {
+    const body = document.getElementById('hsRoomBody'); if (!body) return;
+    body.innerHTML = '';
+    const r = window._hsRoom, me = socket && socket.id;
+    const info = (t) => { const d = document.createElement('p'); d.style.cssText = 'color:#bbb;font-size:13px'; d.textContent = t; body.appendChild(d); };
+    if (!r) {
+      info('Игра только для друзей: приглашать и принимать могут только друзья. Комната на 2–6 игроков.');
+      body.appendChild(hsBtn('Создать комнату', () => socket.emit('hsCreate')));
+      return;
+    }
+    const isOwner = r.owner === me;
+    info('Участники (' + r.members.length + '/' + 6 + ')' + (r.started ? ' · раунд идёт' : ' · ожидание'));
+    const ul = document.createElement('ul'); ul.style.cssText = 'margin:6px 0 10px 18px;color:#fff';
+    r.members.forEach(m => { const li = document.createElement('li'); li.textContent = (m.id === r.owner ? '👑 ' : '') + m.name + (m.id === me ? ' (ты)' : ''); ul.appendChild(li); });
+    body.appendChild(ul);
+    if (isOwner && !r.started) {
+      const friends = (localPlayer && Array.isArray(localPlayer.friends)) ? localPlayer.friends : [];
+      const free = friends.filter(f => f.online && !r.members.some(m => m.id === f.id));
+      if (free.length) {
+        info('Пригласить друга:');
+        free.forEach(f => body.appendChild(hsBtn('➕ ' + f.name, () => socket.emit('hsInvite', f.id))));
+      } else info('Онлайн-друзей для приглашения нет.');
+      body.appendChild(hsBtn('▶ Начать (нужно 2+)', () => socket.emit('hsStart')));
+      body.appendChild(hsBtn('Закрыть комнату', () => socket.emit('hsLeave')));
+    } else {
+      body.appendChild(hsBtn('Выйти из комнаты', () => socket.emit('hsLeave')));
+    }
+  }
+  window.openHsRoom = function () {
+    const m = document.getElementById('hsRoomModal'); if (!m) return;
+    m.classList.add('show');
+    renderHsRoom();
+  };
+
   window.startHideSeek = function () {
     if (st) return;
     if (!localPlayer || !localPlayer.mesh) { if (typeof showNotification === 'function') showNotification('Сначала войди в игру', 'error'); return; }
