@@ -21554,12 +21554,15 @@ function renderFPRow(containerId, rewards, d, isPlus) {
 }
 
 function claimFPReward(r, isPlus, claimKey) {
+  // Награда реально выдаётся: монетки — на баланс, предметы/эмоты — в инвентарь (_fzBoxAddReal)
+  if (localStorage.getItem(claimKey) === '1') return;
   localStorage.setItem(claimKey, '1');
   if (r.coins) {
-    if (typeof localCoins !== 'undefined') { localCoins += r.coins; if(typeof updateCoinsDisplay==='function') updateCoinsDisplay(); }
+    _fzBoxAddReal({ ico: '🪙', name: r.coins + ' монеток' });
     showNotification('🎁 Получено: ' + r.coins + ' 🪙', 'levelup');
   } else {
-    showNotification('🎁 Получено: ' + r.ico + ' ' + r.name, 'levelup');
+    _fzBoxAddReal({ ico: r.ico, name: r.name, rarity: isPlus ? 'rare' : 'common' });
+    showNotification('🎁 Получено: ' + r.ico + ' ' + r.name + ' (в инвентаре)', 'levelup');
   }
   updateFPPanel();
 }
