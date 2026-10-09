@@ -3476,6 +3476,21 @@ document.addEventListener('click', function(e){
           <option value="first">1-е лицо</option>
         </select>
       </div>
+      <div class="settings-row">
+        <label>Поле зрения от 1-го лица (FOV)</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="range" id="set_firstFov" min="60" max="110" value="78" oninput="applySetting('firstFov',this.value)">
+          <span id="set_firstFovVal" style="color:#a29bfe;font-size:13px;width:28px">78</span>
+        </div>
+      </div>
+      <div class="settings-row">
+        <label>Инверсия мыши по вертикали</label>
+        <button id="set_invertY" class="toggle-btn off" onclick="toggleSetting('invertY')">ВЫКЛ</button>
+      </div>
+      <div class="settings-row">
+        <label>Покачивание рук (инерция камеры)</label>
+        <button id="set_handSway" class="toggle-btn on" onclick="toggleSetting('handSway')">ВКЛ</button>
+      </div>
     </div>
     <div class="settings-section">
       <h3>🔊 Звук</h3>
@@ -13500,6 +13515,14 @@ function updateViewModel(delta) {
   const mv = localPlayer.currentAnimation === 'walk' || localPlayer.currentAnimation === 'run', run = localPlayer.currentAnimation === 'run', t = animationTime;
   const bobA = mv ? (run ? 0.03 : 0.015) : 0.004, bobF = mv ? (run ? 11 : 7) : 1.6;
   const u = vm.userData; u.arm.position.set(u.base.x + Math.sin(t * bobF * 0.5) * bobA, u.base.y + Math.abs(Math.sin(t * bobF)) * bobA, u.base.z); u.armL.position.set(u.baseL.x - Math.sin(t * bobF * 0.5) * bobA, u.baseL.y + Math.abs(Math.sin(t * bobF + 1)) * bobA, u.baseL.z);
+  // покачивание рук: инерция от поворота камеры (руки отстают и возвращаются)
+  { const vmu = vm.userData; if (vmu.lastH === undefined) { vmu.lastH = cameraAngleH; vmu.lastV = cameraAngleV; vmu.swX = 0; vmu.swY = 0; }
+    let dH = cameraAngleH - vmu.lastH; if (dH > Math.PI) dH -= Math.PI * 2; else if (dH < -Math.PI) dH += Math.PI * 2;
+    const dV = cameraAngleV - vmu.lastV; vmu.lastH = cameraAngleH; vmu.lastV = cameraAngleV;
+    const on = SETTINGS.handSway !== false, k = 1 - Math.exp(-12 * (delta || 0.016));
+    const tX = on ? Math.max(-0.05, Math.min(0.05, -dH * 3)) : 0, tY = on ? Math.max(-0.04, Math.min(0.04, -dV * 3)) : 0;
+    vmu.swX += (tX - vmu.swX) * k; vmu.swY += (tY - vmu.swY) * k;
+    u.arm.position.x += vmu.swX; u.arm.position.y += vmu.swY; u.armL.position.x += vmu.swX * 0.7; u.armL.position.y += vmu.swY * 0.7; }
   if (ITEMS.swingT > 0) { ITEMS.swingT -= delta; const total = ITEMS.heavy ? 0.75 : 0.42, k = 1 - ITEMS.swingT / total, sw = Math.sin(k * Math.PI); if (ITEMS.slot === 3) { u.arm.rotation.set(-0.35 - sw * 1.6, -0.25 + sw * 0.9 * (ITEMS.heavy ? 1.4 : 1), 0.15 - sw * 1.2); u.arm.position.z = u.base.z - sw * 0.25; } else { u.arm.rotation.set(-0.35 - sw * 0.5, -0.25, 0.15); } if (ITEMS.swingT <= 0) u.arm.rotation.set(-0.35, -0.25, 0.15); }
   else { u.arm.rotation.set(-0.35 + Math.sin(t * 1.3) * 0.01, -0.25, 0.15); }
   if (ITEMS.vmItem && ITEMS.vmItem.userData.rune) ITEMS.vmItem.userData.rune.material.color.setHSL(0, 1, 0.4 + Math.sin(t * 5) * 0.2);
@@ -14882,7 +14905,7 @@ function initControls() {
   document.addEventListener('mousemove', (e) => {
     if (isPointerLocked) {
       cameraAngleH -= e.movementX * CONFIG.MOUSE_SENSITIVITY;
-      cameraAngleV = Math.max(-0.5, Math.min(1.2, cameraAngleV + e.movementY * CONFIG.MOUSE_SENSITIVITY));
+      cameraAngleV = Math.max(-0.5, Math.min(1.2, cameraAngleV + e.movementY * CONFIG.MOUSE_SENSITIVITY * (SETTINGS.invertY ? -1 : 1)));
     } else if (_mouseDragging && localPlayer && localPlayer.isOffline) {
       const dx = e.clientX - _lastMouseX;
       const dy = e.clientY - _lastMouseY;
@@ -18507,7 +18530,7 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
   const camH = CONFIG.CAMERA_HEIGHT;
   if (window.cameraMode === 'first') {
     // ⚡ Настоящий вид от первого лица: FOV шире, плавный head-bob и наклон камеры
-    if (camera.fov !== CONFIG.FIRST_PERSON_FOV) { camera.fov = CONFIG.FIRST_PERSON_FOV; camera.updateProjectionMatrix(); }
+    const ffov = SETTINGS.firstFov || CONFIG.FIRST_PERSON_FOV; if (camera.fov !== ffov) { camera.fov = ffov; camera.updateProjectionMatrix(); }
     const isMoving = localPlayer.currentAnimation === 'walk' || localPlayer.currentAnimation === 'run' || localPlayer.currentAnimation === 'crouch';
     const isRunning = localPlayer.currentAnimation === 'run';
     // Head bob: вертикальный ход (ступени) + боковое покачивание + наклон крена
@@ -19367,7 +19390,8 @@ const SETTINGS = {
   localRange: 30,
   camMode: 'third',
   renderScale: 2, drawDist: 420, grassDensity: 2, fpsCap: 0, fov: 60, exposure: 9, sky: true, nav: true,
-  shaderQuality: 'high', maxLights: 12, toneMap: 'aces', colorGrade: 'cinematic', aniso: 4, texFilter: 'linear', sharp: 0, vignette: true, grain: false, faceAnim: true, fpsShow: false, dynRes: false, detail: true, radar: true, perf: false
+  shaderQuality: 'high', maxLights: 12, toneMap: 'aces', colorGrade: 'cinematic', aniso: 4, texFilter: 'linear', sharp: 0, vignette: true, grain: false, faceAnim: true, fpsShow: false, dynRes: false, detail: true, radar: true, perf: false,
+  invertY: false, firstFov: 78, handSway: true
 };
 let _fpsFrames = 0;
 setInterval(() => { let el = document.getElementById('fpsHUD'); if (!el) { el = document.createElement('div'); el.id = 'fpsHUD'; el.style.cssText = 'position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:950;font:700 12px monospace;color:#7cffb2;background:rgba(0,0,0,.5);padding:3px 8px;border-radius:6px;pointer-events:none;display:none'; document.body.appendChild(el); } el.style.display = SETTINGS.fpsShow ? 'block' : 'none'; if (SETTINGS.fpsShow) { el.textContent = _fpsFrames + ' FPS' + (_dynScale !== null && _dynScale !== SETTINGS.renderScale ? ' · ' + Math.round(_dynScale * 100) + '%' : ''); el.style.color = _fpsFrames >= 50 ? '#7cffb2' : _fpsFrames >= 30 ? '#ffd76a' : '#ff7675'; } updateDynamicRes(_fpsFrames); _fpsFrames = 0; }, 1000);
@@ -19395,10 +19419,10 @@ function loadSettingsUI() {
   });
   document.getElementById('set_camMode').value = SETTINGS.camMode;
   ['renderScale', 'drawDist', 'grassDensity', 'fpsCap'].forEach(k => { const el = document.getElementById('set_' + k); if (el) el.value = String(SETTINGS[k]); });
-  ['fov', 'exposure'].forEach(k => { const el = document.getElementById('set_' + k); if (el) { el.value = SETTINGS[k]; document.getElementById('set_' + k + 'Val').textContent = SETTINGS[k]; } });
+  ['fov', 'exposure', 'firstFov'].forEach(k => { const el = document.getElementById('set_' + k); if (el) { el.value = SETTINGS[k]; document.getElementById('set_' + k + 'Val').textContent = SETTINGS[k]; } });
   ['shaderQuality', 'toneMap', 'colorGrade', 'aniso', 'texFilter'].forEach(k => { const el = document.getElementById('set_' + k); if (el) el.value = String(SETTINGS[k]); });
   { const el = document.getElementById('set_sharp'); if (el) { el.value = SETTINGS.sharp; document.getElementById('set_sharpVal').textContent = SETTINGS.sharp; } }
-  ['sky', 'nav', 'vignette', 'grain', 'faceAnim', 'fpsShow', 'dynRes', 'detail', 'radar', 'perf'].forEach(k => { const btn = document.getElementById('set_' + k); if (btn) { btn.textContent = SETTINGS[k] ? 'ВКЛ' : 'ВЫКЛ'; btn.className = 'toggle-btn ' + (SETTINGS[k] ? 'on' : 'off'); } });
+  ['sky', 'nav', 'vignette', 'grain', 'faceAnim', 'fpsShow', 'dynRes', 'detail', 'radar', 'perf', 'invertY', 'handSway'].forEach(k => { const btn = document.getElementById('set_' + k); if (btn) { btn.textContent = SETTINGS[k] ? 'ВКЛ' : 'ВЫКЛ'; btn.className = 'toggle-btn ' + (SETTINGS[k] ? 'on' : 'off'); } });
 }
 
 function applySetting(key, val) {
@@ -19406,6 +19430,7 @@ function applySetting(key, val) {
   const valEl = document.getElementById('set_'+key+'Val');
   if (valEl) valEl.textContent = val;
 
+  if (key === 'firstFov') CONFIG.FIRST_PERSON_FOV = SETTINGS.firstFov;
   if (key === 'mouseSens') {
     CONFIG.MOUSE_SENSITIVITY = SETTINGS.mouseSens * 0.0005;
   }
