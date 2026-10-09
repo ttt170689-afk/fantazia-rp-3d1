@@ -8692,18 +8692,21 @@ function _facadeTexture(w, h, d) {
 }
 // Слияние набора боксов в одну геометрию (один меш = один draw call)
 function _mergeBoxParts(parts) {
-  const pos = [], nor = [], idx = []; let base = 0;
+  const pos = [], nor = [], idx = [], col = []; let base = 0, hasCol = false;
   parts.forEach(p => {
     const g = new THREE.BoxGeometry(p.w, p.h, p.d); g.translate(p.x, p.y, p.z);
     const P = g.attributes.position.array, N = g.attributes.normal.array, I = g.index.array;
     for (let i = 0; i < P.length; i++) pos.push(P[i]);
     for (let i = 0; i < N.length; i++) nor.push(N[i]);
     for (let i = 0; i < I.length; i++) idx.push(I[i] + base);
+    const c = p.c || null; if (c) hasCol = true;
+    for (let v = 0; v < P.length / 3; v++) col.push(c ? c.r : 1, c ? c.g : 1, c ? c.b : 1);
     base += P.length / 3; g.dispose();
   });
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  if (hasCol) geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
   geo.setIndex(idx);
   return geo;
 }
@@ -8711,7 +8714,7 @@ function _mergeBoxParts(parts) {
 function createBuilding(x, z, w, h, d, color, name, type) {
   const group = new THREE.Group();
   // Основное здание
-  const geo = new THREE.BoxGeometry(w, h, d);
+  let geo = new THREE.BoxGeometry(w, h, d);
   const tall = h >= 30;
   const PAL = [0xd9cbb0, 0xb8c4cc, 0xe0d2c1, 0xa9b8a6, 0xc9b5a5, 0x9fb0c4, 0xd6c7a8, 0xb9a9c9, 0x8c9aa8, 0xc4876a, 0xe8e1d3, 0x7f8f7a];
   const palSeed = Math.abs(Math.round(x * 3.1 + z * 7.7 + w * 5 + d * 11 + h * 2)) % PAL.length;
@@ -8719,24 +8722,24 @@ function createBuilding(x, z, w, h, d, color, name, type) {
   // Магазины — с витриной-текстурой; остальные здания — однотонные светлые фасады (без повторяющейся сетки окон)
   const mat = isShopB
     ? new THREE.MeshLambertMaterial({ color: _cityFacadeColor(color, tall), map: _facadeTexture(w, h, d) })
-    : new THREE.MeshLambertMaterial({ color: PAL[palSeed] });
+    : new THREE.MeshLambertMaterial({ vertexColors: true });
+  if (!isShopB) {
+    // Жилые/прочие: ОДИН меш на здание — корпус, полосы этажей, цоколь, карниз (цвет по вершинам, без текстур)
+    const base = new THREE.Color(PAL[palSeed]), trimC = base.clone().multiplyScalar(0.8);
+    const parts = [{ w, h, d, x: 0, y: h/2, z: 0, c: base }];
+    const floorsN = Math.min(14, Math.floor(h / 3.6));
+    for (let f = 1; f < floorsN; f++) parts.push({ w: w + 0.4, h: 0.32, d: d + 0.4, x: 0, y: f * 3.6, z: 0, c: trimC });
+    parts.push({ w: w + 0.7, h: 0.9, d: d + 0.7, x: 0, y: 0.45, z: 0, c: trimC });   // цоколь
+    if (h < 25) parts.push({ w: w + 1, h: 0.5, d: d + 1, x: 0, y: h + 0.25, z: 0, c: new THREE.Color(color).multiplyScalar(0.7) }); // крыша
+    else parts.push({ w: w + 0.9, h: 0.5, d: d + 0.9, x: 0, y: h + 0.1, z: 0, c: trimC }); // карниз
+    parts.push({ w: 2, h: 3, d: 0.2, x: 0, y: 1.5, z: d / 2 + 0.1, c: new THREE.Color(0x5D4037) }); // дверь
+    geo = _mergeBoxParts(parts);
+  }
   const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.y = h/2;
+  mesh.position.y = isShopB ? h/2 : 0;
   mesh.castShadow = false;  // ОПТИМИЗАЦИЯ: выкл тени у зданий
   mesh.receiveShadow = false;
   group.add(mesh);
-  if (!isShopB) {
-    // Жилые/прочие: горизонтальные полосы этажей, цоколь и карниз — без текстур, одним мешем
-    const parts = [];
-    const floorsN = Math.min(14, Math.floor(h / 3.6));
-    for (let f = 1; f < floorsN; f++) parts.push({ w: w + 0.4, h: 0.32, d: d + 0.4, x: 0, y: f * 3.6, z: 0 });
-    parts.push({ w: w + 0.7, h: 0.9, d: d + 0.7, x: 0, y: 0.45, z: 0 });          // цоколь
-    parts.push({ w: w + 0.9, h: 0.5, d: d + 0.9, x: 0, y: h + 0.1, z: 0 });        // карниз
-    const trimCol = new THREE.Color(PAL[palSeed]).multiplyScalar(0.8);
-    const trim = new THREE.Mesh(_mergeBoxParts(parts), new THREE.MeshLambertMaterial({ color: trimCol }));
-    trim.castShadow = false; trim.receiveShadow = false;
-    group.add(trim);
-  }
 
   // Окна — в текстуре фасада (без отдельных мешей)
 
@@ -8744,7 +8747,7 @@ function createBuilding(x, z, w, h, d, color, name, type) {
   const doorMat = new THREE.MeshLambertMaterial({ color: 0x5D4037 });
   const door = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 0.2), doorMat);
   door.position.set(0, 1.5, d/2+0.1);
-  group.add(door);
+  if (isShopB) group.add(door);   // у жилых дверь уже в общем меше
 
   // Крыша (если не небоскрёб)
   if (h < 25) {
@@ -8752,7 +8755,7 @@ function createBuilding(x, z, w, h, d, color, name, type) {
     const roofMat = new THREE.MeshLambertMaterial({ color: new THREE.Color(color).multiplyScalar(0.7) });
     const roof = new THREE.Mesh(roofGeo, roofMat);
     roof.position.y = h + 0.25;
-    group.add(roof);
+    if (isShopB) group.add(roof);   // у жилых крыша уже в общем меше
   }
 
   // Вывеска — только у типовых зданий, без canvas у небоскрёбов
