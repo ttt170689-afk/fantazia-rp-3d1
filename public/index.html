@@ -8104,7 +8104,7 @@ function initThreeJS() {
 // ───────── ОПТИМИЗАЦИЯ ГОРОДА: объединение статичного декора в крупные меши (меньше draw calls) ─────────
 // Трогаем ТОЛЬКО декор: дороги, деревья, фонари, мелкие детали. Здания, машины, NPC, вода, ветряки
 // и всё анимируемое не трогаем. Меши делятся по материалу и по квадратам 64 м, чтобы работал frustum culling.
-const _MERGE_CELL = 64;
+const _MERGE_CELL = 128;
 function _mergeMatKey(m) {
   if (!m || Array.isArray(m) || m.vertexColors) return null;
   if (Object.keys(m.userData || {}).length) return null;
@@ -8241,6 +8241,42 @@ function buildCity() {
   _mergeDecor(addCityDetails, 'details', true); addSkyLife(); if (SETTINGS.perf) setTimeout(applyPerfMode, 50); if (SETTINGS.radar === false) { const mm = document.getElementById('minimap'); if (mm) mm.style.display = 'none'; }
   _mergeDecor(addTrees, 'trees');
   _mergeDecor(addDecorations, 'decor');
+  mergeBuildingParts(); // в самом конце: после всех удалений зданий
+}
+
+// Склеивает корпуса, двери и крыши зданий в крупные меши. Вывески остаются на группе здания.
+// Выполняется ПОСЛЕ removeBuildingsOnRoads, поэтому удаление зданий больше не затрагивается.
+const _BLD_CELL = 128;
+function mergeBuildingParts() {
+  scene.updateMatrixWorld(true);
+  const buckets = new Map();
+  buildings.forEach(b => {
+    const g = b.mesh; if (!g || !g.isGroup || !g.parent) return;
+    g.children.slice().forEach(o => {
+      if (!o.isMesh || o.children.length || !o.visible || !o.geometry) return;
+      if (o.material && o.material.transparent) return;          // вывески и стёкла не трогаем
+      if (Object.keys(o.userData || {}).length) return;
+      const key = _mergeMatKey(o.material); if (!key) return;
+      const e = o.matrixWorld.elements;
+      const cell = Math.floor(e[12] / _BLD_CELL) + ',' + Math.floor(e[14] / _BLD_CELL);
+      const bk = key + '|' + cell + '|' + o.castShadow + '|' + o.receiveShadow;
+      if (!buckets.has(bk)) buckets.set(bk, []);
+      buckets.get(bk).push(o);
+    });
+  });
+  let before = 0, after = 0;
+  buckets.forEach(list => {
+    if (list.length < 2) return;
+    const ref = list[0];
+    const mesh = new THREE.Mesh(_bakeMeshList(list, true), ref.material);
+    mesh.castShadow = ref.castShadow; mesh.receiveShadow = ref.receiveShadow;
+    mesh.name = 'bld_merged';
+    scene.add(mesh);
+    list.forEach(o => { if (o.parent) o.parent.remove(o); });
+    before += list.length; after++;
+  });
+  window._cityMergeLog = window._cityMergeLog || [];
+  window._cityMergeLog.push({ label: 'buildings', meshes: before, merged: after });
 }
 
 // ── ГОРОД: читаемые фасады. Цвета высоток не чёрные, окна — одна текстура на фасад (меньше мешей и draw calls) ──
