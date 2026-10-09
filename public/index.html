@@ -9049,14 +9049,6 @@ function buildAbandonedFactory() {
     bounds: { minX: FX - 17.5, maxX: FX + 17.5, minZ: FZ - 13.5, maxZ: FZ + 13.5 } });
   interactables.push({ position: { x: FX, y: 0, z: FZ + 14 }, type: 'factory', name: '🏭 Заброшенная фабрика №13', range: 7 });
 
-  // ── портал в TEMKA WORLD (север, конец центральной дороги) ──
-  { const TGX = 0, TGZ = -190; window._temkaGate = { x: TGX, z: TGZ + 8 };
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(3.2, 0.3, 12, 48), new THREE.MeshBasicMaterial({ color: 0xff5fb0 })); ring.position.set(TGX, 3.6, TGZ); scene.add(ring); ring.userData.spin = true; window._cityPortal = ring;
-    const film = new THREE.Mesh(new THREE.CircleGeometry(2.9, 32), new THREE.MeshBasicMaterial({ color: 0xc56bff, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false })); film.position.set(TGX, 3.6, TGZ); scene.add(film);
-    const pl = new THREE.PointLight(0xff5fb0, 1.2, 30); pl.position.set(TGX, 4, TGZ + 2); scene.add(pl);
-    scene.add(mallSign('🌀 ПОРТАЛ · TEMKA WORLD (демо)', TGX, 8.2, TGZ, 9, 1.0, { fg: '#fff59d', glow: '#ff2f90', size: 80 }));
-    interactables.push({ position: { x: TGX, y: 0, z: TGZ + 2 }, type: 'temka_world', name: '🌀 Портал в TEMKA WORLD (демо) [E]', range: 5 });
-  }
 }
 
 // --- Интерьер фабрики (карман-локация) ---
@@ -10380,6 +10372,9 @@ function monsterEmergeCine() {
   const h = DLC.hatchPos, mon = spawnFactoryMonster(true);
   const headPos = () => { const v = new THREE.Vector3(); mon.userData.head.getWorldPosition(v); return v; };
   const pl = () => localPlayer.mesh.position;
+  // направление от монстра к игроку (туда и бежим)
+  const awayDir = () => { const p = pl(), hv = headPos(); const dx = p.x - hv.x, dz = p.z - hv.z, d = Math.hypot(dx, dz) || 1; return { x: dx / d, z: dz / d }; };
+  let runIv = null;
   playCine([
     { pos: [FACTORY_BASE.x + FACTORY_LAYOUT.lab.x, 2.4, FACTORY_BASE.z + FACTORY_LAYOUT.lab.z + 6], look: [FACTORY_BASE.x + FACTORY_LAYOUT.lab.x, 2.2, FACTORY_BASE.z + FACTORY_LAYOUT.lab.z], dur: 3.5, text: 'Третий генератор. Лаборатория оживает: гудят приборы, в колбах поднимаются пузыри…', onStart: () => { SFX.humStart(48, 0.05); } },
     { pos: [FACTORY_BASE.x + FACTORY_LAYOUT.lab.x - 5, 2.0, FACTORY_BASE.z + FACTORY_LAYOUT.lab.z + 3.5], look: [FACTORY_BASE.x + FACTORY_LAYOUT.lab.x, 2.4, FACTORY_BASE.z + FACTORY_LAYOUT.lab.z], dur: 3.5, text: 'Стекло образцов идёт трещинами. Один за другим.', shake: 0.015, onStart: () => { spawnLabCracks(); let n = 0; const iv = setInterval(() => { SFX.spark(); SFX.tick(); if (++n >= 3) clearInterval(iv); }, 700); } },
@@ -10391,8 +10386,14 @@ function monsterEmergeCine() {
     { pos: [h.x + 1.5, 1.0, h.z + 7.5], look: () => headPos(), dur: 3.5, text: 'Оно встаёт во весь рост. Почти пять метров. Сердце светится сквозь рёбра.', shake: 0.02, onStart: () => { mon.userData.emerge = { stage: 'stand', t: 0 }; SFX.noise(2, 0.1, 200); } },
     { pos: () => headPos().clone().add(new THREE.Vector3(1.4, 0.3, 2.4)), look: () => headPos(), dur: 3.5, text: 'РРРААААААААА!', shake: 0.14, onStart: () => { mon.userData.emerge = { stage: 'roar', t: 0 }; DLC.monsterRoar = true; DLC.flickerAll = true; SFX.roar(); } },
     { pos: () => headPos().clone().add(new THREE.Vector3(-0.8, -0.2, 1.6)), look: () => headPos(), dur: 4.0, text: 'Оно поворачивает голову. Медленно. Прямо на тебя.', shake: 0.02, onStart: () => { DLC.monsterRoar = false; mon.userData.emerge = { stage: 'turn', t: 0 }; SFX.noise(2.5, 0.08, 250); } },
-    { pos: () => pl().clone().add(new THREE.Vector3(0, 2.6, 4.5)), look: () => headPos(), dur: 3.0, text: 'Вы: «Гена… камера №1. Бежать. Сейчас же.»', shake: 0, onStart: () => { DLC.flickerAll = false; } }
+    { pos: () => pl().clone().add(new THREE.Vector3(0, 2.6, 4.5)), look: () => headPos(), dur: 3.0, text: 'Вы: «Гена… камера №1. Бежать. Сейчас же.»', shake: 0, onStart: () => { DLC.flickerAll = false; } },
+    // побег: камера сзади, игрок уходит от люка, монстр ломает стеллажи за спиной
+    { pos: () => { const v = awayDir(), p = pl(); return new THREE.Vector3(p.x - v.x * 5, p.y + 2.4, p.z - v.z * 5); },
+      look: () => { const v = awayDir(), p = pl(); return new THREE.Vector3(p.x + v.x * 2, p.y + 1.3, p.z + v.z * 2); },
+      dur: 2.8, shake: 0.06, text: 'Бегом. Не оглядываясь.',
+      onStart: () => { const v = awayDir(), p = pl(); _lerpPlayerTo(p.x + v.x * 12, p.z + v.z * 12, 2.6); localPlayer.currentAnimation = 'run'; runIv = setInterval(() => { localPlayer.currentAnimation = 'run'; }, 60); SFX.step(true, 0.14, true); } }
   ], () => {
+    if (runIv) clearInterval(runIv);
     mon.userData.emerge = null; mon.position.y = 0;
     DLC.monsterState.active = true; SFX.chaseStart();
     showWorldEventBanner('🏭 ФАБРИКА №13', 'ОНО вышло из шахты. Освободи 🧍 монтёра в камере и беги к 🚪 выходу. Не дай ему догнать вас!', 'error');
@@ -13530,6 +13531,22 @@ function bossIntroCine() {
   ], () => { DLC.fightFreeze = false; DLC.demonAct = null; window._cineSpeed = 1; if (DLC.hpBar) DLC.hpBar.style.display = 'block'; screens.forEach(s => s.material.color.setHex(0xffffff)); if (!DLC.hasSword) { DLC.hasSword = true; showNotification('⚔️ Меч Стража сам ложится в руку (клавиша 3)', 'success'); setHeldItem(3); } });
 }
 
+// ДОБИВАНИЕ: игрок выходит к демону на расстояние удара и проигрывает FINISH_SWORD
+function finishDir() {
+  const d = DLC.demon, m = localPlayer.mesh;
+  const dx = m.position.x - d.position.x, dz = m.position.z - d.position.z, dist = Math.hypot(dx, dz) || 1;
+  return { x: dx / dist, z: dz / dist };
+}
+function finishSetup() {
+  const d = DLC.demon, m = localPlayer.mesh; if (!d || !m) return;
+  const v = finishDir();
+  m.position.x = d.position.x + v.x * 2.3; m.position.z = d.position.z + v.z * 2.3;
+  m.rotation.y = Math.atan2(-v.x, -v.z);            // лицом к демону
+  // игра переписывает позу каждый кадр — держим финишер коротким интервалом
+  if (window._finishIv) clearInterval(window._finishIv);
+  window._finishIv = setInterval(function () { localPlayer.currentAnimation = 'finish_sword'; }, 60);
+  setTimeout(function () { if (window._finishIv) clearInterval(window._finishIv); window._finishIv = null; }, 3000);
+}
 function demonDeathCine() {
   const d = DLC.demon, bx = BASEMENT_BASE.x, bz = BASEMENT_BASE.z, TZ = DLC.throneZ || 23.6; if (!d) return;
   const hp = () => { const v = new THREE.Vector3(); d.userData.neck.getWorldPosition(v); return v; };
@@ -13540,6 +13557,10 @@ function demonDeathCine() {
   cineSlow(0.18, 900); cineFlashColor('#ffffff', 0.85, 600); SFX.slam();
   let fall = 0;
   playCine([
+    // 0. ДОБИВАНИЕ: клинок входит в ядро, камера сбоку — видно и игрока, и демона
+    { pos: () => { const v = finishDir(), p = localPlayer.mesh.position; return new THREE.Vector3(p.x - v.z * 3.0 - v.x * 1.2, p.y + 1.8, p.z + v.x * 3.0 - v.z * 1.2); },
+      look: () => { const v = finishDir(), p = localPlayer.mesh.position, c = DLC.demon.position; return new THREE.Vector3((p.x + c.x) / 2, 1.5, (p.z + c.z) / 2); },
+      dur: 2.4, cut: true, shake: 0.02, text: 'Вы: «Это за всех, кого он сожрал.»', onStart: () => { finishSetup(); } },
     // 1. ЗАМЕДЛЕННЫЙ последний удар — макро на ядро
     { pos: () => hp().clone().add(new THREE.Vector3(-2.1, 0.1, -3.0)), look: () => hp(), dur: 2.6, text: 'Последний удар проходит.', shake: 0.09, drift: 0.4, onStart: () => { d.userData.coreL.color.setHex(0xffaa40); cineEmbers(hp(), 24, { spread: 2.5, up: 2.8, life: 1.8 }); } },
     // 2. он падает на колени
@@ -13729,90 +13750,6 @@ function updateFootsteps(delta) {
   const hard = isInFactory || isInBasement || isInsideBuilding; const vol = a === 'run' ? 0.16 : a === 'crouch' ? 0.05 : 0.1;
   window._stepL = !window._stepL; SFX.step(hard, vol, window._stepL);
 }
-// ───────── TEMKAWORLD: вознесение по пути в GRAND MALL ─────────
-const TEMKA_BASE = { x: 5000, z: 5000 }; let isInTemka = false; let temkaObjects = [];
-function checkTemkaTrigger() {
-  if (isInTemka || isInsideBuilding || isInFactory || isInBasement || window.cine || !DLC.victimRescued || DLC.temkaVisited || DLC._ascending || !localPlayer || !localPlayer.mesh) return;
-  const p = localPlayer.mesh.position; if (Math.hypot(p.x - 110, p.z - (-60)) < 9) { startAscension(); return; }
-  if (!DLC._temkaWalkRef) { DLC._temkaWalkRef = p.clone(); DLC._temkaWalk = 0; } const md = p.distanceTo(DLC._temkaWalkRef); if (md > 0.05 && md < 5) DLC._temkaWalk += md; DLC._temkaWalkRef.copy(p); if (DLC._temkaWalk > 20) startAscension();
-}
-function startAscension() {
-  DLC._ascending = true; const m = localPlayer.mesh; m.position.y = Math.max(0.01, m.position.y);
-  const beam = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 3.4, 420, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0xdff4ff, transparent: true, opacity: 0, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
-  beam.position.set(m.position.x, 210, m.position.z); scene.add(beam);
-  const clouds = new THREE.Group(); const cm = new THREE.MeshBasicMaterial({ color: 0xf2f2fa, transparent: true, opacity: 0.9, depthWrite: false, fog: false });
-  for (let i = 0; i < 60; i++) { const c = new THREE.Mesh(new THREE.SphereGeometry(8 + Math.random() * 20, 7, 5), cm); c.scale.y = 0.35; c.position.set(m.position.x + (Math.random() - 0.5) * 300, 120 + Math.random() * 140, m.position.z + (Math.random() - 0.5) * 300); clouds.add(c); }
-  scene.add(clouds);
-  let iv = null; const fade = document.getElementById('cineFade');
-  playCine([
-    { pos: () => [m.position.x + 2.6, 1.7, m.position.z + 3.2], look: () => [m.position.x, 1.5, m.position.z], dur: 3.2, text: 'Земля под ногами… дрожит?', shake: 0.03, onStart: () => { SFX.noise(3, 0.12, 120); localPlayer.mesh.userData.mood = 'scared'; } },
-    { pos: () => [m.position.x + 5, 2.6, m.position.z + 6], look: () => [m.position.x, 6, m.position.z], dur: 3.6, text: 'С неба падает столб света.', shake: 0.02, onStart: () => { SFX.tone(220, 3, 'sine', 0.1, 400); let e = 0; const bi = setInterval(() => { e += 0.05; beam.material.opacity = Math.min(0.45, e * 0.3); if (e >= 1.6) clearInterval(bi); }, 50); } },
-    { pos: () => [m.position.x + 5.5, m.position.y + 1.2, m.position.z + 6.5], look: () => [m.position.x, m.position.y + 1.2, m.position.z], dur: 5.5, text: 'Вы: «Ч-что?! Меня тянет вверх!!»', shake: 0.03, onStart: () => { SFX.humStart && SFX.humStart(60, 0.06); let vy = 0.5, last = performance.now(); iv = setInterval(() => { const now = performance.now(), dt = Math.min(0.05, (now - last) / 1000); last = now; vy = Math.min(48, vy * 1.045 + 2 * dt); m.position.y += vy * dt; m.rotation.y += dt * 0.6; m.rotation.z = Math.sin(now / 400) * 0.25; localPlayer.animOverride = { name: 'jump', start: now - 200, until: now + 300 }; beam.position.y = m.position.y + 150; }, 33); } },
-    { pos: () => [m.position.x + 3, m.position.y + 2.5, m.position.z + 3], look: () => [m.position.x, m.position.y + 1, m.position.z], dur: 3.4, text: 'Облака. Выше. Ещё выше…', shake: 0.05, onStart: () => { setTimeout(() => { fade.style.background = '#fff'; fade.style.transition = 'opacity 1.6s ease'; fade.style.opacity = '1'; }, 1400); } }
-  ], () => {
-    if (iv) clearInterval(iv); scene.remove(beam); scene.remove(clouds); localPlayer.animOverride = null; m.rotation.z = 0;
-    enterTemkaWorld();
-  });
-}
-function enterTemkaWorld() {
-  isInTemka = true; DLC.temkaVisited = true; DLC._ascending = false; DLC._temkaReturn = window._temkaGate ? { x: window._temkaGate.x, z: window._temkaGate.z } : { x: 110, z: -56 };
-  const m = localPlayer.mesh, bx = TEMKA_BASE.x, bz = TEMKA_BASE.z; m.position.set(bx, 0.01, bz + 12); m.rotation.set(0, Math.PI, 0); velocity.y = 0;
-  window._prevSky = { bg: scene.background, fog: scene.fog, dome: window.skyDome ? window.skyDome.visible : null };
-  scene.background = new THREE.Color(0xf6d9ff); scene.fog = new THREE.Fog(0xf6d9ff, 60, 220); if (window.skyDome) { window.skyDome.visible = false; window.sunDisk.visible = false; (window.clouds || []).forEach(c => c.visible = false); }
-  const add = (o) => { scene.add(o); temkaObjects.push(o); return o; };
-  const mat = (c, e = 0) => new THREE.MeshPhongMaterial({ color: c, emissive: e, shininess: 10 });
-  // остров
-  const isl = add(new THREE.Mesh(new THREE.CylinderGeometry(30, 22, 6, 40), mat(0x7cc96b))); isl.position.set(bx, -3, bz);
-  const rock = add(new THREE.Mesh(new THREE.ConeGeometry(24, 26, 12), mat(0x6b5b73))); rock.position.set(bx, -19, bz); rock.rotation.x = Math.PI;
-  for (let i = 0; i < 9; i++) { const r = add(new THREE.Mesh(new THREE.DodecahedronGeometry(2 + Math.random() * 3), mat(0x8c7aa0))); const a = i / 9 * Math.PI * 2; r.position.set(bx + Math.cos(a) * (42 + Math.random() * 20), 4 + Math.sin(i * 1.7) * 6, bz + Math.sin(a) * (42 + Math.random() * 20)); r.userData.float = { y: r.position.y, ph: i }; }
-  for (let i = 0; i < 24; i++) { const a = Math.random() * Math.PI * 2, rr = 6 + Math.random() * 20; const f = add(new THREE.Mesh(new THREE.SphereGeometry(0.25, 6, 5), new THREE.MeshBasicMaterial({ color: [0xff6b9d, 0xffd93d, 0x6bcfff, 0xc56bff][i % 4] }))); f.position.set(bx + Math.cos(a) * rr, 0.3, bz + Math.sin(a) * rr); }
-  // ── ВХОД В TEMKA WORLD: арка по эскизу (две стойки, скошенные плечи, TEMKA / WORLD дугой), дорога упирается в неё ──
-  { const tg = new THREE.Group(); tg.position.set(bx, 0, bz - 18); add(tg);
-    const tm = (c, e = 0, ei = 0) => new THREE.MeshPhongMaterial({ color: c, emissive: e, emissiveIntensity: ei, shininess: 30 });
-    const tb = (w, h, d, m2, x, y, z, ry = 0, rz = 0) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m2); o.position.set(x, y, z); o.rotation.y = ry; o.rotation.z = rz; tg.add(o); return o; };
-    const pink = tm(0xff5fb0, 0xff2f90, 0.25), violet = tm(0x7b4dff, 0x4a1fd0, 0.3), whiteM = tm(0xf4f4ff), gold = tm(0xffd23f, 0xffb000, 0.45);
-    [-1, 1].forEach(sd => { tb(1.2, 12, 1.2, sd < 0 ? pink : violet, sd * 6, 6, 0); tb(1.8, 0.5, 1.8, whiteM, sd * 6, 0.25, 0); tb(1.0, 4.2, 1.0, sd < 0 ? pink : violet, sd * 4.5, 13.6, 0, 0, sd * 0.75); for (let k = 0; k < 5; k++) tb(0.4, 0.4, 0.4, gold, sd * 6, 1.6 + k * 2.2, 0.75); });
-    tb(6.6, 1.0, 1.2, whiteM, 0, 15.4, 0); tb(15, 0.3, 0.3, gold, 0, 16.1, 0);
-    const letters = (txt, x0, y0, dx, dy, tilt) => { [...txt].forEach((ch, i) => { const c2 = document.createElement('canvas'); c2.width = 128; c2.height = 128; const cx = c2.getContext('2d'); cx.font = 'bold 104px Arial Black, Arial'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.lineWidth = 12; cx.strokeStyle = '#3a0a5a'; cx.strokeText(ch, 64, 70); cx.fillStyle = '#fff59d'; cx.fillText(ch, 64, 70); const pl2 = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 1.8), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c2), transparent: true, side: THREE.DoubleSide })); pl2.position.set(x0 + dx * i, y0 + dy * i, 0.75); pl2.rotation.z = tilt; tg.add(pl2); }); };
-    letters('TEMKA', -7.8, 11.2, 1.35, 1.0, 0.6); letters('WORLD', 3.2, 15.2, 1.35, -1.0, -0.6);
-    const film = new THREE.Mesh(new THREE.PlaneGeometry(10.8, 11.5), new THREE.MeshBasicMaterial({ color: 0xff9ad5, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false })); film.position.set(0, 6.2, 0); tg.add(film);
-    const l1 = new THREE.PointLight(0xff5fb0, 1.2, 30); l1.position.set(-4, 7, 3); tg.add(l1); const l2 = new THREE.PointLight(0x7b4dff, 1.2, 30); l2.position.set(4, 7, 3); tg.add(l2);
-    // дорога к арке (как на рисунке): две обочины + плитка
-    const roadM = new THREE.MeshLambertMaterial({ color: 0x4a4550 }); const rd = new THREE.Mesh(new THREE.PlaneGeometry(6, 34), roadM); rd.rotation.x = -Math.PI / 2; rd.position.set(0, 0.02, 17); tg.add(rd);
-    [-3.2, 3.2].forEach(x => { const cb = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.25, 34), new THREE.MeshLambertMaterial({ color: 0xffffff })); cb.position.set(x, 0.12, 17); tg.add(cb); });
-    for (let k = 0; k < 7; k++) { const t = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 2.2), new THREE.MeshBasicMaterial({ color: 0xffd23f })); t.rotation.x = -Math.PI / 2; t.position.set(0, 0.03, 3 + k * 4.5); tg.add(t); }
-    add(mallSign('🚧 ВХОД В TEMKA WORLD · ДЕМО · СКОРО', bx, 8.6, bz - 17.2, 10, 1.1, { fg: '#fff59d', glow: '#ff2f90', size: 80 }));
-    interactables.push({ position: { x: bx, y: 0, z: bz - 15 }, type: 'temka_gate', name: '🚧 Вход в TEMKA WORLD — скоро [E]', range: 5, temka: true });
-  }
-  // портал назад
-  const portal = add(new THREE.Mesh(new THREE.TorusGeometry(2.2, 0.25, 12, 40), new THREE.MeshBasicMaterial({ color: 0x6bcfff }))); portal.position.set(bx, 2.4, bz + 22); portal.userData.spin = true;
-  const pl = add(new THREE.PointLight(0x6bcfff, 1.2, 18)); pl.position.set(bx, 2.4, bz + 21);
-  add(new THREE.HemisphereLight(0xffffff, 0xd9b3ff, 1.1)); const sun = add(new THREE.DirectionalLight(0xfff2cc, 0.9)); sun.position.set(bx + 40, 80, bz + 30); sun.target.position.set(bx, 0, bz); add(sun.target);
-  interactables.push({ position: { x: bx, y: 0, z: bz + 22 }, type: 'temka_exit', name: '🌀 Портал обратно в город', range: 4, temka: true });
-  const fade = document.getElementById('cineFade');
-  window._cineNoFade = true;
-  playCine([
-    { pos: [bx + 26, 9, bz + 30], look: [bx, 6, bz - 18], dur: 0.05, cut: true, drift: 0 },
-    { pos: [bx + 14, 5, bz + 18], look: [bx, 7, bz - 18], dur: 6.0, text: '…Небо цвета сахарной ваты. Парящие камни. И огромная арка впереди.', onStart: () => { setTimeout(() => { fade.style.transition = 'opacity 1.8s ease'; fade.style.opacity = '0'; setTimeout(() => { fade.style.background = '#000'; }, 1900); }, 200); } },
-    { pos: [bx + 4, 3, bz + 4], look: [bx, 8, bz - 18], dur: 4.0, text: 'Вы: «TEMKA WORLD? Кто такой Тёмка… и что там, за аркой?»' },
-    { pos: [bx + 3, 2.4, bz + 16], look: [bx, 2.4, bz + 22], dur: 3.5, text: 'Портал за спиной мерцает. Похоже, это пока единственный путь назад.' }
-  ], () => { window._cineNoFade = false; localPlayer.mesh.userData.mood = 'normal'; showNotification('🌀 TEMKAWORLD пока строится. Портал вернёт тебя в город.', 'info'); });
-}
-function updateTemka(delta) {
-  if (!isInTemka) return; const m = localPlayer.mesh, bx = TEMKA_BASE.x, bz = TEMKA_BASE.z;
-  const dx = m.position.x - bx, dz = m.position.z - bz, d = Math.hypot(dx, dz); if (d > 28) { m.position.x = bx + dx / d * 28; m.position.z = bz + dz / d * 28; }
-  temkaObjects.forEach(o => { if (o.userData.float) o.position.y = o.userData.float.y + Math.sin(animationTime * 0.6 + o.userData.float.ph) * 1.2; if (o.userData.spin) { o.rotation.y += delta * 1.2; o.scale.setScalar(1 + Math.sin(animationTime * 3) * 0.04); } });
-}
-function exitTemkaWorld() {
-  if (!isInTemka || window.cine) return; const fade = document.getElementById('cineFade'); fade.style.transition = 'opacity .6s ease'; fade.style.opacity = '1'; SFX.ding();
-  setTimeout(() => {
-    isInTemka = false; temkaObjects.forEach(o => scene.remove(o)); temkaObjects = []; interactables = interactables.filter(i => i.temka !== true);
-    if (window._prevSky) { scene.background = window._prevSky.bg; scene.fog = window._prevSky.fog; if (window.skyDome) { window.skyDome.visible = SETTINGS.sky !== false; window.sunDisk.visible = SETTINGS.sky !== false; (window.clouds || []).forEach(c => c.visible = SETTINGS.sky !== false); } }
-    const r = DLC._temkaReturn || { x: 110, z: -56 }; localPlayer.mesh.position.set(r.x, 0.01, r.z); velocity.y = 0;
-    setTimeout(() => { fade.style.opacity = '0'; showNotification('Вы снова в городе. Grand Mall — впереди.', 'info'); }, 300);
-  }, 650);
-}
-
 // ───────── ИНТРО: камера падает с облаков к игроку ─────────
 function startIntroFlight() {
   if (!localPlayer || !localPlayer.mesh || window.cine) return; window._introDone = true;
@@ -16916,9 +16853,6 @@ function handleInteraction() {
   if (inter.type === 'b_note') { DLC.bNotesRead = DLC.bNotesRead || {}; DLC.bNotesRead[inter.title] = true; showWorldEventBanner('📄 ' + inter.title, inter.text + `<br><span style="color:#a29bfe;font-size:12px">Записок подземелья: ${Object.keys(DLC.bNotesRead).length}/${window.BASEMENT_NOTES_TOTAL || 11}</span>`, 'warning'); updateQuestHUD(); return; }
   if (inter.type === 'b_down') { goBasement(1); return; }
   if (inter.type === 'b_up') { goBasement(-1); return; }
-  if (inter.type === 'temka_exit') { exitTemkaWorld(); return; }
-  if (inter.type === 'temka_gate') { showNotification('🚧 За аркой пока пусто — TEMKA WORLD строится. Скоро!', 'info'); SFX.ding && SFX.ding(); return; }
-  if (inter.type === 'temka_world') { if (window.cine) return; showNotification('🌀 TEMKA WORLD — демо-версия. Полный мир скоро!', 'info'); enterTemkaWorld(); return; }
   if (inter.type === 'b_exit') { doorCine(() => exitBasement(), { color: 0x6b6f75 }); return; }
 
   // Интерьерные зоны
@@ -17000,7 +16934,6 @@ function checkInteractables() {
 // =================== СТОЛКНОВЕНИЯ ===================
 function checkCollision(newX, newZ) {
   const playerRadius = 0.5;
-  if (typeof isInTemka !== 'undefined' && isInTemka) return false;
 
   // ── DLC: локуация подземелья ТЦ ──
   if (isInBasement) {
@@ -18778,7 +18711,7 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
   if (SETTINGS.perf && renderer.shadowMap && (_fpsFrames % 3 === 0)) renderer.shadowMap.needsUpdate = true;
   cullPointLights(delta);
   updateFlashlight();
-  updateViewModel(delta); updateSkyLife(delta); if (!window.cine) updateDoorTween(delta); updateFootsteps(delta); checkTemkaTrigger(); updateTemka(delta);
+  updateViewModel(delta); updateSkyLife(delta); if (!window.cine) updateDoorTween(delta); updateFootsteps(delta);
   _fpsFrames++;
   if (localPlayer && localPlayer.mesh) updatePlayerFace(localPlayer.mesh, delta);
   if (window.sunLight && localPlayer && localPlayer.mesh) { const p = localPlayer.mesh.position; window.sunLight.position.set(p.x + 60, 90, p.z + 40); window.sunLight.target.position.set(p.x, 0, p.z); window.sunLight.target.updateMatrixWorld(); if (window.skyDome) window.skyDome.position.set(p.x, 0, p.z); }
@@ -21527,6 +21460,35 @@ function phoneTaxi(x, z, name) {
 document.addEventListener('keydown', e => { if (e.code === 'KeyP' && !(e.target && /INPUT|TEXTAREA/.test(e.target.tagName))) togglePhone(); });
 </script>
 <script src="assets/fz-fix-patch.js?v=1"></script>
+<script>
+// ── Защита от лишних сочетаний клавиш и контекстного меню ──
+// Страница не может отменить зарезервированные браузером комбинации
+// (Ctrl+W, Ctrl+T, Ctrl+N, Alt+F4): их Chrome обрабатывает раньше сайта.
+// Остальное здесь блокируется. В полях ввода (чат, вход) копирование и вставка работают.
+(function () {
+  function isText(t) {
+    return !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+  }
+  var TEXT_OK = { a: 1, c: 1, v: 1, x: 1, z: 1, y: 1 };
+  var FKEYS = { F1: 1, F3: 1, F5: 1, F7: 1, F12: 1 };   // справка, поиск, обновление, курсор, инструменты разработчика
+  window.addEventListener('keydown', function (e) {
+    var k = (e.key || '').toLowerCase();
+    var mod = e.ctrlKey || e.metaKey;
+    var block = false;
+    if (FKEYS[e.key]) block = true;
+    if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home')) block = true;   // назад/вперёд по истории
+    if (mod) {
+      if (isText(e.target) && TEXT_OK[k] && !e.shiftKey) block = false;   // в полях: копировать, вставить, отменить
+      else block = true;                                                   // всё остальное с Ctrl/Cmd — блок
+    }
+    if (block) { e.preventDefault(); e.stopPropagation(); }
+  }, true);
+  // правая кнопка: меню браузера не открываем (вне полей ввода)
+  window.addEventListener('contextmenu', function (e) {
+    if (!isText(e.target)) e.preventDefault();
+  }, true);
+})();
+</script>
 </body>
 
 <script>

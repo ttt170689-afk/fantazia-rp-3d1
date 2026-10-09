@@ -70,12 +70,13 @@ var MAP = {
   hold_flash:'HOLD_FLASH',
   hold_sword:'HOLD_SWORD',
   pick_flash:'PICK_FLASH',
-  pick_sword:'PICK_SWORD'
+  pick_sword:'PICK_SWORD',
+  finish_sword:'FINISH_SWORD'
 };
 // одноразовые (проигрываются один раз и замирают на последнем кадре)
-var ONCE = { jump: 1, land: 1, attack: 1, hit: 1, hurt: 1, victory: 1, point: 1, pickup: 1, sit: 1, death: 1, die: 1, look: 1, pick_flash: 1, pick_sword: 1 };
+var ONCE = { jump: 1, land: 1, attack: 1, hit: 1, hurt: 1, victory: 1, point: 1, pickup: 1, sit: 1, death: 1, die: 1, look: 1, pick_flash: 1, pick_sword: 1, finish_sword: 1 };
 // подбор предмета: после окончания клипа персонаж переходит в позу удержания, а не повторяет подбор
-var PICKS = { pick_flash: 1, pick_sword: 1 };
+var PICKS = { pick_flash: 1, pick_sword: 1, finish_sword: 1 };
 
 // --- 16 эмоций из меню «Танцы» -> клипы пака 3.2 ---
 // clip  — что играть, speed — скорость клипа,
@@ -300,7 +301,7 @@ SR.animate = function (ch, animation, delta, emote) {
 
   // подбор предмета: клип играется один раз, после него персонаж держит предмет
   if (PICKS[name]) {
-    if (!ud.actions[MAP[name]]) name = 'pickup';          // клипа нет (GLB не загрузился) — старый подбор
+    if (!ud.actions[MAP[name]]) name = name === 'finish_sword' ? 'attack' : 'pickup';   // клипа нет (GLB не загрузился) — старая анимация
     else if (ud._pickDone === name) name = 'idle';
     else {
       var pk = ud.actions[MAP[name]];

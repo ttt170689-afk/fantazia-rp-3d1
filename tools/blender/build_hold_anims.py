@@ -174,6 +174,27 @@ def main():
         (2.6, ps_end, 0.0),
     ])
 
+    # FINISH_SWORD: добивание демона — замах над головой, выпад и колющий удар в ядро, возврат в позу с мечом
+    fs_wind = merged(HOLD_SWORD, grip(1.0), {
+        'spine': [-8, 0, 0], 'rightArm': [160, 0, -10], 'rightElbow': [20, 0, 0],
+        'leftArm': [120, 0, 15], 'leftElbow': [30, 0, 0]})
+    fs_strike = merged(HOLD_SWORD, grip(1.0), {
+        'spine': [26, 0, 0], 'rightArm': [78, 0, -4], 'rightElbow': [0, 0, 0],
+        'leftArm': [40, 0, 8], 'leftElbow': [40, 0, 0],
+        'leftLeg': [40, 0, 0], 'leftKnee': [-20, 0, 0], 'rightLeg': [-18, 0, 0], 'rightKnee': [-10, 0, 0]})
+    fs_hold = merged(HOLD_SWORD, grip(1.0), {
+        'spine': [24, 0, 0], 'rightArm': [78, 0, -4], 'rightElbow': [0, 0, 0],
+        'leftLeg': [40, 0, 0], 'leftKnee': [-20, 0, 0], 'rightLeg': [-18, 0, 0], 'rightKnee': [-10, 0, 0]})
+    fs_back = merged(HOLD_SWORD, grip(0.8), {'spine': [10, 0, 0]})
+    clip(rig, 'FINISH_SWORD', [
+        (0.0, {}, None),
+        (0.45, fs_wind, -0.05),
+        (0.9, fs_strike, -0.12),
+        (1.25, fs_hold, -0.12),
+        (1.9, fs_back, -0.02),
+        (2.4, merged(HOLD_SWORD, grip(0.8)), 0.0),
+    ])
+
     # --- экспорт только скелета с клипами ---
     bpy.ops.object.select_all(action='DESELECT')
     rig.select_set(True)
