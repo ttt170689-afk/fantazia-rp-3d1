@@ -8751,13 +8751,48 @@ function createBuilding(x, z, w, h, d, color, name, type) {
   const mat = isShopB
     ? new THREE.MeshLambertMaterial({ color: _cityFacadeColor(color, tall), map: _facadeTexture(w, h, d) })
     : new THREE.MeshLambertMaterial({ vertexColors: true });
+  // Верх здания (y, с которого начинается крыша-оборудование); для жилых домов считается ниже вместе с силуэтом
+  let roofTopY = h + 0.5;
+  const seed2 = ((name ? name.length : 0) + Math.round(w * 3) + Math.round(h)) % 5;
   if (!isShopB) {
-    // Жилые/прочие: ОДИН меш на здание — корпус, полосы этажей, цоколь, карниз (цвет по вершинам, без текстур)
+    // Жилые/прочие: ОДИН меш на здание — корпус, полосы этажей, цоколь, карниз, уступы силуэта,
+    // кондиционеры на крыше и балконы с перилами (цвет по вершинам, без текстур)
     const base = new THREE.Color(PAL[palSeed]), trimC = base.clone().multiplyScalar(0.8);
     const parts = [{ w, h, d, x: 0, y: h/2, z: 0, c: base }];
     const floorsN = Math.min(14, Math.floor(h / 3.6));
     for (let f = 1; f < floorsN; f++) parts.push({ w: w + 0.4, h: 0.32, d: d + 0.4, x: 0, y: f * 3.6, z: 0, c: trimC });
     parts.push({ w: w + 0.7, h: 0.9, d: d + 0.7, x: 0, y: 0.45, z: 0, c: trimC });   // цоколь
+    // Ступенчатый силуэт: 1–2 уступа, смещённых в сторону (асимметрия у каждого дома)
+    let y0 = h;
+    if (h >= 14) {
+      const tiers = (h >= 26 && seed2 % 2 === 1) ? 2 : 1;
+      for (let t = 0; t < tiers; t++) {
+        const f = t === 0 ? 0.7 : 0.45;
+        const sbH = t === 0 ? Math.max(3, h * 0.12) : Math.max(2.2, h * 0.07);
+        const shift = (seed2 % 2 ? 1 : -1) * w * 0.06 * (t + 1);
+        parts.push({ w: w * f, h: sbH, d: d * f, x: shift, y: y0 + sbH / 2, z: 0, c: new THREE.Color(PAL[(palSeed + 3 + t) % PAL.length]) });
+        y0 += sbH;
+      }
+    }
+    roofTopY = y0 + 0.5;
+    // Кондиционеры на крыше (геометрия, без отдельных мешей)
+    const units = h >= 12 ? 2 + (seed2 % 2) : 1;
+    for (let k = 0; k < units; k++) {
+      parts.push({ w: 1.8, h: 1.1, d: 1.4, x: (k - (units - 1) / 2) * w * 0.3, y: roofTopY + 0.55, z: (seed2 % 2 ? -1 : 1) * d * 0.2, c: new THREE.Color(0xbfc5cc) });
+    }
+    // Балконы на фасаде (низкие дома): плита, перила спереди и по бокам, ряд через этаж
+    if (h < 25) {
+      const bw = Math.min(2.4, w * 0.34);
+      for (let f = 1; f < floorsN; f++) {
+        if ((seed2 + f) % 3 === 0) continue;                 // не на каждом этаже — ритм фасада разный
+        const bx = ((seed2 + f) % 2 === 0) ? -w * 0.2 : w * 0.2;
+        const yb = f * 3.6;
+        parts.push({ w: bw + 0.2, h: 0.2, d: 0.95, x: bx, y: yb - 0.26, z: d / 2 + 0.45, c: new THREE.Color(0xd7dadd) });   // плита
+        parts.push({ w: bw, h: 0.9, d: 0.06, x: bx, y: yb + 0.45, z: d / 2 + 0.9, c: new THREE.Color(0x5b6069) });         // перила спереди
+        parts.push({ w: 0.06, h: 0.9, d: 0.9, x: bx - bw / 2, y: yb + 0.45, z: d / 2 + 0.45, c: new THREE.Color(0x5b6069) }); // левая стойка-панель
+        parts.push({ w: 0.06, h: 0.9, d: 0.9, x: bx + bw / 2, y: yb + 0.45, z: d / 2 + 0.45, c: new THREE.Color(0x5b6069) }); // правая
+      }
+    }
     if (h < 25) parts.push({ w: w + 1, h: 0.5, d: d + 1, x: 0, y: h + 0.25, z: 0, c: new THREE.Color(color).multiplyScalar(0.7) }); // крыша
     else parts.push({ w: w + 0.9, h: 0.5, d: d + 0.9, x: 0, y: h + 0.1, z: 0, c: trimC }); // карниз
     parts.push({ w: 2, h: 3, d: 0.2, x: 0, y: 1.5, z: d / 2 + 0.1, c: new THREE.Color(0x5D4037) }); // дверь
@@ -8808,20 +8843,23 @@ function createBuilding(x, z, w, h, d, color, name, type) {
 
   // Крыша: кондиционеры, трубы, антенна — разные у каждого здания (видно сверху и издалека)
   {
-    const seed = ((name ? name.length : 0) + Math.round(w * 3) + Math.round(h)) % 5;
-    const ac = new THREE.MeshLambertMaterial({ color: 0xbfc5cc });
+    const seed = seed2;
     const pipe = new THREE.MeshLambertMaterial({ color: 0x59606a });
-    let topY = h + 0.5;
-    if (h >= 14) {                                      // ступенчатая надстройка
-      const sbH = Math.max(3, h * 0.14);
-      const sb = new THREE.Mesh(new THREE.BoxGeometry(w * 0.68, sbH, d * 0.68), new THREE.MeshLambertMaterial({ color: PAL[(palSeed + 3) % PAL.length] }));
-      sb.position.set(0, h + sbH / 2, 0); sb.castShadow = false; group.add(sb);
-      topY = h + sbH + 0.5;
-    }
-    const units = h >= 12 ? 2 + (seed % 2) : 1;
-    for (let k = 0; k < units; k++) {
-      const u = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.1, 1.4), ac);
-      u.position.set(-w * 0.2 + k * (w * 0.4), topY + 0.55, (seed % 2 ? -1 : 1) * d * 0.2); u.castShadow = false; group.add(u);
+    let topY = roofTopY;
+    if (isShopB) {                                      // магазины: надстройка и кондиционеры отдельными мешами (как раньше)
+      const ac = new THREE.MeshLambertMaterial({ color: 0xbfc5cc });
+      topY = h + 0.5;
+      if (h >= 14) {                                    // ступенчатая надстройка
+        const sbH = Math.max(3, h * 0.14);
+        const sb = new THREE.Mesh(new THREE.BoxGeometry(w * 0.68, sbH, d * 0.68), new THREE.MeshLambertMaterial({ color: PAL[(palSeed + 3) % PAL.length] }));
+        sb.position.set(0, h + sbH / 2, 0); sb.castShadow = false; group.add(sb);
+        topY = h + sbH + 0.5;
+      }
+      const units = h >= 12 ? 2 + (seed % 2) : 1;
+      for (let k = 0; k < units; k++) {
+        const u = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.1, 1.4), ac);
+        u.position.set(-w * 0.2 + k * (w * 0.4), topY + 0.55, (seed % 2 ? -1 : 1) * d * 0.2); u.castShadow = false; group.add(u);
+      }
     }
     if (seed !== 1) {                                   // труба
       const pp = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 2.4, 6), pipe);
