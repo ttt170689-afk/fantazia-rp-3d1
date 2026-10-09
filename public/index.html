@@ -3052,6 +3052,7 @@ document.addEventListener('click', function(e){
       <div class="side-btn" onclick="togglePanel('inventory')" title="Инвентарь">🎒</div>
       <div class="side-btn" onclick="togglePanel('apartment')" title="Квартира">🏠</div>
       <div class="side-btn" onclick="openExportPanel()" title="Экспорт 3D в Blender">📦</div>
+      <div class="side-btn" onclick="startHideSeek()" title="Прятки">🙈</div>
       <div class="side-btn" onclick="togglePanel('friends')" title="Друзья">👥</div>
       <div class="side-btn" onclick="togglePanel('players')" title="Игроки">📋</div>
       <div class="side-btn" onclick="toggleDanceBar()" title="Танцы">💃</div>
@@ -22060,6 +22061,112 @@ document.addEventListener('keydown', e => { if (e.code === 'KeyP' && !(e.target 
   window.addEventListener('contextmenu', function (e) {
     if (!isText(e.target)) e.preventDefault();
   }, true);
+})();
+</script>
+
+<script>
+// ===== РЕЖИМ «ПРЯТКИ» (одиночный: скрытый игрок — бот на модели SuperRig) =====
+// 3 минуты бот прячется у случайного здания, потом 10 минут ты ищешь его по карте.
+// Подсказка по расстоянию: Холодно / Тепло / Горячо. Нашёл рядом — победа, время вышло — поражение.
+(function () {
+  const HIDE_MS = 180000, SEEK_MS = 600000, FOUND_R = 4.5, HOME = { x: 110, z: -72 };
+  let st = null;
+  window._hs = () => st;
+  function hudEl() {
+    let h = document.getElementById('hsHud');
+    if (!h) {
+      h = document.createElement('div'); h.id = 'hsHud';
+      h.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:7000;background:rgba(10,8,25,.88);border:1px solid #6c5ce7;border-radius:14px;padding:10px 18px;color:#fff;font-family:Arial,sans-serif;text-align:center;min-width:240px;pointer-events:none';
+      document.body.appendChild(h);
+    }
+    return h;
+  }
+  const fmt = (ms) => { const s = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+  function spots() {
+    const all = (typeof buildings !== 'undefined' && buildings) ? buildings : [];
+    return all.filter(b => b && b.mesh && b.w)
+      .map(b => ({ x: b.x, z: b.z + b.d / 2 + 3 }))
+      .filter(p => Math.hypot(p.x - HOME.x, p.z - HOME.z) > 40);
+  }
+  function makeBot() {
+    const SR = window.SuperRig;
+    if (!window.THREE || !THREE.SkeletonUtils || !SR || !SR.src) return null;
+    const g = new THREE.Group();
+    const m = THREE.SkeletonUtils.clone(SR.src.scene);
+    g.add(m); scene.add(g);
+    if (typeof retintRig === 'function') retintRig(g, { skinColor: '#e0b48a', hairColor: '#4a2f1b', pantsColor: '#2c3e50', shirtColor: '#c0392b', shoeColor: '#222222' });
+    const clip = SR.src.animations.find(a => a.name === 'ANIM_Idle_Loop');
+    if (clip) { g.userData.mixer = new THREE.AnimationMixer(m); g.userData.mixer.clipAction(clip).play(); }
+    g.visible = false;
+    return g;
+  }
+  function hintFor(d) {
+    if (d < FOUND_R) return '🎯 Рядом!';
+    if (d < 12) return '🔥 Горячо';
+    if (d < 30) return '🌡️ Тепло';
+    return '❄️ Холодно';
+  }
+  function cleanup() {
+    if (!st) return;
+    clearInterval(st.iv);
+    if (st.bot && st.bot.parent) st.bot.parent.remove(st.bot);
+    const h = document.getElementById('hsHud'); if (h) h.remove();
+    st = null;
+  }
+  function finish(win) {
+    const bot = st.bot;
+    bot.visible = true;
+    clearInterval(st.iv);
+    const h = document.getElementById('hsHud'); if (h) h.remove();
+    const o = document.createElement('div'); o.id = 'hsResult';
+    o.style.cssText = 'position:fixed;inset:0;z-index:7100;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;font-family:Arial,sans-serif';
+    o.innerHTML = '<div style="background:#14112e;border:2px solid ' + (win ? '#00b894' : '#e74c3c') + ';border-radius:16px;padding:26px 30px;color:#fff;text-align:center;min-width:300px">' +
+      '<div style="font-size:26px;font-weight:bold;margin-bottom:10px">' + (win ? '🏆 Ты нашёл!' : '💀 Время вышло') + '</div>' +
+      '<div style="color:#bbb;margin-bottom:18px">' + (win ? 'Игрок был спрятан у здания. Победа!' : 'Ты не нашёл игрока за 10 минут. Поражение.') + '</div>' +
+      '<button id="hsAgain" style="margin-right:10px;padding:10px 16px;border-radius:10px;border:none;background:#6c5ce7;color:#fff;font-weight:bold;cursor:pointer">Ещё раз</button>' +
+      '<button id="hsClose" style="padding:10px 16px;border-radius:10px;border:1px solid #666;background:transparent;color:#fff;cursor:pointer">Закрыть</button></div>';
+    document.body.appendChild(o);
+    o.querySelector('#hsAgain').onclick = () => { o.remove(); cleanup(); startHideSeek(); };
+    o.querySelector('#hsClose').onclick = () => { o.remove(); cleanup(); };
+    st.done = true;
+  }
+  function tick() {
+    if (!st || st.done) return;
+    const p = localPlayer && localPlayer.mesh; if (!p) return;
+    const now = Date.now();
+    if (st.phase === 'hide') {
+      const left = HIDE_MS - (now - st.t0);
+      hudEl().innerHTML = '<div style="font-size:12px;color:#aaa">ПРЯТКИ · ФАЗА 1</div><div style="font-size:20px;font-weight:bold">🙈 Игрок прячется: ' + fmt(left) + '</div><div style="font-size:12px;color:#aaa">Подожди, пока он спрячется</div>';
+      if (left <= 0) {
+        st.phase = 'seek'; st.t0 = now;
+        if (typeof showNotification === 'function') showNotification('🔍 Ищи! У тебя 10 минут', 'levelup');
+      }
+    } else {
+      const left = SEEK_MS - (now - st.t0);
+      const d = Math.hypot(p.position.x - st.hx, p.position.z - st.hz);
+      hudEl().innerHTML = '<div style="font-size:12px;color:#aaa">ПРЯТКИ · ФАЗА 2</div><div style="font-size:20px;font-weight:bold">⏱ ' + fmt(left) + '</div><div style="font-size:15px;color:#ffd76a">' + hintFor(d) + '</div>';
+      if (d < FOUND_R) finish(true);
+      else if (left <= 0) finish(false);
+    }
+  }
+  window.startHideSeek = function () {
+    if (st) return;
+    if (!localPlayer || !localPlayer.mesh) { if (typeof showNotification === 'function') showNotification('Сначала войди в игру', 'error'); return; }
+    const list = spots();
+    if (!list.length) { if (typeof showNotification === 'function') showNotification('Нет карты для прятков', 'error'); return; }
+    const spot = list[Math.floor(Math.random() * list.length)];
+    const bot = makeBot();
+    if (!bot) { if (typeof showNotification === 'function') showNotification('Модель не загружена, попробуй позже', 'error'); return; }
+    localPlayer.mesh.position.set(HOME.x, 0.01, HOME.z);
+    bot.position.set(spot.x, 0, spot.z);
+    bot.rotation.y = Math.random() * Math.PI * 2;
+    st = { phase: 'hide', t0: Date.now(), bot, hx: spot.x, hz: spot.z, done: false, iv: setInterval(tick, 250) };
+    window._hsSetT0 = (ms) => { if (st) st.t0 -= ms; };
+    if (typeof showNotification === 'function') showNotification('🙈 Прятки: 3 минуты, пока игрок прячется', 'levelup');
+  };
+  window.stopHideSeek = cleanup;
+  // аниматор бота (только когда он виден — после победы)
+  setInterval(() => { if (st && st.bot && st.bot.visible && st.bot.userData.mixer) st.bot.userData.mixer.update(0.25); }, 250);
 })();
 </script>
 </body>
