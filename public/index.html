@@ -14243,6 +14243,8 @@ function ensureViewModel() {
   const fingers = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.06, 0.08), skin); fingers.position.set(0, -0.04, -0.4); arm.add(fingers);
   const holder = new THREE.Group(); holder.position.set(0, 0.02, -0.36); arm.add(holder);
   const armL = arm.clone(); armL.position.set(-0.34, -0.32, -0.42); armL.rotation.set(-0.35, 0.25, -0.15); armL.children.pop(); vm.add(armL);
+  // Руки от первого лица не показываем (по просьбе игрока); держатель предметов остаётся, предметы не пропадают
+  fore.visible = false; hand.visible = false; fingers.visible = false; armL.visible = false;
   vm.userData = { arm, armL, holder, base: arm.position.clone(), baseL: armL.position.clone() };
   ITEMS.vm = vm;
 }
@@ -22431,7 +22433,7 @@ document.addEventListener('keydown', e => { if (e.code === 'KeyP' && !(e.target 
 // 3 минуты бот прячется у случайного здания, потом 10 минут ты ищешь его по карте.
 // Подсказка по расстоянию: Холодно / Тепло / Горячо. Нашёл рядом — победа, время вышло — поражение.
 (function () {
-  const HIDE_MS = 180000, SEEK_MS = 600000, FOUND_R = 4.5, HOME = { x: 110, z: -72 };
+  const HIDE_MS = 180000, SEEK_MS = 600000, FOUND_R = 4.5, HOME = { x: -900, z: -900 };   // арена прятков — отдельная площадка вдали от города
   let st = null;
   window._hs = () => st;
   function hudEl() {
@@ -22485,12 +22487,45 @@ document.addEventListener('keydown', e => { if (e.code === 'KeyP' && !(e.target 
     g.position.set(cx, 0, cz); scene.add(g);
     return g;
   }
+  // Арена: круглая площадка с бетонной стеной и 8 ящиками; прятаться можно только у ящиков
+  let _arena = null;
+  function arenaSpot(seed) {
+    const i = Math.abs(Number(seed) | 0) % 8, a = i * Math.PI / 4;
+    return { x: HOME.x + Math.cos(a) * 18.5, z: HOME.z + Math.sin(a) * 18.5 };
+  }
+  function ensureArena() {
+    if (!_arena) {
+      const g = new THREE.Group();
+      const floor = new THREE.Mesh(new THREE.CylinderGeometry(32, 32, 0.2, 48), new THREE.MeshLambertMaterial({ color: 0x2d3a31 }));
+      floor.position.set(0, -0.1, 0); g.add(floor);
+      const wallM = new THREE.MeshLambertMaterial({ color: 0x7f8c8d });
+      for (let i = 0; i < 28; i++) {
+        const a = i / 28 * Math.PI * 2;
+        const w = new THREE.Mesh(new THREE.BoxGeometry(3.6, 4, 0.6), wallM);
+        w.position.set(Math.cos(a) * 31, 2, Math.sin(a) * 31); w.rotation.y = -(a + Math.PI / 2); g.add(w);
+      }
+      const crateM = new THREE.MeshLambertMaterial({ color: 0x8d6e63 });
+      for (let i = 0; i < 8; i++) {
+        const a = i * Math.PI / 4;
+        const c = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.8, 2.2), crateM);
+        c.position.set(Math.cos(a) * 16, 0.9, Math.sin(a) * 16); c.rotation.y = a; g.add(c);
+      }
+      g.position.set(HOME.x, 0, HOME.z); scene.add(g); _arena = g;
+    }
+    _arena.visible = true;
+    return _arena;
+  }
+  function hideArena() { if (_arena) _arena.visible = false; }
+  function clampArena(v) {
+    const dx = v.x - HOME.x, dz = v.z - HOME.z, d = Math.hypot(dx, dz), R = 29;
+    if (d > R) { v.x = HOME.x + dx / d * R; v.z = HOME.z + dz / d * R; }
+  }
   function dropCage() {
     if (st && st.cage) { scene.remove(st.cage); st.cage = null; }
   }
   function cleanup() {
     if (!st) return;
-    dropCage();
+    dropCage(); hideArena();
     clearInterval(st.iv);
     if (st.bot && st.bot.parent) st.bot.parent.remove(st.bot);
     const h = document.getElementById('hsHud'); if (h) h.remove();
@@ -22518,6 +22553,7 @@ document.addEventListener('keydown', e => { if (e.code === 'KeyP' && !(e.target 
     if (!st || st.done) return;
     const p = localPlayer && localPlayer.mesh; if (!p) return;
     const now = Date.now();
+    clampArena(p.position);
     if (st.phase === 'hide') {
       // Игрок заперт в клетке: если пытается выйти за прутья — возвращаем в центр
       if (Math.hypot(p.position.x - HOME.x, p.position.z - HOME.z) > 1.5) p.position.set(HOME.x, 0.01, HOME.z);
@@ -22542,8 +22578,10 @@ document.addEventListener('keydown', e => { if (e.code === 'KeyP' && !(e.target 
   window._hsRsState = () => rs;   // для проверок
   function hsRoundEnd(msg) {
     if (!rs) return;
+    (window._hsEndLog = window._hsEndLog || []).push(msg + ' | phase=' + rs.phase + ' isHider=' + rs.isHider);
     clearInterval(rs.iv);
     if (rs.cage) { scene.remove(rs.cage); rs.cage = null; }
+    hideArena();
     const h = document.getElementById('hsHud'); if (h) h.remove();
     rs = null;
     if (typeof showNotification === 'function') showNotification(msg, 'levelup');
@@ -22552,6 +22590,7 @@ document.addEventListener('keydown', e => { if (e.code === 'KeyP' && !(e.target 
     if (!rs || rs.done) return;
     const p = localPlayer && localPlayer.mesh; if (!p) return;
     const now = Date.now();
+    clampArena(p.position);
     if (rs.phase === 'hide') {
       if (!rs.isHider && Math.hypot(p.position.x - HOME.x, p.position.z - HOME.z) > 1.5) p.position.set(HOME.x, 0.01, HOME.z);
       const left = HIDE_MS - (now - rs.t0);
@@ -22584,7 +22623,8 @@ document.addEventListener('keydown', e => { if (e.code === 'KeyP' && !(e.target 
     const list = spots();
     if (!list.length || !localPlayer || !localPlayer.mesh) return;
     const isHider = r.hiderId === socket.id;
-    const spot = list[(Number(r.seed) >>> 0) % list.length];   // одинаково у всех клиентов комнаты
+    const spot = arenaSpot(Number(r.seed));   // одинаково у всех клиентов комнаты
+    ensureArena();
     rs = { rid: r.id, hiderId: r.hiderId, isHider, phase: 'hide', t0: Date.now(), done: false, cage: null, iv: null };
     if (isHider) {
       localPlayer.mesh.position.set(spot.x, 0.01, spot.z);
@@ -22661,7 +22701,8 @@ document.addEventListener('keydown', e => { if (e.code === 'KeyP' && !(e.target 
     if (!localPlayer || !localPlayer.mesh) { if (typeof showNotification === 'function') showNotification('Сначала войди в игру', 'error'); return; }
     const list = spots();
     if (!list.length) { if (typeof showNotification === 'function') showNotification('Нет карты для прятков', 'error'); return; }
-    const spot = list[Math.floor(Math.random() * list.length)];
+    const spot = arenaSpot(Math.floor(Math.random() * 1e9));
+    ensureArena();
     const bot = makeBot();
     if (!bot) { if (typeof showNotification === 'function') showNotification('Модель не загружена, попробуй позже', 'error'); return; }
     localPlayer.mesh.position.set(HOME.x, 0.01, HOME.z);
