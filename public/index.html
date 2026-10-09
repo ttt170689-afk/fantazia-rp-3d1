@@ -2211,11 +2211,12 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
   const root = document.getElementById('fzIntro'); if (!root) return;
   const cv = document.getElementById('fziCv'), ctx = cv.getContext('2d');
   const titleEl = document.getElementById('fziTitle'), byEl = document.getElementById('fziBy'), boltEl = document.getElementById('fziBolt'), flashEl = document.getElementById('fziFlash');
-  // буквы названия отдельными спанами: появляются по очереди
+  // название: очищаем исходный текст, иначе он дублируется с буквами
+  titleEl.textContent = '';
   'FANTAZIA RP 3D'.split('').forEach(ch => { const s = document.createElement('span'); s.textContent = ch === ' ' ? '\u00a0' : ch; titleEl.appendChild(s); });
   const letters = Array.from(titleEl.children);
-  let W = 0, H = 0, D = 1, started = false, ended = false, t0 = 0, raf = 0, ac = null, nb = null;
-  function resize() { D = Math.min(2, window.devicePixelRatio || 1); W = cv.width = Math.round(innerWidth * D); H = cv.height = Math.round(innerHeight * D); }
+  let W = 0, H = 0, D = 1, started = false, ended = false, t0 = 0, raf = 0, ac = null, nb = null, G = null;
+  function resize() { D = Math.min(2, window.devicePixelRatio || 1); W = cv.width = Math.round(innerWidth * D); H = cv.height = Math.round(innerHeight * D); if (G) G.onResize(); }
   resize(); window.addEventListener('resize', resize);
   const stars = Array.from({ length: 170 }, () => ({ x: Math.random(), y: Math.random(), s: Math.random() * 1.6 + 0.3, p: Math.random() * 6 }));
   const streaks = Array.from({ length: 110 }, () => ({ a: Math.random() * Math.PI * 2, r: Math.random(), v: 0.5 + Math.random() * 1.2 }));
@@ -2259,77 +2260,135 @@ button:hover:not(:disabled), .sv-btn:hover, .modal-btn:hover,
     g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(0.09, at + 1.0); g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
     o.connect(g); o2.connect(g); g.connect(ac.destination); o.start(at); o2.start(at); o.stop(at + dur + 0.1); o2.stop(at + dur + 0.1);
   }
+  // таймлайн: падение 0–2.4 с, удар 2.4, вращение 2.6–4.2, название с 4.0, конец 8.0
   function playSound() {
     try {
       ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); nb = noiseBuf();
       const T = ac.currentTime + 0.05;
-      drone(T, 7.0);
-      whoosh(T, 1.6);            // падение: свист воздуха
-      boom(T + 1.6);             // приземление: удар баса
-      sweep(T + 1.8, 1.5);       // вращение: нарастающий свип
-      chord(T + 3.3, [261.6, 329.6, 392.0, 523.3], 2.8); // аккорд на название
-      sparkle(T + 3.4, 1046.5);  // искры
-      chord(T + 5.2, [130.8, 196.0, 261.6], 1.8);        // финальный бас
-    } catch (e) { /* звук не поддерживается — визуал идёт без него */ }
+      drone(T, 8.0);
+      whoosh(T, 2.3);                                   // падение в шахту
+      boom(T + 2.4);                                    // приземление
+      sweep(T + 2.6, 1.6);                              // вращение
+      chord(T + 4.0, [261.6, 329.6, 392.0, 523.3], 2.8); // аккорд на название
+      sparkle(T + 4.1, 1046.5);
+      chord(T + 5.6, [130.8, 196.0, 261.6], 2.0);
+    } catch (e) { /* без звука — визуал идёт дальше */ }
   }
 
-  // ───────── картинка ─────────
+  // ───────── 3D: шахта, руки от первого лица (three.js уже на странице) ─────────
+  function init3D() {
+    if (typeof THREE === 'undefined') return null;
+    try {
+      const gl = document.createElement('canvas'); gl.style.cssText = 'position:absolute;inset:0;width:100%;height:100%';
+      root.insertBefore(gl, cv.nextSibling);
+      const R = new THREE.WebGLRenderer({ canvas: gl, antialias: true });
+      R.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); R.setSize(innerWidth, innerHeight, false);
+      const S = new THREE.Scene(); S.background = new THREE.Color(0x05030a); S.fog = new THREE.Fog(0x05030a, 14, 70);
+      const C = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.05, 200);
+      S.add(new THREE.AmbientLight(0x8a7ac0, 1.1)); const shaftLight = new THREE.PointLight(0xa090ff, 1.4, 40); shaftLight.position.set(0, -6, 0); S.add(shaftLight);
+      const sun = new THREE.DirectionalLight(0xffffff, 0.6); sun.position.set(3, 10, 5); S.add(sun);
+      // земля с круглой дырой (шахта)
+      const sh = new THREE.Shape(); sh.moveTo(-80, -80); sh.lineTo(80, -80); sh.lineTo(80, 80); sh.lineTo(-80, 80); sh.lineTo(-80, -80);
+      const hole = new THREE.Path(); hole.absarc(0, 0, 3, 0, Math.PI * 2, false); sh.holes.push(hole);
+      const ground = new THREE.Mesh(new THREE.ShapeGeometry(sh, 6), new THREE.MeshPhongMaterial({ color: 0x1b1733, shininess: 25 }));
+      ground.rotation.x = -Math.PI / 2; S.add(ground);
+      const grid = new THREE.GridHelper(160, 80, 0x6c5ce7, 0x2b2157); grid.position.y = 0.02; S.add(grid);
+      // стены шахты + неоновые кольца (по ним видно скорость падения)
+      const wall = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 60, 56, 1, true), new THREE.MeshPhongMaterial({ color: 0x3a2f78, emissive: 0x1a1240, side: THREE.BackSide, shininess: 30 }));
+      wall.position.y = -30; S.add(wall);
+      for (let k = 0; k < 15; k++) { const r = new THREE.Mesh(new THREE.TorusGeometry(3, 0.04, 6, 56), new THREE.MeshBasicMaterial({ color: k % 2 ? 0x8f7bff : 0x39e6ff })); r.rotation.x = Math.PI / 2; r.position.y = -k * 4; S.add(r); }
+      // дно шахты
+      const bottom = new THREE.Mesh(new THREE.CircleGeometry(3, 56), new THREE.MeshBasicMaterial({ color: 0x3b2a80 })); bottom.rotation.x = -Math.PI / 2; bottom.position.y = -40; S.add(bottom);
+      const bring = new THREE.Mesh(new THREE.TorusGeometry(2.5, 0.08, 8, 56), new THREE.MeshBasicMaterial({ color: 0xffd76a })); bring.rotation.x = Math.PI / 2; bring.position.y = -39.95; S.add(bring);
+      // руки от первого лица (прикреплены к камере)
+      const skin = new THREE.MeshPhongMaterial({ color: 0xd9a27e, shininess: 10 }), sleeve = new THREE.MeshPhongMaterial({ color: 0x2b2f3a });
+      const arms = [];
+      [-1, 1].forEach(side => {
+        const arm = new THREE.Group();
+        const fore = new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.085, 0.34), sleeve); fore.position.z = 0.1;
+        const hand = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 10), skin); hand.position.z = -0.12; hand.scale.set(1, 0.8, 1.3);
+        arm.add(fore, hand); arm.position.set(side * 0.22, -0.3, -0.5); arm.userData.side = side; C.add(arm); arms.push(arm);
+      });
+      S.add(C);
+      const onResize = () => { R.setSize(innerWidth, innerHeight, false); C.aspect = innerWidth / innerHeight; C.updateProjectionMatrix(); };
+      return { R, S, C, arms, onResize };
+    } catch (e) { return null; }
+  }
+  function easeOut3(p) { return 1 - Math.pow(1 - p, 3); }
+  function render3D(t) {
+    const C = G.C, arms = G.arms;
+    if (t < 2.4) {
+      // прыжок вниз: камера стоит над краем, потом падает в шахту (ускорение)
+      const p = t / 2.4;
+      C.position.set(0, 1.7 - 6.94 * t * t, 2.2 * (1 - p));
+      C.rotation.set(-0.66 + 0.5 * p, 0, Math.sin(t * 7) * 0.012);
+      arms.forEach(a => { a.position.y = -0.34 + Math.sin(t * 9 + a.userData.side) * 0.03; a.rotation.x = 0.25; });
+      if (t > 2.2) { const k = (t - 2.2) * 0.2; C.position.x += (Math.random() - 0.5) * k; C.position.y += (Math.random() - 0.5) * k; }
+    } else {
+      // удар о дно: тряска, потом вращение мира и остановка
+      C.position.set(0, -38.3, 0);
+      const landK = Math.max(0, 1 - (t - 2.4) / 0.4);
+      C.position.x += (Math.random() - 0.5) * 0.25 * landK; C.position.y += (Math.random() - 0.5) * 0.2 * landK;
+      C.rotation.set(-0.16, 0, 0);
+      arms.forEach(a => { a.rotation.x = 0.25 + 0.9 * landK; a.position.y = -0.34; });
+      if (t >= 2.6 && t < 4.2) {
+        const e = easeOut3((t - 2.6) / 1.6);
+        C.rotation.z = (1 - e) * Math.PI * 4;      // мир крутится и замедляется
+        C.fov = 70 + (1 - e) * 30; C.updateProjectionMatrix();
+      } else if (t >= 4.2) {
+        C.rotation.z = 0; if (C.fov !== 70) { C.fov = 70; C.updateProjectionMatrix(); }
+        C.position.y = -38.3 + Math.sin(t * 1.5) * 0.02;
+      }
+    }
+    G.R.render(G.S, C);
+  }
+
+  // ───────── 2D запасной вариант (если WebGL не поднялся) ─────────
   function drawWorld(t, alpha) {
-    const hz = H * 0.42, speed = t < 1.6 ? 1.0 : (t < 3.4 ? 0.35 : 0.12);
+    const hz = H * 0.42, speed = t < 2.4 ? 1.0 : 0.3;
     const off = t * 0.9 * speed * 4; ctx.globalAlpha = alpha;
-    // «земля», которая несётся навстречу при падении
     for (let i = 0; i < 22; i++) {
       const u = ((i / 22) + off) % 1; const y = hz + (H - hz) * Math.pow(u, 2.3);
       ctx.strokeStyle = 'rgba(140,120,255,' + (0.08 + 0.5 * u).toFixed(3) + ')'; ctx.lineWidth = (1 + 2 * u) * D;
       ctx.beginPath(); ctx.moveTo(-W, y); ctx.lineTo(W * 2, y); ctx.stroke();
     }
-    for (let j = -8; j <= 8; j++) {
-      ctx.strokeStyle = 'rgba(120,100,230,0.22)'; ctx.lineWidth = 1 * D;
-      ctx.beginPath(); ctx.moveTo(W / 2, hz); ctx.lineTo(W / 2 + j * W * 0.11, H * 1.2); ctx.stroke();
-    }
-    // горизонт и свечение
-    const g = ctx.createRadialGradient(W / 2, hz, 0, W / 2, hz, W * 0.6);
-    g.addColorStop(0, 'rgba(120,80,255,0.35)'); g.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = g; ctx.fillRect(-W, hz - H, W * 3, H * 2);
-    // ветер: полосы из центра
+    for (let j = -8; j <= 8; j++) { ctx.strokeStyle = 'rgba(120,100,230,0.22)'; ctx.lineWidth = D; ctx.beginPath(); ctx.moveTo(W / 2, hz); ctx.lineTo(W / 2 + j * W * 0.11, H * 1.2); ctx.stroke(); }
     ctx.strokeStyle = 'rgba(255,255,255,0.7)';
-    streaks.forEach(s => { const r = (s.r + t * s.v * (t < 1.6 ? 1.6 : 0.25)) % 1; const r0 = r * r * Math.max(W, H) * 0.7, r1 = r0 * 1.12 + 6 * D;
+    streaks.forEach(s => { const r = (s.r + t * s.v * 0.8) % 1; const r0 = r * r * Math.max(W, H) * 0.7, r1 = r0 * 1.12 + 6 * D;
       ctx.globalAlpha = alpha * r * 0.8; ctx.lineWidth = (0.5 + r * 2.5) * D; ctx.beginPath(); ctx.moveTo(W / 2 + Math.cos(s.a) * r0, H / 2 + Math.sin(s.a) * r0); ctx.lineTo(W / 2 + Math.cos(s.a) * r1, H / 2 + Math.sin(s.a) * r1); ctx.stroke(); });
     ctx.globalAlpha = 1;
   }
   function drawStars(t) {
     stars.forEach(s => { const a = 0.35 + 0.35 * Math.sin(t * 2 + s.p); ctx.fillStyle = 'rgba(220,210,255,' + a.toFixed(3) + ')'; ctx.beginPath(); ctx.arc(s.x * W, s.y * H, s.s * D, 0, 6.283); ctx.fill(); });
   }
-  function easeOut3(p) { return 1 - Math.pow(1 - p, 3); }
+
+  // ───────── цикл ─────────
   function frame(now) {
     raf = requestAnimationFrame(frame);
     const t = started ? (now - t0) / 1000 : 0;
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.fillStyle = '#05030a'; ctx.fillRect(0, 0, W, H);
-    if (!started) { drawStars(now / 1000); }
-    else {
-      drawStars(t);
-      let sx = 0, sy = 0; if (t > 1.6 && t < 2.1) { const k = (2.1 - t) * 18 * D; sx = (Math.random() - 0.5) * k; sy = (Math.random() - 0.5) * k; }
-      ctx.save(); ctx.translate(sx, sy);
-      // вращение мира после приземления, затем плавная остановка
-      let rot = 0, zoom = 1;
-      if (t > 1.8 && t < 3.4) { const p = (t - 1.8) / 1.6, e = easeOut3(p); rot = (1 - e) * Math.PI * 3; zoom = 1 + (1 - e) * 0.3; }
-      ctx.translate(W / 2, H / 2); ctx.rotate(rot); ctx.scale(zoom, zoom); ctx.translate(-W / 2, -H / 2);
-      drawWorld(t, t > 3.4 ? 0.3 : 1);
-      ctx.restore();
-      // вспышка при ударе
-      flashEl.style.opacity = t > 1.6 && t < 2.2 ? String(0.9 * (1 - (t - 1.6) / 0.6)) : '0';
-      // молния и название
-      boltEl.style.opacity = t > 3.3 ? String(Math.min(1, (t - 3.3) / 0.4)) : '0';
-      boltEl.style.transform = 'scale(' + (t > 3.3 ? Math.min(1, 0.4 + (t - 3.3) * 2) : 0.3).toFixed(3) + ')';
-      letters.forEach((s, i) => { s.style.opacity = t > 3.5 + i * 0.05 ? '1' : '0'; });
-      byEl.style.opacity = t > 4.8 ? String(Math.min(1, (t - 4.8) / 0.6)) : '0';
-      if (t > 7.4) endIntro();
+    if (!started) {
+      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#05030a'; ctx.fillRect(0, 0, W, H); drawStars(now / 1000);
+    } else if (G) {
+      render3D(t);
+    } else {
+      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#05030a'; ctx.fillRect(0, 0, W, H); drawStars(t);
+      ctx.save(); ctx.translate(W / 2, H / 2);
+      let rot = 0, zoom = 1; if (t > 2.6 && t < 4.2) { const e = easeOut3((t - 2.6) / 1.6); rot = (1 - e) * Math.PI * 3; zoom = 1 + (1 - e) * 0.3; }
+      ctx.rotate(rot); ctx.scale(zoom, zoom); ctx.translate(-W / 2, -H / 2); drawWorld(t, t > 4.2 ? 0.3 : 1); ctx.restore();
+    }
+    if (started) {
+      flashEl.style.opacity = t > 2.4 && t < 2.9 ? String(0.85 * (1 - (t - 2.4) / 0.5)) : '0';
+      boltEl.style.opacity = t > 4.0 ? String(Math.min(1, (t - 4.0) / 0.4)) : '0';
+      boltEl.style.transform = 'scale(' + (t > 4.0 ? Math.min(1, 0.4 + (t - 4.0) * 2) : 0.3).toFixed(3) + ')';
+      letters.forEach((s, i) => { s.style.opacity = t > 4.2 + i * 0.05 ? '1' : '0'; });
+      byEl.style.opacity = t > 5.2 ? String(Math.min(1, (t - 5.2) / 0.6)) : '0';
+      if (t > 8.0) endIntro();
     }
   }
   function startIntro() {
     if (started || ended) return;
     started = true; root.classList.add('play'); playSound(); t0 = performance.now();
+    G = init3D(); if (G) cv.style.display = 'none';
   }
   function endIntro() {
     if (ended) return; ended = true; cancelAnimationFrame(raf); root.classList.add('out');
