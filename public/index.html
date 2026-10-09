@@ -7943,6 +7943,13 @@ const ACCESSORIES = [
   { id:'antenna',   name:'Антенки',       emoji:'👾', coinPrice:33, draw:'antenna' },
   { id:'demonic',   name:'Рога Демона',   emoji:'😈', coinPrice:999, draw:'demonic' },
   { id:'samurai',   name:'Кабуто',        emoji:'🗾', coinPrice:70, draw:'samurai' },
+  { id:'santa',     name:'Шапка Деда Мороза', emoji:'🎅', coinPrice:25, draw:'santa' },
+  { id:'bandana',   name:'Бандана',       emoji:'🏴', coinPrice:12, draw:'bandana' },
+  { id:'tiara',     name:'Диадема',       emoji:'💠', coinPrice:55, draw:'tiara' },
+  { id:'ninja',     name:'Повязка ниндзя', emoji:'🥷', coinPrice:30, draw:'ninja' },
+  { id:'miner',     name:'Шахтёрская каска', emoji:'⛑️', coinPrice:28, draw:'miner' },
+  { id:'elf',       name:'Эльфийские уши', emoji:'🧝', coinPrice:34, draw:'elf' },
+  { id:'mohawk',    name:'Ирокез',        emoji:'🎸', coinPrice:16, draw:'mohawk' },
   { id:'fedora',    name:'Федора',        emoji:'🕵️', coinPrice:26, draw:'fedora' },
   { id:'unicorn',   name:'Рог единорога', emoji:'🦄', coinPrice:52, draw:'unicorn' },
 ];
@@ -13195,6 +13202,53 @@ function updateAccessory3D(mesh, accId) {
       }
       const ppom = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), new THREE.MeshLambertMaterial({ color: 0xff6b6b }));
       ppom.position.set(0.1, 3.52, 0); accGroup.add(ppom);
+      break;
+    }
+    case 'santa': {
+      const red = new THREE.MeshLambertMaterial({ color: 0xc0392b }), white = new THREE.MeshLambertMaterial({ color: 0xffffff });
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.6, 10), red); cone.position.set(0.05, 3.1, 0); cone.rotation.z = -0.35; accGroup.add(cone);
+      const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.14, 12), white); brim.position.set(0, 2.8, 0); accGroup.add(brim);
+      const pom = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), white); pom.position.set(0.25, 3.36, 0); accGroup.add(pom);
+      break;
+    }
+    case 'bandana': {
+      const red = new THREE.MeshLambertMaterial({ color: 0xc0392b });
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(0.37, 0.37, 0.1, 14, 1, true), red); band.position.set(0, 2.6, 0); accGroup.add(band);
+      const t1 = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.04, 0.3), red); t1.position.set(-0.42, 2.55, -0.12); t1.rotation.z = 0.4; accGroup.add(t1);
+      const t2 = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.04, 0.26), red); t2.position.set(-0.46, 2.45, -0.1); t2.rotation.z = 0.9; accGroup.add(t2);
+      break;
+    }
+    case 'tiara': {
+      const gold = new THREE.MeshLambertMaterial({ color: 0xFFD700, emissive: 0xAA7700, emissiveIntensity: 0.3 });
+      const band = new THREE.Mesh(new THREE.TorusGeometry(0.33, 0.025, 6, 20), gold); band.position.set(0, 2.72, 0); band.rotation.x = Math.PI / 2; accGroup.add(band);
+      const gem = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), new THREE.MeshLambertMaterial({ color: 0x48dbfb, emissive: 0x1d6f8a, emissiveIntensity: 0.6 }));
+      gem.position.set(0, 2.72, 0.33); accGroup.add(gem);
+      [-0.2, 0, 0.2].forEach((x, i) => { const sp = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.16 - Math.abs(x) * 0.2, 4), gold); sp.position.set(x, 2.84 + (i === 1 ? 0.04 : 0), 0.28); accGroup.add(sp); });
+      break;
+    }
+    case 'ninja': {
+      const dark = new THREE.MeshLambertMaterial({ color: 0x1b1b1b });
+      const band = new THREE.Mesh(new THREE.TorusGeometry(0.37, 0.05, 6, 20), dark); band.position.set(0, 2.48, 0); band.rotation.x = Math.PI / 2; accGroup.add(band);
+      const t1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 0.42), dark); t1.position.set(0.02, 2.46, -0.44); t1.rotation.x = 0.25; accGroup.add(t1);
+      const t2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 0.36), dark); t2.position.set(-0.06, 2.4, -0.48); t2.rotation.x = 0.55; accGroup.add(t2);
+      break;
+    }
+    case 'miner': {
+      const yellow = new THREE.MeshLambertMaterial({ color: 0xf1c40f });
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(0.42, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), yellow); dome.position.set(0, 2.62, 0); accGroup.add(dome);
+      const lampMat = new THREE.MeshLambertMaterial({ color: 0xfff7c2, emissive: 0xffe066, emissiveIntensity: 0.9 });
+      const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), lampMat); lamp.position.set(0, 2.72, 0.42); accGroup.add(lamp);
+      break;
+    }
+    case 'elf': {
+      const skin = new THREE.MeshLambertMaterial({ color: 0xf5cba7 });
+      const l = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.42, 6), skin); l.position.set(-0.42, 2.4, 0); l.rotation.z = Math.PI / 2; accGroup.add(l);
+      const r = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.42, 6), skin); r.position.set(0.42, 2.4, 0); r.rotation.z = -Math.PI / 2; accGroup.add(r);
+      break;
+    }
+    case 'mohawk': {
+      const green = new THREE.MeshLambertMaterial({ color: 0x2ecc71 });
+      [[0, 2.9, 0.05, 0.3], [0, 2.82, -0.2, 0.22]].forEach(([x, y, z, h]) => { const f = new THREE.Mesh(new THREE.BoxGeometry(0.08, h, 0.22), green); f.position.set(x, y, z); accGroup.add(f); });
       break;
     }
     case 'cat_ears': {
