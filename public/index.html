@@ -12667,6 +12667,7 @@ function openSkinEditor() {
     document.getElementById('sePants').value = localPlayer.appearance.pantsColor || '#2C3E50';
   }
 
+  refreshPreview3D(true);
   // Render clothing grids
   renderClothingGrid('topClothingGrid', CLOTHING_TOPS, 'top');
   renderClothingGrid('shoeClothingGrid', CLOTHING_SHOES, 'shoes');
@@ -12788,6 +12789,7 @@ function renderClothingGrid(gridId, items, category) {
 }
 
 function updateSkinPreview() {
+  if (_prev3d) { refreshPreview3D(true); return; }   // 3D-превью заменило 2D
   const bw = parseInt(document.getElementById('bodyWidthSlider').value);
   const bh = parseInt(document.getElementById('bodyHeightSlider').value);
   document.getElementById('bodyWidthVal').textContent = bw;
@@ -12973,6 +12975,72 @@ function retintRig(mesh, ap) {
       if (DARK[m.name]) nm.color.multiplyScalar(DARK[m.name]);
     });
   });
+}
+
+
+// ===== 3D-превью в редакторе персонажа =====
+// Клон модели игрока (SuperRig) в окне редактора: вращается, перекрашивается и получает аксессуары в реальном времени.
+let _prev3d = null;
+function ensurePreview3D() {
+  if (_prev3d) return _prev3d;
+  if (!window.THREE || !THREE.SkeletonUtils || !window.SuperRig || !SuperRig.src) return null;
+  const old = document.getElementById('skinPreviewCanvas');
+  if (!old) return null;
+  let renderer;
+  const cv = document.createElement('canvas');
+  cv.className = old.className; cv.style.cssText = old.style.cssText;
+  cv.width = old.width * 2; cv.height = old.height * 2;
+  try { renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true }); } catch (e) { return null; }
+  old.style.display = 'none';
+  old.parentNode.insertBefore(cv, old.nextSibling);
+  renderer.setClearColor(0x000000, 0); renderer.setPixelRatio(1); renderer.setSize(cv.width, cv.height, false);
+  const scene = new THREE.Scene();
+  const cam = new THREE.PerspectiveCamera(30, cv.width / cv.height, 0.1, 100);
+  cam.position.set(0, 2.2, 9.5); cam.lookAt(0, 1.8, 0);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+  const dl = new THREE.DirectionalLight(0xffffff, 0.9); dl.position.set(3, 6, 5); scene.add(dl);
+  const model = THREE.SkeletonUtils.clone(SuperRig.src.scene);
+  const wrap = new THREE.Group(); wrap.add(model); scene.add(wrap);
+  const head = model.getObjectByName('head');
+  const accGroup = new THREE.Group();
+  (head || wrap).add(accGroup);
+  wrap.userData.accGroup = accGroup;
+  const mixer = new THREE.AnimationMixer(model);
+  const idle = SuperRig.src.animations.find(a => a.name === 'ANIM_Idle_Loop') || SuperRig.src.animations[0];
+  if (idle) mixer.clipAction(idle).play();
+  _prev3d = { renderer, scene, cam, wrap, mixer, key: '', running: false, last: performance.now() };
+  _prev3d.loop = function (now) {
+    const p = _prev3d; if (!p) return;
+    const modal = document.getElementById('skinEditorModal');
+    if (!modal || !modal.classList.contains('show')) { p.running = false; return; }
+    const dt = Math.min(0.05, (now - p.last) / 1000); p.last = now;
+    p.wrap.rotation.y += dt * 0.5;
+    p.mixer.update(dt);
+    refreshPreview3D(false);
+    p.renderer.render(p.scene, p.cam);
+    requestAnimationFrame(p.loop);
+  };
+  return _prev3d;
+}
+function refreshPreview3D(force) {
+  const p = ensurePreview3D(); if (!p) return;
+  const top = CLOTHING_TOPS.find(t => t.id === skinEditorData.topClothing) || CLOTHING_TOPS[0];
+  const shoe = CLOTHING_SHOES.find(t => t.id === skinEditorData.shoes) || CLOTHING_SHOES[0];
+  const hex = (c) => '#' + (c || 0x222222).toString(16).padStart(6, '0');
+  const ap = {
+    skinColor: document.getElementById('seSkIn').value, hairColor: document.getElementById('seHair').value,
+    pantsColor: document.getElementById('sePants').value, shirtColor: hex(top.color), shoeColor: hex(shoe.color)
+  };
+  const bw = parseInt(document.getElementById('bodyWidthSlider').value) / 100;
+  const bh = parseInt(document.getElementById('bodyHeightSlider').value) / 100;
+  const acc = equippedAccessory || 'none';
+  const key = JSON.stringify([ap, bw, bh, acc]);
+  if (!force && key === p.key) { if (!p.running) { p.running = true; p.last = performance.now(); requestAnimationFrame(p.loop); } return; }
+  p.key = key;
+  p.wrap.scale.set(bw, bh, bw);
+  retintRig(p.wrap, ap);
+  updateAccessory3D(p.wrap, acc);
+  if (!p.running) { p.running = true; p.last = performance.now(); requestAnimationFrame(p.loop); }
 }
 
 function applySkinEditor() {
