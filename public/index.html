@@ -8512,12 +8512,16 @@ function buildRealBridge(cx, cz, width, span) {
 
 function buildRoads() {
   const S = CONFIG.WORLD_SIZE;
-  const asphalt = new THREE.MeshLambertMaterial({ color: 0x2f3136 });
+  const asphalt = new THREE.MeshLambertMaterial({ color: 0x2f3136 }); // плоский асфальт (текстура откачена)
   const curbMat = new THREE.MeshLambertMaterial({ color: 0xb9b9b9 });
   const walkMat = new THREE.MeshLambertMaterial({ color: 0x9d9a94 });
   const white = new THREE.MeshBasicMaterial({ color: 0xf2f2f2 });
   const yellow = new THREE.MeshBasicMaterial({ color: 0xf1c40f });
-  const plane = (w, d, m, x, z, y = 0.01) => { const p = new THREE.Mesh(new THREE.PlaneGeometry(w, d), m); p.rotation.x = -Math.PI / 2; p.position.set(x, y, z); scene.add(p); return p; };
+  const plane = (w, d, m, x, z, y = 0.01) => {
+    const geo = new THREE.PlaneGeometry(w, d);
+    if (m.map) { const uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / 16, uv.getY(i) * d / 16); }
+    const p = new THREE.Mesh(geo, m); p.rotation.x = -Math.PI / 2; p.position.set(x, y, z); scene.add(p); return p;
+  };
   const box = (w, h, d, m, x, y, z) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); scene.add(o); return o; };
 
   // Дорога: асфальт + двойная сплошная + пунктир полос + бордюры + тротуары
@@ -8558,6 +8562,15 @@ function buildRoads() {
       [[0xff3b30, 4.3], [0xffcc00, 3.9], [0x2ecc71, 3.5]].forEach(([c, y]) => { const l = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), new THREE.MeshBasicMaterial({ color: c })); l.position.set(px, y, pz + 0.22); scene.add(l); });
     });
   }));
+
+  // Пешеходные переходы посередине участков между перекрёстками (зебра поперёк дороги)
+  const zebra = (horiz, mid, off, width) => {
+    for (let k = -width / 2 + 1.0; k <= width / 2 - 1.0; k += 1.2) {
+      if (horiz) plane(3.0, 0.6, white, mid, off + k, 0.035); else plane(0.6, 3.0, white, off + k, mid, 0.035);
+    }
+  };
+  [-60, 0, 60].forEach(off => { const w = off === 0 ? 12 : 8; [-30, 30].forEach(m => zebra(true, m, off, w)); });
+  [-60, 0, 60].forEach(off => { const w = off === 0 ? 12 : 8; [-30, 30].forEach(m => zebra(false, m, off, w)); });
 
   // Автобусные остановки
   [[24, 9.2, 0], [-24, -9.2, Math.PI], [9.2, 30, -Math.PI / 2], [-9.2, -30, Math.PI / 2], [90, 9.2, 0], [-90, -9.2, Math.PI]].forEach(([x, z, r]) => createBusStop(x, z, r));
