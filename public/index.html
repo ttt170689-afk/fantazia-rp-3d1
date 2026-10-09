@@ -8380,7 +8380,13 @@ function createBuilding(x, z, w, h, d, color, name, type) {
   // Основное здание
   const geo = new THREE.BoxGeometry(w, h, d);
   const tall = h >= 30;
-  const mat = new THREE.MeshLambertMaterial({ color: _cityFacadeColor(color, tall), map: _facadeTexture(w, h, d) });
+  const PAL = [0xd9cbb0, 0xb8c4cc, 0xe0d2c1, 0xa9b8a6, 0xc9b5a5, 0x9fb0c4, 0xd6c7a8, 0xb9a9c9];
+  const palSeed = ((name ? name.length : 0) + Math.round(w * 3) + Math.round(h)) % PAL.length;
+  const isShopB = !!type && /^shop_/.test(type);
+  // Магазины — с витриной-текстурой; остальные здания — однотонные светлые фасады (без повторяющейся сетки окон)
+  const mat = isShopB
+    ? new THREE.MeshLambertMaterial({ color: _cityFacadeColor(color, tall), map: _facadeTexture(w, h, d) })
+    : new THREE.MeshLambertMaterial({ color: PAL[palSeed] });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.y = h/2;
   mesh.castShadow = false;  // ОПТИМИЗАЦИЯ: выкл тени у зданий
@@ -8428,7 +8434,13 @@ function createBuilding(x, z, w, h, d, color, name, type) {
     const seed = ((name ? name.length : 0) + Math.round(w * 3) + Math.round(h)) % 5;
     const ac = new THREE.MeshLambertMaterial({ color: 0xbfc5cc });
     const pipe = new THREE.MeshLambertMaterial({ color: 0x59606a });
-    const topY = h + 0.5;
+    let topY = h + 0.5;
+    if (h >= 14) {                                      // ступенчатая надстройка
+      const sbH = Math.max(3, h * 0.14);
+      const sb = new THREE.Mesh(new THREE.BoxGeometry(w * 0.68, sbH, d * 0.68), new THREE.MeshLambertMaterial({ color: PAL[(palSeed + 3) % PAL.length] }));
+      sb.position.set(0, h + sbH / 2, 0); sb.castShadow = false; group.add(sb);
+      topY = h + sbH + 0.5;
+    }
     const units = h >= 12 ? 2 + (seed % 2) : 1;
     for (let k = 0; k < units; k++) {
       const u = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.1, 1.4), ac);
