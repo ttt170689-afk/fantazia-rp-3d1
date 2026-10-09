@@ -3364,21 +3364,44 @@ document.addEventListener('click', function(e){
   </div>
 </div>
 
-<!-- Инвентарь (улучшенный) -->
+<!-- Инвентарь (переделан: вкладки, сетка слева, детали справа) -->
+<style id="invRedesignCss">
+#inventoryModal .modal { min-width: min(900px, 94vw); max-width: 94vw; }
+#inventoryModal h2 { margin-bottom: 10px; }
+#inventoryModal .inv-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+#inventoryModal .inv-tab { padding: 6px 12px; border-radius: 10px; font-size: 13px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); cursor: pointer; color: #bbb; }
+#inventoryModal .inv-tab.active { background: rgba(108,92,231,.4); border-color: #6c5ce7; color: #fff; }
+#inventoryModal .inv-body { display: grid; grid-template-columns: minmax(0,1fr) 270px; gap: 14px; align-items: start; }
+#inventoryModal .inv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; max-height: 420px; overflow-y: auto; padding: 2px; }
+#inventoryModal .inv-slot { position: relative; background: rgba(20,22,40,.85); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 10px 6px 8px; text-align: center; cursor: pointer; transition: transform .12s, border-color .12s; min-height: 98px; }
+#inventoryModal .inv-slot:hover { transform: translateY(-2px); border-color: rgba(162,155,254,.6); }
+#inventoryModal .inv-slot.equipped { border-color: #00b894; }
+#inventoryModal .inv-slot .is-icon { font-size: 28px; line-height: 1.1; }
+#inventoryModal .inv-slot .is-name { font-size: 11px; color: #ddd; margin-top: 4px; line-height: 1.2; }
+#inventoryModal .inv-slot .is-rarity { font-size: 10px; margin-top: 2px; }
+#inventoryModal .inv-slot .is-qty { position: absolute; top: 4px; right: 6px; font-size: 11px; color: #fff; background: rgba(0,0,0,.45); border-radius: 6px; padding: 0 5px; }
+#inventoryModal .inv-detail { background: rgba(14,16,30,.9); border: 1px solid rgba(255,255,255,.08); border-radius: 14px; padding: 14px; min-height: 240px; }
+#inventoryModal .inv-detail .modal-btn { border-radius: 10px; padding: 8px 10px; }
+@media (max-width: 760px) { #inventoryModal .inv-body { grid-template-columns: 1fr; } #inventoryModal .inv-grid { max-height: 260px; } }
+</style>
 <div class="modal-overlay" id="inventoryModal">
-  <div class="modal" style="min-width:540px">
+  <div class="modal">
     <button class="modal-close" onclick="closeModal('inventoryModal')">&times;</button>
     <h2>🎒 Инвентарь</h2>
     <div class="inv-tabs" id="invTabs">
-      <div class="inv-tab active" onclick="setInvTab('all')">Все</div>
-      <div class="inv-tab" onclick="setInvTab('food')">🍕 Еда</div>
-      <div class="inv-tab" onclick="setInvTab('clothing')">👕 Одежда</div>
-      <div class="inv-tab" onclick="setInvTab('accessory')">💎 Аксессуары</div>
-      <div class="inv-tab" onclick="setInvTab('petfood')">🐾 Питомцы</div>
+      <div class="inv-tab active" data-tab="all" onclick="setInvTab('all')">Все</div>
+      <div class="inv-tab" data-tab="clothing" onclick="setInvTab('clothing')">👕 Одежда</div>
+      <div class="inv-tab" data-tab="accessory" onclick="setInvTab('accessory')">💎 Аксессуары</div>
+      <div class="inv-tab" data-tab="emote" onclick="setInvTab('emote')">💃 Эмоты</div>
+      <div class="inv-tab" data-tab="cosmetic" onclick="setInvTab('cosmetic')">✨ Косметика</div>
+      <div class="inv-tab" data-tab="food" onclick="setInvTab('food')">🍕 Еда</div>
+      <div class="inv-tab" data-tab="petfood" onclick="setInvTab('petfood')">🐾 Питомцы</div>
     </div>
-    <div class="inv-grid" id="inventoryGrid"></div>
-    <div class="inv-detail" id="invDetail">
-      <p style="color:#555;font-size:13px;text-align:center;margin-top:20px">Нажмите на предмет для подробностей</p>
+    <div class="inv-body">
+      <div class="inv-grid" id="inventoryGrid"></div>
+      <div class="inv-detail" id="invDetail">
+        <p style="color:#666;font-size:13px;text-align:center;margin-top:30px">Выберите предмет слева</p>
+      </div>
     </div>
     <div style="margin-top:10px;color:#666;font-size:12px">Всего предметов: <span id="invCount">0</span></div>
   </div>
@@ -15887,8 +15910,7 @@ let currentInvTab = 'all';
 function setInvTab(tab) {
   currentInvTab = tab;
   document.querySelectorAll('.inv-tab').forEach(t => t.classList.remove('active'));
-  const idx = ['all','food','clothing','accessory','petfood'].indexOf(tab);
-  document.querySelectorAll('.inv-tab')[idx]?.classList.add('active');
+  document.querySelectorAll('#invTabs .inv-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   renderInventory();
 }
 
