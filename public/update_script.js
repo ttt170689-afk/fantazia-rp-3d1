@@ -27,6 +27,8 @@
     },
     render() {
       let panel = $('#questPanel');
+      // Видимость панели задаёт настройка «Трекер квестов» / «Минимальный интерфейс»
+      if (window.applyHudVisibility) setTimeout(window.applyHudVisibility, 0);
       if (!panel) {
         // Создаём панель, если её нет в HTML
         panel = document.createElement('div');
