@@ -16001,6 +16001,148 @@ function buyItem(shopType, itemId) {
 
 // --- Инвентарь (улучшенный) ---
 let currentInvTab = 'all';
+
+// ===== КОСМЕТИКА ПО СЛОТАМ: голова, горло, плечи, спина, ноги =====
+// Детали заданы в локальных координатах кости (суставе). Для правой стороны (кость rightXxx) X зеркалится автоматически.
+const COSMETIC_SLOTS = { head: 'Голова', neck: 'Горло', shoulders: 'Плечи', back: 'Спина', legs: 'Ноги' };
+(function () {
+  const ring = (n, r, y, mk) => { const out = []; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; out.push(mk(Math.cos(a) * r, y, Math.sin(a) * r)); } return out; };
+  const chainLinks = ring(12, 0.25, -0.12, (x, y, z) => ['sphere', [0.025, 6, 6], [x, y, z], [0, 0, 0], 0xffd700, 0.4]);
+  window.COSMETICS = [
+    // ГОЛОВА (кость head)
+    { id: 'hd_headphones', name: 'Наушники', emoji: '🎧', slot: 'head', bones: ['head'], parts: [
+      ['torus', [0.44, 0.04, 8, 24, Math.PI], [0, 0.22, 0], [0, 0, 0], 0x2d3436],
+      ['cyl', [0.12, 0.12, 0.09, 12], [0.44, 0.02, 0], [0, 0, Math.PI / 2], 0x2d3436],
+      ['cyl', [0.12, 0.12, 0.09, 12], [-0.44, 0.02, 0], [0, 0, Math.PI / 2], 0x2d3436]] },
+    { id: 'hd_ninja', name: 'Маска ниндзя', emoji: '🥷', slot: 'head', bones: ['head'], parts: [
+      ['box', [0.5, 0.24, 0.14], [0, -0.1, 0.3], [0, 0, 0], 0x1e272e]] },
+    { id: 'hd_antenna', name: 'Антенны', emoji: '📡', slot: 'head', bones: ['head'], parts: [
+      ['cyl', [0.012, 0.012, 0.5, 6], [0.2, 0.6, 0], [0, 0, 0.12], 0x95a5a6],
+      ['sphere', [0.05, 8, 8], [0.25, 0.86, 0], [0, 0, 0], 0x00ffff, 1.2],
+      ['cyl', [0.012, 0.012, 0.4, 6], [-0.2, 0.5, 0], [0, 0, -0.12], 0x95a5a6],
+      ['sphere', [0.05, 8, 8], [-0.25, 0.7, 0], [0, 0, 0], 0xff00ff, 1.2]] },
+    { id: 'hd_hood', name: 'Капюшон', emoji: '🧥', slot: 'head', bones: ['head'], parts: [
+      ['sphere', [0.44, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2], [0, 0.02, -0.02], [0, 0, 0], 0x2d3436, 0, [1, 1, 1.05]]] },
+    // ГОРЛО (кость head, ниже головы)
+    { id: 'nk_scarf', name: 'Шарф', emoji: '🧣', slot: 'neck', bones: ['head'], parts: [
+      ['torus', [0.27, 0.07, 8, 20], [0, -0.16, 0], [Math.PI / 2, 0, 0], 0xd63031]] },
+    { id: 'nk_chain', name: 'Золотая цепь', emoji: '📿', slot: 'neck', bones: ['head'], parts: chainLinks },
+    { id: 'nk_bow', name: 'Бабочка', emoji: '🎀', slot: 'neck', bones: ['head'], parts: [
+      ['box', [0.08, 0.06, 0.04], [0, -0.14, 0.25], [0, 0, 0], 0xd63031],
+      ['cone', [0.07, 0.09, 8], [0.06, -0.14, 0.25], [0, 0, Math.PI / 2], 0xd63031],
+      ['cone', [0.07, 0.09, 8], [-0.06, -0.14, 0.25], [0, 0, -Math.PI / 2], 0xd63031]] },
+    { id: 'nk_collar', name: 'Воротник', emoji: '🦺', slot: 'neck', bones: ['head'], parts: [
+      ['cyl', [0.24, 0.26, 0.16, 14, 1, true], [0, -0.14, 0], [0, 0, 0], 0x2d3436]] },
+    // ПЛЕЧИ (кости leftArm / rightArm, сустав плеча)
+    { id: 'sh_spikes', name: 'Шипованные наплечники', emoji: '🦔', slot: 'shoulders', bones: ['leftArm', 'rightArm'], parts: [
+      ['sphere', [0.2, 12, 10], [0, 0, 0], [0, 0, 0], 0x636e72, 0, [1, 0.7, 1]],
+      ['cone', [0.05, 0.16, 6], [0, 0.2, 0], [0, 0, 0], 0xdfe6e9],
+      ['cone', [0.05, 0.16, 6], [0.1, 0.16, 0.05], [0, 0, -0.4], 0xdfe6e9]] },
+    { id: 'sh_neon', name: 'Неоновые наплечники', emoji: '💠', slot: 'shoulders', bones: ['leftArm', 'rightArm'], parts: [
+      ['sphere', [0.2, 10, 8], [0, 0, 0], [0, 0, 0], 0x2d3436, 0, [1, 0.6, 1]],
+      ['box', [0.36, 0.08, 0.3], [0, 0.1, 0], [0, 0, 0], 0x00cec9, 1.4]] },
+    { id: 'sh_gold', name: 'Золотые эполеты', emoji: '🥇', slot: 'shoulders', bones: ['leftArm', 'rightArm'], parts: [
+      ['box', [0.34, 0.07, 0.26], [0, 0.12, 0], [0, 0, 0], 0xffd700, 0.3],
+      ['sphere', [0.12, 10, 8], [0, 0.06, 0], [0, 0, 0], 0xffd700, 0.3, [1, 0.5, 1]]] },
+    { id: 'sh_cannons', name: 'Пушки на плечах', emoji: '🔫', slot: 'shoulders', bones: ['leftArm', 'rightArm'], parts: [
+      ['cyl', [0.06, 0.07, 0.34, 8], [0, 0.15, 0.08], [Math.PI / 2, 0, 0], 0x2d3436],
+      ['sphere', [0.09, 8, 8], [0, 0.15, 0], [0, 0, 0], 0x2d3436]] },
+    // СПИНА (кость spine, верх спины — локально выше сустава)
+    { id: 'bk_cape', name: 'Плащ', emoji: '🦸', slot: 'back', bones: ['spine'], parts: [
+      ['plane', [0.72, 1.0], [0, 0.55, -0.27], [0, Math.PI, 0], 0xc0392b]] },
+    { id: 'bk_backpack', name: 'Рюкзак', emoji: '🎒', slot: 'back', bones: ['spine'], parts: [
+      ['box', [0.5, 0.6, 0.22], [0, 0.55, -0.3], [0, 0, 0], 0x2d3436],
+      ['box', [0.3, 0.2, 0.05], [0, 0.6, -0.42], [0, 0, 0], 0x636e72]] },
+    { id: 'bk_jetpack', name: 'Джетпак', emoji: '🚀', slot: 'back', bones: ['spine'], parts: [
+      ['box', [0.36, 0.46, 0.16], [0, 0.6, -0.3], [0, 0, 0], 0x7f8c8d],
+      ['cyl', [0.07, 0.09, 0.42, 8], [0.12, 0.55, -0.42], [0, 0, 0], 0x95a5a6],
+      ['cyl', [0.07, 0.09, 0.42, 8], [-0.12, 0.55, -0.42], [0, 0, 0], 0x95a5a6],
+      ['cone', [0.07, 0.2, 8], [0.12, 0.18, -0.42], [Math.PI, 0, 0], 0xff7b00, 1.5],
+      ['cone', [0.07, 0.2, 8], [-0.12, 0.18, -0.42], [Math.PI, 0, 0], 0xff7b00, 1.5]] },
+    { id: 'bk_wings', name: 'Крылья ангела', emoji: '🪽', slot: 'back', bones: ['spine'], parts: [
+      ['plane', [0.9, 0.7], [0.42, 0.7, -0.28], [0, 0.35, 0], 0xf5f6fa, 0.25],
+      ['plane', [0.9, 0.7], [-0.42, 0.7, -0.28], [0, -0.35, 0], 0xf5f6fa, 0.25]] },
+    // НОГИ (кости leftLeg / rightLeg — бедро, leftKnee / rightKnee — колено)
+    { id: 'lg_stripes', name: 'Неон-полосы', emoji: '⚡', slot: 'legs', bones: ['leftLeg', 'rightLeg'], parts: [
+      ['box', [0.2, 0.05, 0.2], [0, -0.25, 0.12], [0, 0, 0], 0x00ffff, 1.3]] },
+    { id: 'lg_cargo', name: 'Карго-карманы', emoji: '👖', slot: 'legs', bones: ['leftLeg', 'rightLeg'], parts: [
+      ['box', [0.18, 0.2, 0.06], [0, -0.3, 0.14], [0, 0, 0], 0x6b705c],
+      ['box', [0.2, 0.04, 0.08], [0, -0.18, 0.15], [0, 0, 0], 0x4b5139]] },
+    { id: 'lg_knee_pads', name: 'Наколенники', emoji: '🛡️', slot: 'legs', bones: ['leftKnee', 'rightKnee'], parts: [
+      ['sphere', [0.11, 10, 8], [0, 0, 0.06], [0, 0, 0], 0x2d3436, 0, [1, 0.8, 0.6]]] },
+    { id: 'lg_led_knee', name: 'Светящиеся колени', emoji: '💡', slot: 'legs', bones: ['leftKnee', 'rightKnee'], parts: [
+      ['sphere', [0.07, 8, 8], [0, 0, 0.1], [0, 0, 0], 0x00ff88, 1.6]] }
+  ];
+})();
+
+function _cosMesh(p, mirror) {
+  const [kind, args, pos, rot, color, emi, scale] = p;
+  let geo;
+  if (kind === 'box') geo = new THREE.BoxGeometry(...args);
+  else if (kind === 'sphere') geo = new THREE.SphereGeometry(...args);
+  else if (kind === 'cyl') geo = new THREE.CylinderGeometry(...args);
+  else if (kind === 'torus') geo = new THREE.TorusGeometry(...args);
+  else if (kind === 'cone') geo = new THREE.ConeGeometry(...args);
+  else geo = new THREE.PlaneGeometry(...args);
+  const mat = new THREE.MeshLambertMaterial({ color, emissive: emi ? color : 0x000000, emissiveIntensity: emi || 0, side: THREE.DoubleSide });
+  const m = new THREE.Mesh(geo, mat);
+  const sx = mirror ? -1 : 1;
+  m.position.set(pos[0] * sx, pos[1], pos[2]);
+  m.rotation.set(rot[0], rot[1] * sx, rot[2] * sx);
+  if (scale) m.scale.set(scale[0], scale[1], scale[2]);
+  return m;
+}
+function _cosGet() { try { return JSON.parse(localStorage.getItem('fz_cosm')) || {}; } catch (e) { return {}; } }
+// Пересобирает косметику на модели персонажа (только если набор или кости изменились)
+function cosSync(mesh, force) {
+  if (!mesh || !window.THREE || !window.COSMETICS) return;
+  const eq = _cosGet(), head = mesh.getObjectByName('head');
+  const sig = JSON.stringify(eq) + '|' + (head ? head.uuid : '-');
+  if (!force && mesh.userData.cosSig === sig) return;
+  mesh.userData.cosSig = sig;
+  (mesh.userData.cosGroups || []).forEach(g => { if (g.parent) g.parent.remove(g); });
+  mesh.userData.cosGroups = [];
+  Object.keys(eq).forEach(slotKey => {
+    const item = COSMETICS.find(c => c.id === eq[slotKey]); if (!item) return;
+    item.bones.forEach(bn => {
+      const bone = mesh.getObjectByName(bn); if (!bone) return;
+      const g = new THREE.Group(); g.name = 'cos_' + item.id;
+      const mirror = bn.indexOf('right') === 0;
+      item.parts.forEach(p => g.add(_cosMesh(p, mirror)));
+      bone.add(g); mesh.userData.cosGroups.push(g);
+    });
+  });
+}
+function toggleCosmetic(id) {
+  const item = COSMETICS.find(c => c.id === id); if (!item) return;
+  const eq = _cosGet();
+  if (eq[item.slot] === id) delete eq[item.slot]; else eq[item.slot] = id;
+  localStorage.setItem('fz_cosm', JSON.stringify(eq));
+  if (localPlayer && localPlayer.mesh) cosSync(localPlayer.mesh, true);
+}
+function renderCosmeticTab(grid, detail, countEl) {
+  const eq = _cosGet();
+  if (countEl) countEl.textContent = COSMETICS.length;
+  COSMETICS.forEach(item => {
+    const on = eq[item.slot] === item.id;
+    const card = document.createElement('div');
+    card.className = 'inv-slot' + (on ? ' equipped' : '');
+    card.innerHTML = `<div style="font-size:22px">${item.emoji}</div><div style="font-size:11px">${item.name}</div><div style="font-size:10px;color:#a29bfe">${COSMETIC_SLOTS[item.slot]}</div>`;
+    card.onclick = () => {
+      toggleCosmetic(item.id);
+      renderCosmeticTab(grid, detail, countEl);
+      if (detail) showCosmeticDetail(item, detail);
+    };
+    grid.appendChild(card);
+  });
+}
+function showCosmeticDetail(item, detail) {
+  const on = _cosGet()[item.slot] === item.id;
+  detail.innerHTML = `<div style="text-align:center;padding:10px"><div style="font-size:40px">${item.emoji}</div><div style="font-weight:bold;margin:6px 0">${item.name}</div><div style="color:#a29bfe;font-size:12px;margin-bottom:10px">Слот: ${COSMETIC_SLOTS[item.slot]}</div><div style="color:#888;font-size:12px">${on ? 'Надето. Нажмите на карточку, чтобы снять.' : 'Нажмите на карточку, чтобы надеть (заменит предмет в этом слоте).'}</div></div>`;
+}
+// Синхронизация своей косметики раз в секунду (кости могут появиться после загрузки модели)
+setInterval(() => { if (localPlayer && localPlayer.mesh) cosSync(localPlayer.mesh); }, 1000);
+
 function setInvTab(tab) {
   currentInvTab = tab;
   document.querySelectorAll('.inv-tab').forEach(t => t.classList.remove('active'));
@@ -16028,6 +16170,7 @@ function renderInventory() {
   grid.innerHTML = '';
   if (detail) detail.innerHTML = '<p style="color:#555;font-size:13px;text-align:center;padding:20px 0">Нажмите на предмет</p>';
 
+  if (currentInvTab === 'cosmetic') { renderCosmeticTab(grid, detail, countEl); return; }
   // Merge server inventory + box drops
   const serverInv = (localPlayer && localPlayer.inventory) || [];
   const boxInv = _fzBoxInv();
