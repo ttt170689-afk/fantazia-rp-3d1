@@ -12992,6 +12992,9 @@ function updateAccessory3D(mesh, accId) {
   // Удалить старый аксессуар
   while (accGroup.children.length) accGroup.remove(accGroup.children[0]);
   if (!accId || accId === 'none') return;
+  // Координаты аксессуаров заданы под голову на y≈2.35. У модели SuperRig голова (кость head) на y≈2.02,
+  // поэтому группа, прикреплённая к кости головы, сдвигается на -2.35 (в локальных координатах головы).
+  accGroup.position.set(0, (accGroup.parent && accGroup.parent.name === 'head') ? -2.35 : 0, 0);
 
   // Голова персонажа находится на y≈2.35, размер ≈ 0.7
   // Волосы на y≈2.75-2.9
