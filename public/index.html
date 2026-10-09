@@ -8101,36 +8101,113 @@ function initThreeJS() {
 }
 
 // =================== ГЕНЕРАТОР ГОРОДА ===================
+// ───────── ОПТИМИЗАЦИЯ ГОРОДА: объединение статичного декора в крупные меши (меньше draw calls) ─────────
+// Трогаем ТОЛЬКО декор: дороги, деревья, фонари, мелкие детали. Здания, машины, NPC, вода, ветряки
+// и всё анимируемое не трогаем. Меши делятся по материалу и по квадратам 64 м, чтобы работал frustum culling.
+const _MERGE_CELL = 64;
+function _mergeMatKey(m) {
+  if (!m || Array.isArray(m) || m.vertexColors) return null;
+  if (Object.keys(m.userData || {}).length) return null;
+  if (Object.prototype.hasOwnProperty.call(m, 'onBeforeCompile')) return null; // свой шейдер — не трогаем
+  if (!(m.isMeshLambertMaterial || m.isMeshBasicMaterial || m.isMeshPhongMaterial)) return null;
+  return [m.type, m.color ? m.color.getHex() : 0, m.emissive ? m.emissive.getHex() : 0, m.emissiveIntensity,
+          m.opacity, m.transparent, m.side, m.depthWrite, m.fog, m.flatShading, m.map ? m.map.uuid : '-'].join('|');
+}
+function mergeStaticObjects(roots, label) {
+  if (!roots.length) return [];
+  scene.updateMatrixWorld(true);
+  const noMerge = new Set(buildings.map(b => b.mesh).filter(Boolean)); // группы зданий не трогаем
+  const buckets = new Map();
+  const visit = (o) => {
+    if (noMerge.has(o)) return;
+    if (o.isMesh && !o.children.length && o.visible && o.geometry && o.geometry.attributes.position
+        && !Object.keys(o.userData || {}).length) {
+      const key = _mergeMatKey(o.material);
+      if (key) {
+        const e = o.matrixWorld.elements;
+        const cell = Math.floor(e[12] / _MERGE_CELL) + ',' + Math.floor(e[14] / _MERGE_CELL);
+        const bk = key + '|' + cell + '|' + o.castShadow + '|' + o.receiveShadow + '|' + o.renderOrder;
+        if (!buckets.has(bk)) buckets.set(bk, []);
+        buckets.get(bk).push(o);
+      }
+    }
+    o.children.forEach(visit);
+  };
+  roots.forEach(visit);
+  const out = []; let before = 0, after = 0;
+  buckets.forEach(list => {
+    if (list.length < 2) return;
+    const parts = list.map(o => { let g = o.geometry.clone(); if (g.index) g = g.toNonIndexed(); g.applyMatrix4(o.matrixWorld); return g; });
+    let total = 0; parts.forEach(g => total += g.attributes.position.count);
+    const pos = new Float32Array(total * 3), nor = new Float32Array(total * 3), uv = new Float32Array(total * 2);
+    let off = 0;
+    parts.forEach(g => {
+      if (!g.attributes.normal) g.computeVertexNormals();
+      const n = g.attributes.position.count;
+      pos.set(g.attributes.position.array, off * 3);
+      nor.set(g.attributes.normal.array, off * 3);
+      if (g.attributes.uv) uv.set(g.attributes.uv.array, off * 2);
+      off += n;
+    });
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+    geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    const ref = list[0];
+    const mesh = new THREE.Mesh(geo, ref.material);
+    mesh.castShadow = ref.castShadow; mesh.receiveShadow = ref.receiveShadow; mesh.renderOrder = ref.renderOrder;
+    mesh.name = 'merged_' + label;
+    scene.add(mesh); out.push(mesh);
+    list.forEach(o => { if (o.parent) o.parent.remove(o); });
+    before += list.length; after += 1;
+  });
+  window._cityMergeLog = window._cityMergeLog || [];
+  window._cityMergeLog.push({ label, meshes: before, merged: after });
+  return out;
+}
+// Оборачивает функцию построения декора: объединяет только то, что она добавила в сцену
+function _mergeDecor(fn, label, isDetails) {
+  const before = new Set(scene.children);
+  const ret = fn();
+  const added = scene.children.filter(c => !before.has(c));
+  const merged = mergeStaticObjects(added, label);
+  if (isDetails) {
+    const kept = (window._cityDetails || []).filter(o => o.parent === scene && merged.indexOf(o) < 0);
+    window._cityDetails = merged.concat(kept);
+  }
+  return ret;
+}
+
 function buildCity() {
-  buildRoads();
+  _mergeDecor(buildRoads, 'roads');
   buildCentralPlaza();
-  buildShoppingDistrict();
-  buildResidentialArea();
-  buildEntertainmentDistrict();
-  buildBusinessDistrict();
-  buildPark();
-  buildNorthernDistrict();
-  buildSouthernIndustrialZone();
-  buildEasternDistrict();
-  buildWesternVillage();
+  _mergeDecor(buildShoppingDistrict, 'shopping');
+  _mergeDecor(buildResidentialArea, 'residential');
+  _mergeDecor(buildEntertainmentDistrict, 'entertainment');
+  _mergeDecor(buildBusinessDistrict, 'business');
+  _mergeDecor(buildPark, 'park');
+  _mergeDecor(buildNorthernDistrict, 'north');
+  _mergeDecor(buildSouthernIndustrialZone, 'industrial');
+  _mergeDecor(buildEasternDistrict, 'east');
+  _mergeDecor(buildWesternVillage, 'west');
   // ── DLC: GRAND MALL SECRET ──
   buildAbandonedFactory();
-  buildBiomes();
+  _mergeDecor(buildBiomes, 'biomes');
   // --- НОВЫЕ ЗОНЫ ---
-  buildMegaSkyscraperDistrict();
-  buildDesert();
-  buildCaves();
+  _mergeDecor(buildMegaSkyscraperDistrict, 'megasky');
+  _mergeDecor(buildDesert, 'desert');
+  _mergeDecor(buildCaves, 'caves');
   buildBridges();
-  buildFarNorthCity();
-  buildFarEastCity();
-  buildFarWestCity();
-  buildFarSouthCity();
+  _mergeDecor(buildFarNorthCity, 'farN');
+  _mergeDecor(buildFarEastCity, 'farE');
+  _mergeDecor(buildFarWestCity, 'farW');
+  _mergeDecor(buildFarSouthCity, 'farS');
   removeBuildingsOnRoads();
   buildNPCPopulation();
-  addStreetLights();
-  addCityDetails(); addSkyLife(); if (SETTINGS.perf) setTimeout(applyPerfMode, 50); if (SETTINGS.radar === false) { const mm = document.getElementById('minimap'); if (mm) mm.style.display = 'none'; }
-  addTrees();
-  addDecorations();
+  _mergeDecor(addStreetLights, 'lights');
+  _mergeDecor(addCityDetails, 'details', true); addSkyLife(); if (SETTINGS.perf) setTimeout(applyPerfMode, 50); if (SETTINGS.radar === false) { const mm = document.getElementById('minimap'); if (mm) mm.style.display = 'none'; }
+  _mergeDecor(addTrees, 'trees');
+  _mergeDecor(addDecorations, 'decor');
 }
 
 // ── ГОРОД: читаемые фасады. Цвета высоток не чёрные, окна — одна текстура на фасад (меньше мешей и draw calls) ──
