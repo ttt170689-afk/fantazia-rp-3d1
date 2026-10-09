@@ -26,6 +26,9 @@ var SR = global.SuperRig = {
   // (от прошлых сессий), он больше НЕ выключает новые анимации
   enabled: localStorage.getItem('fz_superrig2') !== '0',
   url: 'exports/player_super.glb',
+  // клипы «держит фонарик / меч» и «подбирает» (сделаны в Blender: tools/blender/build_hold_anims.py)
+  holdUrl: 'exports/player_hold.glb',
+  holdClips: [],
   src: null,
   clips: []
 };
@@ -62,10 +65,17 @@ var MAP = {
   talkSerious:'ANIM_Talk_Serious_Loop',
   talkExcited:'ANIM_Talk_Excited_Loop',
   listen:    'ANIM_Listen_Loop',
-  look:      'ANIM_Look_Around'
+  look:      'ANIM_Look_Around',
+  // предметы в руках (клипы из player_hold.glb)
+  hold_flash:'HOLD_FLASH',
+  hold_sword:'HOLD_SWORD',
+  pick_flash:'PICK_FLASH',
+  pick_sword:'PICK_SWORD'
 };
 // одноразовые (проигрываются один раз и замирают на последнем кадре)
-var ONCE = { jump: 1, land: 1, attack: 1, hit: 1, hurt: 1, victory: 1, point: 1, pickup: 1, sit: 1, death: 1, die: 1, look: 1 };
+var ONCE = { jump: 1, land: 1, attack: 1, hit: 1, hurt: 1, victory: 1, point: 1, pickup: 1, sit: 1, death: 1, die: 1, look: 1, pick_flash: 1, pick_sword: 1 };
+// подбор предмета: после окончания клипа персонаж переходит в позу удержания, а не повторяет подбор
+var PICKS = { pick_flash: 1, pick_sword: 1 };
 
 // --- 16 эмоций из меню «Танцы» -> клипы пака 3.2 ---
 // clip  — что играть, speed — скорость клипа,
@@ -130,6 +140,21 @@ function tint(model, appearance) {
 }
 
 // плавное переключение клипа (как у SuperRig-монстра в игре)
+// какой предмет в руке у ЛОКАЛЬНОГО игрока: 2 — фонарик, 3 — меч (слоты хотбара).
+// Заодно включает/выключает меч на модели. У других игроков предметов не видно (не синхронизируются).
+function heldClipName(ch) {
+  var ud = ch && ch.userData;
+  if (!ud) return null;
+  var local = typeof localPlayer !== 'undefined' && !!localPlayer && localPlayer.mesh === ch;
+  var slot = (local && typeof ITEMS !== 'undefined') ? ITEMS.slot : 0;
+  var hasF = (typeof DLC !== 'undefined') && !!DLC.hasFlashlight;
+  var hasS = (typeof DLC !== 'undefined') && !!DLC.hasSword;
+  if (ud._swordMesh) ud._swordMesh.visible = !!(slot === 3 && hasS);
+  if (slot === 2 && hasF && ud.actions && ud.actions.HOLD_FLASH) return 'hold_flash';
+  if (slot === 3 && hasS && ud.actions && ud.actions.HOLD_SWORD) return 'hold_sword';
+  return null;
+}
+
 function playClip(ud, clipName, once, fade) {
   var a = ud.actions[clipName];
   if (!a) return;
@@ -226,6 +251,19 @@ SR.build = function (base, appearance) {
   ud.mixer = new THREE.AnimationMixer(model);
   ud.actions = {};
   SR.src.animations.forEach(function (c) { ud.actions[c.name] = ud.mixer.clipAction(c); });
+  (SR.holdClips || []).forEach(function (c) { ud.actions[c.name] = ud.mixer.clipAction(c); });
+  // меч в правой руке (видим только когда он выбран в слоте 3 у локального игрока)
+  try {
+    var swHand = model.getObjectByName('rightHand');
+    if (swHand && typeof makeSwordModel === 'function') {
+      var sw = makeSwordModel();
+      sw.position.set(0, 0.02, 0.03);
+      sw.rotation.set(Math.PI / 2, 0, 0);   // клинок вперёд от кисти (локальная Z кости = вперёд)
+      sw.visible = false;
+      swHand.add(sw);
+      ud._swordMesh = sw;
+    }
+  } catch (e) { console.warn('[SuperRig] меч не прикреплён:', e); }
   ud.curAnim = null;
   ud._srLast = 0;
   playClip(ud, 'ANIM_Idle_Loop', false, 0);
@@ -250,6 +288,7 @@ SR.animate = function (ch, animation, delta, emote) {
 
   var name = animation || 'idle';
   ud._srReq = name;                 // что просит игра (для отладки: SuperRig.now())
+  var heldName = heldClipName(ch);  // фонарик/меч в руке у локального игрока (и видимость меча)
   // персонаж пишет в чат — каждый раз новая разговорная анимация из пака 3.2
   if ((name === 'idle' || name === 'talk') && ud.mood === 'talk') {
     if (ud._talkPrev !== 'talk') ud._talkKind = ['talk', 'talkSerious', 'talkExcited'][(Math.random() * 3) | 0];
@@ -258,6 +297,20 @@ SR.animate = function (ch, animation, delta, emote) {
     name = 'listen';                // рядом кто-то написал в чат — персонаж слушает
   }
   ud._talkPrev = ud.mood;
+
+  // подбор предмета: клип играется один раз, после него персонаж держит предмет
+  if (PICKS[name]) {
+    if (!ud.actions[MAP[name]]) name = 'pickup';          // клипа нет (GLB не загрузился) — старый подбор
+    else if (ud._pickDone === name) name = 'idle';
+    else {
+      var pk = ud.actions[MAP[name]];
+      if (ud.curAnim === pk && pk.time >= pk.getClip().duration - 0.05) { ud._pickDone = name; name = 'idle'; }
+    }
+  } else {
+    ud._pickDone = null;
+  }
+  // в руке предмет — в покое стоим с ним (ходьба пока обычная)
+  if (name === 'idle' && heldName) name = heldName;
 
   // ----- реальная скорость персонажа (единиц в секунду) -----
   var pos = ch.position, moved = 0;
@@ -548,17 +601,31 @@ function hook() {
   console.log('[SuperRig] анимации игрока подключены: ' + SR.clips.length + ' клипов');
 }
 
+function loadHold(done) {
+  new THREE.GLTFLoader().load(SR.holdUrl, function (h) {
+    SR.holdClips = h.animations;
+    console.log('[SuperRig] player_hold.glb загружен: ' + h.animations.map(function (c) { return c.name; }).join(', '));
+    done();
+  }, undefined, function (err) {
+    console.warn('[SuperRig] player_hold.glb не загрузился — фонарик/меч без своих поз', err && err.message ? err.message : '');
+    done();
+  });
+}
+
 function load() {
   if (!SR.enabled) { console.log('[SuperRig] выключен (SuperRig.on() — включить)'); return; }
   if (!global.THREE || !THREE.GLTFLoader || !THREE.SkeletonUtils) { setTimeout(load, 250); return; }
   new THREE.GLTFLoader().load(SR.url, function (g) {
     SR.src = g;
     SR.clips = g.animations.map(function (c) { return c.name; });
-    SR.ready = true;
-    SR._tries = 0;
-    console.log('[SuperRig] player_super.glb загружен: ' + g.animations.length + ' анимаций');
-    hook();
-    var iv = setInterval(function () { hook(); if (SR._hooked) clearInterval(iv); }, 300);
+    // второй файл — клипы с предметами; если его нет, игра работает без них
+    loadHold(function () {
+      SR.ready = true;
+      SR._tries = 0;
+      console.log('[SuperRig] player_super.glb загружен: ' + g.animations.length + ' анимаций');
+      hook();
+      var iv = setInterval(function () { hook(); if (SR._hooked) clearInterval(iv); }, 300);
+    });
   }, undefined, function (err) {
     // не сдаёмся с первого раза: сеть/прокси могли моргнуть
     SR._tries = (SR._tries || 0) + 1;
