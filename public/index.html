@@ -8423,6 +8423,27 @@ function createBuilding(x, z, w, h, d, color, name, type) {
     group.add(sign);
   }
 
+  // Крыша: кондиционеры, трубы, антенна — разные у каждого здания (видно сверху и издалека)
+  {
+    const seed = ((name ? name.length : 0) + Math.round(w * 3) + Math.round(h)) % 5;
+    const ac = new THREE.MeshLambertMaterial({ color: 0xbfc5cc });
+    const pipe = new THREE.MeshLambertMaterial({ color: 0x59606a });
+    const topY = h + 0.5;
+    const units = h >= 12 ? 2 + (seed % 2) : 1;
+    for (let k = 0; k < units; k++) {
+      const u = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.1, 1.4), ac);
+      u.position.set(-w * 0.2 + k * (w * 0.4), topY + 0.55, (seed % 2 ? -1 : 1) * d * 0.2); u.castShadow = false; group.add(u);
+    }
+    if (seed !== 1) {                                   // труба
+      const pp = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 2.4, 6), pipe);
+      pp.position.set(w * 0.3, topY + 1.2, -d * 0.25); pp.castShadow = false; group.add(pp);
+    }
+    if (h >= 22 && seed >= 3) {                         // антенна у высоток
+      const an = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 6, 4), pipe);
+      an.position.set(0, topY + 3, 0); an.castShadow = false; group.add(an);
+    }
+  }
+
   // Витрина на первом этаже и цветной козырёк — только у торговых/сервисных зданий (не у жилых домов)
   if (type && type !== 'house' && h >= 4) {
     const AWN = [0xc0392b, 0x2980b9, 0x27ae60, 0xd35400, 0x8e44ad, 0x16a085];
