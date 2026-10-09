@@ -8238,11 +8238,64 @@ function buildCity() {
   removeBuildingsOnRoads();
   buildNPCPopulation();
   placeShopSellers();
+  _mergeDecor(buildConstructionSites, 'construction');
   _mergeDecor(addStreetLights, 'lights');
   _mergeDecor(addCityDetails, 'details', true); addSkyLife(); if (SETTINGS.perf) setTimeout(applyPerfMode, 50); if (SETTINGS.radar === false) { const mm = document.getElementById('minimap'); if (mm) mm.style.display = 'none'; }
   _mergeDecor(addTrees, 'trees');
   _mergeDecor(addDecorations, 'decor');
   mergeBuildingParts(); // в самом конце: после всех удалений зданий
+}
+
+// ── СТРОЙКА: башенные краны и строящиеся каркасы. Ставятся только на свободные участки (не на дороги и здания).
+function _constructionFree(x, z, r) {
+  if (Math.abs(x) < 16 || Math.abs(z) < 16) return false;                       // центральные дороги
+  if (Math.abs(Math.abs(x) - 60) < 12 || Math.abs(Math.abs(z) - 60) < 12) return false;
+  if (Math.abs(Math.abs(x) - 60) < 12 && Math.abs(Math.abs(z) - 60) < 12) return false;
+  if (window.MALL_PARKING) { const p = window.MALL_PARKING; if (Math.abs(x - p.x) < p.w / 2 + 8 && Math.abs(z - p.z) < p.d / 2 + 8) return false; }
+  if (buildings.some(b => b.bounds && x > b.bounds.minX - r && x < b.bounds.maxX + r && z > b.bounds.minZ - r && z < b.bounds.maxZ + r)) return false;
+  return true;
+}
+function _mkCrane(x, z, rot) {
+  const g = new THREE.Group();
+  const yel = new THREE.MeshLambertMaterial({ color: 0xf1c40f });
+  const dark = new THREE.MeshLambertMaterial({ color: 0x3a3f47 });
+  const add = (geo, m, px, py, pz) => { const o = new THREE.Mesh(geo, m); o.position.set(px, py, pz); g.add(o); return o; };
+  add(new THREE.BoxGeometry(0.7, 34, 0.7), yel, 0, 17, 0);            // мачта
+  add(new THREE.BoxGeometry(0.5, 0.9, 30), yel, 0, 33, 8);            // стрела
+  add(new THREE.BoxGeometry(1.6, 1.2, 4), dark, 0, 33.4, -9);         // противовес
+  add(new THREE.BoxGeometry(1.8, 1.6, 1.6), dark, 0, 31, -3);         // кабина
+  add(new THREE.BoxGeometry(0.2, 2.2, 0.2), dark, 0, 35, 0);          // оголовок
+  add(new THREE.CylinderGeometry(0.05, 0.05, 20, 4), dark, 0, 22.5, 22);  // трос с крюком
+  add(new THREE.BoxGeometry(1.2, 0.5, 1.2), dark, 0, 12.2, 22);       // крюк
+  g.position.set(x, 0, z); g.rotation.y = rot;
+  scene.add(g); return g;
+}
+function _mkScaffold(x, z, w, d, h) {
+  const g = new THREE.Group();
+  const steel = new THREE.MeshLambertMaterial({ color: 0x9aa3ad });
+  const slab = new THREE.MeshLambertMaterial({ color: 0xc9c4bb });
+  for (const [px, pz] of [[-w/2, -d/2], [w/2, -d/2], [-w/2, d/2], [w/2, d/2]]) {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.2, h, 0.2), steel); post.position.set(x + px, h / 2, z + pz); g.add(post);
+  }
+  for (let y = 3.5; y < h; y += 3.5) {                                 // перекрытия каждые 3.5 м
+    const fl = new THREE.Mesh(new THREE.BoxGeometry(w, 0.15, d), slab); fl.position.set(x, y, z); g.add(fl);
+  }
+  scene.add(g); return g;
+}
+function buildConstructionSites() {
+  const sites = [];
+  for (let gx = -180; gx <= 180; gx += 30) for (let gz = -180; gz <= 180; gz += 30) {
+    const x = gx + 15, z = gz + 15;
+    if (!_constructionFree(x, z, 6) || !_constructionFree(x + 8, z + 8, 4) || !_constructionFree(x - 8, z - 8, 4)) continue;
+    if (sites.some(q => Math.hypot(q.x - x, q.z - z) < 70)) continue;
+    sites.push({ x, z });
+    if (sites.length >= 6) break;
+  }
+  sites.forEach((q, i) => {
+    if (i % 3 === 2) _mkScaffold(q.x, q.z, 14, 10, 18);
+    else _mkCrane(q.x, q.z, (i * 1.3) % (Math.PI * 2));
+  });
+  window._constructionCount = sites.length;
 }
 
 // Продавцы у дверей торговых зданий (единственные NPC в городе). Ограничено, чтобы не грузить сцену.
