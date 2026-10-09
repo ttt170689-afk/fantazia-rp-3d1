@@ -8237,11 +8237,21 @@ function buildCity() {
   _mergeDecor(buildFarSouthCity, 'farS');
   removeBuildingsOnRoads();
   buildNPCPopulation();
+  placeShopSellers();
   _mergeDecor(addStreetLights, 'lights');
   _mergeDecor(addCityDetails, 'details', true); addSkyLife(); if (SETTINGS.perf) setTimeout(applyPerfMode, 50); if (SETTINGS.radar === false) { const mm = document.getElementById('minimap'); if (mm) mm.style.display = 'none'; }
   _mergeDecor(addTrees, 'trees');
   _mergeDecor(addDecorations, 'decor');
   mergeBuildingParts(); // в самом конце: после всех удалений зданий
+}
+
+// Продавцы у дверей торговых зданий (единственные NPC в городе). Ограничено, чтобы не грузить сцену.
+function placeShopSellers() {
+  let n = 0;
+  buildings.forEach(b => {
+    if (n >= 10 || !b.type || !/^shop_/.test(b.type) || !b.mesh) return;
+    spawnNPC(b.x, 0, b.z + b.d / 2 + 2.5, 'merchant'); n++;
+  });
 }
 
 // Склеивает корпуса, двери и крыши зданий в крупные меши. Вывески остаются на группе здания.
