@@ -8133,29 +8133,52 @@ function buildCity() {
   addDecorations();
 }
 
+// ── ГОРОД: читаемые фасады. Цвета высоток не чёрные, окна — одна текстура на фасад (меньше мешей и draw calls) ──
+function _cityFacadeColor(hex, tall) {
+  const c = new THREE.Color(hex); const hsl = {}; c.getHSL(hsl);
+  const minL = tall ? 0.36 : 0.3;
+  const sat = tall ? Math.min(hsl.s, 0.22) : hsl.s;
+  c.setHSL(hsl.h, sat, Math.max(hsl.l, minL));
+  return c;
+}
+const _facadeCache = {};
+function _facadeTexture(w, h, d) {
+  const cols = Math.max(2, Math.round(Math.max(w, d) / 3.2));
+  const floors = Math.max(3, Math.round(h / 3.6));
+  const rx = Math.max(1, Math.round(cols / 4)), ry = Math.max(1, Math.round(floors / 4));
+  const key = rx + 'x' + ry;
+  if (_facadeCache[key]) return _facadeCache[key];
+  const cv = document.createElement('canvas'); cv.width = cv.height = 256;
+  const g = cv.getContext('2d');
+  g.fillStyle = '#e9ecef'; g.fillRect(0, 0, 256, 256); // бетон/штукатурка (умножается на цвет здания)
+  for (let gy = 0; gy < 4; gy++) for (let gx = 0; gx < 4; gx++) {
+    const x = gx * 64, y = gy * 64;
+    g.fillStyle = '#5f6f7f'; g.fillRect(x + 12, y + 14, 40, 36);            // рама окна
+    const lit = Math.random() < 0.16;
+    g.fillStyle = lit ? '#ffd98a' : '#26364a';                              // свет в окне или тёмное стекло
+    g.fillRect(x + 15, y + 17, 34, 30);
+    if (!lit) { g.fillStyle = 'rgba(160,200,235,0.35)'; g.fillRect(x + 15, y + 17, 14, 30); }
+  }
+  const t = new THREE.CanvasTexture(cv);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(rx, ry);
+  t.anisotropy = 4;
+  _facadeCache[key] = t;
+  return t;
+}
 function createBuilding(x, z, w, h, d, color, name, type) {
   const group = new THREE.Group();
   // Основное здание
   const geo = new THREE.BoxGeometry(w, h, d);
-  const mat = new THREE.MeshLambertMaterial({ color });
+  const tall = h >= 30;
+  const mat = new THREE.MeshLambertMaterial({ color: _cityFacadeColor(color, tall), map: _facadeTexture(w, h, d) });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.y = h/2;
   mesh.castShadow = false;  // ОПТИМИЗАЦИЯ: выкл тени у зданий
   mesh.receiveShadow = false;
   group.add(mesh);
 
-  // Окна — только у ближних небольших зданий (экономия draw calls)
-  if (h < 30) {
-    const windowMat = new THREE.MeshBasicMaterial({ color: 0xFFFF99, transparent:true, opacity:0.8 });
-    const floors = Math.floor(h / 4); // реже, меньше плоскостей
-    for (let f = 0; f < floors; f++) {
-      for (let wx = -w/2+1.5; wx < w/2-0.5; wx += 3.5) { // шаг 3.5 вместо 2.5
-        const win = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.5), windowMat);
-        win.position.set(wx, f*4+2, d/2+0.01);
-        group.add(win);
-      }
-    }
-  }
+  // Окна — в текстуре фасада (без отдельных мешей)
 
   // Дверь
   const doorMat = new THREE.MeshLambertMaterial({ color: 0x5D4037 });
