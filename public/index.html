@@ -12943,6 +12943,31 @@ function drawAccessoryOnCanvas(ctx, cx, sh, type) {
   ctx.restore();
 }
 
+// Перекраска модели игрока (SuperRig): майка, штаны, кожа, волосы, обувь.
+// Материалы клонируются один раз на меш, чтобы не менять материалы других игроков.
+function retintRig(mesh, ap) {
+  if (!mesh || !ap) return;
+  const CLR = {
+    Skin_Face: ap.skinColor, Skin_Hands: ap.skinColor,
+    Hoodie_Blue: ap.shirtColor, Accent_Cyan: ap.shirtColor,
+    Pants_Navy: ap.pantsColor, Shoes_Charcoal: ap.shoeColor || '#222222',
+    Hair_Brown: ap.hairColor, Eyebrow_L: ap.hairColor, Eyebrow_R: ap.hairColor
+  };
+  const DARK = { Accent_Cyan: 0.72, Eyebrow_L: 0.6, Eyebrow_R: 0.6, Shoes_Charcoal: 1 };
+  mesh.traverse(function (o) {
+    if (!o.isMesh && !o.isSkinnedMesh) return;
+    if (!o.userData._rigMats) o.userData._rigMats = {};
+    const arr = Array.isArray(o.material) ? o.material : [o.material];
+    arr.forEach(function (m, i) {
+      if (!m || !m.name || !CLR.hasOwnProperty(m.name) || !CLR[m.name]) return;
+      let nm = o.userData._rigMats[m.name];
+      if (!nm) { nm = m.clone(); o.userData._rigMats[m.name] = nm; if (Array.isArray(o.material)) o.material[i] = nm; else o.material = nm; }
+      nm.color.set(CLR[m.name]);
+      if (DARK[m.name]) nm.color.multiplyScalar(DARK[m.name]);
+    });
+  });
+}
+
 function applySkinEditor() {
   if (!localPlayer) return;
   const bw = parseInt(document.getElementById('bodyWidthSlider').value)/100;
@@ -12977,6 +13002,7 @@ function applySkinEditor() {
   };
   socket.emit('updateAppearance', newAppearance);
   localPlayer.appearance = newAppearance;
+  retintRig(mesh, newAppearance);   // перекраска модели игрока SuperRig
 
   closeModal('skinEditorModal');
   showNotification('Внешность обновлена!', 'success');
