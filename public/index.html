@@ -21455,7 +21455,7 @@ function togglePhone() {
   const el = document.getElementById('phoneUI');
   const show = el.style.display === 'none' || !el.style.display;
   if (show) {
-    el.style.display = 'block'; el.style.transform = 'translateY(40px)'; requestAnimationFrame(() => { el.style.transform = 'translateY(0)'; });
+    _phStyle(); el.style.display = 'block'; el.classList.remove('ph-lower'); el.classList.remove('ph-raise'); void el.offsetWidth; el.classList.add('ph-raise');
     phoneHome();
     const d = new Date(); const hh = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
     document.getElementById('phoneClock').textContent = hh; document.getElementById('phoneBigClock').textContent = hh;
@@ -21463,7 +21463,17 @@ function togglePhone() {
     document.getElementById('phoneBat').textContent = 60 + Math.floor((d.getMinutes() / 60) * 40);
     document.getElementById('phTemp').textContent = (typeof dayTime !== 'undefined' && Math.sin(dayTime) < 0 ? '+14°' : '+23°');
     try { document.exitPointerLock(); } catch (e) {}
-  } else { el.style.display = 'none'; }
+  } else { el.classList.remove('ph-raise'); el.classList.add('ph-lower'); clearTimeout(window._phT); window._phT = setTimeout(() => { el.style.display = 'none'; el.classList.remove('ph-lower'); }, 330); }
+}
+// анимация «достать телефон»: снизу справа, поворот к глазам; закрытие — обратно вниз
+function _phStyle() {
+  if (document.getElementById('phRaiseCss')) return;
+  const s = document.createElement('style'); s.id = 'phRaiseCss';
+  s.textContent = '@keyframes phRaise{0%{transform:translate(45%,55%) rotate(22deg) scale(.8);opacity:0}55%{transform:translate(10%,8%) rotate(5deg) scale(.96);opacity:1}100%{transform:translate(0,0) rotate(0) scale(1);opacity:1}}' +
+    '@keyframes phLower{0%{transform:translate(0,0);opacity:1}100%{transform:translate(40%,55%) rotate(18deg) scale(.8);opacity:0}}' +
+    '#phoneUI.ph-raise{animation:phRaise .55s cubic-bezier(.2,.8,.2,1) both;transform-origin:70% 100%}' +
+    '#phoneUI.ph-lower{animation:phLower .32s ease-in both;transform-origin:70% 100%}';
+  document.head.appendChild(s);
 }
 function phoneHome() { document.getElementById('phHome').style.display = 'flex'; document.getElementById('phApp').style.display = 'none'; }
 function phoneOpen(app) {
