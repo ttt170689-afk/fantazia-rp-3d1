@@ -8113,13 +8113,61 @@ function _mergeMatKey(m) {
   return [m.type, m.color ? m.color.getHex() : 0, m.emissive ? m.emissive.getHex() : 0, m.emissiveIntensity,
           m.opacity, m.transparent, m.side, m.depthWrite, m.fog, m.flatShading, m.map ? m.map.uuid : '-'].join('|');
 }
+// Склеивает список мешей в один BufferGeometry. useWorld: true — мировые координаты, false — локальные (o.matrix)
+function _bakeMeshList(list, useWorld) {
+  const parts = list.map(o => {
+    if (!useWorld) o.updateMatrix();
+    let g = o.geometry.clone(); if (g.index) g = g.toNonIndexed();
+    g.applyMatrix4(useWorld ? o.matrixWorld : o.matrix); return g;
+  });
+  let total = 0; parts.forEach(g => total += g.attributes.position.count);
+  const pos = new Float32Array(total * 3), nor = new Float32Array(total * 3), uv = new Float32Array(total * 2);
+  let off = 0;
+  parts.forEach(g => {
+    if (!g.attributes.normal) g.computeVertexNormals();
+    const n = g.attributes.position.count;
+    pos.set(g.attributes.position.array, off * 3);
+    nor.set(g.attributes.normal.array, off * 3);
+    if (g.attributes.uv) uv.set(g.attributes.uv.array, off * 2);
+    off += n;
+  });
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  return geo;
+}
+// Склеивает статичные части одной машины (локальные координаты группы). Колёса, диски и руль не трогаем: они крутятся.
+function _mergeCarStatic(g) {
+  const spinning = (o) => o.geometry && o.geometry.type === 'CylinderGeometry' && o.geometry.parameters.radiusTop > 0.15;
+  const buckets = new Map();
+  g.children.forEach(o => {
+    if (!o.isMesh || o === g.userData.steering || spinning(o) || o.children.length || !o.geometry) return;
+    if (Object.keys(o.userData || {}).length) return;
+    const key = _mergeMatKey(o.material); if (!key) return;
+    const bk = key + '|' + o.castShadow + '|' + o.receiveShadow;
+    if (!buckets.has(bk)) buckets.set(bk, []);
+    buckets.get(bk).push(o);
+  });
+  buckets.forEach(list => {
+    if (list.length < 2) return;
+    const mesh = new THREE.Mesh(_bakeMeshList(list, false), list[0].material);
+    mesh.castShadow = list[0].castShadow; mesh.receiveShadow = list[0].receiveShadow;
+    mesh.name = 'car_static';
+    g.add(mesh);
+    list.forEach(o => g.remove(o));
+  });
+}
+
 function mergeStaticObjects(roots, label) {
   if (!roots.length) return [];
   scene.updateMatrixWorld(true);
   const noMerge = new Set(buildings.map(b => b.mesh).filter(Boolean)); // группы зданий не трогаем
+  if (typeof cars !== 'undefined') cars.forEach(c => noMerge.add(c.mesh)); // машины собираются отдельно (_mergeCarStatic)
   const buckets = new Map();
   const visit = (o) => {
-    if (noMerge.has(o)) return;
+    // объекты с userData (машины, NPC и т.п.) и их поддеревья не трогаем: на них могут ссылаться
+    if (noMerge.has(o) || Object.keys(o.userData || {}).length) return;
     if (o.isMesh && !o.children.length && o.visible && o.geometry && o.geometry.attributes.position
         && !Object.keys(o.userData || {}).length) {
       const key = _mergeMatKey(o.material);
@@ -8137,22 +8185,7 @@ function mergeStaticObjects(roots, label) {
   const out = []; let before = 0, after = 0;
   buckets.forEach(list => {
     if (list.length < 2) return;
-    const parts = list.map(o => { let g = o.geometry.clone(); if (g.index) g = g.toNonIndexed(); g.applyMatrix4(o.matrixWorld); return g; });
-    let total = 0; parts.forEach(g => total += g.attributes.position.count);
-    const pos = new Float32Array(total * 3), nor = new Float32Array(total * 3), uv = new Float32Array(total * 2);
-    let off = 0;
-    parts.forEach(g => {
-      if (!g.attributes.normal) g.computeVertexNormals();
-      const n = g.attributes.position.count;
-      pos.set(g.attributes.position.array, off * 3);
-      nor.set(g.attributes.normal.array, off * 3);
-      if (g.attributes.uv) uv.set(g.attributes.uv.array, off * 2);
-      off += n;
-    });
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
-    geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    const geo = _bakeMeshList(list, true);
     const ref = list[0];
     const mesh = new THREE.Mesh(geo, ref.material);
     mesh.castShadow = ref.castShadow; mesh.receiveShadow = ref.receiveShadow; mesh.renderOrder = ref.renderOrder;
@@ -11720,6 +11753,7 @@ function createCar(type, x, z) {
   if (isVan) { box(Wd * 0.7, 0.5, 0.05, m(0x333), 0, cy + 0.3, back + 0.01); }
   if (isSport) { box(Wd * 0.8, 0.05, 0.3, dark, 0, floorY + bodyH + 0.3, back + 0.1); [-1, 1].forEach(sx => box(0.05, 0.25, 0.1, dark, sx * Wd * 0.35, floorY + bodyH + 0.15, back + 0.1)); }
 
+  _mergeCarStatic(g); // статичный кузов — в один меш на материал (колёса/руль остаются отдельными)
   g.position.set(x, 0, z);
   g.userData.type = type; g.userData.carCfg = cfg; g.userData.speed = 0; g.userData.steer = 0;
   g.userData.dims = { L, Wd, H, seatY: cy + 0.2 };
