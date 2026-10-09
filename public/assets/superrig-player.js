@@ -29,6 +29,8 @@ var SR = global.SuperRig = {
   // клипы «держит фонарик / меч» и «подбирает» (сделаны в Blender: tools/blender/build_hold_anims.py)
   holdUrl: 'exports/player_hold.glb',
   holdClips: [],
+  // позы предметов (фонарик/меч в руке, подбор, добивание). false — отключено: обычная поза
+  itemPoses: false,
   src: null,
   clips: []
 };
@@ -146,6 +148,7 @@ function tint(model, appearance) {
 function heldClipName(ch) {
   var ud = ch && ch.userData;
   if (!ud) return null;
+  if (!SR.itemPoses) { if (ud._swordMesh) ud._swordMesh.visible = false; return null; }
   var local = typeof localPlayer !== 'undefined' && !!localPlayer && localPlayer.mesh === ch;
   var slot = (local && typeof ITEMS !== 'undefined') ? ITEMS.slot : 0;
   var hasF = (typeof DLC !== 'undefined') && !!DLC.hasFlashlight;
@@ -301,7 +304,7 @@ SR.animate = function (ch, animation, delta, emote) {
 
   // подбор предмета: клип играется один раз, после него персонаж держит предмет
   if (PICKS[name]) {
-    if (!ud.actions[MAP[name]]) name = name === 'finish_sword' ? 'attack' : 'pickup';   // клипа нет (GLB не загрузился) — старая анимация
+    if (!SR.itemPoses || !ud.actions[MAP[name]]) name = name === 'finish_sword' ? 'attack' : 'pickup';   // клипа нет (GLB не загрузился) — старая анимация
     else if (ud._pickDone === name) name = 'idle';
     else {
       var pk = ud.actions[MAP[name]];
