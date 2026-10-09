@@ -3052,12 +3052,10 @@ document.addEventListener('click', function(e){
       <div class="side-btn" onclick="togglePanel('inventory')" title="Инвентарь">🎒</div>
       <div class="side-btn" onclick="togglePanel('apartment')" title="Квартира">🏠</div>
       <div class="side-btn" onclick="openExportPanel()" title="Экспорт 3D в Blender">📦</div>
-      <div class="side-btn" onclick="togglePanel('pets')" title="Питомцы">🐾</div>
       <div class="side-btn" onclick="togglePanel('friends')" title="Друзья">👥</div>
       <div class="side-btn" onclick="togglePanel('players')" title="Игроки">📋</div>
       <div class="side-btn" onclick="toggleDanceBar()" title="Танцы">💃</div>
       <div class="side-btn" onclick="openSkinEditor()" title="Редактор скина [B]">👗</div>
-      <div class="side-btn" onclick="togglePanel('cars')" title="Выбор авто">🚗</div>
       <div class="side-btn" onclick="toggleVoice()" title="Голос (V)" id="voiceBtn">🎙️</div>
       <div class="side-btn" onclick="openRewardModal()" title="Ежедневная награда" id="rewardBtn" style="position:relative">🎁<span id="rewardDot" style="position:absolute;top:4px;right:4px;width:8px;height:8px;background:#e74c3c;border-radius:50%;display:none"></span></div>
       <div class="side-btn" onclick="openNewsModal()" title="Новости игры">📰</div>
@@ -9338,6 +9336,7 @@ function updateCine() {
 }
 
 function updateQuestHUD() {
+  return; // квест-панель убрана по просьбе пользователя
   const hud = document.getElementById('questHUD'), list = document.getElementById('questList'); if (!hud || !list) return;
   const li = (done, txt, active) => `<div style="margin:3px 0;opacity:${done ? .55 : 1};color:${done ? '#7cffb2' : active ? '#fff' : '#bbb'}">${done ? '✅' : active ? '▶' : '○'} ${txt}</div>`;
   let h = '';
@@ -14120,6 +14119,7 @@ function spawnLabCracks() {
   }, 380);
 }
 function updateFootsteps(delta) {
+  return; // звуки шагов выключены по просьбе пользователя
   if (!localPlayer || !localPlayer.mesh || window.cine || sittingOn) return;
   const a = localPlayer.currentAnimation; const moving = (a === 'walk' || a === 'run' || a === 'crouch') && isGrounded;
   if (!moving) { window._stepT = 0.08; return; }
