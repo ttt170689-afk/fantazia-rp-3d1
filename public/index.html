@@ -10799,14 +10799,7 @@ function buildMallInteriorWorld(scene, mallGroup) {
 
 
 function spawnMallNPCs(cx, cz) {
-  // NPCs outside mall
-  const npcPositions = [
-    { x:cx-8, z:cz+26, role:'shopper' },
-    { x:cx+6,  z:cz+24, role:'shopper' },
-    { x:cx-3,  z:cz+28, role:'guard' },
-    { x:cx+12, z:cz+22, role:'shopper' },
-  ];
-  npcPositions.forEach(n => spawnNPC(n.x, cz+22, n.z - (cz+22) + cz, n.role));
+  // Прохожих и охранников у ТЦ убрали: на улице остаются только продавцы (см. buildNPCPopulation)
 }
 
 function buildResidentialArea() {
@@ -11381,12 +11374,8 @@ function buildFarSouthCity() {
 // ДОПОЛНИТЕЛЬНЫЕ НПС ПО ВСЕМУ ГОРОДУ
 // ═══════════════════════════════════════════════════════
 function buildNPCPopulation() {
-  // Только 5 НПС в центре города для атмосферы
-  spawnNPC(20, 0, 0, 'shopper');
-  spawnNPC(-20, 0, 10, 'shopper');
-  spawnNPC(0, 0, 25, 'shopper');
+  // Только продавцы: прохожие убраны (оптимизация и по просьбе). Продавец — один на центр.
   spawnNPC(10, 0, -20, 'merchant');
-  spawnNPC(-10, 0, -15, 'shopper');
 }
 
 function createTree(x, z) {
@@ -11807,19 +11796,15 @@ function createParkingLot(cx, cz, w, d, label) {
 
 function spawnCarsInParking() {
   // Парковка у GRAND MALL — машины ровно в карманах
-  const types = ['sedan', 'sport', 'suv', 'taxi', 'limo', 'coupe', 'pickup', 'van', 'sedan', 'suv', 'police', 'coupe'];
+  // Все машины — только в карманах парковки (уличных стоянок больше нет)
+  const types = ['sedan', 'sport', 'suv', 'taxi', 'limo', 'coupe', 'pickup', 'van', 'sedan', 'suv', 'police', 'coupe', 'truck', 'sedan', 'taxi', 'suv', 'sport'];
   const bays = window._parkingBays || [];
-  types.forEach((ty, i) => {
-    const b = bays[i * 2 + 1]; if (!b) return;
-    const car = createCar(ty, b.x, b.z);
+  let k = 0;
+  for (let j = 1; j < bays.length && k < types.length; j += 2) {
+    const b = bays[j]; if (!b) continue;
+    const car = createCar(types[k++], b.x, b.z);
     if (car) car.rotation.y = b.rot;
-  });
-  // Street cars
-  createCar('sedan', 20, 10);
-  createCar('suv',   -20, -10);
-  createCar('taxi',  30, -5);
-  createCar('police', -30, 5);
-  createCar('truck', 0, 30);
+  }
   return;
 }
 function _oldSpawnCarsInParking() {
