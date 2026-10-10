@@ -127,7 +127,16 @@ app.get('/api/admin/accounts', (req, res) => {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+// Отключаем кэш для html/js — иначе браузер показывает старую версию страницы
+app.use((req, res, next) => {
+  if (/\.(html|js|css)$/i.test(req.path) || req.path === '/') {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+  }
+  next();
+});
+app.use(express.static(path.join(__dirname, 'public'), { etag: false, lastModified: false, maxAge: 0 }));
 
 // Главная страница
 app.get('/', (req, res) => {
@@ -685,12 +694,75 @@ setInterval(() => {
 // SOCKET.IO
 // ======================================================
 
+
+// ===== Прятки с друзьями: комнаты. Приглашать и принимать могут только друзья владельца =====
+const HS_MAX_MEMBERS = 6;
+const hsRooms = {};   // roomId (= id владельца) -> { id, owner, members: [socketId], started, hiderId, seed }
+const hsRoomOf = {};  // socketId -> roomId
+function hsPush(roomId) {
+  const r = hsRooms[roomId]; if (!r) return;
+  const payload = {
+    id: r.id, owner: r.owner, started: r.started, hiderId: r.started ? r.hiderId : null, seed: r.seed,
+    members: r.members.map(id => ({ id, name: (players[id] && players[id].name) || 'Unknown' }))
+  };
+  r.members.forEach(id => io.to(id).emit('hsRoom', payload));
+}
+function hsLeaveRoom(sid) {
+  const rid = hsRoomOf[sid]; if (!rid) return;
+  const r = hsRooms[rid];
+  delete hsRoomOf[sid];
+  if (!r) return;
+  if (r.owner === sid) {                      // владелец ушёл — комната закрыта
+    r.members.forEach(id => {
+      if (id === sid) return;
+      delete hsRoomOf[id];
+      io.to(id).emit('hsRoom', null);
+      io.to(id).emit('hsNotify', 'Комната прятков закрыта владельцем');
+    });
+    delete hsRooms[rid];
+    return;
+  }
+  r.members = r.members.filter(id => id !== sid);
+  if (r.hiderId === sid) { r.started = false; r.hiderId = null; }
+  io.to(sid).emit('hsRoom', null);
+  hsPush(rid);
+}
+
 io.on('connection', (socket) => {
   console.log(`[+] CONNECT: ${socket.id}`);
 
   // ----------------------------------------------------
   // Регистрация игрока
   // ----------------------------------------------------
+  // ----------------------------------------------------
+  // Косметика: белый список слотов и id (совпадает с клиентом, public/index.html → COSMETICS)
+  // ----------------------------------------------------
+  const COSMETIC_WHITELIST = {
+    head: ['hd_headphones', 'hd_ninja', 'hd_antenna', 'hd_hood'],
+    neck: ['nk_scarf', 'nk_chain', 'nk_bow', 'nk_collar'],
+    shoulders: ['sh_spikes', 'sh_neon', 'sh_gold', 'sh_cannons'],
+    back: ['bk_cape', 'bk_backpack', 'bk_jetpack', 'bk_wings'],
+    legs: ['lg_stripes', 'lg_cargo', 'lg_knee_pads', 'lg_led_knee']
+  };
+  const sanitizeCosmetics = (raw) => {
+    const out = {};
+    if (!raw || typeof raw !== 'object') return out;
+    Object.keys(COSMETIC_WHITELIST).forEach(slot => {
+      const id = raw[slot];
+      if (typeof id === 'string' && COSMETIC_WHITELIST[slot].includes(id)) out[slot] = id;
+    });
+    return out;
+  };
+
+  // Смена косметики: сохраняем в appearance (уйдёт в аккаунт) и рассылаем всем
+  socket.on('setCosmetics', (data = {}) => {
+    const player = players[socket.id];
+    if (!player) return;
+    player.appearance = player.appearance || {};
+    player.appearance.cosmetics = sanitizeCosmetics(data);
+    io.emit('cosmeticsUpdate', { id: socket.id, cosmetics: player.appearance.cosmetics });
+  });
+
   socket.on('registerPlayer', (data = {}) => {
     try {
       let playerName = sanitizeText(data.name) || `Player_${socket.id.slice(0, 4)}`;
@@ -738,7 +810,8 @@ io.on('connection', (socket) => {
           shirtColor: data.shirtColor || '#3498DB',
           pantsColor: data.pantsColor || '#2C3E50',
           hairColor: data.hairColor || '#4A2F1B',
-          hairStyle: Number.isInteger(data.hairStyle) ? data.hairStyle : 0
+          hairStyle: Number.isInteger(data.hairStyle) ? data.hairStyle : 0,
+          cosmetics: sanitizeCosmetics(savedData && savedData.appearance ? savedData.appearance.cosmetics : null)
         },
         job: null,
         dance: null,
@@ -1418,7 +1491,57 @@ io.on('connection', (socket) => {
   // ----------------------------------------------------
   // ОТКЛЮЧЕНИЕ
   // ----------------------------------------------------
+  // ----------------------------------------------------
+  // Прятки с друзьями (комнаты)
+  // ----------------------------------------------------
+  const hsIsFriend = (a, b) => (friendships[a] || []).includes(b);
+  socket.on('hsCreate', () => {
+    if (hsRoomOf[socket.id]) { notify(socket.id, 'Ты уже в комнате прятков', 'info'); return; }
+    hsRooms[socket.id] = { id: socket.id, owner: socket.id, members: [socket.id], started: false, hiderId: null, seed: 0 };
+    hsRoomOf[socket.id] = socket.id;
+    hsPush(socket.id);
+  });
+  socket.on('hsInvite', (targetId) => {
+    const rid = hsRoomOf[socket.id]; const r = rid && hsRooms[rid];
+    if (!r || r.owner !== socket.id || r.started) return;
+    if (!hsIsFriend(socket.id, targetId) || !players[targetId]) { notify(socket.id, 'Приглашать можно только онлайн-друзей', 'error'); return; }
+    if (hsRoomOf[targetId] || r.members.length >= HS_MAX_MEMBERS) { notify(socket.id, 'Игрок уже в комнате или комната полна', 'error'); return; }
+    io.to(targetId).emit('hsInvite', { roomId: rid, from: players[socket.id] ? players[socket.id].name : 'Игрок' });
+  });
+  socket.on('hsAccept', (roomId) => {
+    const r = hsRooms[roomId];
+    if (!r || r.started || hsRoomOf[socket.id]) return;
+    if (!hsIsFriend(r.owner, socket.id) || r.members.length >= HS_MAX_MEMBERS) { notify(socket.id, 'Не удалось войти в комнату', 'error'); return; }
+    r.members.push(socket.id);
+    hsRoomOf[socket.id] = roomId;
+    hsPush(roomId);
+  });
+  socket.on('hsLeave', () => hsLeaveRoom(socket.id));
+  socket.on('hsStart', () => {
+    const rid = hsRoomOf[socket.id]; const r = rid && hsRooms[rid];
+    if (!r || r.owner !== socket.id || r.started || r.members.length < 2) return;
+    r.started = true;
+    r.hiderId = r.members[Math.floor(Math.random() * r.members.length)];
+    r.seed = Math.floor(Math.random() * 1e9);
+    hsPush(rid);
+  });
+  socket.on('hsFound', () => {
+    const rid = hsRoomOf[socket.id]; const r = rid && hsRooms[rid];
+    if (!r || !r.started || socket.id === r.hiderId) return;
+    const winner = (players[socket.id] && players[socket.id].name) || 'Игрок';
+    r.members.forEach(id => io.to(id).emit('hsRoundOver', { winnerName: winner }));
+    r.started = false; r.hiderId = null;
+    hsPush(rid);
+  });
+  socket.on('hsEnd', () => {
+    const rid = hsRoomOf[socket.id]; const r = rid && hsRooms[rid];
+    if (!r || !r.started) return;
+    r.started = false; r.hiderId = null;
+    hsPush(rid);
+  });
+
   socket.on('disconnect', () => {
+    hsLeaveRoom(socket.id);
     const player = players[socket.id];
 
     if (player) {
