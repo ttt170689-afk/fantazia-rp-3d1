@@ -9394,9 +9394,15 @@ function updateCine() {
     // покачивание головы в такт шагам (синусоида по скорости бега), без рывков
     P = new THREE.Vector3(mp.x, mp.y + 1.62 + Math.abs(Math.sin(T * 9)) * 0.045 * runK, mp.z);
     L = s.look ? _cv(s.look) : new THREE.Vector3(mp.x + Math.sin(ry) * 10, 1.4, mp.z + Math.cos(ry) * 10);
+    // плавность: камера скользит от предыдущей позы к голове игрока и дальше отстаёт на долю секунды
+    if (!c._fpSm) { c._fpSm = { p: c.from.pos.clone(), l: c.from.look.clone() }; }
+    const fk = 1 - Math.exp(-delta * 9);
+    c._fpSm.p.lerp(P, fk); c._fpSm.l.lerp(L, fk);
+    P = c._fpSm.p.clone(); L = c._fpSm.l.clone();
     localPlayer.mesh.visible = false; c._fpOn = true;
   } else {
     P = _cv(s.pos); L = _cv(s.look);
+    c._fpSm = null;
     if (c._fpOn) { localPlayer.mesh.visible = true; c._fpOn = false; }
   }
   const tp = fpOn ? P.clone() : c.from.pos.clone().lerp(P, s.cut ? 1 : k), tl = fpOn ? L.clone() : c.from.look.clone().lerp(L, s.cut ? 1 : k);
