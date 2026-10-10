@@ -9373,6 +9373,7 @@ function _cineStartStep() {
   _cineSetText(s.text || '', 0);
   if (localPlayer && localPlayer.mesh) localPlayer.mesh.userData.mood = /^Вы:/.test(s.text || '') ? 'talk' : (localPlayer.mesh.userData.mood === 'talk' ? 'normal' : localPlayer.mesh.userData.mood);
   if (s.shake !== undefined) c.shake = s.shake;
+  if (s.dpose && DLC.demon) dposeSet(DLC.demon, s.dpose);
   if (s.onStart) s.onStart();
 }
 function _cv(v) { v = typeof v === 'function' ? v() : v; return Array.isArray(v) ? new THREE.Vector3(v[0], v[1], v[2]) : v; }
@@ -10464,6 +10465,51 @@ function buildDemon(bx, bz, FH) {
   DLC.hpBar = hpBar;
   DLC.hpFill = document.getElementById('demonHPFill');
   DLC.hpText = document.getElementById('demonHPText');
+}
+
+// ===== Позы демона в катсценах: ключевые позы поверх процедурной анимации =====
+// Шаг катсцены задаёт dpose: { to: {сустав: значение}, dur, ease }. Остальные суставы живут по обычной логике.
+// Позы держатся между шагами и мягко отпускаются, когда катсцена закончилась. Замедление катсцены замедляет и демона.
+const DPOSE_J = [
+  ['hipsY', u => u.hips.position, 'y'],
+  ['torsoX', u => u.torso.rotation, 'x'], ['torsoY', u => u.torso.rotation, 'y'],
+  ['neckX', u => u.neck.rotation, 'x'], ['neckY', u => u.neck.rotation, 'y'],
+  ['headX', u => u.head.rotation, 'x'], ['headY', u => u.head.rotation, 'y'],
+  ['jawX', u => u.jaw.rotation, 'x'],
+  ['shL_x', u => u.arms[0].sh.rotation, 'x'], ['shL_z', u => u.arms[0].sh.rotation, 'z'], ['elL_x', u => u.arms[0].el.rotation, 'x'],
+  ['shR_x', u => u.arms[1].sh.rotation, 'x'], ['shR_z', u => u.arms[1].sh.rotation, 'z'], ['elR_x', u => u.arms[1].el.rotation, 'x'],
+  ['hipL', u => u.legs[0].hip.rotation, 'x'], ['kneeL', u => u.legs[0].knee.rotation, 'x'],
+  ['hipR', u => u.legs[1].hip.rotation, 'x'], ['kneeR', u => u.legs[1].knee.rotation, 'x'],
+  ['wingL', u => u.wings[0].rotation, 'z'], ['wingR', u => u.wings[1].rotation, 'z']
+];
+function _dEase(r, kind) {
+  if (kind === 'out') return 1 - Math.pow(1 - r, 3);
+  if (kind === 'back') { const c1 = 1.25, c3 = c1 + 1; return 1 + c3 * Math.pow(r - 1, 3) + c1 * Math.pow(r - 1, 2); }
+  return r * r * r * (r * (r * 6 - 15) + 10);   // smootherstep: плавный старт и финиш
+}
+function dposeSet(d, spec) {
+  if (!d || !d.userData || !d.userData.arms || !d.userData.legs || !d.userData.wings) return;
+  const u = d.userData, prev = u._dp && u._dp.w > 0 ? u._dp : null;
+  const to = Object.assign({}, prev ? prev.to : {}, spec.to || {}), from = {};
+  // старт — всегда с текущих значений суставов, поэтому переходы без рывков
+  DPOSE_J.forEach(([k, get, ax]) => { if (k in to) from[k] = get(u)[ax]; });
+  u._dp = { from, to, dur: Math.max(0.05, spec.dur || 1.2), ease: spec.ease || 'inout', t: 0, out: 0, w: 1 };
+}
+function dposeApply(d, delta) {
+  const u = d && d.userData; if (!u || !u._dp || !u.arms) return;
+  const D = u._dp, inCine = !!window.cine;
+  if (inCine) D.out = 0; else { D.out += delta; D.w = Math.max(0, 1 - D.out / 0.9); if (D.w <= 0) { u._dp = null; return; } }
+  D.t += delta;
+  const r = Math.min(1, D.t / D.dur), e = _dEase(r, D.ease);
+  const breath = r >= 1 ? Math.sin(performance.now() / 1000 * 1.3) * 0.025 : 0;
+  DPOSE_J.forEach(([k, get, ax]) => {
+    if (!(k in D.to)) return;
+    const from = D.from[k] !== undefined ? D.from[k] : get(u)[ax];
+    let val = from + (D.to[k] - from) * e;
+    if (breath && (k === 'headX' || k === 'jawX' || k === 'torsoX')) val += breath;
+    const obj = get(u), cur = obj[ax];
+    obj[ax] = cur + (val - cur) * D.w;   // w=1 в катсцене; при выходе — плавное отпускание к обычной позе
+  });
 }
 
 function updateDemon(delta) {
@@ -14205,11 +14251,11 @@ function bossIntroCine() {
     // 3. макро: зрачок
     { pos: () => hp().clone().add(new THREE.Vector3(-1.9, 0.25, -2.9)), look: () => hp(), dur: 2.4, cut: true, text: 'Зрачок сужается.', shake: 0.006, drift: 0.3, onStart: () => { cineFlashColor('#ff2a00', 0.22, 420); SFX.tone(88, 0.9, 'sawtooth', 0.07, -40); } },
     // 4. кресло поворачивается
-    { pos: [bx + 3.5, 3.2, bz + TZ - 7], look: () => hp(), dur: 4.2, cut: true, text: 'Кресло медленно поворачивается. Он смотрит прямо на тебя. Не моргая.', shake: 0.006, onStart: () => { DLC.demonAct = { stage: 'turn', t: 0 }; SFX.noise(3, 0.06, 150); } },
+    { pos: [bx + 3.5, 3.2, bz + TZ - 7], look: () => hp(), dur: 4.2, cut: true, dpose: { to: { torsoX: 0.3, neckX: 0.15, headX: -0.3, jawX: 0.12, shL_x: -0.7, shR_x: -0.7, elL_x: -1.1, elR_x: -1.1 }, dur: 3.6, ease: 'inout' }, text: 'Кресло медленно поворачивается. Он смотрит прямо на тебя. Не моргая.', shake: 0.006, onStart: () => { DLC.demonAct = { stage: 'turn', t: 0 }; SFX.noise(3, 0.06, 150); } },
     // 5. кулаки по столу — хит-стоп + искры
     { pos: [bx - 3, 2.9, bz + TZ - 6], look: [bx, 2.6, bz + TZ - 1.5], dur: 3.8, cut: true, text: 'Кулаки обрушиваются на стол. Черепа, свечи, клавиатура — всё летит в стороны.', shake: 0.07, onStart: () => { DLC.demonAct = { stage: 'slam', t: 0 }; setTimeout(() => { cineSlow(0.22, 700); cineFlashColor('#ff5500', 0.3, 320); SFX.slam(); const v = hp(); cineEmbers(new THREE.Vector3(v.x, 1.6, v.z - 1.5), 26, { spread: 5, up: 3.4, life: 1.6 }); }, 900); } },
     // 6. он встаёт — низкая камера снизу вверх
-    { pos: [bx - 5.5, 0.55, bz + TZ - 9], look: () => hp().clone().add(new THREE.Vector3(0, 0.6, 0)), dur: 4.2, text: 'Он поднимается. Медленно. Кости трона трещат под весом.', shake: 0.035, onStart: () => { DLC.demonAct = null; DLC.demonSeated = false; DLC.demonStandT = 0; SFX.thud(); setTimeout(() => { SFX.thud(); const v = hp(); cineEmbers(new THREE.Vector3(v.x, 0.2, v.z), 18, { color: 0x6a5a50, spread: 6, up: 1.1, grav: 0.012, life: 2.6 }); }, 1200); } },
+    { pos: [bx - 5.5, 0.55, bz + TZ - 9], look: () => hp().clone().add(new THREE.Vector3(0, 0.6, 0)), dur: 4.2, dpose: { to: { hipsY: 2.2, torsoX: -0.12, neckX: -0.25, headX: -0.4, jawX: 0.3, hipL: -0.3, kneeL: 0.4, hipR: -0.3, kneeR: 0.4, shL_x: 0.4, shR_x: 0.4, shL_z: 0.5, shR_z: -0.5, elL_x: -0.5, elR_x: -0.5, wingL: 0.5, wingR: -0.5 }, dur: 4.2, ease: 'inout' }, text: 'Он поднимается. Медленно. Кости трона трещат под весом.', shake: 0.035, onStart: () => { DLC.demonAct = null; DLC.demonSeated = false; DLC.demonStandT = 0; SFX.thud(); setTimeout(() => { SFX.thud(); const v = hp(); cineEmbers(new THREE.Vector3(v.x, 0.2, v.z), 18, { color: 0x6a5a50, spread: 6, up: 1.1, grav: 0.012, life: 2.6 }); }, 1200); } },
     // 7. крылья + титр боссa
     { pos: () => hp().clone().add(new THREE.Vector3(2.4, 0.7, -4.2)), look: () => hp(), dur: 4.2, text: 'Крылья раскрываются на всю ширину зала. Ядро в груди разгорается.', shake: 0.025, onStart: () => { d.userData.coreL.intensity = 6; const v = hp(); cineEmbers(new THREE.Vector3(v.x, 1.0, v.z), 34, { spread: 8, up: 2.6, life: 2.6 }); setTimeout(() => { cineCard('ДЕМОН «ОКО»', 'ХРАНИТЕЛЬ ОБЪЕКТА B5', { hold: 4200 }); SFX.tone(70, 1.6, 'sawtooth', 0.09, -30); }, 700); } },
     // 8. «ТЫ. МОЙ.» — предельно близко, рывок, слоумо
@@ -14252,13 +14298,13 @@ function demonDeathCine() {
     // 1. ЗАМЕДЛЕННЫЙ последний удар — макро на ядро
     { pos: () => hp().clone().add(new THREE.Vector3(-2.1, 0.1, -3.0)), look: () => hp(), dur: 2.6, text: 'Последний удар проходит.', shake: 0.09, drift: 0.4, onStart: () => { d.userData.coreL.color.setHex(0xffaa40); cineEmbers(hp(), 24, { spread: 2.5, up: 2.8, life: 1.8 }); } },
     // 2. он падает на колени
-    { pos: () => hp().clone().add(new THREE.Vector3(-2.8, 0.6, -3.2)), look: () => hp(), dur: 3.8, cut: true, text: 'Демон замирает… и падает на колени. Пол вздрагивает.', shake: 0.055, onStart: () => { SFX.roar(); const iv = setInterval(() => { fall = Math.min(1, fall + 0.02); d.userData.torso.rotation.x = 0.2 + fall * 0.9; d.userData.hips.position.y = 2.2 - fall * 1.2; if (fall >= 1) { clearInterval(iv); SFX.thud(); cineShockRing(hp(), 0x804030, 9, 20); cineEmbers(new THREE.Vector3(hp().x, 0.2, hp().z), 22, { color: 0x6a5a50, spread: 7, up: 1.0, grav: 0.012, life: 2.4 }); } }, 50); } },
+    { pos: () => hp().clone().add(new THREE.Vector3(-2.8, 0.6, -3.2)), look: () => hp(), dur: 3.8, cut: true, text: 'Демон замирает… и падает на колени. Пол вздрагивает.', shake: 0.055, onStart: () => { SFX.roar(); dposeSet(d, { dur: 3.2, ease: 'inout', to: { hipsY: 1.0, torsoX: 1.0, neckX: 0.5, headX: 0.6, jawX: 0.5, hipL: -1.3, kneeL: 1.9, hipR: -1.3, kneeR: 1.9, shL_x: -0.2, shR_x: -0.2, elL_x: -0.6, elR_x: -0.6 } }); setTimeout(() => { SFX.thud(); cineShockRing(hp(), 0x804030, 9, 20); cineEmbers(new THREE.Vector3(hp().x, 0.2, hp().z), 22, { color: 0x6a5a50, spread: 7, up: 1.0, grav: 0.012, life: 2.4 }); }, 3200); } },
     // 3. облёт: стена экранов лопается искрами
     { pos: [bx - 13, 7.5, bz + TZ - 19], look: [bx, 8.5, bz + TZ + 14], dur: 4.2, cut: true, text: 'Экраны лопаются искрами. «ОКО» больше никого не видит.', shake: 0.035, onStart: () => { let i = 0; const iv = setInterval(() => { for (let k = 0; k < 3; k++) { const s = screens[i++]; if (s) { s.material.color.setHex(0x000000); SFX.spark(); if (Math.random() < 0.4) cineEmbers(s.getWorldPosition(new THREE.Vector3()), 4, { color: 0x9fd8ff, spread: 1.2, up: 1.2, life: 1.0, size: 0.05 }); } } if (i >= screens.length) { clearInterval(iv); cineFlashColor('#5fa8ff', 0.2, 380); } }, 110); } },
     // 4. предсмертная реплика — очень близко
     { pos: () => hp().clone().add(new THREE.Vector3(1.3, 0.55, -2.1)), look: () => hp(), dur: 4.2, cut: true, text: 'Демон: «…камеры… я всё равно… буду… смотреть…»', shake: 0.012, drift: 0.5, onStart: () => { d.userData.coreL.intensity = 8; d.userData.coreL.color.setHex(0xffffff); SFX.tone(58, 2.2, 'sawtooth', 0.07, -26); } },
     // 5. ядро схлопывается — вспышка, волна, слоумо
-    { pos: () => hp().clone().add(new THREE.Vector3(0, 1.7, -4.6)), look: () => hp(), dur: 3.6, text: 'Ядро вспыхивает. Тело рассыпается пеплом.', shake: 0.14, onStart: () => { SFX.slam(); SFX.noise(2.5, 0.3, 400); cineSlow(0.4, 1100); cineShockRing(hp(), 0xffd8a0, 20, 46); cineEmbers(hp(), 60, { spread: 4, up: 4.0, life: 2.8 }); const iv = setInterval(() => { d.scale.multiplyScalar(0.94); d.position.y -= 0.03; if (d.scale.x < 0.05) clearInterval(iv); }, 50); cineFlashColor('#ffffff', 0.92, 1400); } },
+    { pos: () => hp().clone().add(new THREE.Vector3(0, 1.7, -4.6)), look: () => hp(), dur: 3.6, dpose: { dur: 2.4, ease: 'out', to: { hipsY: 0.5, torsoX: 1.25, neckX: 0.9, headX: 0.7, jawX: 0.9, shL_x: -1.0, shR_x: -1.0, elL_x: -1.2, elR_x: -1.2, wingL: -0.9, wingR: 0.9 } }, text: 'Ядро вспыхивает. Тело рассыпается пеплом.', shake: 0.14, onStart: () => { SFX.slam(); SFX.noise(2.5, 0.3, 400); cineSlow(0.4, 1100); cineShockRing(hp(), 0xffd8a0, 20, 46); cineEmbers(hp(), 60, { spread: 4, up: 4.0, life: 2.8 }); const iv = setInterval(() => { d.scale.multiplyScalar(0.94); d.position.y -= 0.03; if (d.scale.x < 0.05) clearInterval(iv); }, 50); cineFlashColor('#ffffff', 0.92, 1400); } },
     // 6. пепел падает, луч света над местом гибели
     { pos: [bx + 4.5, 2.2, bz + TZ - 13], look: [bx, 2.2, bz + TZ - 1], dur: 4.0, cut: true, text: 'Пепел оседает. Впервые за долгое время под GRAND MALL тихо.', shake: 0, onStart: () => { cineLightBeam({ x: bx, z: bz + TZ + 0.6 }, 0xffd27a, 26); cineEmbers(new THREE.Vector3(bx, 7, bz + TZ), 70, { color: 0xb9b2a8, spread: 14, up: -0.5, grav: 0.004, life: 4.0, y0: 2, size: 0.05 }); SFX.humStop(); } },
     // 7. финал: игрок в луче, титр «ПОВЕРЖЕН»
@@ -19637,6 +19683,7 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
 
   // --- DLC: демон и монстр фабрики ---
   updateDemon(delta);
+  dposeApply(DLC.demon, window.cine ? delta * (window._cineSpeed || 1) : delta);
   updateNavigation(delta);
   if (window._grassTime) window._grassTime.value = animationTime;
   if (!window._introDone && localPlayer && localPlayer.mesh && !window.cine) { window._introDone = true; setTimeout(startIntroFlight, 150); }
