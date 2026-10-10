@@ -9385,13 +9385,26 @@ function updateCine() {
   const k0 = Math.min(c.t / s.dur, 1), nxt = c.steps[c.i + 1], prv = c.steps[c.i - 1];
   const eIn = (!prv || prv.cut || s.cut) ? 1 : 0.45, eOut = (!nxt || nxt.cut) ? 1 : 0.45;
   const sm = k0 * k0 * k0 * (k0 * (k0 * 6 - 15) + 10), k = k0 + (sm - k0) * (k0 < 0.5 ? eIn : eOut);
-  const P = _cv(s.pos), L = _cv(s.look);
-  const tp = c.from.pos.clone().lerp(P, s.cut ? 1 : k), tl = c.from.look.clone().lerp(L, s.cut ? 1 : k);
+  // Режим «от первого лица» (шаг с fp: true): камера на голове игрока, плавно следует за ним
+  const fpOn = !!s.fp && !!(localPlayer && localPlayer.mesh);
+  let P, L;
+  if (fpOn) {
+    const mp = localPlayer.mesh.position, ry = localPlayer.mesh.rotation.y, T = performance.now() / 1000;
+    const runK = localPlayer.currentAnimation === 'run' ? 1 : (localPlayer.currentAnimation === 'walk' ? 0.5 : 0.15);
+    // покачивание головы в такт шагам (синусоида по скорости бега), без рывков
+    P = new THREE.Vector3(mp.x, mp.y + 1.62 + Math.abs(Math.sin(T * 9)) * 0.045 * runK, mp.z);
+    L = s.look ? _cv(s.look) : new THREE.Vector3(mp.x + Math.sin(ry) * 10, 1.4, mp.z + Math.cos(ry) * 10);
+    localPlayer.mesh.visible = false; c._fpOn = true;
+  } else {
+    P = _cv(s.pos); L = _cv(s.look);
+    if (c._fpOn) { localPlayer.mesh.visible = true; c._fpOn = false; }
+  }
+  const tp = fpOn ? P.clone() : c.from.pos.clone().lerp(P, s.cut ? 1 : k), tl = fpOn ? L.clone() : c.from.look.clone().lerp(L, s.cut ? 1 : k);
   if (!c.smPos || s.cut) { c.smPos = tp.clone(); c.smLook = tl.clone(); }
   const kf = 1 - Math.exp(-10 * delta); c.smPos.lerp(tp, kf); c.smLook.lerp(tl, kf);
   const pos = c.smPos.clone(), look = c.smLook.clone();
   // «живая» камера: микродрейф оператора + медленный наезд на длинных планах
-  if (!s.cut) { const T = performance.now() / 1000, amp = s.drift === undefined ? 1 : s.drift;
+  if (!s.cut && !fpOn) { const T = performance.now() / 1000, amp = s.drift === undefined ? 1 : s.drift;
     pos.x += (Math.sin(T * 0.7) * 0.03 + Math.sin(T * 1.9 + 2) * 0.012) * amp; pos.y += (Math.sin(T * 0.9 + 1) * 0.022 + Math.sin(T * 2.3) * 0.008) * amp; pos.z += Math.cos(T * 0.6 + 0.5) * 0.03 * amp;
     look.x += Math.sin(T * 0.5 + 3) * 0.05 * amp; look.y += Math.sin(T * 0.8) * 0.035 * amp;
     if (s.dur > 2.2 && c.from.pos.distanceTo(P) < 0.5) { const dv = look.clone().sub(pos); dv.y = 0; if (dv.lengthSq() > 0.01) pos.addScaledVector(dv.normalize(), sm * Math.min(0.6, s.dur * 0.12)); }
@@ -9399,13 +9412,13 @@ function updateCine() {
   if (c.shake > 0) pos.add(new THREE.Vector3((Math.random() - 0.5) * c.shake, (Math.random() - 0.5) * c.shake, (Math.random() - 0.5) * c.shake));
   const vg = document.getElementById('cineGrain'); if (vg) vg.style.opacity = (0.06 + c.shake * 0.8).toFixed(2);
   camera.position.copy(pos); const rl = s.cut ? 0 : Math.sin(performance.now() / 1000 * 0.45) * 0.006 + (c.shake > 0 ? (Math.random() - 0.5) * c.shake * 0.15 : 0); camera.up.set(Math.sin(rl), Math.cos(rl), 0); camera.lookAt(look); camera.up.set(0, 1, 0);
-  if (localPlayer && localPlayer.mesh) localPlayer.mesh.visible = true;
+  if (!fpOn && localPlayer && localPlayer.mesh) localPlayer.mesh.visible = true;   // тело скрыто только в шагах «от первого лица»
   if (c.t >= s.dur) {
     c.from = { pos: P.clone(), look: L.clone() }; c.i++; c.t = 0;
     if (c.i < c.steps.length && c.steps[c.i].cut) { SFX.noise(0.12, 0.05, 1500); const f = document.getElementById('cineFade'); if (f) { f.style.transition = 'none'; f.style.opacity = '0.6'; requestAnimationFrame(() => requestAnimationFrame(() => { f.style.transition = 'opacity .25s ease'; f.style.opacity = '0'; })); } }
     if (c.i >= c.steps.length) {
       const cvx = document.getElementById('cineVig'); if (cvx) cvx.style.opacity = 0; const hx = document.getElementById('cineHint'); if (hx) hx.style.display = 'none';
-      window.cine = null; window._cineSpeed = 1; document.body.classList.remove('cine-on'); if (window.elevatorCut && window.elevatorCut.phase === 'cine') window.elevatorCut = null;
+      window.cine = null; window._cineSpeed = 1; document.body.classList.remove('cine-on'); if (localPlayer && localPlayer.mesh) localPlayer.mesh.visible = true; if (window.elevatorCut && window.elevatorCut.phase === 'cine') window.elevatorCut = null;
       document.getElementById('cineTop').classList.remove('in'); document.getElementById('cineBot').classList.remove('in');
       setTimeout(() => { if (!window.cine) ['cineTop', 'cineBot'].forEach(id => document.getElementById(id).style.display = 'none'); }, 560); document.getElementById('cineSub').style.display = 'none';
       if (c.fovBase && camera.fov !== c.fovBase) { camera.fov = c.fovBase; camera.updateProjectionMatrix(); }
@@ -10846,7 +10859,7 @@ function monsterEmergeCine() {
     // побег: камера сзади, игрок уходит от люка, монстр ломает стеллажи за спиной
     { pos: () => { const v = awayDir(), p = pl(); return new THREE.Vector3(p.x - v.x * 5, p.y + 2.4, p.z - v.z * 5); },
       look: () => { const v = awayDir(), p = pl(); return new THREE.Vector3(p.x + v.x * 2, p.y + 1.3, p.z + v.z * 2); },
-      dur: 2.8, shake: 0.06, text: 'Бегом. Не оглядываясь.',
+      dur: 2.8, shake: 0.06, fp: true, text: 'Бегом. Не оглядываясь.',
       onStart: () => { const v = awayDir(), p = pl(); _lerpPlayerTo(p.x + v.x * 12, p.z + v.z * 12, 2.6); localPlayer.currentAnimation = 'run'; runIv = setInterval(() => { localPlayer.currentAnimation = 'run'; }, 60); SFX.step(true, 0.14, true); } }
   ], () => {
     if (runIv) clearInterval(runIv);
@@ -10922,7 +10935,7 @@ function exitFactory() {
           let e = 0; const mi = setInterval(() => { e += 0.05; mon.position.z = TZ - 7 + Math.min(1, e / 1.6) * 9; mon.userData._forceRun = true; if (e >= 1.6) clearInterval(mi); }, 50); } },
       { pos: () => [m.position.x + 2.2, 1.6, m.position.z + 2.8], look: () => headPos(), dur: 2.2, text: 'Гена: «БЕГИ!!! НЕ СТОЙ!!!»', shake: 0.06, onStart: () => { setVictimEmotion('shout'); } },
       // 1. ПОБЕГ ЧЕРЕЗ ЗАЛ: зигзагом между ящиками, прыжок через балку, мосты над головой
-      { pos: () => [m.position.x + 4.5, 1.9, m.position.z + 1.5], look: () => [m.position.x - 2, 1.4, m.position.z], dur: 5.0, text: 'Вы: «Держись рядом! Между ящиками!»', shake: 0.03, cut: true, onStart: () => {
+      { fp: true, pos: () => [m.position.x + 4.5, 1.9, m.position.z + 1.5], look: () => [m.position.x - 2, 1.4, m.position.z], dur: 5.0, text: 'Вы: «Держись рядом! Между ящиками!»', shake: 0.03, cut: true, onStart: () => {
           const WP = FL.WP.map(([x, z]) => new THREE.Vector3(gx0 + x, 0, gz0 + z));
           const mk = (o, i) => ({ o, i, done: false }); const P = mk(m, 1), V = mk(v, 1), M = mk(mon, 0); M.stopAt = WP.length - 3;
           const adv = (S, sp, dt, off) => { if (S.done || !S.o) return; const tg = WP[S.i]; if (!tg) { S.done = true; return; } const tx = tg.x + (off ? off.x : 0), tz = tg.z + (off ? off.z : 0); const dx = tx - S.o.position.x, dz = tz - S.o.position.z, d = Math.hypot(dx, dz); const st = Math.min(d, sp * dt); if (d > 0.01) { S.o.position.x += dx / d * st; S.o.position.z += dz / d * st; S.o.rotation.y = Math.atan2(dx, dz); } if (d < 0.6) { S.i++; if (S.stopAt !== undefined && S.i >= S.stopAt) S.done = true; } };
@@ -10937,18 +10950,18 @@ function exitFactory() {
             DLC._runDebris.forEach(d => { if (d.position.y <= 0.15 && d.userData.v.y <= 0) { d.userData.v.multiplyScalar(0.7); d.userData.v.y = 0; d.userData.av.multiplyScalar(0.6); return; } d.userData.v.y -= 16 * dt; d.position.addScaledVector(d.userData.v, dt); if (d.position.y < 0.15) d.position.y = 0.15; d.rotation.x += d.userData.av.x * dt; d.rotation.y += d.userData.av.y * dt; d.rotation.z += d.userData.av.z * dt; });
             if (P.done && V.done) { clearInterval(DLC._runIv); DLC._runIv = null; }
           }, 33); } },
-      { pos: () => [m.position.x - 3.5, 2.6, m.position.z - 1.5], look: () => headPos(), dur: 4.5, text: 'Оно ломится следом, снося ящики и бочки. Мосты над головой дрожат.', shake: 0.07 },
-      { pos: () => [m.position.x + 2, 9.5, m.position.z + 6], look: () => [m.position.x, 1.2, m.position.z], dur: 4.5, text: '', shake: 0.05 },
-      { pos: () => [m.position.x - 1.5, 1.7, m.position.z - 4], look: () => [m.position.x, 1.4, m.position.z + 3], dur: 4.5, text: 'Вы: «Через вент. зал! В атриум и к проходной!»', shake: 0.04 },
-      { pos: () => [m.position.x + 2.6, 1.5, m.position.z + 4.2], look: () => [m.position.x, 1.3, m.position.z - 1], dur: 3.5, text: 'Гена: «КОД! Быстрее, код!»', shake: 0.04 },
+      { fp: true, pos: () => [m.position.x - 3.5, 2.6, m.position.z - 1.5], look: () => headPos(), dur: 4.5, text: 'Оно ломится следом, снося ящики и бочки. Мосты над головой дрожат.', shake: 0.07 },
+      { fp: true, pos: () => [m.position.x + 2, 9.5, m.position.z + 6], look: () => [m.position.x, 1.2, m.position.z], dur: 4.5, text: '', shake: 0.05 },
+      { fp: true, pos: () => [m.position.x - 1.5, 1.7, m.position.z - 4], look: () => [m.position.x, 1.4, m.position.z + 3], dur: 4.5, text: 'Вы: «Через вент. зал! В атриум и к проходной!»', shake: 0.04 },
+      { fp: true, pos: () => [m.position.x + 2.6, 1.5, m.position.z + 4.2], look: () => [m.position.x, 1.3, m.position.z - 1], dur: 3.5, text: 'Гена: «КОД! Быстрее, код!»', shake: 0.04 },
       // 1. Гена набирает код
-      { pos: [gx + 3.2, 2.2, gz - 5], look: [gx + 2.6, 1.5, gz - 0.5], dur: 2.6, text: 'Гена лихорадочно бьёт по кнопкам…', shake: 0.03, onStart: () => { if (DLC._runIv) { clearInterval(DLC._runIv); DLC._runIv = null; } if (localPlayer.animOverride && localPlayer.animOverride.name === 'run') localPlayer.animOverride = null; m.position.set(gx - 0.8, 0.01, gz - 2.2); m.rotation.y = 0; if (v) { v.position.set(gx + 2.0, 0, gz - 1.3); v.rotation.y = 0; } mon.position.set(gx - 6, 0, gz - 16); mon.rotation.y = 0; if (v) { v.position.set(gx + 2.0, 0, gz - 1.3); v.rotation.y = 0; setVictimEmotion('scared'); } m.position.set(gx - 0.8, 0.01, gz - 2.2); m.rotation.y = 0; pinAutoType('0313', 'ВОРОТА · ПРОХОДНАЯ', 2000, DLC.gateKeypad); if (v) { v.userData.armState = 'type'; setVictimEmotion('scared'); } } },
+      { fp: true, pos: [gx + 3.2, 2.2, gz - 5], look: [gx + 2.6, 1.5, gz - 0.5], dur: 2.6, text: 'Гена лихорадочно бьёт по кнопкам…', shake: 0.03, onStart: () => { if (DLC._runIv) { clearInterval(DLC._runIv); DLC._runIv = null; } if (localPlayer.animOverride && localPlayer.animOverride.name === 'run') localPlayer.animOverride = null; m.position.set(gx - 0.8, 0.01, gz - 2.2); m.rotation.y = 0; if (v) { v.position.set(gx + 2.0, 0, gz - 1.3); v.rotation.y = 0; } mon.position.set(gx - 6, 0, gz - 16); mon.rotation.y = 0; if (v) { v.position.set(gx + 2.0, 0, gz - 1.3); v.rotation.y = 0; setVictimEmotion('scared'); } m.position.set(gx - 0.8, 0.01, gz - 2.2); m.rotation.y = 0; pinAutoType('0313', 'ВОРОТА · ПРОХОДНАЯ', 2000, DLC.gateKeypad); if (v) { v.userData.armState = 'type'; setVictimEmotion('scared'); } } },
       // 2. Ворота ползут вверх
-      { pos: [gx - 3, 2.6, gz - 6], look: [gx, 2, gz], dur: 3.0, text: 'Пи-и-ип. Ворота с лязгом ползут вверх…', shake: 0.02, onStart: () => { SFX.ok(); SFX.door(); let e = 0; const iv = setInterval(() => { e += 0.05; setGate(Math.min(3.9, e * 1.4)); if (e >= 2.8) clearInterval(iv); }, 50); } },
+      { fp: true, pos: [gx - 3, 2.6, gz - 6], look: [gx, 2, gz], dur: 3.0, text: 'Пи-и-ип. Ворота с лязгом ползут вверх…', shake: 0.02, onStart: () => { SFX.ok(); SFX.door(); let e = 0; const iv = setInterval(() => { e += 0.05; setGate(Math.min(3.9, e * 1.4)); if (e >= 2.8) clearInterval(iv); }, 50); } },
       // 3. Монстр сзади — рывок
-      { pos: () => [m.position.x + 1.5, 1.6, m.position.z + 2.5], look: () => headPos(), dur: 1.6, text: 'СЗАДИ!!!', shake: 0.1, cut: true, onStart: () => { mon.position.set(gx, 0, gz - 12); mon.rotation.y = 0; DLC.monsterRoar = true; SFX.roar(); setVictimEmotion('shout'); let e = 0; const iv = setInterval(() => { e += 0.05; mon.position.z = gz - 12 + Math.min(1, e / 1.4) * 9; mon.position.y = Math.sin(Math.min(1, e / 1.4) * Math.PI) * 1.2; if (e >= 1.4) clearInterval(iv); }, 50); } },
+      { fp: true, pos: () => [m.position.x + 1.5, 1.6, m.position.z + 2.5], look: () => headPos(), dur: 1.6, text: 'СЗАДИ!!!', shake: 0.1, cut: true, onStart: () => { mon.position.set(gx, 0, gz - 12); mon.rotation.y = 0; DLC.monsterRoar = true; SFX.roar(); setVictimEmotion('shout'); let e = 0; const iv = setInterval(() => { e += 0.05; mon.position.z = gz - 12 + Math.min(1, e / 1.4) * 9; mon.position.y = Math.sin(Math.min(1, e / 1.4) * Math.PI) * 1.2; if (e >= 1.4) clearInterval(iv); }, 50); } },
       // 4. Прыжок в проём, ворота падают, падаем на пол
-      { pos: [gx + 3.5, 1.2, gz + 4], look: [gx, 1.2, gz], dur: 1.8, text: '', shake: 0.05, cut: true, onStart: () => { let e = 0; const iv = setInterval(() => { e += 0.05; const k = Math.min(1, e / 0.9); m.position.z = gz - 2.2 + k * 5.2; m.position.y = Math.sin(k * Math.PI) * 0.9; m.rotation.x = -k * Math.PI / 2; if (v) { v.position.z = gz - 1.3 + k * 4.4; v.position.x = gx + 1.6; v.position.y = Math.sin(k * Math.PI) * 0.6; v.rotation.x = -k * 1.3; } if (k >= 1) { clearInterval(iv); m.position.y = 0.35; SFX.thud(); setTimeout(() => { SFX.slam(); let e2 = 0; const iv2 = setInterval(() => { e2 += 0.03; setGate(Math.max(0, 3.9 - e2 * 16)); if (e2 >= 0.3) clearInterval(iv2); }, 30); if (window.cine) window.cine.shake = 0.25; setTimeout(() => { if (window.cine) window.cine.shake = 0.03; }, 400); mon.position.z = gz - 1.2; }, 250); } }, 50); } },
+      { fp: true, pos: [gx + 3.5, 1.2, gz + 4], look: [gx, 1.2, gz], dur: 1.8, text: '', shake: 0.05, cut: true, onStart: () => { let e = 0; const iv = setInterval(() => { e += 0.05; const k = Math.min(1, e / 0.9); m.position.z = gz - 2.2 + k * 5.2; m.position.y = Math.sin(k * Math.PI) * 0.9; m.rotation.x = -k * Math.PI / 2; if (v) { v.position.z = gz - 1.3 + k * 4.4; v.position.x = gx + 1.6; v.position.y = Math.sin(k * Math.PI) * 0.6; v.rotation.x = -k * 1.3; } if (k >= 1) { clearInterval(iv); m.position.y = 0.35; SFX.thud(); setTimeout(() => { SFX.slam(); let e2 = 0; const iv2 = setInterval(() => { e2 += 0.03; setGate(Math.max(0, 3.9 - e2 * 16)); if (e2 >= 0.3) clearInterval(iv2); }, 30); if (window.cine) window.cine.shake = 0.25; setTimeout(() => { if (window.cine) window.cine.shake = 0.03; }, 400); mon.position.z = gz - 1.2; }, 250); } }, 50); } },
       // 5. Лежим на полу, монстр бьётся в ворота
       { pos: [gx + 2.4, 0.5, gz + 5.5], look: [gx, 1.6, gz], dur: 3.2, text: '…Оно бьётся в ворота. Металл гнётся, но держит.', shake: 0.04, onStart: () => { DLC.monsterRoar = true; let n = 0; const iv = setInterval(() => { SFX.slam(); DLC.exitGate.position.z = FACTORY_BASE.z + 49.7 + 0.15; setTimeout(() => DLC.exitGate.position.z = FACTORY_BASE.z + 49.7, 120); if (++n >= 4) clearInterval(iv); }, 800); } },
       // 6. Встаём
@@ -20319,7 +20332,7 @@ const SETTINGS = {
   nameTags: true,
   localRange: 30,
   camMode: 'third',
-  renderScale: 2, drawDist: 420, grassDensity: 2, fpsCap: 0, fov: 60, exposure: 9, sky: true, nav: true, minimalHud: false, hudMoney: true, hudCoins: true, hudLevel: true, hudJob: true, hudOnline: true, hudHealth: true, hudQuest: true, hudFpass: true, hudChat: true,
+  renderScale: 2, drawDist: 420, grassDensity: 2, fpsCap: 0, fov: 60, exposure: 9, sky: true, nav: true, minimalHud: false, hudMoney: true, hudCoins: true, hudLevel: true, hudJob: true, hudOnline: true, hudHealth: true, hudQuest: true, hudFpass: true, hudChat: true, trailerMode: false,
   shaderQuality: 'high', maxLights: 12, toneMap: 'aces', colorGrade: 'cinematic', aniso: 4, texFilter: 'linear', sharp: 0, vignette: true, grain: false, faceAnim: true, fpsShow: false, dynRes: false, detail: true, radar: true, perf: false,
   invertY: false, firstFov: 78, handSway: true,
   menuCompact: true, menuHidden: [], bgMusic: true
@@ -20454,6 +20467,7 @@ function toggleSetting(key) {
   if (key === 'menuCompact' && window.applyMenuSettings) window.applyMenuSettings();
   if (key === 'bgMusic' && window.musicRefresh) window.musicRefresh();
   if (key === 'minimalHud' || key.indexOf('hud') === 0) { if (window.applyHudVisibility) window.applyHudVisibility(); }
+  if (key === 'trailerMode' && window.applyTrailerMode) window.applyTrailerMode();
   const btn = document.getElementById('set_'+key);
   if (btn) { btn.textContent = SETTINGS[key] ? 'ВКЛ' : 'ВЫКЛ'; btn.className = 'toggle-btn ' + (SETTINGS[key] ? 'on' : 'off'); }
   if (key === 'fog' && typeof scene !== 'undefined' && scene) scene.fog = SETTINGS.fog ? new THREE.Fog(0x87CEEB, 100, 300) : null;
@@ -22791,7 +22805,7 @@ window.applyHudVisibility = function () {
 function renderHudCfg() {
   const box = document.getElementById('hudCfgList'); if (!box || box.dataset.ready) return;
   box.dataset.ready = '1';
-  const rows = [{ key:'minimalHud', label:'Минимальный интерфейс', desc:'Прячет все показатели и панели, остаются прицел, меню и радар. Как в одиночных играх.' }].concat(HUD_ITEMS);
+  const rows = [{ key:'trailerMode', label:'Режим трейлера (F9)', desc:'Временно для съёмки: прячет весь интерфейс, включает вид от первого лица. Клавиша F9 — переключить.' }, { key:'minimalHud', label:'Минимальный интерфейс', desc:'Прячет все показатели и панели, остаются прицел, меню и радар. Как в одиночных играх.' }].concat(HUD_ITEMS);
   rows.forEach(r => {
     const row = document.createElement('div'); row.className = 'sx-row';
     row.innerHTML = '<div class="sx-info"><div class="sx-name"></div><div class="sx-desc"></div></div><div class="sx-ctrl"><button id="set_' + r.key + '" class="toggle-btn on" onclick="toggleSetting(\'' + r.key + '\')">ВКЛ</button></div>';
@@ -22800,7 +22814,21 @@ function renderHudCfg() {
     box.appendChild(row);
   });
 }
-window.addEventListener('load', () => { renderHudCfg(); window.applyHudVisibility && window.applyHudVisibility(); });
+// ===== Режим трейлера (временный): весь интерфейс скрыт, вид от первого лица. Клавиша F9 — переключить =====
+(function () {
+  const st = document.createElement('style'); st.id = 'fzTrailerStyle';
+  st.textContent = 'body.fz-trailer #hud,body.fz-trailer #minimap,body.fz-trailer #chatPanel,body.fz-trailer #chatToggleBtn,body.fz-trailer #crosshair,body.fz-trailer #sideMenuWrap,body.fz-trailer #questPanel,body.fz-trailer #questHUD,body.fz-trailer #navHUD,body.fz-trailer #fpWidget,body.fz-trailer #hsHud,body.fz-trailer #actionButtons,body.fz-trailer #mobileControls,body.fz-trailer #mobileRightBtns,body.fz-trailer #mobileTopBtns,body.fz-trailer #notifications,body.fz-trailer #carHUD,body.fz-trailer #interiorHUD,body.fz-trailer #elevatorHUD{display:none !important}';
+  document.head.appendChild(st);
+})();
+window.applyTrailerMode = function () {
+  const on = !!SETTINGS.trailerMode;
+  document.body.classList.toggle('fz-trailer', on);
+  const btn = document.getElementById('set_trailerMode');
+  if (btn) { btn.textContent = on ? 'ВКЛ' : 'ВЫКЛ'; btn.className = 'toggle-btn ' + (on ? 'on' : 'off'); }
+  if (on && window.cameraMode !== 'first' && typeof toggleCameraMode === 'function') toggleCameraMode();
+};
+document.addEventListener('keydown', (e) => { if (e.code === 'F9') { e.preventDefault(); toggleSetting('trailerMode'); } });
+window.addEventListener('load', () => { renderHudCfg(); window.applyHudVisibility && window.applyHudVisibility(); window.applyTrailerMode && window.applyTrailerMode(); });
 </script>
 </body>
 
