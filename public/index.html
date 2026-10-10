@@ -9579,7 +9579,7 @@ function buildFactoryInterior() {
   stairs(-28.4, 30, -1); stairs(28.4, 30, -1);
   [[-30, 0], [30, 0], [-30, 40], [30, 40]].forEach(([x, z]) => { box(0.9, F2, 0.9, concreteD, x, F2 / 2, z); solid(x, z, 1, 1); });
   // центр: витрина-капсула, ресепшн, скамьи
-  { cyl(2.2, 2.2, 6, new THREE.MeshLambertMaterial({ color: 0x39ff14, transparent: true, opacity: 0.2, emissive: 0x39ff14, emissiveIntensity: 0.5 }), 0, 3.2, 20, 24); cyl(2.6, 2.6, 0.5, steel, 0, 0.25, 20, 24); cyl(2.6, 2.6, 0.4, steel, 0, 6.4, 20, 24); solid(0, 20, 5.4, 5.4); const sp = box(1.0, 2.4, 0.7, mat(0x0a1a0a), 0, 3.2, 20); sp.userData.spin = true; light(0x39ff14, 1.2, 14, 0, 3.5, 22); add(mallSign('ОБРАЗЕЦ №0 · ПРОЕКТ «КОЛЫБЕЛЬ» · НЕ ВСКРЫВАТЬ', bx, 7.4, bz + 22.8, 6, 0.6, { fg: '#39ff14', size: 70 })); }
+  { cyl(2.2, 2.2, 6, new THREE.MeshLambertMaterial({ color: 0x39ff14, transparent: true, opacity: 0.2, emissive: 0x39ff14, emissiveIntensity: 0.5 }), 0, 3.2, 20, 24); cyl(2.6, 2.6, 0.5, steel, 0, 0.25, 20, 24); cyl(2.6, 2.6, 0.4, steel, 0, 6.4, 20, 24); solid(0, 20, 5.4, 5.4); const sp = cyl(0.55, 0.55, 2.4, mat(0x0a1a0a), 0, 3.2, 20, 28); sp.userData.spin = true; light(0x39ff14, 1.2, 14, 0, 3.5, 22); add(mallSign('ОБРАЗЕЦ №0 · ПРОЕКТ «КОЛЫБЕЛЬ» · НЕ ВСКРЫВАТЬ', bx, 7.4, bz + 22.8, 6, 0.6, { fg: '#39ff14', size: 70 })); }
   box(8, 1.2, 1.4, mat(0x556270), 0, 0.6, 8); box(8, 0.1, 1.6, mat(0x7a8a9a), 0, 1.22, 8); solid(0, 8, 8, 1.6); box(0.7, 0.5, 0.08, mat(0x111, 0x3a8aff, 0.6), -2, 1.5, 7.7); roomSign('ℹ РЕГИСТРАТУРА', 0, 8.2, 0, '#a0e0ff', 2.6);
   [[-18, 12], [18, 12], [-18, 30], [18, 30]].forEach(([x, z]) => { box(3.6, 0.12, 0.5, mat(0x7a5a3a), x, 0.5, z); box(0.1, 0.5, 0.1, steel, x - 1.6, 0.25, z); box(0.1, 0.5, 0.1, steel, x + 1.6, 0.25, z); solid(x, z, 3.6, 0.6); });
   box(0.3, 0.012, 58, warn, -5, 0.03, 20); box(0.3, 0.012, 58, warn, 5, 0.03, 20);
@@ -14438,14 +14438,14 @@ function ensureViewModel() {
   if (ITEMS.vm || !camera) return;
   const vm = new THREE.Group(); vm.name = 'viewModel'; camera.add(vm); if (!scene.children.includes(camera)) scene.add(camera);
   const ap = (localPlayer && localPlayer.appearance) || {}; const skin = new THREE.MeshLambertMaterial({ color: ap.skinColor || 0xd4a574 }), sleeve = new THREE.MeshLambertMaterial({ color: ap.shirtColor || 0x3366aa });
-  const arm = new THREE.Group(); arm.position.set(0.34, -0.30, -0.42); arm.rotation.set(-0.35, -0.25, 0.15); vm.add(arm);
+  const arm = new THREE.Group(); arm.position.set(0.26, -0.2, -0.4); arm.rotation.set(-0.2, -0.2, 0.1); vm.add(arm);
   const fore = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.11, 0.42), sleeve); fore.position.z = -0.05; arm.add(fore);
   const hand = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.1, 0.14), skin); hand.position.z = -0.32; arm.add(hand);
   const fingers = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.06, 0.08), skin); fingers.position.set(0, -0.04, -0.4); arm.add(fingers);
   const holder = new THREE.Group(); holder.position.set(0, 0.02, -0.36); arm.add(holder);
   const armL = arm.clone(); armL.position.set(-0.34, -0.32, -0.42); armL.rotation.set(-0.35, 0.25, -0.15); armL.children.pop(); vm.add(armL);
-  // Руки от первого лица не показываем (по просьбе игрока); держатель предметов остаётся, предметы не пропадают
-  fore.visible = false; hand.visible = false; fingers.visible = false; armL.visible = false;
+  // Правая рука от первого лица видна и держит предмет (по просьбе игрока); левая рука скрыта
+  fore.visible = true; hand.visible = true; fingers.visible = true; armL.visible = false;
   vm.userData = { arm, armL, holder, base: arm.position.clone(), baseL: armL.position.clone() };
   ITEMS.vm = vm;
 }
