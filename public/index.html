@@ -14439,13 +14439,15 @@ function ensureViewModel() {
   const vm = new THREE.Group(); vm.name = 'viewModel'; camera.add(vm); if (!scene.children.includes(camera)) scene.add(camera);
   const ap = (localPlayer && localPlayer.appearance) || {}; const skin = new THREE.MeshLambertMaterial({ color: ap.skinColor || 0xd4a574 }), sleeve = new THREE.MeshLambertMaterial({ color: ap.shirtColor || 0x3366aa });
   const arm = new THREE.Group(); arm.position.set(0.26, -0.2, -0.4); arm.rotation.set(-0.2, -0.2, 0.1); vm.add(arm);
-  const fore = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.11, 0.42), sleeve); fore.position.z = -0.05; arm.add(fore);
-  const hand = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.1, 0.14), skin); hand.position.z = -0.32; arm.add(hand);
-  const fingers = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.06, 0.08), skin); fingers.position.set(0, -0.04, -0.4); arm.add(fingers);
+  // рука: рукав — предплечье; кисть охватывает держатель фонарика (большой палец сверху, четыре пальца снизу)
+  const fore = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.5), sleeve); fore.position.set(0, 0, -0.02); arm.add(fore);
+  const hand = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.09, 0.12), skin); hand.position.set(0, 0, -0.29); arm.add(hand);
+  const fingers = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.05, 0.1), skin); fingers.position.set(0, -0.06, -0.33); arm.add(fingers);
+  const thumb = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.05, 0.1), skin); thumb.position.set(-0.045, 0.04, -0.31); arm.add(thumb);
   const holder = new THREE.Group(); holder.position.set(0, 0.02, -0.36); arm.add(holder);
   const armL = arm.clone(); armL.position.set(-0.34, -0.32, -0.42); armL.rotation.set(-0.35, 0.25, -0.15); armL.children.pop(); vm.add(armL);
   // Правая рука от первого лица видна и держит предмет (по просьбе игрока); левая рука скрыта
-  fore.visible = true; hand.visible = true; fingers.visible = true; armL.visible = false;
+  fore.visible = true; hand.visible = true; fingers.visible = true; thumb.visible = true; armL.visible = false;
   vm.userData = { arm, armL, holder, base: arm.position.clone(), baseL: armL.position.clone() };
   ITEMS.vm = vm;
 }
