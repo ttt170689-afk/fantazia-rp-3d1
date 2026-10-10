@@ -9726,7 +9726,7 @@ function buildFactoryInterior() {
     solid(cx - 1.8, cz - 0.4, 0.2, 4.0); solid(cx + 1.8, cz - 0.4, 0.2, 4.0); solid(cx, cz - 2.3, 3.8, 0.2);
     box(3.4, 0.05, 3.6, concreteD, cx, 0.01, cz - 0.4);
     for (let k = 0; k < 8; k++) { const b1 = box(0.06, 2.8, 0.06, rustD, cx - 1.6 + k * 0.45, 1.4, cz + 1.6); if (main) DLC.cellBars.push(b1); }
-    box(3.4, 0.08, 0.08, rustD, cx, 2.8, cz + 1.6); if (!main) solid(cx, cz + 1.6, 3.4, 0.2);
+    box(3.4, 0.08, 0.08, rustD, cx, 2.8, cz + 1.6); solid(cx, cz + 1.6, 3.4, 0.2); if (main) DLC.cellFrontCol = basementColliders[basementColliders.length - 1];
     box(1.8, 0.4, 0.8, mat(0x4a4a4a), cx + 0.6, 0.3, cz - 1.6); box(1.6, 0.15, 0.7, mat(0x6a6a7a), cx + 0.6, 0.55, cz - 1.6);
     if (!main && rnd() > 0.3) box(0.5, 0.5, 0.5, mat(0xd8d0c0), cx - 0.6, 0.25, cz - 0.6);
     if (!main) { const l = light(0xffb080, 0.25, 5, cx, 2.5, cz); l.userData.flicker = rnd() * 6; }
@@ -9812,6 +9812,7 @@ function spawnFactoryVictim(x, z) {
   scene.add(g);
   basementObjects.push(g);
   DLC.factoryVictim = g;
+  _victimRigWhenReady(g);
   // бейджик
   const nc = document.createElement('canvas'); nc.width = 180; nc.height = 36;
   const nctx = nc.getContext('2d');
@@ -9971,6 +9972,82 @@ function poseMonsterGLB(m, delta, moving, roar) {
 }
 
 function setVictimEmotion(emo) { if (DLC.factoryVictim) DLC.factoryVictim.userData.emotion = emo; }
+// ===== Гена: скелетная модель (SuperRig) + верёвка на запястьях, которую развязывают по узлам =====
+function _victimRigWhenReady(g, tries) {
+  tries = tries || 0;
+  const SRg = window.SuperRig;
+  if (SRg && SRg.src && SRg.src.scene && typeof SRg.build === 'function') {
+    try { SRg.build(g, { skinColor: '#d4a574', hairColor: '#3a2a1a', shirtColor: '#4a6a8a', pantsColor: '#2d2a26' }); }
+    catch (e) { console.warn('[Гена] скелетная модель не собрана, остаётся процедурная:', e); return; }
+    g.userData.leftHand = g.userData.srModel.getObjectByName('leftHand') || null;
+    g.userData.rightHand = g.userData.srModel.getObjectByName('rightHand') || null;
+    _victimRopeBuild(g);
+    return;
+  }
+  if (tries < 100) setTimeout(() => _victimRigWhenReady(g, tries + 1), 150);
+}
+function _victimRopeBuild(g) {
+  const mat = new THREE.MeshLambertMaterial({ color: 0x9a7a4a });
+  const bridge = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 1, 6), mat);
+  bridge.castShadow = true; g.add(bridge);
+  const loops = [];
+  for (let i = 0; i < 4; i++) {
+    const t = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.02, 6, 14), mat);
+    t.castShadow = true; g.add(t);
+    loops.push({ mesh: t, t: (i + 1) / 5, gone: 0, vx: 0, vz: 0, p0: null });
+  }
+  g.userData.ropeFx = { bridge, loops, bridgeGone: false };
+}
+function victimHandsWorld(v) {
+  const u = v.userData, a = new THREE.Vector3(), b = new THREE.Vector3();
+  const lh = u.leftHand || (u.srModel && u.srModel.getObjectByName('leftHand')), rh = u.rightHand || (u.srModel && u.srModel.getObjectByName('rightHand'));
+  if (!lh || !rh) return v.position.clone().add(new THREE.Vector3(0, 1.0, 0));
+  lh.getWorldPosition(a); rh.getWorldPosition(b);
+  return a.add(b).multiplyScalar(0.5);
+}
+// развязать узел: петля соскальзывает с запястья и падает на пол
+function untieVictimStep(v, idx) {
+  const fx = v.userData.ropeFx; if (!fx || !fx.loops[idx]) return;
+  const L = fx.loops[idx]; if (L.gone > 0) return;
+  L.gone = 0.0001; L.p0 = L.mesh.position.clone();
+  L.vx = (Math.random() - 0.5) * 0.5; L.vz = 0.25 + Math.random() * 0.25;
+}
+// каждый кадр: мост между запястьями, петли на верёвке, упавшие петли лежат на полу
+function updateVictimRope(v, delta) {
+  const fx = v.userData.ropeFx; if (!fx) return;
+  const A = new THREE.Vector3(), B = new THREE.Vector3();
+  const lh = v.userData.leftHand, rh = v.userData.rightHand;
+  if (lh && rh) { lh.getWorldPosition(A); rh.getWorldPosition(B); v.worldToLocal(A); v.worldToLocal(B); }
+  else { A.set(-0.2, 1.0, 0.3); B.set(0.2, 1.0, 0.3); }
+  const dir = B.clone().sub(A), len = Math.max(0.001, dir.length()); dir.normalize();
+  fx.bridge.visible = !fx.bridgeGone;
+  fx.bridge.position.copy(A).add(B).multiplyScalar(0.5);
+  fx.bridge.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+  fx.bridge.scale.set(1, len, 1);
+  fx.loops.forEach(L => {
+    if (L.gone > 0) {
+      if (L.gone < 1) L.gone = Math.min(1, L.gone + delta * 2.2);
+      const k = L.gone, e = k * k;
+      L.mesh.position.set(L.p0.x + L.vx * k, L.p0.y + (0.04 - L.p0.y) * e, L.p0.z + L.vz * k);
+      L.mesh.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), (Math.PI / 2) * e);
+      L.mesh.visible = true;
+      return;
+    }
+    L.mesh.position.copy(A).lerp(B, L.t);
+    L.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir);
+    L.mesh.visible = !fx.bridgeGone;
+  });
+}
+// анимация Гены по состоянию
+function victimAnimName(v) {
+  const u = v.userData;
+  if (u.anim) return u.anim;
+  if ((u.armState || (u.ropeFx ? 'tied' : 'free')) === 'tied') return 'sit';
+  if (u.armState === 'walk') return 'walk';
+  if (u.emotion === 'talk' || u.emotion === 'relief') return 'talk';
+  if (u.emotion === 'shout') return 'talkExcited';
+  return 'idle';
+}
 function animateVictimFace(v, delta) {
   const f = v.userData.face; if (!f) return; const emo = v.userData.emotion || 'scared', t = animationTime;
   const target = { scared: { eye: 1.35, browY: 0.2, browRot: 0.35, mouthW: 0.12, mouthH: 0.12 }, shout: { eye: 1.5, browY: 0.21, browRot: 0.45, mouthW: 0.16, mouthH: 0.2 }, relief: { eye: 1.0, browY: 0.16, browRot: -0.1, mouthW: 0.2, mouthH: 0.04 }, talk: { eye: 1.05, browY: 0.17, browRot: 0, mouthW: 0.14, mouthH: 0.06 + Math.abs(Math.sin(t * 12)) * 0.08 } }[emo];
@@ -10714,6 +10791,7 @@ function updateFactoryMonster(delta) {
   // монстр поднимается из люка
   if (DLC.monster && !DLC.monster.userData.isGLB && DLC.monsterRise !== undefined) { DLC.monsterRise = Math.min(1, DLC.monsterRise + delta / 4.5); const k = DLC.monsterRise; DLC.monster.position.y = -4.2 + (1 - Math.pow(1 - k, 3)) * 4.2; if (k >= 1) DLC.monsterRise = undefined; }
   if (DLC.factoryVictim) animateVictimFace(DLC.factoryVictim, delta);
+  if (DLC.factoryVictim && DLC.factoryVictim.userData.srModel) { const gv = DLC.factoryVictim; gv.userData.mood = (gv.userData.emotion === 'talk' || gv.userData.emotion === 'shout') ? 'talk' : 'normal'; if (window.SuperRig && window.SuperRig.animate) window.SuperRig.animate(gv, victimAnimName(gv), delta); updateVictimRope(gv, delta); }
   // монтёр идёт следом
   if (DLC.factoryVictim && !DLC.victimRescued && !window.cine && localPlayer && localPlayer.mesh) { const v = DLC.factoryVictim, p = localPlayer.mesh.position, dx = p.x - v.position.x, dz = p.z - v.position.z; if (dx * dx + dz * dz < 64) { let d = Math.atan2(dx, dz) - v.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); v.rotation.y += d * Math.min(1, delta * 4); } }
   if (DLC.victimFollow && DLC.factoryVictim && !window.cine) {
@@ -10954,9 +11032,12 @@ function _rescueCine() {
   let poseIv = null; const holdPose = (a) => { if (poseIv) clearInterval(poseIv); poseIv = setInterval(() => setAnim(a), 60); };
   playCine([
     { pos: [kpx + 0.9, 1.9, kpz - 1.6], look: [kpx, 1.55, kpz], dur: 2.2, text: 'Пи-ип. Красный огонёк гаснет, замок щёлкает.', onStart: () => { keypadSetOk(kp); SFX.tick(); setTimeout(() => SFX.tick(), 500); m.position.set(kpx + 0.6, 0.01, kpz - 1.1); m.rotation.y = Math.PI; } },
-    { pos: [vp.x + 3.2, 2.4, vp.z - 5.5], look: [vp.x, 1.5, vp.z], dur: 3.2, text: 'Решётка со скрежетом уползает вверх.', shake: 0.012, onStart: () => { SFX.door(); let e = 0; const iv = setInterval(() => { e += 0.05; DLC.cellBars.forEach(b => b.position.y += 0.09); if (e >= 1.8) clearInterval(iv); }, 50); } },
+    { pos: [vp.x + 3.2, 2.4, vp.z - 5.5], look: [vp.x, 1.5, vp.z], dur: 3.2, text: 'Решётка со скрежетом уползает вверх.', shake: 0.012, onStart: () => { SFX.door(); if (DLC.cellFrontCol) { basementColliders = basementColliders.filter(c => c !== DLC.cellFrontCol); DLC.cellFrontCol = null; } let e = 0; const iv = setInterval(() => { e += 0.05; DLC.cellBars.forEach(b => b.position.y += 0.09); if (e >= 1.8) clearInterval(iv); }, 50); } },
     { pos: [vp.x - 2.6, 2.1, vp.z + 3.4], look: [vp.x, 1.3, vp.z - 0.5], dur: 3.0, text: 'Вы: «Тихо, тихо… Сейчас вытащу тебя.»', onStart: () => { _lerpPlayerTo(vp.x, vp.z - 1.3, 2.4, () => { m.rotation.y = Math.PI; }); setVictimEmotion('talk'); setTimeout(() => setVictimEmotion('scared'), 2000); } },
-    { pos: [vp.x + 1.9, 1.5, vp.z - 0.4], look: [vp.x, 1.3, vp.z - 0.6], dur: 3.5, text: 'Узлы затянуты намертво. Лезвие скрипит по волокнам…', onStart: () => { holdPose('crouch'); m.rotation.y = Math.PI; let n = 0; const iv = setInterval(() => { SFX.spark(); if (++n >= 4) clearInterval(iv); }, 700); } },
+    { pos: () => { const h = victimHandsWorld(v); return new THREE.Vector3(h.x + 1.3, h.y + 0.9, h.z + 1.9); }, look: () => victimHandsWorld(v), dur: 2.6, text: 'Узлы затянуты намертво. Развязывать, не резать — иначе верёвка порвёт руки.', onStart: () => { holdPose('crouch'); m.rotation.y = Math.PI; setVictimEmotion('scared'); } },
+    { pos: () => { const h = victimHandsWorld(v); return new THREE.Vector3(h.x + 0.7, h.y + 0.5, h.z + 1.2); }, look: () => victimHandsWorld(v), dur: 2.8, text: 'Первый узел. Пальцы скользят по мокрой верёвке…', onStart: () => { untieVictimStep(v, 0); SFX.tick(); } },
+    { pos: () => { const h = victimHandsWorld(v); return new THREE.Vector3(h.x + -0.6, h.y + 0.5, h.z + 1.4); }, look: () => victimHandsWorld(v), dur: 2.8, text: 'Второй узел. Петля соскальзывает с запястья.', onStart: () => { untieVictimStep(v, 1); setTimeout(() => untieVictimStep(v, 2), 900); SFX.tick(); } },
+    { pos: () => { const h = victimHandsWorld(v); return new THREE.Vector3(h.x + 0.4, h.y + 0.8, h.z + 1.6); }, look: () => victimHandsWorld(v), dur: 3.0, text: 'Последний виток. Руки свободны.', onStart: () => { untieVictimStep(v, 3); setTimeout(() => { if (v.userData.ropeFx) v.userData.ropeFx.bridgeGone = true; }, 600); setVictimEmotion('relief'); } },
     { pos: [vp.x - 1.6, 1.2, vp.z - 1.8], look: [vp.x, 1.2, vp.z], dur: 2.0, text: 'Верёвка падает на бетон.', onStart: () => { SFX.thud(); const r = v.userData.rope; if (r) { let e = 0; const iv = setInterval(() => { e += 0.05; r.position.y = Math.max(-1.06, r.position.y - 0.14); r.position.z += 0.03; r.children.forEach((c, i) => { c.rotation.z += 0.05 * (i % 2 ? 1 : -1); c.position.x += (i - 2) * 0.006; }); if (e >= 1.0) { clearInterval(iv); r.scale.y = 0.35; r.position.y = -0.3; } }, 50); } v.userData.armState = 'rub'; setVictimEmotion('relief'); if (poseIv) clearInterval(poseIv); poseIv = null; setAnim('idle'); } },
     { pos: [vp.x + 1.2, 2.0, vp.z + 2.6], look: [vp.x, 1.7, vp.z], dur: 3.0, text: 'Гена: «Ох… руки… три дня. Спасибо тебе.»', onStart: () => { setVictimEmotion('talk'); setTimeout(() => setVictimEmotion('relief'), 2200); } },
     { pos: [vp.x - 1.0, 2.0, vp.z + 2.8], look: [vp.x, 1.7, vp.z], dur: 4.5, text: 'Гена: «Я Гена, монтёр. ОНО поднялось из шахты, охрана заперла меня и сбежала. Оно слышит бег — держись стен.»', onStart: () => { v.userData.armState = 'free'; setVictimEmotion('talk'); setTimeout(() => setVictimEmotion('scared'), 4000); } },
@@ -19683,6 +19764,7 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
 
   // --- DLC: демон и монстр фабрики ---
   updateDemon(delta);
+  if (window._hsCageClamp && localPlayer && localPlayer.mesh) window._hsCageClamp(localPlayer.mesh.position);
   dposeApply(DLC.demon, window.cine ? delta * (window._cineSpeed || 1) : delta);
   updateNavigation(delta);
   if (window._grassTime) window._grassTime.value = animationTime;
@@ -22698,6 +22780,8 @@ document.addEventListener('keydown', e => { if (e.code === 'KeyP' && !(e.target 
   let rs = null;   // состояние раунда в комнате
   window._hsRoom = null;
   window._hsRsState = () => rs;   // для проверок
+  // прутья клетки: пока игрок в клетке, он не может выйти за круг прутьев (каждый кадр, см. игровой цикл)
+  window._hsCageClamp = (v) => { if (!rs || !rs.cage || !v) return; const dx = v.x - HOME.x, dz = v.z - HOME.z, d = Math.hypot(dx, dz), R = 1.65; if (d > R) { v.x = HOME.x + dx / d * R; v.z = HOME.z + dz / d * R; } };
   function hsRoundEnd(msg) {
     if (!rs) return;
     (window._hsEndLog = window._hsEndLog || []).push(msg + ' | phase=' + rs.phase + ' isHider=' + rs.isHider);
