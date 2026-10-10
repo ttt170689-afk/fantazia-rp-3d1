@@ -13054,6 +13054,7 @@ function drawAccessoryOnCanvas(ctx, cx, sh, type) {
 // Материалы клонируются один раз на меш, чтобы не менять материалы других игроков.
 function retintRig(mesh, ap) {
   if (!mesh || !ap) return;
+  if (ap.jacket === undefined && localPlayer && mesh === localPlayer.mesh) ap = Object.assign({}, ap, savedJacket());
   const CLR = {
     Skin_Face: ap.skinColor, Skin_Hands: ap.skinColor,
     Hoodie_Blue: ap.shirtColor, Accent_Cyan: ap.shirtColor,
@@ -13072,6 +13073,49 @@ function retintRig(mesh, ap) {
       nm.color.set(CLR[m.name]);
       if (DARK[m.name]) nm.color.multiplyScalar(DARK[m.name]);
     });
+  });
+  applyJacketOverlay(mesh, ap);
+}
+
+// ===== Куртка/кожанка: накладка поверх торса и рук (отдельные меши, копия геометрии с выдавливанием по нормалям) =====
+const JACKET_COLORS = { jacket: 0x8e44ad, leather: 0x2d1b1b };
+function jacketFromTop(topId) {
+  return JACKET_COLORS.hasOwnProperty(topId) ? { jacket: true, jacketColor: '#' + JACKET_COLORS[topId].toString(16).padStart(6, '0') } : { jacket: false };
+}
+function savedJacket() {
+  try { const j = JSON.parse(localStorage.getItem('fz_clothes') || 'null'); return jacketFromTop(j && j.top); } catch (e) { return { jacket: false }; }
+}
+function applyJacketOverlay(mesh, ap) {
+  if (!mesh || !ap) return;
+  const want = !!ap.jacket;
+  const PARTS = ['Torso', 'Arm_L_Upper', 'Arm_L_Lower', 'Arm_R_Upper', 'Arm_R_Lower'];
+  mesh.traverse(function (o) {
+    if (!o.isMesh && !o.isSkinnedMesh) return;
+    if (PARTS.indexOf(o.name) < 0) return;
+    if (!o.userData._jacket) {
+      if (!want || !o.geometry) return;
+      const g = o.geometry.clone();
+      const pos = g.attributes.position, nor = g.attributes.normal;
+      if (nor) {
+        for (let i = 0; i < pos.count; i++) {
+          pos.setXYZ(i, pos.getX(i) + nor.getX(i) * 0.045, pos.getY(i) + nor.getY(i) * 0.045, pos.getZ(i) + nor.getZ(i) * 0.045);
+        }
+        pos.needsUpdate = true;
+      }
+      const mat = new THREE.MeshLambertMaterial({ color: new THREE.Color(ap.jacketColor || '#8e44ad') });
+      let ov;
+      if (o.isSkinnedMesh) { ov = new THREE.SkinnedMesh(g, mat); ov.bind(o.skeleton, o.bindMatrix); }
+      else { ov = new THREE.Mesh(g, mat); }
+      ov.name = 'Jacket_' + o.name;
+      ov.position.copy(o.position); ov.quaternion.copy(o.quaternion); ov.scale.copy(o.scale);
+      o.parent.add(ov);
+      o.userData._jacket = ov;
+    }
+    const ov = o.userData._jacket;
+    if (ov) {
+      ov.visible = want;
+      if (want && ap.jacketColor) ov.material.color.set(ap.jacketColor);
+    }
   });
 }
 
@@ -13129,6 +13173,7 @@ function refreshPreview3D(force) {
     skinColor: document.getElementById('seSkIn').value, hairColor: document.getElementById('seHair').value,
     pantsColor: document.getElementById('sePants').value, shirtColor: hex(top.color), shoeColor: hex(shoe.color)
   };
+  Object.assign(ap, jacketFromTop(top.id));
   const bw = parseInt(document.getElementById('bodyWidthSlider').value) / 100;
   const bh = parseInt(document.getElementById('bodyHeightSlider').value) / 100;
   const acc = equippedAccessory || 'none';
@@ -13171,8 +13216,10 @@ function applySkinEditor() {
   // Update server
   const newAppearance = {
     ...localPlayer.appearance,
-    skinColor: skin, hairColor: hair, pantsColor: pants, shirtColor: shirtHex
+    skinColor: skin, hairColor: hair, pantsColor: pants, shirtColor: shirtHex, shoeColor: '#' + (CLOTHING_SHOES.find(t => t.id === skinEditorData.shoes) || CLOTHING_SHOES[0]).color.toString(16).padStart(6, '0')
   };
+  Object.assign(newAppearance, jacketFromTop(topItem.id));
+  try { localStorage.setItem('fz_clothes', JSON.stringify({ top: skinEditorData.topClothing, shoes: skinEditorData.shoes })); } catch (e) {}
   socket.emit('updateAppearance', newAppearance);
   localPlayer.appearance = newAppearance;
   retintRig(mesh, newAppearance);   // перекраска модели игрока SuperRig
