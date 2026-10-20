@@ -4,6 +4,8 @@ const { Server } = require('socket.io');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const SkyPolicy = require('./public/assets/fz-sky-policy');
+const { attachSkyAccess } = require('./server/sky-access');
 
 // ======================================================
 // FANTAZIA RP 3D SERVER
@@ -140,7 +142,7 @@ app.use(express.static(path.join(__dirname, 'public'), { etag: false, lastModifi
 
 // Главная страница
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.set('Cache-Control', 'no-store'); res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Проверка сервера
@@ -419,6 +421,7 @@ app.post('/api/admin/message', (req, res) => {
 // ======================================================
 
 const players = {};
+attachSkyAccess(io, players);
 const bans = {};
 const friendships = {};
 const portals = {};
@@ -803,7 +806,7 @@ io.on('connection', (socket) => {
         id: socket.id,
         socketId: socket.id,
         name: playerName,
-        position: { x: 0, y: 0, z: 0 },
+        position: { ...SkyPolicy.spawn },
         rotation: { y: 0 },
         appearance: {
           skinColor: data.skinColor || '#FFD1A4',
@@ -866,20 +869,18 @@ io.on('connection', (socket) => {
     const player = players[socket.id];
     if (!player) return;
 
-    const pos = data.position || {};
-    const rot = data.rotation || {};
+    const pos = data?.position || {};
+    const rot = data?.rotation || {};
 
-    player.position = {
-      x: Number(pos.x) || 0,
-      y: Number(pos.y) || 0,
-      z: Number(pos.z) || 0
-    };
+    const proposed = {x:Number(pos.x),y:Number(pos.y),z:Number(pos.z)};
+    player.position = SkyPolicy.position(proposed, player.position, socket.data.skyAdmin === true);
+    if (['x','y','z'].some(k => player.position[k] !== proposed[k])) socket.emit('sky:correction', player.position);
 
     player.rotation = {
       y: Number(rot.y) || 0
     };
 
-    player.animation = data.animation || 'idle';
+    player.animation = typeof data?.animation === 'string' ? data.animation.slice(0,32) : 'idle';
 
     socket.broadcast.emit('playerMoved', {
       id: socket.id,
@@ -1640,6 +1641,187 @@ app.get('/api/player/load', (req, res) => {
 // SECURITY NOTE (исправление ошибки): рекомендуется заменить SHA256 на bcrypt
 // Для этого установите: npm install bcrypt
 // И замените hashPassword() на bcrypt.hashSync(password, 10) + bcrypt.compareSync()
+
+// ======================================================
+// 💎 FANTAZIA SHOP — кристаллы, донат-предметы, DonationAlerts
+// Портировано из fantazia-shop (server.js), префикс /shop/*
+// ======================================================
+const SHOP_DA_SECRET  = process.env.DA_SECRET  || '';
+const SHOP_ADMIN_PASS = process.env.ADMIN_PASS || 'admin123';
+const SHOP_DA_URL     = process.env.DA_URL     || '';
+const SHOP_DB_FILE    = path.join(__dirname, 'shop-users.json');
+
+const SHOP_PACKS = [
+  { priceRub: 59,   gems: 60   },
+  { priceRub: 139,  gems: 150  },
+  { priceRub: 269,  gems: 320  },
+  { priceRub: 549,  gems: 700  },
+  { priceRub: 999,  gems: 1500 },
+  { priceRub: 1999, gems: 3500 },
+];
+function shopCalcGems(amount) {
+  const rubles = Math.round(parseFloat(amount));
+  const exact = SHOP_PACKS.find(p => p.priceRub === rubles);
+  return exact ? exact.gems : Math.max(1, Math.floor(rubles * 1.75));
+}
+// Предмет → свойства персонажа (из оригинального магазина)
+const SHOP_ITEM_MAP = {
+  'Кожаная куртка':        { shirtColor: '#1a1a1a' },
+  'Кимоно Тёмной Луны':    { shirtColor: '#2E0A5A', pantsColor: '#0A0A2E' },
+  'Уличный худи':          { shirtColor: '#3D3D3D' },
+  'Деловой костюм':        { shirtColor: '#1C2B4A', pantsColor: '#1C2B4A' },
+  'Неоновый топ':          { shirtColor: '#FF00DD' },
+  'Шарф Арктики':          { shirtColor: '#DDEEFF' },
+  'Камуфляжные штаны':     { pantsColor: '#4A5340' },
+  'Платье Звёздной ночи':  { shirtColor: '#0A0A4A', pantsColor: '#0A0A4A' },
+  'Бронежилет':            { shirtColor: '#3A3A3A' },
+  'Корона Королей':        { accessory: 'crown' },
+  'Тёмные очки':           { accessory: 'glasses' },
+  'Золотые часы':          { accessory: 'watch' },
+  'Ожерелье Дракона':      { accessory: 'chain' },
+  'Цилиндр джентльмена':   { accessory: 'tophat' },
+  'Кольцо силы':           { accessory: 'ring' },
+  'Маска Тени':            { accessory: 'mask' },
+  'Перчатки ниндзя':       { accessory: 'gloves' },
+  'Шляпа ковбоя':          { accessory: 'cowboy' },
+  'Кепка':                 { accessory: 'cap' },
+  'Мини-корона':           { accessory: 'crown' },
+};
+// Каталог для игры: цены в кристаллах
+const SHOP_CATALOG = [
+  { name:'Кожаная куртка',       emoji:'🧥', type:'shirt',     price:60  },
+  { name:'Кимоно Тёмной Луны',   emoji:'🥋', type:'shirt',     price:120 },
+  { name:'Уличный худи',         emoji:'🧟', type:'shirt',     price:45  },
+  { name:'Деловой костюм',       emoji:'🤵', type:'shirt',     price:90  },
+  { name:'Неоновый топ',         emoji:'👚', type:'shirt',     price:75  },
+  { name:'Шарф Арктики',         emoji:'🧣', type:'shirt',     price:50  },
+  { name:'Камуфляжные штаны',    emoji:'👖', type:'pants',     price:55  },
+  { name:'Платье Звёздной ночи', emoji:'👗', type:'shirt',     price:110 },
+  { name:'Бронежилет',           emoji:'🦺', type:'shirt',     price:80  },
+  { name:'Корона Королей',       emoji:'👑', type:'accessory', price:150 },
+  { name:'Тёмные очки',          emoji:'🕶️', type:'accessory', price:70  },
+  { name:'Золотые часы',         emoji:'⌚', type:'accessory', price:90  },
+  { name:'Ожерелье Дракона',     emoji:'🐉', type:'accessory', price:130 },
+  { name:'Цилиндр джентльмена',  emoji:'🎩', type:'accessory', price:85  },
+  { name:'Кольцо силы',          emoji:'💍', type:'accessory', price:140 },
+  { name:'Маска Тени',           emoji:'🎭', type:'accessory', price:100 },
+  { name:'Перчатки ниндзя',      emoji:'🥷', type:'accessory', price:65  },
+  { name:'Шляпа ковбоя',         emoji:'🤠', type:'accessory', price:60  },
+  { name:'Кепка',                emoji:'🧢', type:'accessory', price:40  },
+  { name:'Мини-корона',          emoji:'👸', type:'accessory', price:110 },
+  // ── АНИМИРОВАННЫЕ (редкие, FX) ──
+  { name:'Неоновая аура',        emoji:'💫', type:'fx',        price:200, fx:'aura'  },
+  { name:'Золотой след',         emoji:'✨', type:'fx',        price:250, fx:'trail' },
+  { name:'Питомец-кристалл',     emoji:'🔮', type:'fx',        price:350, fx:'pet'   },
+  { name:'Крылья феи',           emoji:'🧚', type:'fx',        price:400, fx:'wings' },
+];
+function shopLoadDB() {
+  try { if (fs.existsSync(SHOP_DB_FILE)) return JSON.parse(fs.readFileSync(SHOP_DB_FILE, 'utf8')); }
+  catch(e) {}
+  return {};
+}
+function shopSaveDB(db) {
+  try { fs.writeFileSync(SHOP_DB_FILE, JSON.stringify(db, null, 2)); } catch(e) {}
+}
+function shopUser(nick) {
+  const db = shopLoadDB();
+  const key = String(nick || '').toLowerCase().trim();
+  if (!db[key]) db[key] = { gems: 0, pendingGems: 0, donations: [], items: [], equippedItems: {} };
+  return { db, key };
+}
+// Конфиг для игры (ссылка доната)
+app.get('/shop/api/config', (req, res) => {
+  res.json({ ok: true, daUrl: SHOP_DA_URL, packs: SHOP_PACKS });
+});
+app.get('/shop/api/packs', (req, res) => res.json({ ok: true, packs: SHOP_PACKS }));
+app.get('/shop/api/catalog', (req, res) => res.json({ ok: true, catalog: SHOP_CATALOG }));
+// Данные пользователя
+app.get('/shop/api/user/:nick', (req, res) => {
+  const { db, key } = shopUser(req.params.nick);
+  const u = db[key];
+  res.json({ ok: true, gems: u.gems || 0, pendingGems: u.pendingGems || 0,
+    items: u.items || [], equippedItems: u.equippedItems || {} });
+});
+// Внешность для игры
+app.get('/shop/api/user/:nick/appearance', (req, res) => {
+  const { db, key } = shopUser(req.params.nick);
+  const u = db[key];
+  const ownedItems = (u.items || []).map(i => i.name);
+  const equipped = u.equippedItems || {};
+  let appearance = {};
+  for (const slot of ['shirt', 'pants', 'accessory']) {
+    if (equipped[slot] && SHOP_ITEM_MAP[equipped[slot]]) Object.assign(appearance, SHOP_ITEM_MAP[equipped[slot]]);
+  }
+  res.json({ ok: true, appearance, ownedItems, equippedItems: equipped, gems: u.gems || 0, pendingGems: u.pendingGems || 0 });
+});
+// Забрать кристаллы
+app.post('/shop/api/user/:nick/claim', express.json(), (req, res) => {
+  const { db, key } = shopUser(req.params.nick);
+  const pending = db[key].pendingGems || 0;
+  if (pending <= 0) return res.json({ ok: true, added: 0, gems: db[key].gems || 0 });
+  db[key].gems = (db[key].gems || 0) + pending;
+  db[key].pendingGems = 0;
+  shopSaveDB(db);
+  console.log(`💎 ${key} забрал ${pending} кристаллов. Итого: ${db[key].gems}`);
+  res.json({ ok: true, added: pending, gems: db[key].gems });
+});
+// Экипировать
+app.post('/shop/api/user/:nick/equip', express.json(), (req, res) => {
+  const { itemName, slot } = req.body || {};
+  const { db, key } = shopUser(req.params.nick);
+  const owned = (db[key].items || []).map(i => i.name);
+  if (!owned.includes(itemName)) return res.json({ ok: false, error: 'not owned' });
+  if (!db[key].equippedItems) db[key].equippedItems = {};
+  db[key].equippedItems[slot] = itemName;
+  shopSaveDB(db);
+  res.json({ ok: true, equippedItems: db[key].equippedItems });
+});
+// Потратить кристаллы (покупка)
+app.post('/shop/api/user/:nick/spend', express.json(), (req, res) => {
+  const { amount, item } = req.body || {};
+  const { db, key } = shopUser(req.params.nick);
+  if ((db[key].gems || 0) < amount) return res.json({ ok: false, error: 'not_enough' });
+  db[key].gems -= amount;
+  if (item) {
+    if (!db[key].items) db[key].items = [];
+    if (!db[key].items.find(i => i.name === item.name)) {
+      db[key].items.push({ ...item, date: new Date().toISOString() });
+    }
+  }
+  shopSaveDB(db);
+  res.json({ ok: true, gems: db[key].gems });
+});
+// Вебхук DonationAlerts: сообщение "НИК | Название пакета"
+app.post('/shop/webhook/da', express.json(), (req, res) => {
+  try {
+    if (SHOP_DA_SECRET) {
+      const incoming = req.headers['x-da-secret'] || req.body.secret;
+      if (incoming !== SHOP_DA_SECRET) return res.status(403).json({ ok: false, error: 'wrong secret' });
+    }
+    const { username, message, amount, alert_type } = req.body || {};
+    if (alert_type && alert_type !== 1) return res.json({ ok: true, skip: true });
+    if (!message || !amount) return res.json({ ok: false, error: 'no message/amount' });
+    const nick = String(message).split('|')[0].trim();
+    if (!nick) return res.json({ ok: false, error: 'no nick' });
+    const gems = shopCalcGems(amount);
+    const { db, key } = shopUser(nick);
+    db[key].pendingGems = (db[key].pendingGems || 0) + gems;
+    db[key].donations.push({ gems, amount: parseFloat(amount), daUser: username || '?',
+      message, date: new Date().toISOString(), verified: true });
+    shopSaveDB(db);
+    console.log(`✅ ДОНАТ: ${gems} кристаллов → ${nick} (${amount}₽ от ${username})`);
+    res.json({ ok: true, nick, gems });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+// Админ: ручная выдача
+app.post('/shop/api/admin/give', express.json(), (req, res) => {
+  const { pass, nick, gems } = req.body || {};
+  if (pass !== SHOP_ADMIN_PASS) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const { db, key } = shopUser(nick);
+  db[key].pendingGems = (db[key].pendingGems || 0) + parseInt(gems);
+  shopSaveDB(db);
+  res.json({ ok: true, nick, gems: parseInt(gems) });
+});
 
 const PORT = process.env.PORT || 3000;
 

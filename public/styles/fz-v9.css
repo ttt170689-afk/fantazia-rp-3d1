@@ -1,0 +1,664 @@
+/* Automatic cinematic intro and touch controls; classic UI styling is independent. */
+#fzFrontWorld {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(140deg, #b9b8a0, #426666);
+}
+#fzFrontWorld[hidden] {
+  display: none !important;
+}
+#fzFrontWorld canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+#fzFrontWorld.front-fallback:after {
+  content: "";
+  position: absolute;
+  inset: 28% 0 0;
+  background: repeating-linear-gradient(
+    90deg,
+    #45676c 0 11%,
+    #668983 11% 18%,
+    #a4aa91 18% 25%
+  );
+  clip-path: polygon(
+    0 30%,
+    12% 30%,
+    12% 5%,
+    25% 5%,
+    25% 40%,
+    40% 40%,
+    40% 0,
+    55% 0,
+    55% 25%,
+    76% 25%,
+    76% 10%,
+    100% 10%,
+    100% 100%,
+    0 100%
+  );
+}
+body.fz-intro-active #fzFrontWorld {
+  z-index: 100001;
+}
+body.fz-intro-active :is(#authScreen, #serverScreen) {
+  visibility: hidden !important;
+}
+#fzIntro {
+  position: fixed;
+  inset: 0;
+  z-index: 200000;
+  color: #fff8e4;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(
+    180deg,
+    #16353c44,
+    transparent 35%,
+    transparent 60%,
+    #12313c99
+  );
+  overflow: hidden;
+}
+#fzIntro .front-letterbox {
+  position: absolute;
+  inset: 0;
+  border-top: 28px solid #112d32;
+  border-bottom: 28px solid #112d32;
+  pointer-events: none;
+}
+#fzIntro .front-identity {
+  position: absolute;
+  top: 52px;
+  left: 5vw;
+  font-size: 11px;
+  letter-spacing: 0.23em;
+}
+#fzIntroSkip {
+  position: absolute;
+  right: 5vw;
+  top: 42px;
+  min-height: 44px;
+  border: 1px solid #e9e4c873;
+  border-radius: 28px;
+  background: #16373aaa;
+  color: #fff3d8;
+  padding: 11px 20px;
+  cursor: pointer;
+  font: 14px Arial;
+}
+#fzIntro .front-caption {
+  position: absolute;
+  bottom: 65px;
+  left: 5vw;
+  font-size: clamp(16px, 2.4vw, 24px);
+  font-weight: 500;
+  text-shadow: 0 2px 12px #143139;
+}
+#fzIntro .front-title {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.5s,
+    transform 0.6s;
+  background: #15343b55;
+  pointer-events: none;
+}
+#fzIntro[data-phase="title"] .front-title {
+  opacity: 1;
+  transform: none;
+}
+#fzIntro .front-title > span {
+  font-size: clamp(10px, 1.4vw, 14px);
+  letter-spacing: 0.25em;
+  color: #f6d1a6;
+}
+#fzIntro h1 {
+  font:
+    900 clamp(40px, 10.8vw, 136px) / 1 Arial,
+    sans-serif;
+  letter-spacing: -0.055em;
+  margin: 20px 0 5px;
+  text-shadow:
+    0 4px 0 #234547,
+    0 18px 38px #11282c99;
+}
+#fzIntro .front-title strong {
+  font: 700 clamp(23px, 4.7vw, 52px) Arial;
+  letter-spacing: 0.32em;
+  padding-left: 0.32em;
+  color: #ecc695;
+}
+#fzIntro .front-title small {
+  margin-top: 28px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: #d9e0ce;
+}
+#fzIntro .front-progress {
+  position: absolute;
+  bottom: 27px;
+  height: 2px;
+  left: 0;
+  right: 0;
+  background: #ffffff22;
+}
+#fzIntro .front-progress i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #dab87a;
+  transform-origin: left;
+  transform: scaleX(0);
+}
+/* The pre-v9 auth, main-menu and in-game menu styles live in index.html
+   and fz-ui.css. Keep this file limited to the intro and touch controls. */
+/* Old touch panes are retired. World gestures attach to the canvas itself. */
+#htmlRoot body #mobileControls,
+#htmlRoot body #mobileRightBtns,
+#htmlRoot body #mobileTopBtns,
+#htmlRoot body #touchCameraZone {
+  display: none !important;
+  pointer-events: none !important;
+}
+#fzTouch[hidden],
+#fzTouchPanel[hidden] {
+  display: none !important;
+}
+#fzTouch {
+  position: fixed;
+  inset: 0;
+  z-index: 9100;
+  pointer-events: none;
+  font: 12px Arial;
+  user-select: none;
+  -webkit-user-select: none;
+}
+#fzTouch button,
+#fzTouchStick {
+  pointer-events: auto;
+  touch-action: none;
+}
+#fzTouch button {
+  background: #173b40d9;
+  color: #f7ecd3;
+  border: 1px solid #d5d9bc77;
+  border-radius: 15px;
+  min-height: 48px;
+  font: 600 12px/1.25 Arial;
+  box-shadow: 0 3px 14px #102b3533;
+  padding: 6px;
+  cursor: pointer;
+}
+#fzTouch button[aria-pressed="true"] {
+  background: #d0b67a;
+  color: #123637;
+}
+#fzTouchStick {
+  position: absolute;
+  left: max(18px, env(safe-area-inset-left));
+  bottom: max(22px, env(safe-area-inset-bottom));
+  width: 116px;
+  height: 116px;
+  border-radius: 50%;
+  background: #163a3f66;
+  border: 1px solid #ebebd47a;
+  box-shadow: inset 0 0 0 13px #16393d33;
+  outline: 1px solid #203e3c33;
+  outline-offset: 7px;
+}
+#fzTouchStick span {
+  position: absolute;
+  top: -25px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font: 9px Arial;
+  letter-spacing: 0.13em;
+  color: #f2ead1;
+  text-shadow: 0 2px 4px #1b383e;
+}
+#fzTouchKnob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 47px;
+  height: 47px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #d6d8babb;
+  border: 2px solid #f9edcd;
+  pointer-events: none;
+}
+#fzTouchActions {
+  position: absolute;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: 65px 65px;
+  gap: 7px;
+  pointer-events: none;
+}
+#fzTouchUse {
+  grid-column: 1/-1;
+  min-height: 52px !important;
+  background: #e0c28b !important;
+  color: #1b3d3b !important;
+  padding: 8px 10px !important;
+}
+#fzTouchMore {
+  position: absolute;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: 205px;
+  width: 48px;
+  font-size: 19px !important;
+}
+#fzTouchPanel {
+  position: fixed;
+  inset: 0;
+  z-index: 25000;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  background: #12303bc9;
+  color: #203e40;
+  font: 14px/1.5 Arial;
+}
+#fzTouchPanel .touch-card {
+  background: #eeeadd;
+  border-radius: 20px;
+  padding: 24px;
+  width: min(520px, 100%);
+  box-sizing: border-box;
+  max-height: calc(100dvh - 24px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+#fzTouchPanel header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+#fzTouchPanel h2 {
+  margin: 8px 0;
+  font-size: 25px;
+}
+#fzTouchPanel small {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  color: #5f7c70;
+}
+#fzTouchPanel button {
+  min-height: 46px;
+  border: 1px solid #a9bba6;
+  border-radius: 9px;
+  background: #dfe3d3;
+  color: #264b46;
+  padding: 10px;
+  font: 600 13px Arial;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+#fzTouchPanel button:focus-visible {
+  outline: 3px solid #a7793d;
+  outline-offset: 2px;
+}
+#fzTouchPanel .touch-tools {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 18px 0;
+}
+#fzTouchPanel label {
+  display: block;
+  margin-top: 22px;
+  font-weight: 600;
+}
+#fzTouchSensitivity {
+  width: 100%;
+  height: 44px;
+  accent-color: #315e55;
+  touch-action: pan-x;
+}
+#fzTouchPanel output {
+  float: right;
+}
+#htmlRoot body.fz-touch-device #gameCanvas {
+  touch-action: none;
+}
+#htmlRoot body.fz-touch-device :is(#fz8Shoot, #enterBuildingBtn) {
+  display: none !important;
+}
+#htmlRoot body.fz-touch-device.fz-touch-blocked #fzUIBar {
+  visibility: hidden !important;
+}
+#htmlRoot #minimap {
+  pointer-events: none;
+}
+#htmlRoot .modal-overlay {
+  z-index: 24000;
+  box-sizing: border-box;
+}
+#htmlRoot body.fz-touch-device .modal-overlay {
+  padding: 10px !important;
+  align-items: center !important;
+}
+#htmlRoot body.fz-touch-device .modal {
+  min-width: 0 !important;
+  width: 100% !important;
+  max-width: 600px !important;
+  max-height: calc(100dvh - 20px) !important;
+  box-sizing: border-box;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+#htmlRoot
+  body.fz-touch-device
+  :is(.modal, .fz8Modal, #fz8bPanel, #fzSeaModal, #fz8MetroModal, #fz8CityModal)
+  button {
+  min-height: 44px;
+  touch-action: manipulation;
+}
+#htmlRoot body.fz-touch-device :is(.modal-close, .ph-btn) {
+  min-width: 44px;
+  min-height: 44px;
+}
+#htmlRoot body.fz-touch-device #phoneUI {
+  max-height: calc(100dvh - 20px);
+  max-width: calc(100vw - 20px);
+  right: 10px !important;
+  bottom: 10px !important;
+}
+#htmlRoot #phHome,
+#htmlRoot #phApp {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+#htmlRoot #phAppBody {
+  min-height: 0;
+}
+#htmlRoot #phApp > div:first-child > span {
+  display: inline-grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+}
+#htmlRoot body:not(.fz-playing) :is(#fzTouch, #fzTouchPanel, #phoneUI) {
+  display: none !important;
+}
+@media (max-width: 760px) {
+  #fzIntro .front-letterbox {
+    border-width: 18px 0;
+  }
+  #fzIntro .front-identity {
+    top: 37px;
+    left: 20px;
+    font-size: 9px;
+    max-width: 120px;
+    line-height: 1.6;
+  }
+  #fzIntroSkip {
+    top: 28px;
+    right: 18px;
+    font-size: 12px;
+    padding: 10px 14px;
+  }
+  #fzIntro .front-progress {
+    bottom: 17px;
+  }
+  #fzIntro .front-caption {
+    left: 22px;
+    bottom: 52px;
+    max-width: 260px;
+    line-height: 1.5;
+  }
+  #fzIntro .front-title > span {
+    letter-spacing: 0.12em;
+  }
+}
+@media (max-height: 520px) {
+  #fzTouchStick {
+    width: 100px;
+    height: 100px;
+    bottom: 18px;
+  }
+  #fzTouchActions {
+    grid-template-columns: 72px 72px 72px;
+    gap: 6px;
+  }
+  #fzTouchUse {
+    grid-column: 1/-1;
+    min-height: 44px !important;
+  }
+  #fzTouchMore {
+    bottom: 129px;
+  }
+  #fzTouchActions button {
+    min-height: 44px;
+  }
+  #fzTouchCrouch {
+    grid-column: 3;
+    grid-row: 2;
+  }
+  #fzTouchRun {
+    grid-column: 3;
+    grid-row: 3;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #fzIntro * {
+    transition: none !important;
+    animation: none !important;
+  }
+  #htmlRoot :is(.auth-card, .fz-menu-btn, .fz-menu-content) {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+@media (max-height: 520px) {
+  #fzTouchUse {
+    grid-column: 1/3;
+    grid-row: 1;
+  }
+  #fzTouchJump {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  #fzTouchAttack {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  #fzTouchRun {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  #fzTouchCrouch {
+    grid-column: 3;
+    grid-row: 2;
+  }
+  #fzTouchMore {
+    bottom: 128px;
+  }
+}
+#htmlRoot body.fz-touch-device #fzUIBar {
+  top: max(12px, env(safe-area-inset-top));
+  left: max(12px, env(safe-area-inset-left));
+}
+#htmlRoot #serverScreen .fz-menu-btn.fz-play {
+  order: 0;
+}
+#htmlRoot #serverScreen .fz-menu-btn:not(.fz-play):not(.fz-exit) {
+  order: 1;
+}
+#htmlRoot #serverScreen .fz-menu-btn.fz-exit {
+  order: 2;
+}
+#htmlRoot body.fz-touch-device #danceBar {
+  position: fixed !important;
+  left: 10px !important;
+  right: 10px !important;
+  bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  max-height: calc(100dvh - 110px);
+  width: auto !important;
+  box-sizing: border-box;
+  overflow: auto;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid #c8d2b77a;
+  background: #143438f5;
+  z-index: 25000;
+}
+#htmlRoot body.fz-touch-device .dance-btn {
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  font: 13px Arial;
+  padding: 8px 12px;
+}
+#fzPhoneClose {
+  position: absolute;
+  right: 6px;
+  top: 43px;
+  width: 44px;
+  height: 44px;
+  z-index: 10;
+  border: 1px solid #adc6b877;
+  border-radius: 12px;
+  background: #16383ce6;
+  color: #f2e5ca;
+  font: 24px Arial;
+  cursor: pointer;
+}
+#htmlRoot
+  body.fz-touch-device
+  :is(.modal, #fz8bPanel, #fzUIMenu)
+  :is(input, select, textarea) {
+  font-size: 16px !important;
+}
+
+/* Keep the original centred layout usable on phones, including landscape.
+   No new palette or desktop composition overrides. */
+#htmlRoot #authScreen {
+  height: 100dvh;
+  overflow-y: auto;
+  padding: max(16px, env(safe-area-inset-top)) 16px
+    max(16px, env(safe-area-inset-bottom)) !important;
+  box-sizing: border-box;
+}
+#htmlRoot #authScreen .auth-card {
+  flex-shrink: 0;
+  margin: auto;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+}
+#htmlRoot #fzUIMenu .ui-card {
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+}
+#htmlRoot #serverScreen {
+  height: 100dvh;
+  overflow-y: auto;
+  padding: 70px 16px 48px;
+  box-sizing: border-box;
+}
+#htmlRoot #serverScreen .fz-menu-content,
+#htmlRoot #serverScreen .fz-menu-nav {
+  flex-shrink: 0;
+}
+@media (max-height: 650px) {
+  #htmlRoot #serverScreen {
+    justify-content: flex-start;
+  }
+  #htmlRoot #serverScreen .fz-menu-content {
+    margin: 0 0 22px;
+  }
+  #htmlRoot #serverScreen .fz-menu-bolt {
+    display: none;
+  }
+  #htmlRoot #serverScreen .fz-menu-title {
+    font-size: 36px;
+  }
+  #htmlRoot #serverScreen .fz-menu-nav {
+    gap: 8px;
+  }
+  #htmlRoot #serverScreen .fz-menu-btn {
+    min-height: 44px;
+    padding: 10px;
+  }
+  #htmlRoot #serverScreen .fz-menu-footer {
+    position: relative;
+    bottom: auto;
+    margin-top: 24px;
+    flex-shrink: 0;
+  }
+}
+
+/* v11 cinematic chapter cards — scoped strictly to the opening. */
+#fzIntro {
+  background: linear-gradient(
+    180deg,
+    #070c1670,
+    transparent 30%,
+    transparent 60%,
+    #070912c9
+  );
+}
+#fzIntro .front-letterbox {
+  border-color: #070910;
+}
+#fzIntro .front-chapter {
+  position: absolute;
+  left: 5vw;
+  bottom: 108px;
+  font: 600 11px Arial;
+  letter-spacing: 0.24em;
+  color: #f1bb81;
+}
+#fzIntro .front-title {
+  background: radial-gradient(ellipse, #0b1122c9, transparent 72%);
+}
+#fzIntro .front-title h1 {
+  text-shadow:
+    0 3px 0 #432f39,
+    0 0 45px #dc8d4d88,
+    0 12px 70px #040610;
+}
+#fzIntro .front-title strong {
+  color: #f7c28d;
+}
+#fzIntro .front-title:before {
+  content: "";
+  height: 1px;
+  width: min(350px, 70vw);
+  background: linear-gradient(90deg, transparent, #e5b882, transparent);
+  margin-bottom: 22px;
+}
+#fzIntro .front-progress i {
+  background: linear-gradient(90deg, #bb754f, #f8d2a0);
+}
+@media (max-width: 650px) {
+  #fzIntro .front-chapter {
+    left: 22px;
+    bottom: 125px;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+  }
+  #fzIntro .front-title > span {
+    max-width: 85vw;
+    line-height: 1.7;
+  }
+  #fzIntro .front-caption {
+    bottom: 55px;
+    max-width: 80vw;
+  }
+}

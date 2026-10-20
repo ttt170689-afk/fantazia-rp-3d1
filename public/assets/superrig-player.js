@@ -148,7 +148,8 @@ function tint(model, appearance) {
 function heldClipName(ch) {
   var ud = ch && ch.userData;
   if (!ud) return null;
-  if (!SR.itemPoses) { if (ud._swordMesh) ud._swordMesh.visible = false; return null; }
+  // позы предметов выключены — видимостью меча управляет setHeldItem игры, сюда не лезем
+  if (!SR.itemPoses) return null;
   var local = typeof localPlayer !== 'undefined' && !!localPlayer && localPlayer.mesh === ch;
   var slot = (local && typeof ITEMS !== 'undefined') ? ITEMS.slot : 0;
   var hasF = (typeof DLC !== 'undefined') && !!DLC.hasFlashlight;
@@ -190,7 +191,13 @@ SR.build = function (base, appearance) {
   // чтобы старая процедурная анимация больше ничего не рисовала.
   var junk = ud._procJunk || (ud._procJunk = new THREE.Group());   // в сцену НЕ добавляется
   var old = [];
-  base.traverse(function (o) { if (o.isMesh && !o.userData._srPart) old.push(o); });
+  base.traverse(function (o) {
+    if (!o.isMesh || o.userData._srPart) return;
+    // надетые аксессуары (шапки/очки) не трогаем — они переедут на голову рига вместе с accGroup
+    var p = o, insideAcc = false;
+    while (p) { if (p === ud.accGroup) { insideAcc = true; break; } p = p.parent; }
+    if (!insideAcc) old.push(o);
+  });
   old.forEach(function (o) {
     o.visible = false;
     o.userData._procBox = true;
@@ -493,7 +500,7 @@ SR.badge = function () {
     if (!SR.ready) {
       el.style.color = '#ff9a9a'; el.style.borderColor = 'rgba(255,120,120,.45)';
       el.textContent = 'АНИМАЦИИ: СТАРЫЕ (процедурные)\n' +
-        (SR.enabled ? 'exports/player_super.glb не загрузился' : 'SuperRig выключен: SuperRig.on()');
+        (SR.enabled ? (SR._why || 'ждём загрузку exports/player_super.glb') : 'SuperRig выключен: SuperRig.on()');
       return;
     }
     var ud = SR.last && SR.last.userData;
@@ -617,26 +624,38 @@ function loadHold(done) {
 }
 
 function load() {
-  if (!SR.enabled) { console.log('[SuperRig] выключен (SuperRig.on() — включить)'); return; }
-  if (!global.THREE || !THREE.GLTFLoader || !THREE.SkeletonUtils) { setTimeout(load, 250); return; }
+  if (!SR.enabled) { SR._why = 'SuperRig выключен (localStorage fz_superrig2=0): SuperRig.on()'; console.log('[SuperRig] выключен (SuperRig.on() — включить)'); return; }
+  if (!global.THREE || !THREE.GLTFLoader || !THREE.SkeletonUtils) {
+    SR._waitN = (SR._waitN || 0) + 1;
+    SR._why = 'жду THREE/GLTFLoader/SkeletonUtils (попытка ' + SR._waitN + ')';
+    if (SR._waitN === 40) console.error('[SuperRig] THREE.GLTFLoader или THREE.SkeletonUtils не загрузились — проверь подключение three.min.js');
+    setTimeout(load, 250); return;
+  }
+  SR._why = 'качаю exports/player_super.glb';
   new THREE.GLTFLoader().load(SR.url, function (g) {
-    SR.src = g;
-    SR.clips = g.animations.map(function (c) { return c.name; });
-    // второй файл — клипы с предметами; если его нет, игра работает без них
-    loadHold(function () {
-      SR.ready = true;
-      SR._tries = 0;
-      console.log('[SuperRig] player_super.glb загружен: ' + g.animations.length + ' анимаций');
-      hook();
-      var iv = setInterval(function () { hook(); if (SR._hooked) clearInterval(iv); }, 300);
-    });
+    try {
+      SR.src = g;
+      SR.clips = g.animations.map(function (c) { return c.name; });
+      // второй файл — клипы с предметами; если его нет, игра работает без них
+      loadHold(function () {
+        try {
+          SR.ready = true;
+          SR._tries = 0;
+          SR._why = 'ok';
+          console.log('[SuperRig] player_super.glb загружен: ' + g.animations.length + ' анимаций');
+          hook();
+          var iv = setInterval(function () { hook(); if (SR._hooked) clearInterval(iv); }, 300);
+        } catch (e) { SR._why = 'ошибка после загрузки: ' + (e && e.message); console.error('[SuperRig]', e); }
+      });
+    } catch (e) { SR._why = 'ошибка разбора GLB: ' + (e && e.message); console.error('[SuperRig]', e); }
   }, undefined, function (err) {
     // не сдаёмся с первого раза: сеть/прокси могли моргнуть
     SR._tries = (SR._tries || 0) + 1;
-    console.warn('[SuperRig] попытка ' + SR._tries + ': ' + SR.url + ' не загрузился', err && err.message ? err.message : '');
-    if (SR._tries < 4) setTimeout(load, 1200 * SR._tries);
-    else console.error('[SuperRig] ФАЙЛ АНИМАЦИЙ НЕ НАЙДЕН: ' + SR.url +
-      ' — положи player_super.glb в public/exports/, иначе игра играет старые процедурные анимации');
+    var msg = err && err.message ? err.message : String(err);
+    SR._why = 'GLB не загрузился (попытка ' + SR._tries + '): ' + msg;
+    console.warn('[SuperRig] попытка ' + SR._tries + ': ' + SR.url + ' не загрузился', msg);
+    if (SR._tries === 4) console.error('[SuperRig] ФАЙЛ АНИМАЦИЙ НЕ ЗАГРУЗИЛСЯ: ' + SR.url + ' — ' + msg);
+    setTimeout(load, SR._tries < 4 ? 1200 * SR._tries : 5000);   // дальше — повтор каждые 5 с, пока не загрузится
   });
 }
 
@@ -645,5 +664,22 @@ else load();
 
 // Индикатор по умолчанию СКРЫТ. Показать/скрыть — клавиша F9
 // (или вручную из консоли: SuperRig.badge()).
+// ВРЕМЕННО: индикатор показан сразу, чтобы видеть, какой риг реально загрузился.
+// Когда причина найдена — убрать строку ниже (F9 всё равно переключает).
+setTimeout(function () { try { SR.badge(); } catch (e) {} }, 1500);
+
+// Если модель SUPER так и не загрузилась — показать причину ПРЯМО В ИГРЕ,
+// а не только в консоль (иначе игрок видит коробку и не понимает почему).
+setTimeout(function () {
+  if (SR.ready || !SR.enabled || SR._warned) return;
+  SR._warned = true;
+  var why = SR._why || 'неизвестная ошибка';
+  console.error('[SuperRig] МОДЕЛЬ НЕ ЗАГРУЗИЛАСЬ: ' + why);
+  try {
+    if (typeof showNotification === 'function') {
+      showNotification('⚠️ SUPER-модель не загрузилась: ' + why + '. Персонаж пока коробочный.', 'error');
+    }
+  } catch (e) {}
+}, 15000);
 
 })(window);

@@ -43,10 +43,19 @@
       }
     }
   }
-  cleanAuth();
-  document.addEventListener('DOMContentLoaded', cleanAuth);
-  try { new MutationObserver(cleanAuth).observe(document.documentElement, { childList: true, subtree: true }); } catch (e) {}
-  var n = 0, iv = setInterval(function () { cleanAuth(); if (++n > 120) clearInterval(iv); }, 500);
+  let authObserver = null, authQueued = false;
+  function observeAuth() {
+    cleanAuth();
+    const scr = document.getElementById('authScreen');
+    if (!scr || authObserver) return;
+    authObserver = new MutationObserver(() => {
+      if (authQueued) return; authQueued = true;
+      queueMicrotask(() => { authQueued = false; cleanAuth(); });
+    });
+    authObserver.observe(scr, { childList: true, subtree: true });
+  }
+  observeAuth();
+  document.addEventListener('DOMContentLoaded', observeAuth);
 
   /* ---------- 2. БРОВИ НА МЕСТЕ ---------- */
   // Игра каждый кадр пишет в кости лица АБСОЛЮТНЫЕ координаты (brow.position.y = 0.19),
@@ -89,7 +98,12 @@
   }
 
   function loop() {
-    for (var i = 0; i < chars.length; i++) { try { fixOne(chars[i]); } catch (e) {} }
+    for (var i = chars.length - 1; i >= 0; i--) {
+      var ch = chars[i];
+      if (ch.parent) ch.__fzBrowAttached = true;
+      else if (ch.__fzBrowAttached) { chars.splice(i, 1); continue; }
+      try { fixOne(ch); } catch (e) {}
+    }
     // персонаж с новым ригом, если модуль SuperRig есть
     try { if (window.SuperRig && window.SuperRig.last) { watch(window.SuperRig.last); } } catch (e) {}
     requestAnimationFrame(loop);

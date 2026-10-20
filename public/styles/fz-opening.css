@@ -1,0 +1,211 @@
+/* v16 cinematic-only layer. Classic auth, menu and HUD keep their old design. */
+body.fz-intro-active #gameCanvas {
+  z-index: 100002 !important;
+  visibility: visible !important;
+  pointer-events: none !important;
+}
+body:not(.game-active):not(.fz-intro-active) #gameCanvas {
+  visibility: hidden;
+}
+body.fz-intro-active #fzGpuRecovery {
+  display: none !important;
+}
+#fzFrontWorld {
+  background: #0b111b;
+}
+#fzFrontWorld.front-fallback:after {
+  display: none;
+}
+#fzIntro {
+  perspective: 900px;
+  background: linear-gradient(
+    180deg,
+    #080e184d,
+    transparent 28%,
+    transparent 65%,
+    #080b1499
+  );
+}
+#fzIntro .front-letterbox {
+  border-top-width: clamp(32px, 6vh, 66px);
+  border-bottom-width: clamp(42px, 7vh, 74px);
+  pointer-events: none;
+}
+#fzIntro .front-credit {
+  background: transparent;
+  opacity: 0;
+  transition: none;
+  z-index: 1;
+}
+#fzIntro[data-phase="credit"] .front-credit {
+  opacity: 1;
+  background: radial-gradient(ellipse at 50% 50%, #172639, #070b13 75%);
+}
+#fzIntro[data-phase="gateway"] .front-credit {
+  opacity: 1;
+}
+#fzIntro .front-credit-type {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  transform: scale(var(--opening-credit-scale, 1));
+  opacity: var(--opening-credit-opacity, 1);
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+}
+#fzIntro .front-credit-type > span {
+  font: 400 clamp(14px, 1.7vw, 22px) / 1.5 Arial;
+  color: #c2cbd9;
+  letter-spacing: 0.12em;
+}
+#fzIntro .front-credit-type strong {
+  font: 700 clamp(17px, 4.2vw, 58px) / 1.2 Arial;
+  letter-spacing: 0.025em;
+  color: #f6ebd6;
+  text-shadow: 0 4px 35px #070a11;
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
+#fzIntro .front-credit-type i {
+  width: min(160px, 30vw);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #dcc198, transparent);
+}
+#fzIntro .front-loading {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 15vh;
+  z-index: 3;
+  text-align: center;
+  font: 12px/1.5 Arial;
+  color: #b9c8d7;
+  pointer-events: none;
+}
+#fzIntro[data-ready="true"] .front-loading {
+  display: none;
+}
+#fzIntro .front-cut {
+  position: absolute;
+  inset: 0;
+  background: #060a11;
+  opacity: var(--opening-cut, 0);
+  pointer-events: none;
+}
+#fzIntro .front-identity {
+  top: 22px;
+  left: 5vw;
+  color: #c7d0de;
+  font: 10px Arial;
+  letter-spacing: 0.18em;
+}
+#fzIntro .front-chapter {
+  bottom: 112px;
+  color: #e4c99f;
+}
+#fzIntro .front-caption {
+  bottom: 66px;
+  max-width: min(650px, 85vw);
+  font-size: 15px;
+  line-height: 1.6;
+  text-shadow: 0 2px 12px #000;
+}
+#fzIntro .front-title {
+  z-index: 1;
+  padding: 20px;
+  box-sizing: border-box;
+}
+#fzIntro .front-title h1 {
+  font-size: clamp(38px, 10.4vw, 138px);
+  letter-spacing: 0.07em;
+  text-shadow: 0 3px 35px #060b13;
+}
+#fzIntro .front-title strong {
+  color: #e9cba1;
+  letter-spacing: 0.35em;
+}
+#fzIntro .front-title small {
+  max-width: 90vw;
+  line-height: 1.7;
+  font-size: clamp(10px, 1vw, 14px);
+}
+#fzIntro .front-progress {
+  height: 2px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+#fzIntro .front-progress i {
+  background: #dac29d;
+}
+#fzIntroSkip {
+  z-index: 4;
+  background: #0e1726cc;
+  border-color: #73849b;
+  color: #eef2f7;
+}
+#fzIntroSkip:focus-visible {
+  outline: 3px solid #e1c499;
+  outline-offset: 3px;
+}
+@media (max-width: 650px) {
+  #fzIntro .front-identity {
+    top: 19px;
+    left: 16px;
+    max-width: 42vw;
+    line-height: 1.5;
+    font-size: 9px;
+  }
+  #fzIntro .front-chapter {
+    left: 20px;
+    bottom: 128px;
+    max-width: 80vw;
+    font-size: 9px;
+    line-height: 1.6;
+  }
+  #fzIntro .front-caption {
+    bottom: 68px;
+    font-size: 13px;
+    max-width: 86vw;
+  }
+  #fzIntro .front-title > span {
+    font-size: 9px;
+    letter-spacing: 0.13em;
+  }
+  #fzIntro .front-credit-type {
+    gap: 16px;
+  }
+}
+@media (max-height: 450px) {
+  #fzIntro .front-letterbox {
+    border-top-width: 32px;
+    border-bottom-width: 32px;
+  }
+  #fzIntro .front-chapter {
+    bottom: 67px;
+  }
+  #fzIntro .front-caption {
+    bottom: 32px;
+    font-size: 12px;
+  }
+  #fzIntro .front-title h1 {
+    font-size: clamp(36px, 8vw, 80px);
+  }
+  #fzIntro .front-title strong {
+    font-size: 20px;
+  }
+  #fzIntro .front-title:before {
+    margin-bottom: 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #fzIntro .front-credit-type {
+    transform: none !important;
+    will-change: auto;
+  }
+  #fzIntro .front-title {
+    transition: none;
+  }
+}

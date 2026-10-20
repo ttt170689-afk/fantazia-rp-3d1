@@ -1,0 +1,266 @@
+/* Additional utility panels inherit the classic dark UI. Auth/menu layout unchanged. */
+.fz-play-dialog[hidden],
+#fzConnection[hidden] {
+  display: none !important;
+}
+.fz-play-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 26000;
+  display: grid;
+  place-items: center;
+  background: #060912c9;
+  padding: max(12px, env(safe-area-inset-top))
+    max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom))
+    max(12px, env(safe-area-inset-left));
+  box-sizing: border-box;
+  color: #edf1f7;
+  font:
+    14px/1.5 Arial,
+    sans-serif;
+  overscroll-behavior: contain;
+}
+.fz-play-card {
+  background: #172435;
+  border: 1px solid #596b80;
+  border-radius: 16px;
+  padding: 22px;
+  width: min(620px, 100%);
+  max-height: calc(var(--fz-viewport-height, 100dvh) - 28px);
+  overflow: auto;
+  box-sizing: border-box;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.fz-play-card header {
+  position: sticky;
+  top: -22px;
+  z-index: 1;
+  background: #172435;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.fz-play-card h2 {
+  margin: 5px 0;
+  font-size: 25px;
+}
+.fz-play-card small,
+.fz-muted {
+  color: #b7c7d7;
+}
+.fz-play-card button,
+.fz-play-card select,
+.fz-play-card input[type="search"] {
+  font: inherit;
+  min-height: 46px;
+  border: 1px solid #66778b;
+  border-radius: 9px;
+  background: #293c50;
+  color: #fff;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  touch-action: manipulation;
+}
+.fz-play-card button {
+  cursor: pointer;
+}
+.fz-play-card button:focus-visible,
+.fz-play-card input:focus-visible,
+.fz-play-card select:focus-visible,
+.fz-play-card summary:focus-visible {
+  outline: 3px solid #d6b77e;
+  outline-offset: 2px;
+}
+.fz-play-card button[aria-pressed="true"] {
+  border-color: #e0c28b;
+  background: #3b4b5c;
+}
+.fz-play-card label {
+  display: block;
+  margin: 13px 0;
+  font-weight: 600;
+}
+.fz-play-card select,
+.fz-play-card input[type="search"],
+.fz-play-card input[type="range"] {
+  width: 100%;
+  margin-top: 6px;
+}
+.fz-play-card input[type="range"] {
+  min-height: 32px;
+  accent-color: #d6b77e;
+}
+.fz-play-card .fz-check {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 38px;
+}
+.fz-check input {
+  width: 21px;
+  height: 21px;
+  accent-color: #d6b77e;
+  flex-shrink: 0;
+}
+.fz-play-card output {
+  float: right;
+  color: #d6b77e;
+}
+.fz-play-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0;
+}
+.fz-play-tools button {
+  flex: 1 1 160px;
+}
+.fz-play-card details {
+  border-top: 1px solid #435469;
+  padding-top: 14px;
+  margin-top: 16px;
+}
+.fz-play-card summary {
+  cursor: pointer;
+  min-height: 44px;
+}
+#fzCityGuide canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid #526579;
+  border-radius: 10px;
+}
+.fz-guide-row {
+  padding: 14px 0;
+  border-bottom: 1px solid #435469;
+}
+.fz-guide-row strong {
+  display: block;
+  font-size: 15px;
+}
+.fz-guide-row small {
+  display: block;
+  margin-top: 6px;
+}
+.fz-guide-row p {
+  margin: 7px 0;
+}
+#fzConnection {
+  position: fixed;
+  top: max(60px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9300;
+  max-width: 80vw;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #372d20ed;
+  border: 1px solid #ba9a65;
+  color: #ffe8bd;
+  font: 12px/1.4 Arial;
+  pointer-events: none;
+  text-align: center;
+}
+#fzGpuRecovery {
+  z-index: 300000;
+}
+body:not(.fz-playing) :is(#fzPlayPanel, #fzCityGuide, #fzConnection, #fzPhoto) {
+  display: none !important;
+}
+#fzTouch {
+  --fz-effective-scale: var(--fz-control-scale, 1);
+  opacity: var(--fz-control-opacity, 0.9);
+}
+#fzTouchStick {
+  transform: scale(var(--fz-effective-scale));
+  transform-origin: bottom left;
+}
+#fzTouchActions {
+  transform: scale(var(--fz-effective-scale));
+  transform-origin: bottom right;
+}
+#fzTouchMore {
+  bottom: calc(
+    max(18px, env(safe-area-inset-bottom)) + 180px * var(--fz-effective-scale)
+  );
+  transform: scale(var(--fz-effective-scale));
+  transform-origin: bottom right;
+}
+body.fz-left-handed #fzTouchStick {
+  left: auto;
+  right: max(18px, env(safe-area-inset-right));
+  transform-origin: bottom right;
+}
+body.fz-left-handed #fzTouchActions {
+  right: auto;
+  left: max(14px, env(safe-area-inset-left));
+  transform-origin: bottom left;
+}
+body.fz-left-handed #fzTouchMore {
+  right: auto;
+  left: max(14px, env(safe-area-inset-left));
+  transform-origin: bottom left;
+}
+body.fz-touch-device :is(#fzTouchPanel .touch-card, #fzUIMenu .ui-card) {
+  max-height: calc(var(--fz-viewport-height, 100dvh) - 24px);
+}
+body.fz-reduced-motion :is(.fz-play-dialog, #fzUIMenu, #fzTouchPanel) {
+  scroll-behavior: auto;
+}
+body.fz-reduced-motion :is(#fzTouch, #fzUIMenu, .fz-play-dialog) * {
+  animation: none !important;
+  transition: none !important;
+}
+@media (max-width: 360px) {
+  #fzTouch {
+    --fz-effective-scale: min(var(--fz-control-scale, 1), 1);
+  }
+  .fz-play-card {
+    padding: 14px;
+  }
+  .fz-play-card h2 {
+    font-size: 21px;
+  }
+}
+@media (max-height: 440px) {
+  .fz-play-card {
+    padding: 14px;
+  }
+  .fz-play-card header {
+    position: sticky;
+    top: -14px;
+    background: #172435;
+    z-index: 1;
+  }
+  .fz-play-card h2 {
+    font-size: 21px;
+  }
+  #fzCityGuide canvas {
+    max-height: 140px;
+    object-fit: contain;
+  }
+  #fzTouch {
+    --fz-effective-scale: min(var(--fz-control-scale, 1), 1);
+  }
+}
+
+@media (max-width: 360px) {
+  .fz-play-card header {
+    top: -14px;
+  }
+}
+
+/* Follow the visible viewport when the phone keyboard pans/resizes the page. */
+.fz-play-dialog { inset: auto 0 auto; top: var(--fz-viewport-top, 0px); height: var(--fz-viewport-height, 100dvh); }
+#fzJourney [hidden] { display: none !important; }
+#fzJourney form { display: flex; align-items: end; gap: 10px; flex-wrap: wrap; margin: 16px 0; }
+#fzJourney input:not([type=file]) { display: block; width: 100%; min-height: 46px; box-sizing: border-box; font: inherit; font-size: 16px; color: white; background: #293c50; border: 1px solid #66778b; border-radius: 9px; padding: 10px; }
+#fzJourney details { border-top: 1px solid #596b80; margin-top: 14px; padding-top: 12px; }
+#fzJourney summary { min-height: 44px; cursor: pointer; }
+#fzJourney input[type=file] { max-width: 100%; display: block; }
+.fz-journey-place { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0; }
+.fz-journey-place strong { flex: 1 1 100%; overflow-wrap: anywhere; }
+#fzJourney button:disabled { opacity: .5; cursor: default; }
