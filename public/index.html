@@ -5,7 +5,9 @@
 <link rel="stylesheet" href="styles/fz-ui.css?v=9.0">
 <link rel="stylesheet" href="styles/fz-v9.css?v=11.0">
 <link rel="stylesheet" href="styles/fz-play.css?v=15.0">
-<link rel="stylesheet" href="styles/fz-sky.css?v=14.0">
+<link rel="stylesheet" href="styles/fz-sky.css?v=18.0">
+<link rel="stylesheet" href="styles/fz-v19.css?v=19.0">
+<link rel="stylesheet" href="styles/fz-neon.css?v=20.0">
 <meta charset="UTF-8">
 <script src="https://yandex.ru/games/sdk/v2"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -2081,7 +2083,7 @@ body.theme-cyber .fz-menu-logged{background:rgba(0,229,255,.08)!important;border
 @keyframes wShimmer{0%{background-position:200% 0}100%{background-position:-20% 0}}
 @keyframes wPulse{0%,100%{opacity:.7;filter:blur(0)}50%{opacity:1;filter:blur(1px)}}
 </style>
-<link rel="stylesheet" href="styles/fz-opening.css?v=16.0">
+<link rel="stylesheet" href="styles/fz-opening.css?v=17.0">
 </head>
 <body>
 
@@ -15098,6 +15100,9 @@ function createCharacter(appearance, isLocal) {
   return group;
 }
 
+// Stable native articulated factory for temporary cinema actors. No SuperRig clones or player state.
+window.FZNativeCharacter = createCharacter;
+
 function createNameTag(name, group) {
   const canvas = document.createElement('canvas');
   canvas.width = 256; canvas.height = 64;
@@ -20154,6 +20159,7 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
     updateMinimap();
   }
 
+  window.FZSky?.beforeRender();
   renderer.render(scene, camera);
 }
 
@@ -25082,7 +25088,7 @@ window.FZV5_update = FZV5_update;
 <script src="assets/fz-landmarks.js?v=14.0"></script>
 <script src="assets/fz-city-refresh.js?v=14.0"></script>
 <script src="assets/fz-v7.js?v=11.1"></script>
-<script src="assets/fz-v8gfx.js?v=13.0"></script>
+<script src="assets/fz-v8gfx.js?v=18.0"></script>
 <script src="assets/fz-v8life.js?v=8.8"></script>
 <script src="assets/fz-v8world.js?v=8.0"></script>
 <script src="assets/fz-v8city.js?v=11.0"></script>
@@ -25092,16 +25098,17 @@ window.FZV5_update = FZV5_update;
 <script src="assets/fz-v8home.js?v=8.7.1"></script>
 <script src="assets/fz-v8sea.js?v=14.0"></script>
 <script src="assets/superrig-player.js?v=anim-13"></script>
-<script src="assets/fz-ui.js?v=15.0"></script>
+<script src="assets/fz-ui.js?v=19.0"></script>
 <script src="assets/fz-classic-world.js?v=14.0"></script>
 <script src="assets/fz-city-spaces.js?v=8.9"></script>
 <script>window.FZ_CITY_ARRIVAL = false;</script>
 <script src="assets/fz-city-urban.js?v=10.0"></script>
 <script src="assets/fz-city-stream.js?v=11.0"></script>
 <script src="assets/fz-city-leisure.js?v=8.9"></script>
-<script src="assets/fz-opening-plan.js?v=16.0"></script>
-<script src="assets/fz-opening-cast.js?v=16.0"></script>
-<script src="assets/fz-front.js?v=16.0"></script>
+<script src="assets/fz-opening-plan.js?v=19.0"></script>
+<script src="assets/fz-letter-portal.js?v=20.0"></script>
+<script src="assets/fz-opening-cast.js?v=17.0"></script>
+<script src="assets/fz-front.js?v=19.0"></script>
 <script src="assets/fz-motion.js?v=15.0"></script>
 <script src="assets/fz-journey-policy.js?v=15.0"></script>
 <script src="assets/fz-touch.js?v=15.0"></script>
@@ -25109,8 +25116,10 @@ window.FZV5_update = FZV5_update;
 <script src="assets/fz-city-guide.js?v=15.0"></script>
 <script src="assets/fz-play.js?v=16.0"></script>
 <script src="assets/fz-photo.js?v=13.0"></script>
-<script src="assets/fz-sky-policy.js?v=14.0"></script>
-<script src="assets/fz-sky.js?v=15.0"></script>
+<script src="assets/fz-sky-policy.js?v=19.0"></script>
+<script src="assets/fz-sky-visual.js?v=20.0"></script>
+<script src="assets/fz-sky-garden.js?v=20.0"></script>
+<script src="assets/fz-sky.js?v=20.0"></script>
 <script src="assets/fz-journey.js?v=15.0"></script>
 
 

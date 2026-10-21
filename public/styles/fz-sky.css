@@ -151,3 +151,13 @@ body.fz-sky-cine
     transition: none;
   }
 }
+
+/* Let the real lighting/material contrast carry the pavilion, not dark screen edges. */
+body.fz-in-sky #vignetteFX {
+  opacity: 0.22;
+}
+
+/* Static native ambient vignette, not the separate damage feedback overlay. */
+body.fz-in-sky #vignetteOverlay {
+  opacity: 0.15;
+}

@@ -11,7 +11,10 @@
     flight = null,
     ui = null,
     priorWorld = false,
-    restoreFog = null;
+    restoreFog = null,
+    visual = null,
+    clouds = null,
+    garden = null;
   const resources = new Set();
   function active() {
     return (
@@ -23,11 +26,6 @@
   const busy = () => !!flight;
   function notice(s) {
     showNotification(s, "info");
-  }
-  function material(color, extra = {}) {
-    const m = new THREE.MeshLambertMaterial({ color, ...extra });
-    resources.add(m);
-    return m;
   }
   function geometry(g) {
     resources.add(g);
@@ -42,8 +40,10 @@
   function build() {
     if (root && owner === scene) return;
     if (root) {
+      garden?.dispose();
+      visual?.dispose();
       root.parent?.remove(root);
-      resources.forEach((r) => r.dispose());
+      resources.forEach((r) => r.dispose?.());
       resources.clear();
     }
     owner = scene;
@@ -51,219 +51,270 @@
     root.name = "Fantazia cloud arrival";
     root.position.set(D.x, D.y, D.z);
     scene.add(root);
-    const skyCanvas = document.createElement("canvas");
-    skyCanvas.width = 4;
-    skyCanvas.height = 256;
-    const skyContext = skyCanvas.getContext("2d"),
-      gradient = skyContext.createLinearGradient(0, 0, 0, 256);
-    gradient.addColorStop(0, "#426f9c");
-    gradient.addColorStop(0.45, "#a6cde5");
-    gradient.addColorStop(0.65, "#e7edf1");
-    gradient.addColorStop(1, "#f4f2e9");
-    skyContext.fillStyle = gradient;
-    skyContext.fillRect(0, 0, 4, 256);
-    const skyTexture = new THREE.CanvasTexture(skyCanvas);
-    resources.add(skyTexture);
-    const skyMaterial = new THREE.MeshBasicMaterial({
-      map: skyTexture,
-      side: THREE.BackSide,
-      depthWrite: false,
-      fog: false,
-    });
-    resources.add(skyMaterial);
-    const sky = add(
-      geometry(new THREE.SphereGeometry(260, 32, 16)),
-      skyMaterial,
-      0,
-      0,
-      0,
+    visual = FZSkyVisual.create(root, resources);
+    const M = visual.materials;
+    const shape = new THREE.Shape();
+    shape.moveTo(-0.475, -0.475);
+    shape.lineTo(0.475, -0.475);
+    shape.lineTo(0.475, 0.475);
+    shape.lineTo(-0.475, 0.475);
+    shape.closePath();
+    const boxGeo = geometry(
+      new THREE.ExtrudeBufferGeometry(shape, {
+        depth: 0.95,
+        bevelEnabled: true,
+        bevelThickness: 0.025,
+        bevelSize: 0.025,
+        bevelSegments: 2,
+        steps: 1,
+      }),
     );
-    sky.renderOrder = -9;
-
-    const stone = material(0xb9bec4),
-      white = material(0xd9dfe3),
-      gold = material(0xb8955b),
-      dark = material(0x223449),
-      blue = material(0x7eafc3),
-      glow = material(0xfff5de, {
-        emissive: 0xffecc6,
-        emissiveIntensity: 0.65,
-      });
-    const boxGeo = geometry(new THREE.BoxGeometry(1, 1, 1)),
-      sphere = geometry(new THREE.SphereGeometry(1, 12, 8));
+    boxGeo.translate(0, 0, -0.475);
+    const cylinder = geometry(new THREE.CylinderGeometry(0.5, 0.5, 1, 12));
     const box = (x, y, z, w, h, d, m) => {
       const o = add(boxGeo, m, x, y, z);
       o.scale.set(w, h, d);
+      o.castShadow = true;
+      o.receiveShadow = true;
+      return o;
+    };
+    const rod = (a, b, r, m) => {
+      const va = new THREE.Vector3(...a),
+        vb = new THREE.Vector3(...b),
+        dir = vb.clone().sub(va);
+      const o = add(
+        cylinder,
+        m,
+        ...va.clone().add(vb).multiplyScalar(0.5).toArray(),
+      );
+      o.scale.set(r * 2, dir.length(), r * 2);
+      o.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 1, 0),
+        dir.normalize(),
+      );
+      o.castShadow = true;
+      o.receiveShadow = true;
       return o;
     };
     const ring = (r, t, y, m) => {
-      const o = add(geometry(new THREE.TorusGeometry(r, t, 8, 96)), m, 0, y, 0);
+      const o = add(
+        geometry(new THREE.TorusGeometry(r, t, 8, 128)),
+        m,
+        0,
+        y,
+        0,
+      );
       o.rotation.x = Math.PI / 2;
+      o.castShadow = true;
       return o;
     };
-    const deckShape = new THREE.Shape();
-    deckShape.absarc(0, 0, 31, 0, Math.PI * 2, false);
+    // Exact deck and stair aperture; the physics/server policy remains in world coordinates.
+    const deck = new THREE.Shape();
+    deck.absarc(0, 0, D.r, 0, Math.PI * 2, false);
     const hole = new THREE.Path();
     hole.moveTo(15.25, -8);
     hole.lineTo(15.25, -18);
     hole.lineTo(20.75, -18);
     hole.lineTo(20.75, -8);
     hole.closePath();
-    deckShape.holes.push(hole);
-    const disk = add(
+    deck.holes.push(hole);
+    const floor = add(
       geometry(
-        new THREE.ExtrudeGeometry(deckShape, {
+        new THREE.ExtrudeGeometry(deck, {
           depth: 2.2,
           bevelEnabled: false,
-          curveSegments: 64,
+          curveSegments: 96,
         }),
       ),
-      stone,
+      M.stone,
       0,
       -2.2,
       0,
     );
-    disk.rotation.x = -Math.PI / 2;
-    add(
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    floor.name = "sky_travertine_deck";
+    const foundation = add(
       geometry(new THREE.CylinderGeometry(28, 30, 1.2, 96)),
-      dark,
+      M.dark,
       0,
       -2.8,
       0,
     );
-    ring(30.7, 0.22, 0.1, gold);
-    ring(29.4, 0.09, 0.06, glow);
-    ring(10, 0.055, 0.04, gold);
-    ring(6, 0.06, 0.04, gold);
-    for (let i = 0; i < 16; i++) {
-      const a = (i * Math.PI) / 8;
-      const strip = box(
-        Math.sin(a) * 20,
-        0.025,
-        Math.cos(a) * 20,
-        0.06,
-        0.035,
-        18,
-        gold,
-      );
-      strip.rotation.y = a;
-    }
-    // Open sightlines, real edge collision and a continuous guardrail.
-    const glass = material(0xb9deea, {
-      transparent: true,
-      opacity: 0.26,
-      depthWrite: false,
-      side: THREE.DoubleSide,
-    });
+    foundation.receiveShadow = true;
+    ring(30.7, 0.12, 0.08, M.brass);
+    ring(29.4, 0.035, 0.04, M.light);
+
+    // Brushed posts, base plates, narrow caps and pale glass: not a solid fence.
     for (let i = 0; i < 48; i++) {
-      const a = (i * Math.PI) / 24;
-      box(Math.sin(a) * 30, 0.8, Math.cos(a) * 30, 0.12, 1.6, 0.12, gold);
-      const pane = box(
+      const a = (i * Math.PI) / 24,
+        x = Math.sin(a) * 30,
+        z = Math.cos(a) * 30;
+      rod([x, 0.08, z], [x, 1.55, z], 0.045, M.steel);
+      box(x, 0.06, z, 0.28, 0.08, 0.28, M.steel);
+      const g = box(
         Math.sin(a + Math.PI / 48) * 30,
-        0.8,
+        0.81,
         Math.cos(a + Math.PI / 48) * 30,
-        3.8,
-        1.3,
-        0.045,
-        glass,
+        3.78,
+        1.24,
+        0.035,
+        M.glass,
       );
-      pane.rotation.y = a + Math.PI / 48;
+      g.rotation.y = a + Math.PI / 48;
+      g.castShadow = false;
     }
-    ring(30, 0.065, 1.55, gold);
-    // Raised stage: all access is also checked by the server, not by nickname.
-    box(0, 0.6, -17, 14, 1.2, 10, dark);
-    box(0, 1.23, -17, 14, 0.06, 10, white);
-    box(0, 4.5, -22, 15, 7, 0.5, dark);
-    box(0, 8, -18, 15, 0.25, 9, gold);
+    ring(30, 0.047, 1.55, M.brass);
+    // Pavilion keeps the same protected footprint. Layered base, teak floor and roof soffit.
+    box(0, 0.6, -17, 14, 1.2, 10, M.dark);
+    box(0, 1.23, -17, 14, 0.06, 10, M.wood);
+    for (let i = 0; i < 27; i++)
+      box(-6.75 + i * 0.5, 1.269, -17, 0.018, 0.008, 9.7, M.dark);
+    box(0, 0.14, -11.95, 13.5, 0.1, 0.035, M.light);
+    box(0, 1.18, -11.98, 13.8, 0.035, 0.025, M.neonPink);
+    box(0, 4.5, -22, 15, 7, 0.5, M.dark);
+    for (let i = 0; i < 24; i++)
+      box(
+        -7.2 + i * 0.625,
+        4.65,
+        -21.73,
+        i % 3 === 0 ? 0.075 : 0.05,
+        6.45,
+        0.035,
+        i % 6 === 0 ? M.neonPink : i % 3 === 0 ? M.light : M.steel,
+      );
+
     for (const x of [-7.1, 7.1]) {
-      box(x, 4.4, -22, 0.25, 7, 0.25, gold);
-      box(x, 4.4, -12, 0.25, 7, 0.25, gold);
-      box(x, 7.8, -17, 0.18, 0.18, 10, gold);
+      rod([x, 1.2, -22], [x, 7.9, -22], 0.09, M.steel);
+      rod([x, 1.2, -12], [x, 7.9, -12], 0.09, M.steel);
+      for (const z of [-22, -12]) box(x, 1.3, z, 0.36, 0.2, 0.36, M.steel);
     }
+    // Speaker grilles, inset woofers and a correctly proportioned microphone.
     for (const x of [-5.5, 5.5]) {
-      box(x, 2.2, -15.8, 1.3, 2, 1.1, dark);
+      box(x, 2.2, -15.8, 1.25, 2, 1.05, M.dark);
+      box(x, 2.2, -15.245, 1.12, 1.84, 0.035, M.grille);
       for (const y of [1.8, 2.5]) {
-        const o = add(
-          geometry(new THREE.CylinderGeometry(0.38, 0.38, 0.06, 16)),
-          blue,
+        const woofer = add(
+          geometry(new THREE.TorusGeometry(0.32, 0.026, 8, 24)),
+          M.steel,
           x,
           y,
-          -15.2,
+          -15.214,
         );
-        o.rotation.x = Math.PI / 2;
       }
     }
-    box(0, 2.4, -15, 0.1, 2.3, 0.1, gold);
-    box(0, 3.5, -15, 0.5, 0.18, 0.18, dark);
-    for (let i = 0; i < 4; i++)
-      box(0, (i + 1) * 0.15, -11.5 - i * 0.6, 4, (i + 1) * 0.3, 0.6, stone);
-    sign("FANTAZIA LIVE", 0, 5.5, -21.68, 12, 2.2, "#152639", "#ffe5b2");
-    sign("СЦЕНА • ДОСТУП АДМИНИСТРАТОРА", 0, 2, -11.65, 8, 0.65);
-    // News stand beside the stage; the existing News button remains untouched.
-    box(14, 1.2, -13, 0.15, 2.4, 0.15, gold);
-    box(14, 3.2, -13, 6, 3, 0.3, dark);
-    sign("НОВОСТИ ГОРОДА", 14, 3.8, -12.82, 5.5, 0.8);
-    sign("ПОДОЙДИ И НАЖМИ ДЕЙСТВИЕ", 14, 2.8, -12.81, 5.5, 0.65);
-    // Short descending stairway cut into the deck, with a smooth white portal.
-    // A narrow cover hides the flat deck beneath the steps; local floor heights follow the stair treads.
-    box(18, -2.16, 13, 5.5, 0.04, 10, dark);
-    for (let i = 0; i < 8; i++)
-      box(
-        18,
-        -0.25 * (i + 1) - 0.1,
-        8.55 + i * 1.1,
-        5,
-        0.2,
-        1.08,
-        i % 2 ? white : stone,
-      );
-    for (const x of [15.3, 20.7]) {
-      box(x, 0.7, 13, 0.1, 1.4, 10, gold);
-      box(x, 0.6, 18, 0.4, 5.2, 0.4, gold);
+    rod([0, 1.3, -15], [0, 3.45, -15], 0.025, M.steel);
+    rod([0, 3.45, -15], [0.32, 3.53, -15], 0.06, M.dark);
+    for (let i = 0; i < 4; i++) {
+      const h = (i + 1) * 0.3;
+      box(0, h / 2, -11.5 - i * 0.6, 4, h, 0.6, M.trim);
+      box(0, h + 0.012, -11.28 - i * 0.6, 3.9, 0.022, 0.08, M.brass);
     }
-    const arch = add(
-      geometry(new THREE.TorusGeometry(2.7, 0.18, 10, 40, Math.PI)),
-      gold,
+    box(0, 5.5, -21.65, 12.3, 2.55, 0.16, M.steel);
+    sign("FANTAZIA LIVE", 0, 5.5, -21.55, 11.9, 2.2, "#0c1024", "#e3dcff");
+    sign("СЦЕНА • АДМИНИСТРАТОР", -4.8, 1.6, -11.65, 3, 0.38);
+    // News retains the same interaction/position, with a framed freestanding screen.
+    for (const x of [12.2, 15.8]) {
+      rod([x, 0, -13], [x, 3.5, -13], 0.055, M.steel);
+      box(x, 0.07, -13, 0.5, 0.12, 0.7, M.dark);
+    }
+    box(14, 3.2, -13, 6, 3, 0.3, M.steel);
+    box(11.08, 3.2, -12.8, 0.045, 2.9, 0.04, M.light);
+    box(16.92, 3.2, -12.8, 0.045, 2.9, 0.04, M.neonPink);
+    box(14, 3.2, -12.82, 5.8, 2.8, 0.04, M.dark);
+    sign("НОВОСТИ ГОРОДА", 14, 3.8, -12.78, 5.5, 0.8);
+    sign("ПОДОЙДИ И НАЖМИ ДЕЙСТВИЕ", 14, 2.8, -12.77, 5.5, 0.65);
+    // Small wayfinding totem instead of the ten-metre billboard blocking the garden.
+    box(-14, 1.8, 2, 2.25, 3.6, 0.25, M.dark);
+    box(-14, 0.08, 2, 2.5, 0.16, 0.8, M.steel);
+    box(-15.13, 1.8, 2, 0.03, 3.3, 0.28, M.light);
+    sign("НЕБЕСНЫЙ САД", -14, 2.8, 2.14, 2.1, 0.48);
+    sign("FANTAZIA", -14, 2.05, 2.14, 2.05, 0.45);
+    sign("СЦЕНА ↑   ГОРОД →", -14, 1.25, 2.14, 2.05, 0.3);
+    // The same real stair treads; replace the old tall solid side boxes with sloped rails.
+    box(18, -2.16, 13, 5.5, 0.04, 10, M.dark);
+    for (let i = 0; i < 8; i++) {
+      const y = -0.25 * (i + 1),
+        z = 8.55 + i * 1.1;
+      box(18, y - 0.1, z, 5, 0.2, 1.08, M.trim);
+      box(18, y + 0.015, z - 0.43, 4.9, 0.022, 0.07, M.brass);
+    }
+    for (const x of [15.3, 20.7]) {
+      for (const i of [0, 2, 4, 6, 8]) {
+        const z = 8 + i * 1.1,
+          y = -Math.min(8, i) * 0.25;
+        rod([x, y, z], [x, y + 1.02, z], 0.035, M.steel);
+      }
+      rod([x, 1.02, 8], [x, -0.98, 16.8], 0.05, M.brass);
+      rod([x, -2, 18], [x, 3.2, 18], 0.1, M.brass);
+    }
+    add(
+      geometry(new THREE.TorusGeometry(2.7, 0.12, 12, 64, Math.PI)),
+      M.brass,
       18,
       3.2,
       18,
     );
-    arch.rotation.z = 0;
-    const lightMat = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.82,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    });
-    resources.add(lightMat);
-    add(geometry(new THREE.PlaneGeometry(4.8, 5)), lightMat, 18, 0.5, 17.9);
+    const portal = ownMaterial(
+      new THREE.MeshBasicMaterial({
+        color: 0xf7fbff,
+        transparent: true,
+        opacity: 0.68,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      }),
+    );
+    add(geometry(new THREE.PlaneGeometry(4.8, 5)), portal, 18, 0.5, 17.9);
     sign("В ГОРОД ↓", 18, 5.8, 18, 6, 1);
-    sign("НЕБЕСНАЯ ПЛОЩАДЬ", -14, 3.5, 2, 10, 1.4);
-    sign("FANTAZIA RP 3D", -14, 2.3, 2, 9, 0.9);
     for (const z of [-5, 8]) {
-      box(-20, 0.55, z, 5, 0.2, 1, stone);
-      box(-20, 1.05, z - 0.55, 5, 0.8, 0.16, stone);
-      for (const x of [-22, -18]) box(x, 0.25, z, 0.2, 0.5, 1, gold);
-    }
-    // Cheap opaque cloud clusters below the deck: no large transparent-particle overdraw.
-    const cloud = material(0xf3f6fa);
-    for (let i = 0; i < 44; i++) {
-      const a = i * 2.39996,
-        r = 36 + (i % 7) * 11;
-      for (let k = 0; k < 3; k++) {
-        const o = add(
-          sphere,
-          cloud,
-          Math.cos(a) * r + k * 5,
-          -6 - (i % 4) * 2,
-          Math.sin(a) * r,
-        );
-        o.scale.set(10 + k * 2, 3 + k, 7 + k);
+      for (let i = 0; i < 7; i++)
+        box(-20, 0.55, z - 0.42 + i * 0.14, 5, 0.13, 0.105, M.wood);
+      for (let i = 0; i < 4; i++)
+        box(-20, 0.86 + i * 0.18, z - 0.55, 5, 0.125, 0.13, M.wood);
+      for (const x of [-22, -18]) {
+        box(x, 0.26, z, 0.12, 0.52, 0.85, M.steel);
+        rod([x, 0.5, z - 0.5], [x, 1.48, z - 0.5], 0.04, M.steel);
       }
     }
-    const hemi = new THREE.HemisphereLight(0xddefff, 0x7e8c9a, 0.35);
-    root.add(hemi);
+    garden = FZSkyGarden.create(root, resources, M, {
+      box,
+      rod,
+      maps: visual.maps,
+    });
+    // Texture-baked density/cloud shading; a single instanced horizon draw.
+    const cloudGeo = geometry(new THREE.PlaneGeometry(1, 1));
+    clouds = new THREE.InstancedMesh(cloudGeo, M.cloud, 24);
+    resources.add(clouds);
+    root.add(clouds);
+    clouds.name = "sky_cloud_bank";
+    const dummy = new THREE.Object3D();
+    for (let i = 0; i < 24; i++) {
+      const a = i * 2.39996,
+        r = 82 + (i % 4) * 17;
+      dummy.position.set(Math.sin(a) * r, 1 + (i % 3) * 2, Math.cos(a) * r);
+      dummy.scale.set(43 + (i % 3) * 9, 24 + (i % 4) * 3, 1);
+      dummy.rotation.set(0, a, 0);
+      dummy.updateMatrix();
+      clouds.setMatrixAt(i, dummy.matrix);
+    }
+    clouds.instanceMatrix.needsUpdate = true;
+    const sky = add(
+      geometry(new THREE.SphereGeometry(260, 48, 24)),
+      ownMaterial(
+        new THREE.MeshBasicMaterial({
+          map: visual.maps.sky,
+          side: THREE.BackSide,
+          depthWrite: false,
+          fog: false,
+          toneMapped: false,
+        }),
+      ),
+      0,
+      0,
+      0,
+    );
+    sky.name = "sky_atmosphere";
+    sky.renderOrder = -9;
     interactables.push(
       {
         type: "sky_descent",
@@ -287,9 +338,14 @@
         sky: true,
       },
     );
+    visual.setLayers();
     root.visible = false;
   }
-  function sign(text, x, y, z, w, h, bg = "#223449", fg = "#fff2d3") {
+  function ownMaterial(m) {
+    resources.add(m);
+    return m;
+  }
+  function sign(text, x, y, z, w, h, bg = "#101326", fg = "#d8edff") {
     const c = document.createElement("canvas");
     c.width = 1024;
     c.height = 160;
@@ -302,8 +358,13 @@
     ctx.textBaseline = "middle";
     ctx.fillText(text, 512, 80, 970);
     const t = new THREE.CanvasTexture(c);
+    t.encoding = THREE.sRGBEncoding;
     resources.add(t);
-    const m = new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide });
+    const m = new THREE.MeshBasicMaterial({
+      map: t,
+      side: THREE.DoubleSide,
+      toneMapped: false,
+    });
     resources.add(m);
     add(geometry(new THREE.PlaneGeometry(w, h)), m, x, y, z);
   }
@@ -313,7 +374,10 @@
     window._introDone = true;
     window._spawnFixed = true;
     window.cameraMode = "third";
-    CONFIG.CAMERA_DISTANCE = Math.max(10, CONFIG.CAMERA_DISTANCE);
+    CONFIG.CAMERA_DISTANCE = Math.max(
+      8.5,
+      Math.min(14, CONFIG.CAMERA_DISTANCE),
+    );
     mesh.rotation.y = Math.PI;
     cameraAngleH = 0;
     cameraAngleV = -0.15;
@@ -347,7 +411,11 @@
     localPlayer.currentAnimation = "walk";
     localPlayer.mesh.position.set(18, D.y, D.z + 7.5);
     localPlayer.mesh.rotation.y = 0;
-    flight = { previousMode, landed: false, onArrival: typeof onArrival === "function" ? onArrival : null };
+    flight = {
+      previousMode,
+      landed: false,
+      onArrival: typeof onArrival === "function" ? onArrival : null,
+    };
     let white = document.getElementById("fzSkyWhite");
     if (!white) {
       white = document.createElement("div");
@@ -389,7 +457,8 @@
   }
   function finish() {
     if (!flight) return;
-    const previous = flight.previousMode, onArrival = flight.onArrival;
+    const previous = flight.previousMode,
+      onArrival = flight.onArrival;
     flight = null;
     window.cameraMode = previous;
     localPlayer.mesh.position.set(SPAWN_POINT.x, 0, SPAWN_POINT.z);
@@ -407,10 +476,12 @@
     }
     document.getElementById("cityIntroSkip")?.remove();
     FZPlay.release();
+    leaveVisual();
     FZPlay.apply(false);
     if (onArrival && window.FZUI?.playing()) onArrival();
   }
   function cancel() {
+    leaveVisual();
     if (flight) flight.onArrival = null;
     if (ui) {
       ui.hidden = true;
@@ -430,7 +501,7 @@
       document.body.classList.toggle("fz-in-sky", on);
       if (on) {
         restoreFog = scene.fog;
-        scene.fog = new THREE.Fog(0xc9deee, 100, 380);
+        scene.fog = new THREE.Fog(0x30345b, 100, 380);
       } else if (restoreFog) {
         scene.fog = restoreFog;
         restoreFog = null;
@@ -439,12 +510,8 @@
       priorWorld = on;
     }
     if (on) {
-      if (camera.far < 450) {
-        camera.far = 450;
-        camera.updateProjectionMatrix();
-      }
       if (scene.fog) {
-        scene.fog.color.setHex(0xc9deee);
+        scene.fog.color.setHex(0x30345b);
         scene.fog.near = 100;
         scene.fog.far = 380;
       }
@@ -504,6 +571,41 @@
     w.style.opacity = String(opacity);
     w.querySelector("strong").style.opacity = t > 4.2 ? "1" : "0";
     w.querySelector("span").style.opacity = t > 4.2 ? "1" : "0";
+  }
+  function leaveVisual() {
+    visual?.release();
+    if (root) root.visible = false;
+    document.body.classList.remove("fz-in-sky");
+    if (restoreFog) {
+      scene.fog = restoreFog;
+      restoreFog = null;
+    }
+    priorWorld = false;
+  }
+  function beforeRender() {
+    if (!visual) return;
+    const on = active() && !!window.FZUI?.playing();
+    const extras = [
+      window._flash,
+      window._flashSpill,
+      typeof ITEMS !== "undefined" ? ITEMS.vm : null,
+    ];
+    const q = visual.update(
+      on,
+      renderer,
+      camera,
+      localPlayer,
+      remotePlayers,
+      extras,
+    );
+    if (on && clouds && q) {
+      garden?.update(performance.now() * 0.001, FZPlay.reducedMotion());
+      clouds.count = q.clouds;
+      clouds.visible = SETTINGS.sky !== false;
+      clouds.rotation.y = FZPlay.reducedMotion()
+        ? 0
+        : Math.sin(performance.now() * 0.000025) * 0.012;
+    }
   }
   function openStage() {
     if (!active() || window.cine) return;
@@ -588,6 +690,7 @@
     active,
     busy,
     update,
+    beforeRender,
     interact,
     openStage,
     collision: (x, z) => (active() ? P.blocked(x, z, allowed) : null),
@@ -605,6 +708,9 @@
       flight: !!flight,
       spawn: { ...P.spawn },
       objects: root?.children.length || 0,
+      look: visual?.info() || null,
+      cloudInstances: clouds?.count || 0,
+      garden: garden?.info() || null,
     }),
   };
 })();

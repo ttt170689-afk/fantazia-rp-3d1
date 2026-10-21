@@ -1,54 +1,54 @@
 /* Opening shot data uses LIVE world-space anchors. No city geometry lives here. */
 (function (root) {
   "use strict";
-  const duration = 33;
+  const duration = 41;
   const smooth = (value) => {
     const t = Math.max(0, Math.min(1, value));
     return t * t * t * (t * (t * 6 - 15) + 10);
   };
   const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * smooth(t));
   const phases = [
-    { id: "credit", start: 0, end: 2.8, label: "", caption: "" },
+    { id: "credit", start: 0, end: 3, label: "", caption: "" },
     {
       id: "gateway",
-      start: 2.8,
-      end: 5.4,
-      label: "FANTAZIA / ОДИН ГОРОД",
-      caption: "",
+      start: 3,
+      end: 9,
+      label: "ПРОЛЁТ / TEMKA_PLAY_OFFICIAL",
+      caption: "Твой город — по ту сторону буквы.",
     },
     {
       id: "life",
-      start: 5.4,
-      end: 11.4,
+      start: 9,
+      end: 18,
       label: "01 / УТРО НА ПЛОЩАДИ",
       caption: "Кто-то спешит с доставкой. Кто-то никуда не торопится.",
     },
     {
       id: "neighbors",
-      start: 11.4,
-      end: 16,
+      start: 18,
+      end: 24,
       label: "02 / МАЛЕНЬКИЕ ИСТОРИИ",
       caption: "Книга на скамейке. Разговор со знакомым. Обычный день.",
     },
     {
       id: "mall",
-      start: 16,
-      end: 23,
+      start: 24,
+      end: 31,
       label: "03 / GRAND MALL",
       caption: "Знакомые входы. Знакомые улицы. Твой город.",
     },
     {
       id: "flight",
-      start: 23,
-      end: 28,
+      start: 31,
+      end: 36,
       label: "FANTAZIA / МЕСТО ДЛЯ ТВОЕЙ ИСТОРИИ",
       caption: "",
     },
-    { id: "title", start: 28, end: 33, label: "", caption: "" },
+    { id: "title", start: 36, end: 41, label: "", caption: "" },
   ];
   function at(time, reduced = false) {
     const t = Number.isFinite(time) ? Math.max(0, time) : 0;
-    if (reduced) return t < 2.8 ? phases[0] : t < 6 ? phases[2] : phases[6];
+    if (reduced) return t < 3 ? phases[0] : t < 6 ? phases[2] : phases[6];
     return phases.find((p) => t < p.end) || phases[6];
   }
   function shots(a) {
@@ -69,13 +69,13 @@
       gateway: { from: wide, to: near, lookA: life, lookB: life },
       life: {
         from: near,
-        to: [s.x + 4, 3.1, s.z + 9],
+        to: [s.x - 3.5, 2.5, s.z + 7.5],
         lookA: life,
         lookB: [s.x + 1, 1.4, s.z + 2],
       },
       neighbors: {
         from: benchCam,
-        to: [benchCam[0] - 1, benchCam[1] + 0.3, benchCam[2] + 1],
+        to: [benchCam[0] - 2.8, benchCam[1] + 0.1, benchCam[2] + 0.5],
         lookA: benchLook,
         lookB: benchLook,
       },
@@ -111,7 +111,23 @@
       progress: Math.min(1, Math.max(0, time / (reduced ? 9 : duration))),
     };
   }
-  const api = { duration, phases, smooth, mix, at, sample };
+  function framedSample(time, anchors, reduced = false, portrait = false) {
+    const frame = sample(time, anchors, reduced);
+    if (portrait) {
+      const distance = ["credit", "gateway", "life"].includes(frame.phase)
+        ? 11
+        : frame.phase === "neighbors"
+          ? 2
+          : 18;
+      const d = frame.position.map((v, i) => v - frame.look[i]);
+      const length = Math.hypot(...d) || 1;
+      frame.position = frame.position.map(
+        (v, i) => v + (d[i] / length) * distance,
+      );
+    }
+    return frame;
+  }
+  const api = { duration, phases, smooth, mix, at, sample, framedSample };
   root.FZOpeningPlan = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window === "undefined" ? globalThis : window);

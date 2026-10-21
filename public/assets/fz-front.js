@@ -1,4 +1,4 @@
-/* v16 opening: render the ACTUAL gameplay scene, not a reconstructed city.
+/* v17 opening: render the ACTUAL gameplay scene, not a reconstructed city.
  * Its scene/renderer/landmarks survive into Play. Only the cast/camera belong to
  * this director. Native city construction yields between districts before login.
  */
@@ -20,6 +20,7 @@
     borrowed = null,
     openingCamera = null,
     cast = null,
+    portal = null,
     anchors = null,
     saved = null;
   let failed = false,
@@ -93,11 +94,33 @@
       shadows: renderer.shadowMap.enabled,
       tone: renderer.toneMapping,
       exposure: renderer.toneMappingExposure,
+      encoding: renderer.outputEncoding,
+      lights: [window.sunLight, window.ambientLight, window.hemiLight]
+        .filter(Boolean)
+        .map((light) => ({
+          light,
+          color: light.color.clone(),
+          intensity: light.intensity,
+          ground: light.groundColor?.clone(),
+        })),
     };
     renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1));
     renderer.shadowMap.enabled = false;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.95;
+    renderer.toneMappingExposure = 0.88;
+    if (window.sunLight) {
+      sunLight.color.setHex(0xffdfae);
+      sunLight.intensity = 1.35;
+    }
+    if (window.ambientLight) {
+      ambientLight.color.setHex(0xb5c3d8);
+      ambientLight.intensity = 0.65;
+    }
+    if (window.hemiLight) {
+      hemiLight.color.setHex(0xaec9ed);
+      hemiLight.groundColor.setHex(0x5b5148);
+      hemiLight.intensity = 0.6;
+    }
     scene.fog = new THREE.Fog(
       scene.background?.isColor ? scene.background : 0x87ceeb,
       95,
@@ -110,25 +133,35 @@
       360,
     );
     cast = FZOpeningCast.create(anchors);
+    portal = FZLetterPortal.create(anchors);
     renderer.domElement.addEventListener("webglcontextlost", contextLost);
     ready = true;
     elapsed = 0;
     last = 0;
     renderedFrames = 0;
     root().dataset.ready = "true";
+    root().dataset.letter = "true";
     root().querySelector(".front-loading").textContent = "";
     resize();
   }
   function releaseWorld() {
+    portal?.dispose();
+    portal = null;
     cast?.dispose();
     cast = null;
     if (borrowed && saved) {
       borrowed.domElement.removeEventListener("webglcontextlost", contextLost);
       saved.scene.fog = saved.fog;
+      for (const entry of saved.lights) {
+        entry.light.color.copy(entry.color);
+        entry.light.intensity = entry.intensity;
+        if (entry.ground) entry.light.groundColor.copy(entry.ground);
+      }
       borrowed.setPixelRatio(saved.ratio);
       borrowed.shadowMap.enabled = saved.shadows;
       borrowed.toneMapping = saved.tone;
       borrowed.toneMappingExposure = saved.exposure;
+      borrowed.outputEncoding = saved.encoding;
       disposed++;
     }
     borrowed = null;
@@ -146,6 +179,10 @@
     host.classList.add("front-fallback");
     if (root()) {
       root().dataset.ready = "false";
+      root().dataset.letter = "false";
+      root().style.setProperty("--opening-credit-scale", "1");
+      root().style.setProperty("--opening-credit-opacity", "1");
+      root().style.setProperty("--opening-cut", "0");
       root().querySelector(".front-loading").textContent =
         "3D-заставка недоступна. Можно перейти ко входу.";
     }
@@ -158,7 +195,7 @@
   function resize() {
     if (!openingCamera || !borrowed) return;
     openingCamera.aspect = innerWidth / innerHeight;
-    openingCamera.fov = innerWidth < 650 ? 60 : 52;
+    openingCamera.fov = openingCamera.aspect < 1 ? 60 : 52;
     openingCamera.updateProjectionMatrix();
     borrowed.setSize(innerWidth, innerHeight);
   }
@@ -177,24 +214,20 @@
     offset = new THREE.Vector3();
   function pose(time) {
     if (!ready || !openingCamera) return;
-    const frame = P.sample(time, anchors, reduced);
+    const frame = P.framedSample(
+      time,
+      anchors,
+      reduced,
+      openingCamera.aspect < 1,
+    );
     cameraPosition.fromArray(frame.position);
     cameraLook.fromArray(frame.look);
-    if (innerWidth < 650) {
-      const distance = ["credit", "gateway", "life"].includes(frame.phase)
-        ? 11
-        : frame.phase === "neighbors"
-          ? 2
-          : 18;
-      offset
-        .copy(cameraPosition)
-        .sub(cameraLook)
-        .normalize()
-        .multiplyScalar(distance);
-      cameraPosition.add(offset);
-    }
     openingCamera.position.copy(cameraPosition);
     openingCamera.lookAt(cameraLook);
+    if (!portal.pose(time, openingCamera, reduced)) {
+      openingCamera.near = 0.12;
+      openingCamera.updateProjectionMatrix();
+    }
     cast.update(time, reduced);
     const el = root(),
       gateway = reduced ? 0 : P.smooth((time - 2.8) / 2.6);
@@ -213,7 +246,7 @@
       "--opening-cut",
       String(cut ? Math.max(0, 1 - (time - p.start) / 0.32) * 0.45 : 0),
     );
-    borrowed.render(saved.scene, openingCamera);
+    portal.render(borrowed, saved.scene, openingCamera);
     renderedFrames++;
   }
   function frame(now) {
@@ -331,7 +364,7 @@
     bootTimer = setTimeout(() => {
       bootTimer = 0;
       if (!intro || token !== generation) return;
-      ensureWorld()
+      Promise.all([ensureWorld(), FZLetterPortal.load()])
         .then(() => {
           if (intro && token === generation) {
             try {
@@ -373,6 +406,8 @@
       disposed,
       actors: cast?.info().length || 0,
       cast: cast?.info() || [],
+      acting: cast?.acting() || null,
+      portal: portal?.info() || null,
       anchors: anchors ? JSON.parse(JSON.stringify(anchors)) : null,
       sceneUUID:
         saved?.sceneUUID || (typeof scene !== "undefined" ? scene?.uuid : null),

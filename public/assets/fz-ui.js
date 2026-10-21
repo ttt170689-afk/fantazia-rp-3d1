@@ -49,22 +49,24 @@
   function close() {
     if (!drawer) return;
     drawer.hidden = true;
+    document.getElementById("fzUIOpen")?.setAttribute("aria-expanded", "false");
     if (focusBefore && focusBefore.isConnected) focusBefore.focus();
     focusBefore = null;
   }
   function action(label, fn) {
     label = label.replace(/\s*v[78](?:\.\d+)?/gi, "").trim();
-    const category = /город|район|школ|квартир|море|метро|фото|транспорт/i.test(
-      label,
-    )
-      ? "city"
-      : /настрой|график|пауза|журнал/i.test(label)
-        ? "settings"
-        : /инвентарь|крафт|персонаж|одеж|скин|друз|игрок|телефон|чат|магазин|pass|навык|питом|танц|автомоб/i.test(
-              label,
-            )
-          ? "player"
-          : "activities";
+    const category =
+      /город|район|школ|квартир|море|метро|фото|транспорт|небес|площад/i.test(
+        label,
+      )
+        ? "city"
+        : /настрой|график|пауза|журнал/i.test(label)
+          ? "settings"
+          : /инвентарь|крафт|персонаж|одеж|скин|друз|игрок|телефон|чат|магазин|pass|навык|питом|танц|автомоб/i.test(
+                label,
+              )
+            ? "player"
+            : "activities";
     return { label, fn, category };
   }
   function openChat() {
@@ -100,9 +102,13 @@
     const items = [
       action("☁ Небесная площадь", () => window.FZSky?.arrive()),
       action("↓ Спуститься с облаков в город", () => window.FZSky?.descend()),
-      action('🧭 Город — места, избранное и прогулки', () => window.FZGuide?.open()),
-      action('📌 Мой город — сохранённые места и копия журнала', () => window.FZJourney?.open()),
-      action('📱 Настройки игры на телефоне', () => window.FZPlay?.open()),
+      action("🧭 Город — места, избранное и прогулки", () =>
+        window.FZGuide?.open(),
+      ),
+      action("📌 Мой город — сохранённые места и копия журнала", () =>
+        window.FZJourney?.open(),
+      ),
+      action("📱 Настройки игры на телефоне", () => window.FZPlay?.open()),
       action(
         window.FZ_CLASSIC_WORLD
           ? "🗺 Старый город — GRAND MALL и лаборатория"
@@ -118,6 +124,7 @@
         "🏀 Дворы рядом — спорт и отдых",
         () => window.FZLeisure && FZLeisure.directory(),
       ),
+      action("📰 Новости города", () => openNewsModal()),
       action("📷 Сделать фото", () => takePhoto()),
       action("📒 Журнал уведомлений", showJournal),
       action("💼 Работа", () => togglePanel("jobs")),
@@ -137,7 +144,7 @@
           return;
         if (b.style.display === "none") return;
         const label = b.title || b.textContent.trim();
-        if (!label || names.has(label)) return;
+        if (!label || names.has(label) || /новости/i.test(label)) return;
         names.add(label);
         items.push(action(label, () => b.click()));
       });
@@ -161,7 +168,39 @@
         (query.trim() || a.category === section),
     );
     for (const a of matches) {
-      const b = text(list, "button", a.label);
+      const b = text(list, "button", "");
+      b.className = "ui-action";
+      const icon = text(b, "span", "");
+      icon.className = "ui-action-icon";
+      icon.setAttribute("aria-hidden", "true");
+      const paths = /фото/i.test(a.label)
+        ? "M3 7h5l2-3h4l2 3h5v13H3z M16 13a4 4 0 1 1-8 0 4 4 0 0 1 8 0"
+        : /новости/i.test(a.label)
+          ? "M4 3h16v18H4z M8 7h8 M8 11h8 M8 15h5"
+          : /настрой|график|управлен/i.test(a.label)
+            ? "M5 4v16 M12 4v16 M19 4v16 M2 8h6 M9 15h6 M16 10h6"
+            : /спуститься/i.test(a.label)
+              ? "M12 3v13 M6 10l6 6 6-6 M4 18v3h16v-3"
+              : /сохран|избран/i.test(a.label)
+                ? "M6 3h12v18l-6-4-6 4z"
+                : /мор|небес|корабл/i.test(a.label)
+                  ? "M5 16a5 5 0 0 1-1-10 6 6 0 0 1 11-1 5 5 0 1 1 4 11z"
+                  : /транспорт|метро|авто/i.test(a.label)
+                    ? "M5 4h14v14H5z M5 12h14 M8 4v8 M16 4v8 M7 18v3 M17 18v3"
+                    : /школ|город|квартир/i.test(a.label)
+                      ? "M3 21V9h7V3h11v18z M6 13h1 M6 17h1 M14 7h3 M14 11h3 M14 15h3"
+                      : a.category === "player"
+                        ? "M17 7a5 5 0 1 1-10 0 5 5 0 0 1 10 0 M3 22v-3a9 7 0 0 1 18 0v3"
+                        : "M12 2l3 7 7 3-7 3-3 7-3-7-7-3 7-3z";
+      icon.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="' +
+        paths +
+        '"/></svg>';
+      text(b, "span", a.label.replace(/^[^\p{L}\p{N}]+/u, "")).className =
+        "ui-action-label";
+      const arrow = text(b, "span", "↗");
+      arrow.className = "ui-action-arrow";
+      arrow.setAttribute("aria-hidden", "true");
       b.type = "button";
       b.onclick = () => {
         close();
@@ -204,6 +243,8 @@
     init();
     focusBefore = document.activeElement;
     drawer.hidden = false;
+    document.getElementById("fzUIOpen").setAttribute("aria-expanded", "true");
+    window.FZPlay?.release();
     const search = document.getElementById("fzUISearch");
     search.hidden = false;
     document.getElementById("fzUICategories").hidden = false;
@@ -259,10 +300,16 @@
     bar.hidden = true;
     bar.setAttribute("aria-label", "Быстрые действия");
     bar.innerHTML =
-      '<button id="fzUIOpen" aria-expanded="false">☰ Меню · M</button><button id="fzUIFlash" aria-pressed="false">🔦 Фонарик · F</button>';
+      '<button id="fzUIOpen" aria-expanded="false">☰ Меню · M</button><button id="fzUIFlash" aria-pressed="false">🔦 Фонарик · F</button><button id="fzUINews" type="button" aria-haspopup="dialog">Новости</button>';
     document.body.appendChild(bar);
     document.getElementById("fzUIOpen").onclick = open;
     document.getElementById("fzUIFlash").onclick = toggleLight;
+    document.getElementById("fzUINews").onclick = () => {
+      if (active) {
+        FZPlay.release();
+        openNewsModal();
+      }
+    };
     drawer = document.createElement("div");
     drawer.id = "fzUIMenu";
     drawer.hidden = true;
@@ -294,7 +341,7 @@
       (e) => {
         if (
           !active ||
-          !!document.querySelector('.fz-play-dialog:not([hidden])') ||
+          !!document.querySelector(".fz-play-dialog:not([hidden])") ||
           (window.FZLeisure && FZLeisure.modalOpen()) ||
           (document.getElementById("fzTouchPanel") &&
             !document.getElementById("fzTouchPanel").hidden)

@@ -209,3 +209,14 @@ body.fz-intro-active #fzGpuRecovery {
     transition: none;
   }
 }
+
+/* v17: the title is geometry; these selectors only keep its Russian credit accessible. */
+#fzIntro[data-letter="true"][data-phase="credit"] .front-credit,
+#fzIntro[data-letter="true"][data-phase="gateway"] .front-credit { background: transparent; }
+#fzIntro[data-letter="true"] .front-credit-type { transform: none !important; opacity: 1 !important; position: absolute; inset: 0; }
+#fzIntro[data-letter="true"] .front-credit-type strong,
+#fzIntro[data-letter="true"] .front-credit-type i { opacity: 0; }
+#fzIntro[data-letter="true"] .front-credit-type > span { position: absolute; top: calc(50% - 90px); color: #fff4dc; text-shadow: 0 2px 12px #101723, 0 0 30px #101723; }
+#fzIntro[data-letter="true"][data-phase="gateway"] .front-credit-type { visibility: hidden; }
+#fzIntro[data-letter="true"] .front-title h1 { text-shadow: 0 2px 0 #b8a68c, 0 8px 35px #060b13; }
+@media(max-width:650px) { #fzIntro[data-letter="true"] .front-credit-type > span { top: calc(50% - 70px); font-size: 13px; letter-spacing: .08em; } }

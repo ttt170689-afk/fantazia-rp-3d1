@@ -128,7 +128,7 @@ function buildPasses() {
 let fade = 1, fadeTarget = 1, shockLevel = 0;
 function sizeCheck() {
   const s = rtSize();
-  if (!rtScene || Math.abs(s.w - V2.x) > 2 || Math.abs(s.h - V2.y) > 2) allocTargets();
+  if (!rtScene || rtScene.texture.encoding !== renderer.outputEncoding || Math.abs(s.w - V2.x) > 2 || Math.abs(s.h - V2.y) > 2) allocTargets();
 }
 function compose(sc, cam) {
   if (!origRender) return;
@@ -158,13 +158,14 @@ function compose(sc, cam) {
     const u = compMat.uniforms;
     u.tDiffuse.value = rtScene.texture;
     u.tBloom.value = rtB[0].texture;
-    u.bloom.value = P.bloom * (1 + shockLevel * 0.6);
+    const sky = cam.layers.mask === 4 && window.FZSky?.active();
+    u.bloom.value = P.bloom * (sky ? .18 : 1) * (1 + shockLevel * 0.6);
     u.exposure.value = P.exposure * (1 + shockLevel * 0.35);
     u.saturation.value = P.saturation;
     u.contrast.value = P.contrast;
-    u.vignette.value = P.vignette;
-    u.grain.value = P.grain;
-    u.aberr.value = P.aberr;
+    u.vignette.value = P.vignette * (sky ? .22 : 1);
+    u.grain.value = P.grain * (sky ? .2 : 1);
+    u.aberr.value = sky ? 0 : P.aberr;
     u.fade.value = fade;
     u.shock.value = shockLevel;
     renderer.setRenderTarget(null);

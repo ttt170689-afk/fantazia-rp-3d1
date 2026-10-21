@@ -4,6 +4,22 @@
   const deck = { x: 0, y: 360, z: -1400, r: 31 },
     spawn = { x: 0, y: 360, z: -1390 },
     stage = { x: 0, z: -1417, w: 14, d: 10, h: 1.2 };
+  const gardenPools = [
+    { x: -11, z: -4, r: 2.8 },
+    { x: 12, z: 1, r: 3 },
+  ];
+  const gardenTrees = [
+    { x: -23, z: -14, r: 1.65 },
+    { x: 23, z: -9, r: 1.65 },
+    { x: -23, z: 13, r: 1.5 },
+    { x: 11, z: -22, r: 1.5 },
+  ];
+  const gardenSupports = [
+    { x: -25, z: -6, r: 0.55 },
+    { x: 25, z: -6, r: 0.55 },
+    { x: -25, z: -3, r: 0.55 },
+    { x: 25, z: -3, r: 0.55 },
+  ];
   const finite = (p) =>
     p && ["x", "y", "z"].every((k) => Number.isFinite(p[k]));
   function region(p) {
@@ -23,8 +39,15 @@
   }
   function blocked(x, z, allowed) {
     const dz = z - deck.z;
-    if(dz>8 && dz<18 && [15.3,20.7].some(px=>Math.abs(x-px)<.6)) return true;
+    if (dz > 8 && dz < 18 && [15.3, 20.7].some((px) => Math.abs(x - px) < 0.6))
+      return true;
+    const garden = [...gardenPools, ...gardenTrees, ...gardenSupports].some(
+      (p) => Math.hypot(x - p.x, dz - p.z) < p.r + 0.3,
+    );
     const furniture =
+      garden ||
+      [-7.1, 7.1].some((px) => Math.hypot(x - px, dz + 12) < 0.4) ||
+      (Math.abs(x + 14) < 1.45 && Math.abs(dz - 2) < 0.7) ||
       (Math.abs(x + 20) < 3 &&
         (Math.abs(dz + 5) < 0.95 || Math.abs(dz - 8) < 0.95)) ||
       (Math.abs(x) < 8 && Math.abs(dz + 22) < 0.85) ||
@@ -53,6 +76,9 @@
   }
   const api = {
     deck,
+    gardenPools,
+    gardenTrees,
+    gardenSupports,
     spawn,
     stage,
     region,
