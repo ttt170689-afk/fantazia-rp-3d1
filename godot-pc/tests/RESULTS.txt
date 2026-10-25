@@ -1,0 +1,142 @@
+Godot Engine v4.5.1.stable.custom_build - https://godotengine.org
+
+PASS world finishes initialization
+PASS original GLB city meshes, not a replacement map
+PASS triangle colliders on actual city surfaces
+PASS original gameplay avatar loads
+PASS concierge uses gameplay GLB
+PASS GLB animation player exists
+PASS 27 source animation clips
+PASS walking animation imported
+PASS city spawn has a real walkable floor
+PASS city spawn remains above terrain
+PASS imported idle actually plays
+PASS B plays imported dance
+PASS Space triggers a physical jump
+PASS jump returns to the city floor
+PASS W plays imported walk
+PASS W moves the character in the city
+PASS Shift plays imported run
+PASS Shift runs faster
+PASS home entrance reachable from actual city pavement
+PASS E enters the connected residence
+PASS lobby floor supports the player
+PASS physical stairs reach floor two
+PASS stairs climb continuously without teleportation
+PASS top landing supports the character
+PASS stairs connect to upper corridor
+PASS upper corridor is not blocked by apartment wall
+PASS upper hall reaches apartment door
+PASS apartment door physically rotates open
+PASS open apartment doorway is traversable
+PASS furnished apartment has a proper floor
+PASS stairs descend back to the lobby
+PASS stair descent ends at floor one
+PASS occupied threshold blocks departure
+PASS character can stand in the actual lift cabin
+PASS key 2 requests the upper floor
+PASS lift really moves between floors
+PASS pause freezes lift physics
+PASS pause menu is shown
+PASS native menu fits the PC viewport
+PASS lift arrives and opens on floor two
+PASS lift carries its passenger without falling or double motion
+PASS empty lower shaft stays guarded
+PASS upper landing gate opens only at arrival
+PASS passenger can physically exit on floor two
+PASS lift returns to floor one
+PASS passenger returns with cabin
+PASS closed door blocks the capsule
+PASS entry door opens after clearing swing area
+PASS open entry door can be walked through
+PASS exit interaction returns to city
+PASS return from interior lands safely
+PASS F toggles native flashlight
+PASS out-of-bounds recovery returns to city
+PASS third-person camera uses volumetric collision
+PASS camera arm retracts against interior wall
+MODEL_COUNTS city_meshes=320 city_colliders=226 animations=27
+PASS 02: nonfinite sensitivity replaced
+PASS 02: wrong FOV type replaced
+PASS 02: numeric settings clamped
+PASS 02: FPS and bool whitelist
+PASS 02: unknown settings discarded
+PASS 02: missing settings use defaults
+PASS 02: empty location rejected
+PASS 02: unknown zone rejected
+PASS 02: nonfinite location rejected
+PASS 02: string coordinates rejected
+PASS 02: partial position rejected
+PASS 02: out-of-city location rejected
+PASS 02: interior vertical bounds checked
+PASS 02: city checkpoint accepted
+PASS 02: lobby checkpoint accepted
+PASS 02: asset loader rejects external paths
+PASS 02: helper materials reused
+PASS 02: missing profile is harmless
+PASS 02: first atomic save succeeds
+PASS 02: settings round trip
+PASS 02: location round trip
+PASS 02: second save succeeds
+PASS 02: previous version retained
+PASS 02: corrupt primary restores backup
+PASS 02: save after recovery succeeds
+PASS 02: corrupt primary preserved for inspection
+PASS 02: good backup not replaced with corrupt data
+PASS 02: future schema uses compatible backup
+PASS 02: oversized backup safely rejected
+PASS 02: bad save produces recovery notice
+PASS 02: temporary test file removed 
+PASS 02: temporary test file removed .bak
+PASS 02: temporary test file removed .damaged
+PASS 02: write failure returned, not reported as success
+PASS 02: FOV applies to real camera
+PASS 02: inverted mouse moves in opposite direction
+PASS 02: normal mouse direction retained
+PASS 02: invalid mouse input ignored
+PASS 02: camera zoom interpolates instead of snapping
+PASS 02: camera reaches requested zoom
+PASS 02: low quality applies real render settings
+PASS 02: high quality restores settings
+PASS 02: invalid UI input sanitized
+PASS 02: settings reset without deleting game data
+PASS 02: settings UI synchronized silently
+PASS 02: pause clears held input
+PASS 02: pause clears horizontal inertia
+PASS 02: pause clears jump buffers
+PASS 02: resume does not continue stale movement
+PASS 02: F1 opens settings and route
+PASS 02: test mode never writes personal profile
+PASS 02: grounded position can be saved
+PASS 02: supported checkpoint restores exactly
+PASS 02: restored city position matches save
+PASS 02: unsupported position falls back
+PASS 02: unsafe city save recovers at spawn
+PASS 02: empty lift shaft not accepted
+PASS 02: empty shaft recovers in safe upper hallway
+PASS 02: saved position inside wall rejected
+PASS 02: recovered interior position has solid floor
+PASS 02: airborne save retains last safe checkpoint
+PASS 02: stale interaction revalidated before activation
+PASS 02: generic action ignores rapid duplicates
+PASS 02: action available after cooldown
+PASS 02: disabled actions hidden
+PASS 02: door ignores rapid double-toggle
+PASS 02: interaction focus follows moving door
+PASS 02: door stops before crushing player
+PASS 02: door explains obstruction
+PASS 02: door finishes after obstruction removed
+PASS 02: busy lift keeps one bounded return request
+PASS 02: live lift direction displayed
+PASS 02: queued trip leaves time for disembarking
+PASS 02: queued return finishes and clears queue
+PASS 02: late threshold obstruction reopens doors
+PASS 02: lift waits while threshold remains occupied
+PASS 02: queued trip resumes after threshold cleared
+PASS 02: resumed lift safely carries rider
+PASS 02: both landing indicators match actual lift state
+PASS 02: light switch reachable from inside apartment
+PASS 02: apartment switch controls real light
+PASS 02: switch prompt reflects off state
+PASS 02: apartment light restored
+PROTOTYPE_RESULT checks=138 failures=0

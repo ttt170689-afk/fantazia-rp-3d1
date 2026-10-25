@@ -1,0 +1,39 @@
+{
+  "city.glb": {
+    "source": "public/world/fantazia_city.glb",
+    "sha256": "116d93b1abfb5f448a739794fc64fd3d8e9517dc75c979a609cdef53d715f6ed",
+    "bytes": 17381100
+  },
+  "player.glb": {
+    "source": "public/exports/player_super.glb",
+    "sha256": "a8f29fe2be06e7700caf7ae48329f7c5dd78682a59f16c1d090312909391ffa7",
+    "bytes": 1090824
+  },
+  "city_v28.glb": {
+    "kind": "web_scene_capture",
+    "source": "public/index.html",
+    "source_manifest": "assets/web-source05.json",
+    "sector": "city",
+    "exporter": "tools/export-web-world05.cjs",
+    "sha256": "c5894f2d9bc95d625d8c2d3b5d8a7ef8f09f1964f58544ef236d6d198c97fa32",
+    "bytes": 25897308
+  },
+  "sky_v28.glb": {
+    "kind": "web_scene_capture",
+    "source": "public/index.html",
+    "source_manifest": "assets/web-source05.json",
+    "sector": "sky",
+    "exporter": "tools/export-web-world05.cjs",
+    "sha256": "405acac2b423ca45da17719287fc86fc4244d089c4868ff84a65dbebdf13e75d",
+    "bytes": 2357484
+  },
+  "sea_v28.glb": {
+    "kind": "web_scene_capture",
+    "source": "public/index.html",
+    "source_manifest": "assets/web-source05.json",
+    "sector": "sea",
+    "exporter": "tools/export-web-world05.cjs",
+    "sha256": "9ba2cffa38b9dabecddac7b97238520a6c1e7b285d999482484f775a2a209f56",
+    "bytes": 918320
+  }
+}

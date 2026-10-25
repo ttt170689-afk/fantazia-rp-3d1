@@ -1,0 +1,10 @@
+.godot/
+exports/
+*.log
+.DS_Store
+
+# Recreated by the GLB editor importer; originals remain embedded in city.glb.
+/assets/city_[0-9]*.png
+/assets/city_[0-9]*.png.import
+/assets/player_[0-9]*.png
+/assets/player_[0-9]*.png.import

@@ -208,3 +208,35 @@
     transition: none !important;
   }
 }
+
+/* v21: real preferences in the existing settings dialog, never a new floating bar. */
+#htmlRoot #fzPlayPanel .fz-neon-preferences {
+  margin: 18px 0;
+  padding: 12px 14px;
+  border: 1px solid #b786db5c;
+  border-radius: 14px;
+  background: linear-gradient(120deg, #1d18354d, #122c404d);
+  min-width: 0;
+}
+#htmlRoot #fzPlayPanel .fz-neon-preferences legend {
+  padding: 0 8px;
+  color: #dec5f5;
+  font-size: 13px;
+  font-weight: 700;
+}
+#htmlRoot #fzPlayPanel .fz-neon-preferences label {
+  line-height: 1.5;
+}
+#htmlRoot #fzPlayPanel .fz-neon-preferences input[type="range"] {
+  width: 100%;
+  accent-color: #a89bff;
+  min-height: 32px;
+}
+#htmlRoot #fzPlayPanel .fz-neon-preferences input[type="checkbox"] {
+  accent-color: #98ceff;
+}
+#htmlRoot #fzPlayPanel .fz-neon-preferences p {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #b9c4dc;
+}

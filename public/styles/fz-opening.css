@@ -50,10 +50,10 @@ body.fz-intro-active #fzGpuRecovery {
   align-items: center;
   gap: 20px;
   width: 100%;
-  transform: scale(var(--opening-credit-scale, 1));
-  opacity: var(--opening-credit-opacity, 1);
+  transform: none;
+  opacity: 1;
   transform-origin: 50% 50%;
-  will-change: transform, opacity;
+  /* No CSS zoom/blur impersonating a 3D passage. */
 }
 #fzIntro .front-credit-type > span {
   font: 400 clamp(14px, 1.7vw, 22px) / 1.5 Arial;
@@ -212,11 +212,79 @@ body.fz-intro-active #fzGpuRecovery {
 
 /* v17: the title is geometry; these selectors only keep its Russian credit accessible. */
 #fzIntro[data-letter="true"][data-phase="credit"] .front-credit,
-#fzIntro[data-letter="true"][data-phase="gateway"] .front-credit { background: transparent; }
-#fzIntro[data-letter="true"] .front-credit-type { transform: none !important; opacity: 1 !important; position: absolute; inset: 0; }
+#fzIntro[data-letter="true"][data-phase="gateway"] .front-credit {
+  background: transparent;
+}
+#fzIntro[data-letter="true"] .front-credit-type {
+  transform: none !important;
+  opacity: 1 !important;
+  position: absolute;
+  inset: 0;
+}
 #fzIntro[data-letter="true"] .front-credit-type strong,
-#fzIntro[data-letter="true"] .front-credit-type i { opacity: 0; }
-#fzIntro[data-letter="true"] .front-credit-type > span { position: absolute; top: calc(50% - 90px); color: #fff4dc; text-shadow: 0 2px 12px #101723, 0 0 30px #101723; }
-#fzIntro[data-letter="true"][data-phase="gateway"] .front-credit-type { visibility: hidden; }
-#fzIntro[data-letter="true"] .front-title h1 { text-shadow: 0 2px 0 #b8a68c, 0 8px 35px #060b13; }
-@media(max-width:650px) { #fzIntro[data-letter="true"] .front-credit-type > span { top: calc(50% - 70px); font-size: 13px; letter-spacing: .08em; } }
+#fzIntro[data-letter="true"] .front-credit-type i {
+  opacity: 0;
+}
+#fzIntro[data-letter="true"] .front-credit-type > span {
+  position: absolute;
+  top: calc(50% - 90px);
+  color: #fff4dc;
+  text-shadow:
+    0 2px 12px #101723,
+    0 0 30px #101723;
+}
+#fzIntro[data-letter="true"][data-phase="gateway"] .front-credit-type {
+  visibility: hidden;
+}
+#fzIntro[data-letter="true"] .front-title h1 {
+  text-shadow:
+    0 2px 0 #b8a68c,
+    0 8px 35px #060b13;
+}
+@media (max-width: 650px) {
+  #fzIntro[data-letter="true"] .front-credit-type > span {
+    top: calc(50% - 70px);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+  }
+}
+
+/* v22 loading is explicitly separate from the physical 3D title. */
+#htmlRoot
+  #fzIntro[data-build="22"][data-ready="false"]
+  .front-credit-type
+  strong {
+  font-size: clamp(16px, 3vw, 32px);
+  color: #cbd6ff;
+}
+#htmlRoot #fzIntro .front-build-note {
+  margin-top: 22px;
+  color: #86d8f4;
+  font: 600 11px/1.5 system-ui;
+  letter-spacing: 0.16em;
+}
+#htmlRoot #fzIntro[data-letter="true"] .front-build-note {
+  display: none;
+}
+#htmlRoot
+  #fzIntro[data-letter="true"][data-reduced="true"]
+  .front-identity:after {
+  content: " · БЕЗ ДВИЖЕНИЯ";
+}
+#htmlRoot #fzIntro[data-letter="true"] .front-credit-type strong {
+  display: none;
+}
+
+/* v27: no menus, HUD, notifications or loading cards leak into the intro. */
+body.fz-intro-active
+  > :not(#fzIntro):not(#fzFrontWorld):not(#gameCanvas):not(script):not(style) {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+#fzIntro:not([data-phase="title"]) .front-title {
+  display: none !important;
+}
+#fzIntro:not([data-ready="true"]) .front-caption,
+#fzIntro:not([data-ready="true"]) .front-chapter {
+  visibility: hidden !important;
+}

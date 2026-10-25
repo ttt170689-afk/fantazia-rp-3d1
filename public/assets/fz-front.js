@@ -132,6 +132,7 @@
       0.12,
       360,
     );
+    openingCamera.userData.fzOpeningPass = true;
     cast = FZOpeningCast.create(anchors);
     portal = FZLetterPortal.create(anchors);
     renderer.domElement.addEventListener("webglcontextlost", contextLost);
@@ -141,6 +142,7 @@
     renderedFrames = 0;
     root().dataset.ready = "true";
     root().dataset.letter = "true";
+    root().dataset.reduced = String(reduced);
     root().querySelector(".front-loading").textContent = "";
     resize();
   }
@@ -180,8 +182,6 @@
     if (root()) {
       root().dataset.ready = "false";
       root().dataset.letter = "false";
-      root().style.setProperty("--opening-credit-scale", "1");
-      root().style.setProperty("--opening-credit-opacity", "1");
       root().style.setProperty("--opening-cut", "0");
       root().querySelector(".front-loading").textContent =
         "3D-заставка недоступна. Можно перейти ко входу.";
@@ -224,21 +224,12 @@
     cameraLook.fromArray(frame.look);
     openingCamera.position.copy(cameraPosition);
     openingCamera.lookAt(cameraLook);
-    if (!portal.pose(time, openingCamera, reduced)) {
+    if (!portal.pose(P.virtualTime(time), openingCamera, reduced)) {
       openingCamera.near = 0.12;
       openingCamera.updateProjectionMatrix();
     }
-    cast.update(time, reduced);
-    const el = root(),
-      gateway = reduced ? 0 : P.smooth((time - 2.8) / 2.6);
-    el.style.setProperty(
-      "--opening-credit-scale",
-      String(1 / (1 - gateway * 0.96)),
-    );
-    el.style.setProperty(
-      "--opening-credit-opacity",
-      String(time < 2.8 ? 1 : Math.max(0, 1 - gateway * 1.5)),
-    );
+    cast.update(P.virtualTime(time), reduced);
+    const el = root();
     // Gentle dark edit, not a white flash; disabled for reduced-motion viewers.
     const p = P.at(time, reduced),
       cut = ["neighbors", "mall", "flight"].includes(p.id) && !reduced;
@@ -246,7 +237,7 @@
       "--opening-cut",
       String(cut ? Math.max(0, 1 - (time - p.start) / 0.32) * 0.45 : 0),
     );
-    portal.render(borrowed, saved.scene, openingCamera);
+    portal.render(borrowed, saved.scene, openingCamera, time >= 1.2);
     renderedFrames++;
   }
   function frame(now) {
@@ -259,12 +250,12 @@
       raf = requestAnimationFrame(frame);
       return;
     }
-    const dt = last ? Math.min(0.25, (now - last) / 1000) : 0;
+    const dt = last ? Math.max(0, (now - last) / 1000) : 0;
     last = now;
     if (ready || failed) elapsed += dt;
     if (failed) setPhase(elapsed < 2.8 ? "credit" : "title");
     else setPhase(P.at(elapsed, reduced).id);
-    const duration = failed ? 5 : reduced ? 9 : P.duration;
+    const duration = P.duration;
     const el = root();
     if (!el) return;
     el.querySelector(".front-progress i").style.transform =
@@ -339,10 +330,15 @@
     el.id = "fzIntro";
     el.setAttribute("role", "dialog");
     el.setAttribute("aria-modal", "true");
-    el.setAttribute("aria-label", "Заставка Fantazia RP 3D");
+    el.setAttribute(
+      "aria-label",
+      "Заставка Fantazia RP 3D. Создано при помощи TEMKA_PLAY_OFFICIAL",
+    );
     el.dataset.ready = "false";
+    el.dataset.build = "22";
+    el.dataset.letter = "false";
     el.innerHTML =
-      '<div class="front-credit"><div class="front-credit-type"><span>Создано при помощи</span><strong>TEMKA_PLAY_OFFICIAL</strong><i aria-hidden="true"></i></div></div><div class="front-letterbox"></div><div class="front-identity">FANTAZIA / ТВОЙ ГОРОД</div><button id="fzIntroSkip" type="button">Пропустить ↗</button><div class="front-loading" role="status" aria-live="polite">Готовим игровой город…</div><div class="front-chapter"></div><div class="front-caption"></div><div class="front-cut" aria-hidden="true"></div><div class="front-title"><span>ТВОЯ ИСТОРИЯ НАЧИНАЕТСЯ ЗДЕСЬ</span><h1>FANTAZIA</h1><strong>RP 3D</strong><small>Создано при помощи TEMKA_PLAY_OFFICIAL</small></div><div class="front-progress"><i></i></div>';
+      '<div class="front-credit"><div class="front-credit-type"><span>Создано при помощи</span><strong>TEMKA_PLAY_OFFICIAL</strong><small class="front-build-note">ОБНОВЛЕНИЕ 28 · 3D-ПРОЛЁТ</small><i aria-hidden="true"></i></div></div><div class="front-letterbox"></div><div class="front-identity">FANTAZIA / ОБНОВЛЕНИЕ 28</div><button id="fzIntroSkip" type="button">Пропустить ↗</button><div class="front-loading" role="status" aria-live="polite">Готовим игровой город…</div><div class="front-chapter"></div><div class="front-caption"></div><div class="front-cut" aria-hidden="true"></div><div class="front-title"><span>ТВОЯ ИСТОРИЯ НАЧИНАЕТСЯ ЗДЕСЬ</span><h1>FANTAZIA</h1><strong>RP 3D</strong><small>Создано при помощи TEMKA_PLAY_OFFICIAL</small></div><div class="front-progress"><i></i></div>';
     document.body.appendChild(el);
     oldFocus = document.activeElement;
     el.querySelector("button").onclick = finish;
@@ -364,7 +360,11 @@
     bootTimer = setTimeout(() => {
       bootTimer = 0;
       if (!intro || token !== generation) return;
-      Promise.all([ensureWorld(), FZLetterPortal.load()])
+      Promise.all([
+        ensureWorld(),
+        FZLetterPortal.load(),
+        FZOpeningAvatar.load(),
+      ])
         .then(() => {
           if (intro && token === generation) {
             try {
@@ -395,6 +395,7 @@
     active: () => intro,
     info: () => ({
       phase,
+      build: 28,
       citySource: "live-gameplay-scene",
       credit: "TEMKA_PLAY_OFFICIAL",
       autoplay: "page-load",

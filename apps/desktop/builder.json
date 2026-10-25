@@ -1,0 +1,10 @@
+{
+  "appId": "org.fantazia.rp3d",
+  "productName": "Fantazia RP 3D",
+  "directories": {"output": "release"},
+  "files": ["desktop/main.cjs", "game-config.json", "configure.cjs", "package.json"],
+  "extraMetadata": {"main": "desktop/main.cjs"},
+  "win": {"target": [{"target": "nsis", "arch": ["x64"]}]},
+  "nsis": {"oneClick": false, "allowToChangeInstallationDirectory": true},
+  "asar": true
+}

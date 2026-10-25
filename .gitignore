@@ -15,3 +15,7 @@ apps/release/
 # Restore inputs and generated delivery archives
 dropbox/
 *.zip
+
+# Separate Godot PC prototype: editor caches and compiled exports
+godot-pc/.godot/
+godot-pc/exports/

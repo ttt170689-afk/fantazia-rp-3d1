@@ -12,6 +12,8 @@ const { attachSkyAccess } = require('./server/sky-access');
 // ======================================================
 
 const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -47,18 +49,32 @@ function generateToken() {
   return crypto.randomBytes(32).toString('hex');
 }
 
+// Bounded ordinary account sign-in attempts (there is no separate stage key).
+const authAttempts = new Map();
+app.use(['/api/auth/login', '/api/auth/register'], (req, res, next) => {
+  const now = Date.now();
+  for (const [key, value] of authAttempts) if (now - value.since > 60000) authAttempts.delete(key);
+  const key = req.ip + ':' + req.path;
+  const value = authAttempts.get(key) || {since:now,count:0};
+  value.count++; authAttempts.set(key,value);
+  if (value.count > 12) return res.status(429).json({ok:false,error:'Слишком много попыток. Подожди минуту.'});
+  next();
+});
+
 // Регистрация
 app.post('/api/auth/register', (req, res) => {
-  const { username, password, email } = req.body;
-  if (!username || !password) return res.json({ ok: false, error: 'Введи имя и пароль' });
+  const { username, password, email } = req.body || {};
+  if (typeof username !== 'string' || typeof password !== 'string' || !username.trim() || !password || username.length > 64 || password.length > 256) return res.json({ ok: false, error: 'Введи имя и пароль' });
   if (username.length < 3) return res.json({ ok: false, error: 'Имя минимум 3 символа' });
   if (password.length < 6) return res.json({ ok: false, error: 'Пароль минимум 6 символов' });
-  const key = username.toLowerCase();
+  const key = username.trim().toLowerCase();
+  if (ADMIN_USERNAMES.includes(key)) return res.json({ok:false,error:'Это имя закреплено за администратором. Войди в существующий аккаунт.'});
   if (accounts[key]) return res.json({ ok: false, error: 'Это имя уже занято' });
   
   const token = generateToken();
   accounts[key] = {
-    username,
+    username: username.trim(),
+    role: 'user',
     email: email || '',
     password: hashPassword(password),
     token,
@@ -77,9 +93,9 @@ app.post('/api/auth/register', (req, res) => {
 
 // Вход
 app.post('/api/auth/login', (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) return res.json({ ok: false, error: 'Введи имя и пароль' });
-  const key = username.toLowerCase();
+  const { username, password } = req.body || {};
+  if (typeof username !== 'string' || typeof password !== 'string' || !username.trim() || !password || username.length > 64 || password.length > 256) return res.json({ ok: false, error: 'Введи имя и пароль' });
+  const key = username.trim().toLowerCase();
   const acc = accounts[key];
   if (!acc) return res.json({ ok: false, error: 'Аккаунт не найден' });
   if (acc.password !== hashPassword(password)) return res.json({ ok: false, error: 'Неверный пароль' });
@@ -88,13 +104,13 @@ app.post('/api/auth/login', (req, res) => {
   acc.token = token;
   acc.lastLogin = Date.now();
   saveAccounts();
-  res.json({ ok: true, token, username: acc.username, data: { money: acc.money, level: acc.level, exp: acc.exp, inventory: acc.inventory, appearance: acc.appearance } });
+  res.json({ ok: true, token, username: acc.username, isAdmin: accountIsAdmin(acc), data: { money: acc.money, level: acc.level, exp: acc.exp, inventory: acc.inventory, appearance: acc.appearance } });
 });
 
 // Проверка токена
 app.post('/api/auth/verify', (req, res) => {
   const { token } = req.body;
-  const acc = Object.values(accounts).find(a => a.token === token);
+  const acc = typeof token === 'string' && token.length >= 32 ? Object.values(accounts).find(a => a.token === token) : null;
   if (!acc) return res.json({ ok: false });
   res.json({ ok: true, username: acc.username, data: { money: acc.money, level: acc.level, exp: acc.exp, inventory: acc.inventory, appearance: acc.appearance } });
 });
@@ -102,7 +118,7 @@ app.post('/api/auth/verify', (req, res) => {
 // Сохранение прогресса
 app.post('/api/auth/save', (req, res) => {
   const { token, money, level, exp, inventory, appearance } = req.body;
-  const acc = Object.values(accounts).find(a => a.token === token);
+  const acc = typeof token === 'string' && token.length >= 32 ? Object.values(accounts).find(a => a.token === token) : null;
   if (!acc) return res.json({ ok: false, error: 'Не авторизован' });
   if (money !== undefined) acc.money = money;
   if (level !== undefined) acc.level = level;
@@ -127,8 +143,6 @@ app.get('/api/admin/accounts', (req, res) => {
 // EXPRESS
 // ======================================================
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 // Отключаем кэш для html/js — иначе браузер показывает старую версию страницы
 app.use((req, res, next) => {
   if (/\.(html|js|css)$/i.test(req.path) || req.path === '/') {
@@ -175,6 +189,10 @@ app.get('/api/players', (req, res) => {
 const ADMIN_PASSWORD   = 'fnfpoppy567765';
 const ADMIN_EMAIL      = 'ttt170689@gmail.com';
 const ADMIN_USERNAMES  = ['temka_play_official', 'ttt170689@gmail.com', 'ttt170689'];
+
+function accountIsAdmin(account) {
+  return !!account && (account.role === 'admin' || (account.role !== 'user' && ADMIN_USERNAMES.includes(String(account.username || '').toLowerCase())));
+}
 
 function checkAdmin(req, res) {
   const pwd = req.body?.adminPassword || req.query?.adminPassword;
@@ -421,7 +439,10 @@ app.post('/api/admin/message', (req, res) => {
 // ======================================================
 
 const players = {};
-attachSkyAccess(io, players);
+const skyAccess = attachSkyAccess(io, players, {isAdmin: socket => {
+  const account = accounts[socket.data.accountKey];
+  return !!socket.data.accountToken && account?.token === socket.data.accountToken && accountIsAdmin(account);
+}});
 const bans = {};
 const friendships = {};
 const portals = {};
@@ -780,6 +801,8 @@ io.on('connection', (socket) => {
         }
       }
 
+      socket.data.accountKey = savedData ? savedData.username.toLowerCase() : null;
+      socket.data.accountToken = savedData ? data.token : null;
       // ── Проверка бана ──────────────────────────────
       const banRecord = bans[playerName.toLowerCase()];
       if (banRecord) {
@@ -830,7 +853,7 @@ io.on('connection', (socket) => {
         inventory: savedData ? (savedData.inventory || []) : [],
         online: true,
         joinedAt: Date.now(),
-        isAdmin: (data.email || '') === ADMIN_EMAIL || ADMIN_USERNAMES.includes((playerName || '').toLowerCase()),
+        isAdmin: accountIsAdmin(savedData),
         email: data.email || '',
         hasAccount: !!savedData
       };
@@ -847,6 +870,7 @@ io.on('connection', (socket) => {
         worldState,
         chatHistory: chatHistory.slice(-50),
         isAdmin: player.isAdmin,
+        stageAllowed: skyAccess.allowed(socket),
         portals: Object.values(portals)
       });
 
@@ -873,7 +897,7 @@ io.on('connection', (socket) => {
     const rot = data?.rotation || {};
 
     const proposed = {x:Number(pos.x),y:Number(pos.y),z:Number(pos.z)};
-    player.position = SkyPolicy.position(proposed, player.position, socket.data.skyAdmin === true);
+    player.position = SkyPolicy.position(proposed, player.position, skyAccess.allowed(socket));
     if (['x','y','z'].some(k => player.position[k] !== proposed[k])) socket.emit('sky:correction', player.position);
 
     player.rotation = {

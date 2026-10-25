@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="ru" id="htmlRoot">
 <head>
-<script>window.FZ_CLASSIC_WORLD = true;</script>
+<script>window.FZ_CLASSIC_WORLD = true; window.FZ_METRO23 = true;</script>
 <link rel="stylesheet" href="styles/fz-ui.css?v=9.0">
 <link rel="stylesheet" href="styles/fz-v9.css?v=11.0">
 <link rel="stylesheet" href="styles/fz-play.css?v=15.0">
 <link rel="stylesheet" href="styles/fz-sky.css?v=18.0">
 <link rel="stylesheet" href="styles/fz-v19.css?v=19.0">
-<link rel="stylesheet" href="styles/fz-neon.css?v=20.0">
+<link rel="stylesheet" href="styles/fz-neon.css?v=21.0">
 <meta charset="UTF-8">
 <script src="https://yandex.ru/games/sdk/v2"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -2083,7 +2083,10 @@ body.theme-cyber .fz-menu-logged{background:rgba(0,229,255,.08)!important;border
 @keyframes wShimmer{0%{background-position:200% 0}100%{background-position:-20% 0}}
 @keyframes wPulse{0%,100%{opacity:.7;filter:blur(0)}50%{opacity:1;filter:blur(1px)}}
 </style>
-<link rel="stylesheet" href="styles/fz-opening.css?v=17.0">
+<link rel="stylesheet" href="styles/fz-opening.css?v=27.0">
+<link rel="stylesheet" href="styles/fz-buildings.css?v=28.0">
+<link rel="stylesheet" href="styles/fz-lobby23.css?v=23.0">
+<link rel="stylesheet" href="styles/fz-sound.css?v=24.0">
 </head>
 <body>
 
@@ -2315,7 +2318,7 @@ body.theme-cyber .fz-menu-logged{background:rgba(0,229,255,.08)!important;border
   <div class="fz-menu-content">
     <span class="fz-menu-bolt">⚡</span>
     <div class="fz-menu-title">FANTAZIA <em>RP</em></div>
-    <div class="fz-menu-subtitle">3D · ONLINE</div>
+    <div class="fz-menu-subtitle">ТВОЙ ГОРОД. ТВОЙ МАРШРУТ.</div>
   </div>
 
   <!-- Кнопки меню -->
@@ -2326,7 +2329,8 @@ body.theme-cyber .fz-menu-logged{background:rgba(0,229,255,.08)!important;border
     <button class="fz-menu-btn" onclick="FZFront.start()">Заставка ↗</button>
   </nav>
 
-  <div class="fz-menu-footer">FANTAZIA RP 3D</div>
+  <aside class="fz-lobby-story"><small>ОБНОВЛЕНИЕ 24 / ГОРОД ЗВУЧИТ</small><h2>Твоя следующая<br>остановка.</h2><p>Неоновая площадь наверху. Новый маршрут — под городом. Пять станций, поезд и голосовые объявления. Теперь — музыка, атмосфера города и новые звуковые эффекты.</p><div class="fz-lobby-line"><span>Центральная</span><span>Заводская</span><span>Парковая</span><span>Портовая</span><span>Деловая</span></div><p>Сначала войди в город через белый спуск. Найди павильон M или открой схему метро в меню.</p></aside>
+  <div class="fz-menu-footer">FANTAZIA RP 3D / ОБНОВЛЕНИЕ 23</div>
 
   <!-- ══════════ ЭКРАН ПРИВЕТСТВИЯ ══════════ -->
   <div id="welcomeOverlay">
@@ -2391,94 +2395,8 @@ function saveAppearanceLocal(){
 /* ── Экран загрузки при нажатии PLAY: мир, анимации, новый город, подключение ── */
 
 // Танцующий человечек на экране загрузки (canvas, старт/стоп вместе с лоадером)
-function playLoadDance() {
-  const cv = document.getElementById('playLoadDance');
-  if (!cv) return;
-  const ctx = cv.getContext('2d');
-  const tips = ['Танцы теперь под музыку!', 'MALL с лучом в небо — не пройдёшь мимо', 'Жми фото — скриншот без интерфейса', 'На пирсе клюёт!', 'Встречаемся у фонтана', 'Автобусы ждут на остановках'];
-  let tipI = 0, frame = 0;
-  const T0 = performance.now();
-  const notes = ['\u266A', '\u266B', '\u2669', '\u266A', '\u266C'];
-  function draw() {
-    if (window._playLoadDanceStop) return;
-    if (!document.getElementById('playLoadDance')) return;
-    const t = (performance.now() - T0) / 1000;
-    frame++;
-    if (frame % 150 === 1) {
-      const tip = document.getElementById('playLoadTip');
-      if (tip) tip.textContent = tips[tipI++ % tips.length];
-    }
-    const W = 140, H = 150, cx = 70, gy = 130;
-    ctx.clearRect(0, 0, W, H);
-    const move = Math.floor(t / 2.2) % 3;
-    const mt = (t % 2.2) / 2.2;
-    const pulse = 0.5 + 0.5 * Math.sin(t * 5);
-    const grd = ctx.createRadialGradient(cx, gy, 4, cx, gy, 70);
-    grd.addColorStop(0, 'rgba(108,92,231,' + (0.35 + pulse * 0.2).toFixed(3) + ')');
-    grd.addColorStop(1, 'rgba(108,92,231,0)');
-    ctx.fillStyle = grd;
-    ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = 'rgba(0,229,255,0.22)';
-    ctx.beginPath(); ctx.ellipse(cx, gy + 4, 30 + pulse * 6, 8, 0, 0, 7); ctx.fill();
-    ctx.textAlign = 'center';
-    for (let i = 0; i < 5; i++) {
-      const nt = ((t * 0.35 + i / 5) % 1);
-      const nx = cx + Math.sin(i * 2.1 + t * 1.5) * 44;
-      const ny = gy - 10 - nt * 100;
-      ctx.globalAlpha = (1 - nt) * 0.9;
-      ctx.font = 'bold ' + (12 + (i % 3) * 3) + 'px Arial';
-      ctx.fillStyle = i % 2 ? '#00e5ff' : '#ff6fa5';
-      ctx.fillText(notes[i], nx, ny);
-    }
-    ctx.globalAlpha = 1;
-    let hop = 0, lean = 0, spin = 0, armW = 0, fr = 7;
-    if (move === 0) { hop = Math.abs(Math.sin(t * 7)) * 16; lean = Math.sin(t * 7) * 0.12; armW = Math.sin(t * 7); }
-    else if (move === 1) { const k = Math.sin(t * 4); fr = 4; hop = Math.abs(k) * 5; lean = k * 0.25; armW = k; }
-    else { spin = mt * Math.PI * 2; hop = Math.abs(Math.sin(t * 6)) * 8; armW = Math.cos(t * 6); fr = 6; }
-    const dir = Math.cos(spin);
-    const back = dir < -0.15;
-    const by = gy - hop;
-    const hipX = cx + lean * 20, hipY = by - 14;
-    const shx = cx + lean * 40, shy = by - 58;
-    const spread = (6 + 10 * Math.abs(armW)) * (0.35 + 0.65 * Math.abs(dir));
-    const sw = Math.sin(t * fr) * 10;
-    ctx.save();
-    ctx.lineCap = 'round';
-    ctx.shadowBlur = 12;
-    const legC = back ? '#6f68c9' : '#a29bfe', legC2 = back ? '#5e58b5' : '#8b7ff0';
-    ctx.shadowColor = legC; ctx.strokeStyle = legC; ctx.lineWidth = 8;
-    ctx.beginPath(); ctx.moveTo(hipX, hipY); ctx.lineTo(hipX - spread + sw * 0.4, by); ctx.stroke();
-    ctx.shadowColor = legC2; ctx.strokeStyle = legC2;
-    ctx.beginPath(); ctx.moveTo(hipX, hipY); ctx.lineTo(hipX + spread - sw * 0.4, by); ctx.stroke();
-    const bodyC = back ? '#0093a8' : '#00e5ff';
-    ctx.shadowColor = bodyC; ctx.strokeStyle = bodyC; ctx.lineWidth = 9;
-    ctx.beginPath(); ctx.moveTo(hipX, hipY); ctx.lineTo(shx, shy); ctx.stroke();
-    const aR = 20 + armW * 12, aL = 20 - armW * 12;
-    const armCR = back ? '#b35a43' : '#e17055', armCL = back ? '#544cb5' : '#6c5ce7';
-    ctx.shadowColor = armCR; ctx.strokeStyle = armCR; ctx.lineWidth = 7;
-    ctx.beginPath(); ctx.moveTo(shx, shy); ctx.lineTo(shx + aR * dir, shy - 30 + armW * 6); ctx.stroke();
-    ctx.shadowColor = armCL; ctx.strokeStyle = armCL;
-    ctx.beginPath(); ctx.moveTo(shx, shy); ctx.lineTo(shx - aL * dir, shy - 30 - armW * 6); ctx.stroke();
-    const hx = shx + Math.sin(t * fr) * 3, hy = shy - 22;
-    ctx.shadowColor = '#ffd166'; ctx.fillStyle = back ? '#e8b34b' : '#ffd166';
-    ctx.beginPath(); ctx.arc(hx, hy, 13, 0, 7); ctx.fill();
-    if (!back) {
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = '#1a1a2e';
-      ctx.beginPath(); ctx.arc(hx - 4, hy - 2, 2, 0, 7); ctx.fill();
-      ctx.beginPath(); ctx.arc(hx + 4, hy - 2, 2, 0, 7); ctx.fill();
-      ctx.strokeStyle = '#1a1a2e'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(hx, hy + 3, 5, 0.3, Math.PI - 0.3); ctx.stroke();
-    } else {
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = '#4a3728';
-      ctx.beginPath(); ctx.arc(hx, hy - 2, 10, Math.PI, 0); ctx.fill();
-    }
-    ctx.restore();
-    requestAnimationFrame(draw);
-  }
-  draw();
-}
+function playLoadDance() { window.FZLoadingDancer?.start(document.getElementById('playLoadDance')); }
+
 function showPlayLoader() {
   let ov = document.getElementById('playLoadOv');
   if (!ov) {
@@ -2495,7 +2413,7 @@ function showPlayLoader() {
   ov.style.display = 'flex'; ov.style.opacity = '1';
   window._loadingGate = true; window._playLoadDanceStop = false;
   try { playLoadDance(); } catch (e) {}
-  const steps = [['world', '🌍 Мир и город'], ['anim', '🕺 Анимации персонажа'], ['city', '🏙️ Старый город · GRAND MALL'], ['conn', '🎮 Подключение к игре']];
+  const steps = [['world', '🌍 Мир и город'], ['anim', '🕺 Анимации персонажа'], ['city', '🏙️ Город · GRAND MALL'], ['conn', '🎮 Подключение к игре']];
   const done = {};
   const render = () => {
     const el = document.getElementById('playLoadSteps'); if (!el) return;
@@ -2505,7 +2423,7 @@ function showPlayLoader() {
   };
   render();
   const hide = () => {
-    window._loadingGate = false; window._playLoadDanceStop = true;
+    window._loadingGate = false; window._playLoadDanceStop = true; window.FZLoadingDancer?.stop();
     if (window._playLoadIv) { clearInterval(window._playLoadIv); window._playLoadIv = null; }
     const fill = document.getElementById('playLoadFill'); if (fill) fill.style.width = '100%';
     setTimeout(() => { ov.style.opacity = '0'; setTimeout(() => { ov.style.display = 'none'; }, 500); }, 400);
@@ -2575,7 +2493,7 @@ function startGameDirect(){
   if (typeof showPlayLoader === 'function') showPlayLoader();
   setTimeout(async function () {
   try { await window.FZFront?.prepareGame(); } catch (error) {
-    window._loadingGate = false; window._playLoadDanceStop = true;
+    window._loadingGate = false; window._playLoadDanceStop = true; window.FZLoadingDancer?.stop();
     if (window._playLoadIv) clearInterval(window._playLoadIv);
     const loader = document.getElementById("playLoadOv"); if (loader) loader.style.display = "none";
     backToServers(); showNotification("Не удалось подготовить 3D. Перезагрузи страницу или проверь поддержку WebGL.", "error"); return;
@@ -3524,7 +3442,7 @@ document.addEventListener('click', function(e){
     <button class="modal-close" onclick="closeModal('settingsModal')">&times;</button>
     <div class="sx-head"><h2>⚙️ Настройки</h2><div class="sx-sub">Наведите на настройку, чтобы понять, что она делает. Изменения применяются сразу.</div></div>
     <div class="sx-tabs"><button class="sx-tab on" data-tab="graphics" onclick="sxTab('graphics')">🖥️ Графика</button><button class="sx-tab" data-tab="image" onclick="sxTab('image')">🎨 Изображение</button><button class="sx-tab" data-tab="controls" onclick="sxTab('controls')">🎮 Управление</button><button class="sx-tab" data-tab="ui" onclick="sxTab('ui')">🧭 Интерфейс</button><button class="sx-tab" data-tab="sound" onclick="sxTab('sound')">🔊 Звук и чат</button></div>
-    <div class="sx-body"><div class="sx-pane on" data-tab="graphics"><div class="sx-group">Быстрый выбор</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Пресет качества</div><div class="sx-desc">Готовый набор графики: тени, разрешение, дальность и свет сразу. Слабый ПК — «Низкий», мощный — «Ультра».</div></div><div class="sx-ctrl"><div class="sx-presets"><button class="toggle-btn off" onclick="applyPreset('low')">Низкий</button><button class="toggle-btn off" onclick="applyPreset('medium')">Средний</button><button class="toggle-btn off" onclick="applyPreset('high')">Высокий</button><button class="toggle-btn off" onclick="applyPreset('ultra')">Ультра</button></div></div></div><div class="sx-group">Качество картинки</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Масштаб рендера</div><div class="sx-desc">Внутреннее разрешение, в котором рисуется мир. 50% — заметно быстрее, но картинка мыльнее. 200% — максимальная чёткость, сильно нагружает видеокарту.</div></div><div class="sx-ctrl"><select id="set_renderScale" onchange="applySetting('renderScale',this.value)"><option value="0.5">50% (быстро)</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.5">150%</option><option value="2" selected>200% (макс. качество)</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Дальность прорисовки</div><div class="sx-desc">Насколько далеко видно город. Чем дальше, тем больше объектов рисуется одновременно.</div></div><div class="sx-ctrl"><select id="set_drawDist" onchange="applySetting('drawDist',this.value)"><option value="150">Низкая</option><option value="260">Средняя</option><option value="420" selected>Высокая</option><option value="700">Ультра</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Качество теней</div><div class="sx-desc">Детализация и мягкость теней от солнца. «Выкл» даёт заметный прирост FPS.</div></div><div class="sx-ctrl"><select id="set_shadowQuality" onchange="applySetting('shadowQuality',this.value)"><option value="off">Выкл</option><option value="low">Низкое</option><option value="high" selected>Высокое</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Количество источников света</div><div class="sx-desc">Сколько световых источников (фонари, неон, фонарик) освещают сцену одновременно. Больше — красивее, но тяжелее.</div></div><div class="sx-ctrl"><select id="set_shaderQuality" onchange="applySetting('shaderQuality',this.value)"><option value="low">Низкое (4 лампы)</option><option value="medium">Среднее (8)</option><option value="high" selected>Высокое (12)</option><option value="ultra">Ультра (20)</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Сглаживание (антиалиасинг)</div><div class="sx-desc">Убирает «лесенку» по краям предметов. Применяется сразу, но может ненадолго мигнуть экран.</div></div><div class="sx-ctrl"><button id="set_aa" class="toggle-btn on" onclick="toggleSetting('aa')">ВКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Анизотропная фильтрация</div><div class="sx-desc">Чёткость текстур на земле и стенах под углом. Почти не бьёт по FPS — обычно 8× или 16×.</div></div><div class="sx-ctrl"><select id="set_aniso" onchange="applySetting('aniso',this.value)"><option value="1">Выкл</option><option value="4" selected>4×</option><option value="8">8×</option><option value="16">16×</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Фильтрация текстур</div><div class="sx-desc">«Пиксельная» — ретро-вид без размытия текстур.</div></div><div class="sx-ctrl"><select id="set_texFilter" onchange="applySetting('texFilter',this.value)"><option value="linear" selected>Сглаженная</option><option value="nearest">Пиксельная (ретро)</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Туман</div><div class="sx-desc">Скрывает дальние объекты мягкой дымкой. Выключение показывает весь город, но нагрузка растёт.</div></div><div class="sx-ctrl"><button id="set_fog" class="toggle-btn on" onclick="toggleSetting('fog')">ВКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Облака и небо</div><div class="sx-desc">Небосвод, солнце и облака. Выключение экономит ресурсы.</div></div><div class="sx-ctrl"><button id="set_sky" class="toggle-btn on" onclick="toggleSetting('sky')">ВКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Мелкие детали города</div><div class="sx-desc">Фоновая анимация птиц. Твёрдые предметы остаются видимыми, чтобы не было невидимых препятствий.</div></div><div class="sx-ctrl"><button id="set_detail" class="toggle-btn on" onclick="toggleSetting('detail')">ВКЛ</button></div></div><div class="sx-group">Производительность</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Лимит FPS</div><div class="sx-desc">Ограничивает частоту кадров. Удобно для экономии батареи и тихой работы ноутбука.</div></div><div class="sx-ctrl"><select id="set_fpsCap" onchange="applySetting('fpsCap',this.value)"><option value="0" selected>Без лимита</option><option value="144">144</option><option value="60">60</option><option value="30">30</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Динамическое разрешение</div><div class="sx-desc">Масштаб рендера подстраивается под выбранный лимит кадров, в том числе 30 FPS.</div></div><div class="sx-ctrl"><button id="set_dynRes" class="toggle-btn off" onclick="toggleSetting('dynRes')">ВЫКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Режим максимального FPS</div><div class="sx-desc">Снижает разрешение, отключает птиц и тени. Твёрдые предметы не исчезают.</div></div><div class="sx-ctrl"><button id="set_perf" class="toggle-btn off" onclick="toggleSetting('perf')">ВЫКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Счётчик FPS</div><div class="sx-desc">Показывает количество кадров в секунду в верхней части экрана.</div></div><div class="sx-ctrl"><button id="set_fpsShow" class="toggle-btn off" onclick="toggleSetting('fpsShow')">ВЫКЛ</button></div></div></div><div class="sx-pane" data-tab="image"><div class="sx-group">Цвет и свет</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Тональная компрессия</div><div class="sx-desc">Как яркие и тёмные участки переводятся на экран. ACES — кинематографичный вид.</div></div><div class="sx-ctrl"><select id="set_toneMap" onchange="applySetting('toneMap',this.value)"><option value="aces" selected>ACES Filmic (кино)</option><option value="reinhard">Reinhard (мягко)</option><option value="cineon">Cineon (контраст)</option><option value="linear">Линейная</option><option value="none">Выкл</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Яркость</div><div class="sx-desc">Общая яркость картинки. Если на вашем мониторе всё тёмное — увеличьте.</div></div><div class="sx-ctrl"><input type="range" id="set_exposure" min="5" max="15" value="9" oninput="applySetting('exposure',this.value)"><span id="set_exposureVal" class="sx-val">9</span></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Цветокоррекция</div><div class="sx-desc">Цветовой фильтр: кинематографичный, сочный, тёплый, холодный или чёрно-белый нуар.</div></div><div class="sx-ctrl"><select id="set_colorGrade" onchange="applySetting('colorGrade',this.value)"><option value="off">Выкл</option><option value="cinematic" selected>Кинематографичная</option><option value="vivid">Сочная</option><option value="warm">Тёплая</option><option value="cold">Холодная</option><option value="noir">Нуар (ч/б)</option></select></div></div><div class="sx-group">Эффекты</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Резкость</div><div class="sx-desc">Добавляет контраста — картинка выглядит чётче, но может стать грубее.</div></div><div class="sx-ctrl"><input type="range" id="set_sharp" min="0" max="10" value="0" oninput="applySetting('sharp',this.value)"><span id="set_sharpVal" class="sx-val">0</span></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Виньетка</div><div class="sx-desc">Затемняет края экрана, фокусируя внимание на центре.</div></div><div class="sx-ctrl"><button id="set_vignette" class="toggle-btn off" onclick="toggleSetting('vignette')">ВЫКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Зерно плёнки</div><div class="sx-desc">Лёгкая зернистость, как на старой киноплёнке.</div></div><div class="sx-ctrl"><button id="set_grain" class="toggle-btn off" onclick="toggleSetting('grain')">ВЫКЛ</button></div></div></div><div class="sx-pane" data-tab="controls"><div class="sx-group">Мышь</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Чувствительность мыши</div><div class="sx-desc">Насколько сильно поворачивается камера при движении мыши.</div></div><div class="sx-ctrl"><input type="range" id="set_mouseSens" min="1" max="10" value="4" oninput="applySetting('mouseSens',this.value)"><span id="set_mouseSensVal" class="sx-val">4</span></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Вид камеры</div><div class="sx-desc">От 3 лица — персонаж виден целиком сзади. От 1 лица — глазами персонажа, шире обзор (настраивается ниже). Клавиша F5 тоже переключает.</div></div><div class="sx-ctrl"><button id="set_camBtn" class="toggle-btn off" onclick="toggleCameraMode()">ОТ 3 ЛИЦА</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Инверсия мыши по вертикали</div><div class="sx-desc">Мышь вверх — камера смотрит вниз. Удобно тем, кто привык к полётным симуляторам.</div></div><div class="sx-ctrl"><button id="set_invertY" class="toggle-btn off" onclick="toggleSetting('invertY')">ВЫКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Скорость камеры (колёсико)</div><div class="sx-desc">Насколько быстро приближается и отдаляется камера колёсиком мыши.</div></div><div class="sx-ctrl"><input type="range" id="set_zoomSpeed" min="1" max="10" value="5" oninput="applySetting('zoomSpeed',this.value)"><span id="set_zoomSpeedVal" class="sx-val">5</span></div></div><div class="sx-group">Камера</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Режим камеры (F5)</div><div class="sx-desc">3-е лицо — персонаж виден целиком. 1-е лицо — глазами персонажа. Переключается также клавишей F5.</div></div><div class="sx-ctrl"><select id="set_camMode" onchange="applySetting('camMode',this.value)"><option value="third" selected>3-е лицо</option><option value="first">1-е лицо</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Поле зрения (3-е лицо)</div><div class="sx-desc">Ширина обзора. Больше — видно шире, но картинка сильнее искажается по краям.</div></div><div class="sx-ctrl"><input type="range" id="set_fov" min="50" max="100" value="60" oninput="applySetting('fov',this.value)"><span id="set_fovVal" class="sx-val">60</span></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Поле зрения (1-е лицо)</div><div class="sx-desc">То же для вида от первого лица. Обычно комфортно 70–85.</div></div><div class="sx-ctrl"><input type="range" id="set_firstFov" min="60" max="110" value="78" oninput="applySetting('firstFov',this.value)"><span id="set_firstFovVal" class="sx-val">78</span></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Покачивание рук</div><div class="sx-desc">Руки от первого лица отстают и плавно возвращаются, когда вы поворачиваете камеру.</div></div><div class="sx-ctrl"><button id="set_handSway" class="toggle-btn on" onclick="toggleSetting('handSway')">ВКЛ</button></div></div></div><div class="sx-pane" data-tab="ui"><div class="sx-group">Музыка</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Фоновая музыка</div><div class="sx-desc">Музыка в GRAND MALL, офисах, лифтах, домах и квартирах. Снаружи не играет.</div></div><div class="sx-ctrl"><button id="set_bgMusic" class="toggle-btn on" onclick="toggleSetting('bgMusic')">ВКЛ</button></div></div><div class="sx-group">Боковое меню</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Компактное меню</div><div class="sx-desc">Кнопки 40 px в три колонки. Выключите, если нужны крупные кнопки.</div></div><div class="sx-ctrl"><button id="set_menuCompact" class="toggle-btn on" onclick="toggleSetting('menuCompact')">ВКЛ</button></div></div><div class="sx-row" style="display:block"><div class="sx-info"><div class="sx-name">Кнопки в меню</div><div class="sx-desc">Снимите галочку, чтобы убрать кнопку из бокового меню. Изменения сразу видны в меню.</div></div><div id="menuCfgList" style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin-top:8px"></div></div><div class="sx-group">HUD</div><div id="hudCfgList"></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Радар (мини-карта)</div><div class="sx-desc">Карта города в углу экрана.</div></div><div class="sx-ctrl"><button id="set_radar" class="toggle-btn on" onclick="toggleSetting('radar')">ВКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Навигатор</div><div class="sx-desc">Стрелка, которая указывает на текущую цель задания.</div></div><div class="sx-ctrl"><button id="set_nav" class="toggle-btn on" onclick="toggleSetting('nav')">ВКЛ</button></div></div><div class="sx-group">Персонажи</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Имена игроков</div><div class="sx-desc">Показывать ники над головами других игроков.</div></div><div class="sx-ctrl"><button id="set_nameTags" class="toggle-btn on" onclick="toggleSetting('nameTags')">ВКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Мимика персонажей</div><div class="sx-desc">Лица персонажей меняют выражение: радость, страх, злость.</div></div><div class="sx-ctrl"><button id="set_faceAnim" class="toggle-btn on" onclick="toggleSetting('faceAnim')">ВКЛ</button></div></div></div><div class="sx-pane" data-tab="sound"><div class="sx-group">Звук</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Музыка в лифте</div><div class="sx-desc">Фоновая мелодия и сигналы во время поездки на лифте.</div></div><div class="sx-ctrl"><button id="set_elevMusic" class="toggle-btn on" onclick="toggleSetting('elevMusic')">ВКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Звуки интерфейса</div><div class="sx-desc">Щелчки и сигналы кнопок и уведомлений.</div></div><div class="sx-ctrl"><button id="set_uiSounds" class="toggle-btn on" onclick="toggleSetting('uiSounds')">ВКЛ</button></div></div><div class="sx-group">Чат</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Радиус местного чата</div><div class="sx-desc">На каком расстоянии слышны сообщения в режиме «📍 Местный».</div></div><div class="sx-ctrl"><input type="range" id="set_localRange" min="10" max="80" value="30" oninput="applySetting('localRange',this.value)"><span id="set_localRangeVal" class="sx-val">30</span></div></div></div></div>
+    <div class="sx-body"><div class="sx-pane on" data-tab="graphics"><div class="sx-group">Быстрый выбор</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Пресет качества</div><div class="sx-desc">Готовый набор графики: тени, разрешение, дальность и свет сразу. Слабый ПК — «Низкий», мощный — «Ультра».</div></div><div class="sx-ctrl"><div class="sx-presets"><button class="toggle-btn off" onclick="applyPreset('low')">Низкий</button><button class="toggle-btn off" onclick="applyPreset('medium')">Средний</button><button class="toggle-btn off" onclick="applyPreset('high')">Высокий</button><button class="toggle-btn off" onclick="applyPreset('ultra')">Ультра</button></div></div></div><div class="sx-group">Качество картинки</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Масштаб рендера</div><div class="sx-desc">Внутреннее разрешение, в котором рисуется мир. 50% — заметно быстрее, но картинка мыльнее. 200% — максимальная чёткость, сильно нагружает видеокарту.</div></div><div class="sx-ctrl"><select id="set_renderScale" onchange="applySetting('renderScale',this.value)"><option value="0.5">50% (быстро)</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.5">150%</option><option value="2" selected>200% (макс. качество)</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Дальность прорисовки</div><div class="sx-desc">Насколько далеко видно город. Чем дальше, тем больше объектов рисуется одновременно.</div></div><div class="sx-ctrl"><select id="set_drawDist" onchange="applySetting('drawDist',this.value)"><option value="150">Низкая</option><option value="260">Средняя</option><option value="420" selected>Высокая</option><option value="700">Ультра</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Качество теней</div><div class="sx-desc">Детализация и мягкость теней от солнца. «Выкл» даёт заметный прирост FPS.</div></div><div class="sx-ctrl"><select id="set_shadowQuality" onchange="applySetting('shadowQuality',this.value)"><option value="off">Выкл</option><option value="low">Низкое</option><option value="high" selected>Высокое</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Количество источников света</div><div class="sx-desc">Сколько световых источников (фонари, неон, фонарик) освещают сцену одновременно. Больше — красивее, но тяжелее.</div></div><div class="sx-ctrl"><select id="set_shaderQuality" onchange="applySetting('shaderQuality',this.value)"><option value="low">Низкое (4 лампы)</option><option value="medium">Среднее (8)</option><option value="high" selected>Высокое (12)</option><option value="ultra">Ультра (20)</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Сглаживание (антиалиасинг)</div><div class="sx-desc">Убирает «лесенку» по краям предметов. Применяется сразу, но может ненадолго мигнуть экран.</div></div><div class="sx-ctrl"><button id="set_aa" class="toggle-btn on" onclick="toggleSetting('aa')">ВКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Анизотропная фильтрация</div><div class="sx-desc">Чёткость текстур на земле и стенах под углом. Почти не бьёт по FPS — обычно 8× или 16×.</div></div><div class="sx-ctrl"><select id="set_aniso" onchange="applySetting('aniso',this.value)"><option value="1">Выкл</option><option value="4" selected>4×</option><option value="8">8×</option><option value="16">16×</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Фильтрация текстур</div><div class="sx-desc">«Пиксельная» — ретро-вид без размытия текстур.</div></div><div class="sx-ctrl"><select id="set_texFilter" onchange="applySetting('texFilter',this.value)"><option value="linear" selected>Сглаженная</option><option value="nearest">Пиксельная (ретро)</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Туман</div><div class="sx-desc">Скрывает дальние объекты мягкой дымкой. Выключение показывает весь город, но нагрузка растёт.</div></div><div class="sx-ctrl"><button id="set_fog" class="toggle-btn on" onclick="toggleSetting('fog')">ВКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Облака и небо</div><div class="sx-desc">Небосвод, солнце и облака. Выключение экономит ресурсы.</div></div><div class="sx-ctrl"><button id="set_sky" class="toggle-btn on" onclick="toggleSetting('sky')">ВКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Мелкие детали города</div><div class="sx-desc">Фоновая анимация птиц. Твёрдые предметы остаются видимыми, чтобы не было невидимых препятствий.</div></div><div class="sx-ctrl"><button id="set_detail" class="toggle-btn on" onclick="toggleSetting('detail')">ВКЛ</button></div></div><div class="sx-group">Производительность</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Лимит FPS</div><div class="sx-desc">Ограничивает частоту кадров. Удобно для экономии батареи и тихой работы ноутбука.</div></div><div class="sx-ctrl"><select id="set_fpsCap" onchange="applySetting('fpsCap',this.value)"><option value="0" selected>Без лимита</option><option value="144">144</option><option value="60">60</option><option value="30">30</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Динамическое разрешение</div><div class="sx-desc">Масштаб рендера подстраивается под выбранный лимит кадров, в том числе 30 FPS.</div></div><div class="sx-ctrl"><button id="set_dynRes" class="toggle-btn off" onclick="toggleSetting('dynRes')">ВЫКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Режим максимального FPS</div><div class="sx-desc">Снижает разрешение, отключает птиц и тени. Твёрдые предметы не исчезают.</div></div><div class="sx-ctrl"><button id="set_perf" class="toggle-btn off" onclick="toggleSetting('perf')">ВЫКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Счётчик FPS</div><div class="sx-desc">Показывает количество кадров в секунду в верхней части экрана.</div></div><div class="sx-ctrl"><button id="set_fpsShow" class="toggle-btn off" onclick="toggleSetting('fpsShow')">ВЫКЛ</button></div></div></div><div class="sx-pane" data-tab="image"><div class="sx-group">Цвет и свет</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Тональная компрессия</div><div class="sx-desc">Как яркие и тёмные участки переводятся на экран. ACES — кинематографичный вид.</div></div><div class="sx-ctrl"><select id="set_toneMap" onchange="applySetting('toneMap',this.value)"><option value="aces" selected>ACES Filmic (кино)</option><option value="reinhard">Reinhard (мягко)</option><option value="cineon">Cineon (контраст)</option><option value="linear">Линейная</option><option value="none">Выкл</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Яркость</div><div class="sx-desc">Общая яркость картинки. Если на вашем мониторе всё тёмное — увеличьте.</div></div><div class="sx-ctrl"><input type="range" id="set_exposure" min="5" max="15" value="9" oninput="applySetting('exposure',this.value)"><span id="set_exposureVal" class="sx-val">9</span></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Цветокоррекция</div><div class="sx-desc">Цветовой фильтр: кинематографичный, сочный, тёплый, холодный или чёрно-белый нуар.</div></div><div class="sx-ctrl"><select id="set_colorGrade" onchange="applySetting('colorGrade',this.value)"><option value="off">Выкл</option><option value="cinematic" selected>Кинематографичная</option><option value="vivid">Сочная</option><option value="warm">Тёплая</option><option value="cold">Холодная</option><option value="noir">Нуар (ч/б)</option></select></div></div><div class="sx-group">Эффекты</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Резкость</div><div class="sx-desc">Добавляет контраста — картинка выглядит чётче, но может стать грубее.</div></div><div class="sx-ctrl"><input type="range" id="set_sharp" min="0" max="10" value="0" oninput="applySetting('sharp',this.value)"><span id="set_sharpVal" class="sx-val">0</span></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Виньетка</div><div class="sx-desc">Затемняет края экрана, фокусируя внимание на центре.</div></div><div class="sx-ctrl"><button id="set_vignette" class="toggle-btn off" onclick="toggleSetting('vignette')">ВЫКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Зерно плёнки</div><div class="sx-desc">Лёгкая зернистость, как на старой киноплёнке.</div></div><div class="sx-ctrl"><button id="set_grain" class="toggle-btn off" onclick="toggleSetting('grain')">ВЫКЛ</button></div></div></div><div class="sx-pane" data-tab="controls"><div class="sx-group">Мышь</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Чувствительность мыши</div><div class="sx-desc">Насколько сильно поворачивается камера при движении мыши.</div></div><div class="sx-ctrl"><input type="range" id="set_mouseSens" min="1" max="10" value="4" oninput="applySetting('mouseSens',this.value)"><span id="set_mouseSensVal" class="sx-val">4</span></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Вид камеры</div><div class="sx-desc">От 3 лица — персонаж виден целиком сзади. От 1 лица — глазами персонажа, шире обзор (настраивается ниже). Клавиша F5 тоже переключает.</div></div><div class="sx-ctrl"><button id="set_camBtn" class="toggle-btn off" onclick="toggleCameraMode()">ОТ 3 ЛИЦА</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Инверсия мыши по вертикали</div><div class="sx-desc">Мышь вверх — камера смотрит вниз. Удобно тем, кто привык к полётным симуляторам.</div></div><div class="sx-ctrl"><button id="set_invertY" class="toggle-btn off" onclick="toggleSetting('invertY')">ВЫКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Скорость камеры (колёсико)</div><div class="sx-desc">Насколько быстро приближается и отдаляется камера колёсиком мыши.</div></div><div class="sx-ctrl"><input type="range" id="set_zoomSpeed" min="1" max="10" value="5" oninput="applySetting('zoomSpeed',this.value)"><span id="set_zoomSpeedVal" class="sx-val">5</span></div></div><div class="sx-group">Камера</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Режим камеры (F5)</div><div class="sx-desc">3-е лицо — персонаж виден целиком. 1-е лицо — глазами персонажа. Переключается также клавишей F5.</div></div><div class="sx-ctrl"><select id="set_camMode" onchange="applySetting('camMode',this.value)"><option value="third" selected>3-е лицо</option><option value="first">1-е лицо</option></select></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Поле зрения (3-е лицо)</div><div class="sx-desc">Ширина обзора. Больше — видно шире, но картинка сильнее искажается по краям.</div></div><div class="sx-ctrl"><input type="range" id="set_fov" min="50" max="100" value="60" oninput="applySetting('fov',this.value)"><span id="set_fovVal" class="sx-val">60</span></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Поле зрения (1-е лицо)</div><div class="sx-desc">То же для вида от первого лица. Обычно комфортно 70–85.</div></div><div class="sx-ctrl"><input type="range" id="set_firstFov" min="60" max="110" value="78" oninput="applySetting('firstFov',this.value)"><span id="set_firstFovVal" class="sx-val">78</span></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Покачивание рук</div><div class="sx-desc">Руки от первого лица отстают и плавно возвращаются, когда вы поворачиваете камеру.</div></div><div class="sx-ctrl"><button id="set_handSway" class="toggle-btn on" onclick="toggleSetting('handSway')">ВКЛ</button></div></div></div><div class="sx-pane" data-tab="ui"><div class="sx-group">Музыка</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Фоновая музыка</div><div class="sx-desc">Музыка в лобби, городе, метро и интерьерах. Громкость — в звуковом микшере.</div></div><div class="sx-ctrl"><button id="set_bgMusic" class="toggle-btn on" onclick="toggleSetting('bgMusic')">ВКЛ</button></div></div><div class="sx-group">Боковое меню</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Компактное меню</div><div class="sx-desc">Кнопки 40 px в три колонки. Выключите, если нужны крупные кнопки.</div></div><div class="sx-ctrl"><button id="set_menuCompact" class="toggle-btn on" onclick="toggleSetting('menuCompact')">ВКЛ</button></div></div><div class="sx-row" style="display:block"><div class="sx-info"><div class="sx-name">Кнопки в меню</div><div class="sx-desc">Снимите галочку, чтобы убрать кнопку из бокового меню. Изменения сразу видны в меню.</div></div><div id="menuCfgList" style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin-top:8px"></div></div><div class="sx-group">HUD</div><div id="hudCfgList"></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Радар (мини-карта)</div><div class="sx-desc">Карта города в углу экрана.</div></div><div class="sx-ctrl"><button id="set_radar" class="toggle-btn on" onclick="toggleSetting('radar')">ВКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Навигатор</div><div class="sx-desc">Стрелка, которая указывает на текущую цель задания.</div></div><div class="sx-ctrl"><button id="set_nav" class="toggle-btn on" onclick="toggleSetting('nav')">ВКЛ</button></div></div><div class="sx-group">Персонажи</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Имена игроков</div><div class="sx-desc">Показывать ники над головами других игроков.</div></div><div class="sx-ctrl"><button id="set_nameTags" class="toggle-btn on" onclick="toggleSetting('nameTags')">ВКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Мимика персонажей</div><div class="sx-desc">Лица персонажей меняют выражение: радость, страх, злость.</div></div><div class="sx-ctrl"><button id="set_faceAnim" class="toggle-btn on" onclick="toggleSetting('faceAnim')">ВКЛ</button></div></div></div><div class="sx-pane" data-tab="sound"><div class="sx-group">Звук города</div><button type="button" class="fz-sound-settings" onclick="FZSound.open()">Музыка, озвучка и SFX — микшер</button><div class="sx-group">Звук</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Музыка в лифте</div><div class="sx-desc">Фоновая мелодия и сигналы во время поездки на лифте.</div></div><div class="sx-ctrl"><button id="set_elevMusic" class="toggle-btn on" onclick="toggleSetting('elevMusic')">ВКЛ</button></div></div><div class="sx-row"><div class="sx-info"><div class="sx-name">Звуки интерфейса</div><div class="sx-desc">Щелчки и сигналы кнопок и уведомлений.</div></div><div class="sx-ctrl"><button id="set_uiSounds" class="toggle-btn on" onclick="toggleSetting('uiSounds')">ВКЛ</button></div></div><div class="sx-group">Чат</div><div class="sx-row"><div class="sx-info"><div class="sx-name">Радиус местного чата</div><div class="sx-desc">На каком расстоянии слышны сообщения в режиме «📍 Местный».</div></div><div class="sx-ctrl"><input type="range" id="set_localRange" min="10" max="80" value="30" oninput="applySetting('localRange',this.value)"><span id="set_localRangeVal" class="sx-val">30</span></div></div></div></div>
     <div class="sx-foot"><span>«Сохранить» запоминает настройки в этом браузере.</span><button class="modal-btn success" onclick="saveSettings()">✅ Сохранить</button></div>
   </div>
 </div>
@@ -14161,7 +14079,7 @@ function animateElevatorDoors(direction, duration, callback) {
 let audioCtx = null;
 function getAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-  if (audioCtx && audioCtx.state === 'suspended') { try { audioCtx.resume(); } catch(e) {} }
+  if (audioCtx && audioCtx.state === 'suspended' && !document.hidden && (!window.FZSound || FZSound.unlocked())) { try { audioCtx.resume(); } catch(e) {} }
   return audioCtx;
 }
 
@@ -14177,12 +14095,13 @@ function getAudioCtx() {
 
 // Звук клика по кнопкам интерфейса (уважает настройку uiSounds)
 window.playUIClick = function() {
+  if(window.FZSound) { FZSound.effect("click"); return; }
   try {
     if (typeof SETTINGS !== 'undefined' && SETTINGS.uiSounds === false) return;
     const ctx = getAudioCtx();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.connect(gain); gain.connect(ctx.destination);
+    osc.connect(gain); gain.connect(window.FZSound?.bus("sfx") || ctx.destination);
     osc.type = 'sine';
     osc.frequency.value = 720;
     gain.gain.setValueAtTime(0.06, ctx.currentTime);
@@ -14374,20 +14293,22 @@ function pickupFlashlight(inter) {
   ], () => { if (poseIv) clearInterval(poseIv); localPlayer.currentAnimation = 'idle'; showNotification('🔦 Фонарь получен. F — вкл/выкл, клавиша 2', 'success'); updateFlashHUD(); setHeldItem(2); if (typeof updateQuestHUD === 'function') updateQuestHUD(); });
 }
 function attachFlashlightToHand(fl) {
+  if(window.FZFlash){FZFlash.attach(fl);return;}
   const m = localPlayer.mesh;
   // кисть правой руки: фонарик лежит в ладони, как меч (локальная Z кости = вперёд)
-  const hand = m.getObjectByName('rightHand') || m.userData.rightElbow || m.userData.rightArm || m;
+  const hand = m.userData.rightHand || m.getObjectByName('rightHand') || m.userData.rightElbow || m.userData.rightArm || m;
   hand.add(fl); fl.position.set(0, 0.02, 0.03); fl.rotation.set(Math.PI / 2, 0, 0); fl.scale.setScalar(1.0); DLC.flashMesh = fl;
 }
 function toggleFlashlight() {
   if (!DLC.hasFlashlight) { showNotification('🔦 У вас нет фонаря. Он лежит в проходной фабрики и у входа в подвал ТЦ.', 'info'); return; }
-  DLC.flashOn = !DLC.flashOn; SFX.tone(DLC.flashOn ? 1800 : 1200, 0.05, 'square', 0.08); updateFlashHUD();
+  DLC.flashOn = !DLC.flashOn; if(window.FZSound)FZSound.effect('flash');else SFX.tone(DLC.flashOn ? 1800 : 1200, 0.05, 'square', 0.08); updateFlashHUD();
 }
 function updateFlashHUD() {
   let h = document.getElementById('flashHUD'); if (!h) { h = document.createElement('div'); h.id = 'flashHUD'; h.style.cssText = 'position:fixed;left:14px;bottom:86px;z-index:900;font:700 13px Arial;color:#ffd76a;background:rgba(0,0,0,.55);border:1px solid rgba(255,215,106,.35);border-radius:10px;padding:6px 10px;pointer-events:none;display:none'; document.body.appendChild(h); }
   h.style.display = DLC.hasFlashlight ? 'block' : 'none'; h.innerHTML = `🔦 Фонарь: <span style="color:${DLC.flashOn ? '#7cffb2' : '#ff8a8a'}">${DLC.flashOn ? 'ВКЛ' : 'ВЫКЛ'}</span> <span style="opacity:.6">[F]</span>` + (isInFactory && DLC.flashBat !== undefined ? ` <span style="color:${DLC.flashBat < 20 ? '#ff6a6a' : '#ffd76a'}">🔋${Math.round(DLC.flashBat)}%</span>` : '');
 }
 function updateFlashlight() {
+  window.FZFlash?.update();
   if (window.FZUI && FZUI.playing()) FZUI.grantLight();
   const f = window._flash; if (!f || !localPlayer || !localPlayer.mesh) return;
   if (DLC.hasFlashlight && (!DLC.flashMesh || !DLC.flashMesh.parent || !localPlayer.mesh.getObjectById(DLC.flashMesh.id))) { if (DLC.flashMesh && DLC.flashMesh.parent) DLC.flashMesh.parent.remove(DLC.flashMesh); attachFlashlightToHand(makeFlashlightModel()); }
@@ -14397,8 +14318,9 @@ function updateFlashlight() {
   const dir = new THREE.Vector3(); camera.getWorldDirection(dir); const p = localPlayer.mesh.position;
   if (DLC.flashMesh && window.cameraMode !== 'first') { DLC.flashMesh.getWorldPosition(f.position); } else f.position.set(p.x, p.y + 1.6, p.z);
   f.target.position.set(f.position.x + dir.x * 12, f.position.y + dir.y * 12, f.position.z + dir.z * 12);
-  f.intensity = 5.5 + Math.sin(animationTime * 40) * 0.1; f.angle = 0.48; f.penumbra = 0.45; f.distance = 60; f.decay = 0.7; f.color.setHex(0xfff4d6);
-  if (!window._flashSpill) { window._flashSpill = new THREE.PointLight(0xffe8c0, 0.9, 9, 1.0); scene.add(window._flashSpill); } window._flashSpill.visible = true; window._flashSpill.position.copy(f.position).addScaledVector(dir, 1.6);
+  window.FZFlash?.beam(f);
+  f.intensity = 2.8; f.angle = 0.34; f.penumbra = 0.65; f.distance = 60; f.decay = 0.7; f.color.setHex(0xfff4d6);
+  if (!window._flashSpill) { window._flashSpill = new THREE.PointLight(0xffe8c0, 0.22, 9, 1.0); scene.add(window._flashSpill); } window._flashSpill.visible = true; window._flashSpill.position.copy(f.position).addScaledVector(dir, 1.6);
   // пикапы фонаря пульсируют
   basementObjects.forEach(o => { if (o.userData.flashPickup && o.userData.pulse) { o.userData.pulse.scale.setScalar(1 + Math.sin(animationTime * 4) * 0.25); o.userData.fl.rotation.y += 0.01; } });
 }
@@ -14592,7 +14514,7 @@ function setHeldItem(slot) {
   if (slot === 3 && !DLC.hasSword) { showNotification('⚔️ Меча пока нет — он ждёт на алтаре в логове (B5)', 'info'); return; }
   ITEMS.slot = slot; SFX.tick(); updateHotbar();
   // вид от 1-го лица
-  ensureViewModel(); const vm = ITEMS.vm; if (vm) { const h = vm.userData.holder; while (h.children.length) h.remove(h.children[0]); vm.userData.armL.visible = slot === 1;
+  ensureViewModel(); const vm = ITEMS.vm; if (vm) { const h = vm.userData.holder; while (h.children.length) { const old=h.children[0],owned=new Set();old.traverse(o=>{if(o.geometry)owned.add(o.geometry);if(o.material)owned.add(o.material);});h.remove(old);owned.forEach(r=>r.dispose?.());} vm.userData.armL.visible = slot === 1;
     if (slot === 2) { const f = makeFlashlightModel(); f.rotation.set(-Math.PI / 2, 0, 0); f.position.set(0, 0.03, -0.05); h.add(f); ITEMS.vmItem = f; }
     else if (slot === 3) { const s = makeSwordModel(); s.rotation.set(-1.2, 0, 0); s.position.set(0, 0.05, -0.05); h.add(s); ITEMS.vmItem = s; } else ITEMS.vmItem = null; }
   // вид от 3-го лица
@@ -14709,7 +14631,7 @@ function spawnLabCracks() {
   }, 380);
 }
 function updateFootsteps(delta) {
-  return; // звуки шагов выключены по просьбе пользователя
+  if (!window.FZSound?.stepsEnabled()) return; // По умолчанию выключены; включаются отдельно в микшере v24.
   if (!localPlayer || !localPlayer.mesh || window.cine || sittingOn) return;
   const a = localPlayer.currentAnimation; const moving = (a === 'walk' || a === 'run' || a === 'crouch') && isGrounded;
   if (!moving) { window._stepT = 0.08; return; }
@@ -14796,20 +14718,20 @@ function updateSkyLife(delta) {
 
 const SFX = {
   _noise(ctx, dur) { const b = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate); const d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; const s = ctx.createBufferSource(); s.buffer = b; return s; },
-  tone(freq, dur, type = 'sine', vol = 0.12, slide = 0) { try { const ctx = getAudioCtx(); const o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; o.frequency.setValueAtTime(freq, ctx.currentTime); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(20, freq + slide), ctx.currentTime + dur); g.gain.setValueAtTime(vol, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur); o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + dur + 0.05); } catch (e) { } },
-  noise(dur, vol = 0.2, lp = 800, hp = 0) { try { const ctx = getAudioCtx(); const s = this._noise(ctx, dur), g = ctx.createGain(), f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lp; g.gain.setValueAtTime(vol, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur); s.connect(f); f.connect(g); g.connect(ctx.destination); s.start(); } catch (e) { } },
+  tone(freq, dur, type = 'sine', vol = 0.12, slide = 0) { try { const ctx = getAudioCtx(); const o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; o.frequency.setValueAtTime(freq, ctx.currentTime); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(20, freq + slide), ctx.currentTime + dur); g.gain.setValueAtTime(vol, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur); o.connect(g); g.connect(window.FZSound?.bus("sfx") || ctx.destination); o.start(); o.stop(ctx.currentTime + dur + 0.05); } catch (e) { } },
+  noise(dur, vol = 0.2, lp = 800, hp = 0) { try { const ctx = getAudioCtx(); const s = this._noise(ctx, dur), g = ctx.createGain(), f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lp; g.gain.setValueAtTime(vol, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur); s.connect(f); f.connect(g); g.connect(window.FZSound?.bus("sfx") || ctx.destination); s.start(); } catch (e) { } },
   ding() { this.tone(880, 0.5, 'sine', 0.15); setTimeout(() => this.tone(1320, 0.8, 'sine', 0.12), 160); },
   door() { this.noise(0.9, 0.08, 500); this.tone(90, 0.9, 'triangle', 0.04); },
   slam() { this.noise(0.25, 0.5, 300); this.tone(60, 0.5, 'square', 0.2, -40); },
   thud() { this.noise(0.18, 0.3, 200); this.tone(50, 0.3, 'sine', 0.25, -30); },
-  roar() { try { const ctx = getAudioCtx(); const s = this._noise(ctx, 1.8), f = ctx.createBiquadFilter(), g = ctx.createGain(); f.type = 'bandpass'; f.frequency.setValueAtTime(120, ctx.currentTime); f.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.5); f.frequency.exponentialRampToValueAtTime(90, ctx.currentTime + 1.8); f.Q.value = 3; g.gain.setValueAtTime(0.0001, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.6, ctx.currentTime + 0.15); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.8); s.connect(f); f.connect(g); g.connect(ctx.destination); s.start(); this.tone(55, 1.6, 'sawtooth', 0.18, 25); } catch (e) { } },
+  roar() { try { const ctx = getAudioCtx(); const s = this._noise(ctx, 1.8), f = ctx.createBiquadFilter(), g = ctx.createGain(); f.type = 'bandpass'; f.frequency.setValueAtTime(120, ctx.currentTime); f.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.5); f.frequency.exponentialRampToValueAtTime(90, ctx.currentTime + 1.8); f.Q.value = 3; g.gain.setValueAtTime(0.0001, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.6, ctx.currentTime + 0.15); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.8); s.connect(f); f.connect(g); g.connect(window.FZSound?.bus("sfx") || ctx.destination); s.start(); this.tone(55, 1.6, 'sawtooth', 0.18, 25); } catch (e) { } },
   tick() { this.tone(1200, 0.05, 'square', 0.05); },
   ok() { this.tone(660, 0.12, 'sine', 0.12); setTimeout(() => this.tone(990, 0.18, 'sine', 0.12), 90); },
   fail() { this.noise(0.5, 0.35, 1200); this.tone(120, 0.5, 'sawtooth', 0.15, -60); },
   spark() { this.noise(0.12, 0.18, 4000); },
-  step(hard, vol = 0.1, left = false) { const p = 0.9 + Math.random() * 0.2; this.noise(hard ? 0.07 : 0.11, vol * (hard ? 1.2 : 1), hard ? 1800 * p : 700 * p, hard ? 200 : 60); if (hard) this.tone(140 * p + (left ? 0 : 12), 0.05, 'triangle', vol * 0.35, -60); },
+  step(hard, vol = 0.1, left = false) { if(window.FZSound){FZSound.effect("step",{hard,volume:vol,left});return;} const p = 0.9 + Math.random() * 0.2; this.noise(hard ? 0.07 : 0.11, vol * (hard ? 1.2 : 1), hard ? 1800 * p : 700 * p, hard ? 200 : 60); if (hard) this.tone(140 * p + (left ? 0 : 12), 0.05, 'triangle', vol * 0.35, -60); },
   keypad() { this.tone(1000 + Math.random() * 400, 0.08, 'square', 0.05); },
-  chaseStart() { try { if (this._chase) return; const ctx = getAudioCtx(); const master = ctx.createGain(); master.gain.setValueAtTime(0.0001, ctx.currentTime); master.gain.exponentialRampToValueAtTime(0.5, ctx.currentTime + 1.5); master.connect(ctx.destination);
+  chaseStart() { try { if (this._chase) return; const ctx = getAudioCtx(); const master = ctx.createGain(); master.gain.setValueAtTime(0.0001, ctx.currentTime); master.gain.exponentialRampToValueAtTime(0.5, ctx.currentTime + 1.5); master.connect(window.FZSound?.bus("music") || ctx.destination);
       const bpm = 152, beat = 60 / bpm; let step = 0; const notes = [55, 55, 58.27, 55, 55, 51.91, 55, 65.41];
       const tick = () => { const t0 = ctx.currentTime + 0.05, n = step % 8;
         const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sawtooth'; o.frequency.value = notes[n]; g.gain.setValueAtTime(0.22, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + beat * 0.45); o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + beat * 0.5);
@@ -14820,7 +14742,7 @@ const SFX = {
         step++; };
       this._chase = { master, iv: setInterval(tick, beat * 500) }; tick(); } catch (e) {} },
   chaseStop() { try { if (!this._chase) return; const c = this._chase; this._chase = null; clearInterval(c.iv); const ctx = getAudioCtx(); c.master.gain.setValueAtTime(c.master.gain.value, ctx.currentTime); c.master.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.2); setTimeout(() => { try { c.master.disconnect(); } catch (e) {} }, 1400); } catch (e) {} },
-  humStart(freq = 55, vol = 0.05) { try { this.humStop(); const ctx = getAudioCtx(); const o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sawtooth'; o.frequency.value = freq; o2.type = 'sine'; o2.frequency.value = freq * 2.01; g.gain.setValueAtTime(0.0001, ctx.currentTime); g.gain.exponentialRampToValueAtTime(vol, ctx.currentTime + 0.6); o.connect(g); o2.connect(g); g.connect(ctx.destination); o.start(); o2.start(); this._hum = { o, o2, g, ctx }; } catch (e) { } },
+  humStart(freq = 55, vol = 0.05) { try { this.humStop(); const ctx = getAudioCtx(); const o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sawtooth'; o.frequency.value = freq; o2.type = 'sine'; o2.frequency.value = freq * 2.01; g.gain.setValueAtTime(0.0001, ctx.currentTime); g.gain.exponentialRampToValueAtTime(vol, ctx.currentTime + 0.6); o.connect(g); o2.connect(g); g.connect(window.FZSound?.bus("sfx") || ctx.destination); o.start(); o2.start(); this._hum = { o, o2, g, ctx }; } catch (e) { } },
   humStop() { const h = this._hum; if (!h) return; try { h.g.gain.exponentialRampToValueAtTime(0.0001, h.ctx.currentTime + 0.4); h.o.stop(h.ctx.currentTime + 0.5); h.o2.stop(h.ctx.currentTime + 0.5); } catch (e) { } this._hum = null; }
 };
 window.SFX = SFX;
@@ -14878,6 +14800,7 @@ Object.assign(MUSIC_ZONES, {
 });
 
 function _musicTick() {
+  if(document.hidden || (window.FZSound && !FZSound.audible()))return;
   const def = MUSIC.def; if (!def) return;
   const ctx = getAudioCtx(); if (!ctx) return;
   const beat = 60 / def.bpm;
@@ -14898,7 +14821,7 @@ function _musicFadeOut(sec) {
 function _musicStart(zone) {
   const ctx = getAudioCtx(); if (!ctx) return;
   _musicFadeOut(1.2);
-  const m = ctx.createGain(); m.gain.setValueAtTime(0.0001, ctx.currentTime); m.gain.linearRampToValueAtTime(0.55, ctx.currentTime + 1.5); m.connect(ctx.destination);
+  const m = ctx.createGain(); m.gain.setValueAtTime(0.0001, ctx.currentTime); m.gain.linearRampToValueAtTime(0.55, ctx.currentTime + 1.5); m.connect(window.FZSound?.bus("music") || ctx.destination);
   MUSIC.master = m; MUSIC.zone = zone; MUSIC.def = MUSIC_ZONES[zone]; MUSIC.step = 0; MUSIC.next = ctx.currentTime + 0.1;
   _musicTick();
 }
@@ -14915,6 +14838,7 @@ function musicCurrentZone() {
   return null;
 }
 window.musicRefresh = function () {
+  if(!document.body.classList.contains("game-active")){if(MUSIC.zone)_musicStop();return;}
   if (window._danceBeat) return;
   const want = musicCurrentZone();
   if (want !== MUSIC.zone) { if (want) _musicStart(want); else _musicStop(); }
@@ -14931,7 +14855,7 @@ function playElevatorBeep() {
     notes.forEach((freq, i) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
+      osc.connect(gain); gain.connect(window.FZSound?.bus("sfx") || ctx.destination);
       osc.frequency.value = freq;
       osc.type = 'sine';
       gain.gain.setValueAtTime(0.15, ctx.currentTime + i*0.12);
@@ -14956,7 +14880,7 @@ function playElevatorMoving(progress) {
           const ctx = getAudioCtx();
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
-          osc.connect(gain); gain.connect(ctx.destination);
+          osc.connect(gain); gain.connect(window.FZSound?.bus("sfx") || ctx.destination);
           osc.frequency.value = melody[beat%melody.length];
           osc.type = 'triangle';
           gain.gain.setValueAtTime(0.06, ctx.currentTime);
@@ -14975,7 +14899,7 @@ function playElevatorMoving(progress) {
       [784,1047].forEach((f,i) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        osc.connect(gain); gain.connect(ctx.destination);
+        osc.connect(gain); gain.connect(window.FZSound?.bus("sfx") || ctx.destination);
         osc.frequency.value = f; osc.type='sine';
         gain.gain.setValueAtTime(0.2, ctx.currentTime+i*0.15);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+i*0.15+0.5);
@@ -15216,6 +15140,9 @@ function createPet3D(petData) {
 // ── Супер-эффекты: пыль от прыжка/приземления ──
 let landDust = []; // { mesh, vx, vy, vz, life, maxLife }
 function _fzGroundY() {
+  if(window.FZBuildings?.active())return FZBuildings.ground();
+  if(window.FZCranes?.active())return FZCranes.ground();
+  if(window.FZMetro?.active()) return FZMetro.ground();
   if (window.FZSky) { const y = FZSky.ground(); if (y !== null) return y; }
   if (window.FZ8SEA) { const y = FZ8SEA.ground(); if (y !== null) return y; }
   if (typeof isInsideBuilding !== 'undefined' && isInsideBuilding) return currentFloor * 3.5;
@@ -15743,7 +15670,7 @@ function initSocket(name) {
     const _cu = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null;
     const adminName = _cu ? (_cu.displayName || _cu.username || '') : '';
     socket.emit('registerPlayer', {
-      isAdminClient: !!_cu && (!!_cu.isAdmin || checkIfAdmin(adminName)),
+      token: _cu?.token || null,
       name,
       email: _cu ? (_cu.email || '') : '',
       skinColor: document.getElementById('skinColor').value,
@@ -15783,7 +15710,7 @@ function initSocket(name) {
     if (!existingMesh) showNotification('Добро пожаловать в Fantazia RP 3D!', 'success');
     // Загрузить предметы из магазина
     setTimeout(() => applyShopItems(name), 1500);
-    if (data.isAdmin || data.isAdminClient || (currentUser && currentUser.isAdmin)) {
+    if (data.isAdmin === true) {
       localPlayer.isAdmin = true;
       window.isAdminFly    = false;
       window.isAdminNoclip = false;
@@ -18078,9 +18005,9 @@ function standUpFromSeat() {
   const spot = sittingOn.spot;
   // Встаём перед лавочкой
   localPlayer.mesh.position.set(
-    spot.x + Math.sin(spot.rot) * 1.4,
-    0,
-    spot.z + Math.cos(spot.rot) * 1.4
+    spot.x + Math.sin(spot.rot) * (spot.standOffset || 1.4),
+    Number.isFinite(spot.groundY) ? spot.groundY : 0,
+    spot.z + Math.cos(spot.rot) * (spot.standOffset || 1.4)
   );
   sittingOn = null;
   currentDance = null;
@@ -18095,6 +18022,10 @@ function handleInteraction() {
   if (window.cine) return;
   if (!nearestInteractable) return;
   const inter = nearestInteractable;
+  if(window.FZBuildings?.interact(inter))return;
+  if(window.FZCranes?.interact(inter))return;
+  if(window.FZMetro?.interact(inter)) return;
+  if(window.FZVenues?.interact(inter)) return;
   if (window.FZSky?.interact(inter)) return;
   if (inter.type === 'city_guide') { window.FZGuide?.open(); return; }
   if (window.FZLeisure && FZLeisure.interact(inter)) return;
@@ -18175,7 +18106,14 @@ function checkInteractables() {
   let minDist = Infinity;
 
   interactables.forEach(inter => {
+    if(window.FZBuildings && !FZBuildings.accept(inter))return;
+    if(window.FZCranes && !FZCranes.accept(inter))return;
     if (!!inter.sky !== !!window.FZSky?.active()) return;
+    if(window.FZMetro?.active() && !inter.metroInside)return;
+    if(inter.fzMetro && inter.metroInside && !FZMetro.active())return;
+    if(inter.type==='metro_board' && FZMetro.ride())return;
+    if(inter.type==='metro_alight' && !FZMetro.ride())return;
+    if(inter.type==='metro_seat' && inter.seat.train!==FZMetro.ride())return;
     if (inter.cityLeisure && (isInsideBuilding || isInFactory || isInBasement || (window.FZ8SEA && FZ8SEA.active()))) return;
     if (inter.fz8sea && window.FZ8SEA && !FZ8SEA.visibleSpot(inter)) return;
     const dx = pos.x - inter.position.x;
@@ -18206,6 +18144,9 @@ function checkInteractables() {
 
 // =================== СТОЛКНОВЕНИЯ ===================
 function checkCollision(newX, newZ) {
+  if(window.FZBuildings?.active())return FZBuildings.collision(newX,newZ);
+  if(window.FZCranes?.active())return FZCranes.collision(newX,newZ);
+  if(window.FZMetro){const hit=FZMetro.collision(newX,newZ);if(hit!==null)return hit;}
   if (window.FZSky) { const hit = FZSky.collision(newX,newZ); if (hit !== null) return hit; }
   const playerRadius = 0.5;
   if (window.FZ8SEA) { const hit = FZ8SEA.collision(newX, newZ); if (hit !== null) return hit; }
@@ -19639,6 +19580,7 @@ function addInteriorSign(text, x, y, z, add) {
 }
 
 function enterBuilding(buildingType, buildingName) {
+  if(window.FZSky?.active() || window.FZCranes?.active()) { showNotification('Сначала спуститесь на улицу.','info'); return; }
   if (window.FZ8SEA && FZ8SEA.aboard()) { showNotification('Сначала сойдите на причал', 'info'); return; }
   if (isInsideBuilding) return;
   const cfg = INTERIOR_CONFIGS[buildingType] || INTERIOR_CONFIGS.office;
@@ -19663,7 +19605,7 @@ function enterBuilding(buildingType, buildingName) {
   // Скрыть уличные объекты — перенастроить туман под интерьер
   if (buildingType === 'mall') applyMallAtmosphere();
   else {
-    scene.fog = new THREE.Fog(0x111122, 0, 30);
+    scene.fog = new THREE.Fog(0x111122, window.FZBuildings?.active()?35:0, window.FZBuildings?.active()?100:30);
     scene.background = new THREE.Color(0x111122);
   }
 
@@ -19676,9 +19618,13 @@ function enterBuilding(buildingType, buildingName) {
   showNotification(`Вы вошли в ${currentBuildingName}`, 'info');
 }
 
-function exitBuilding() { if (!isInsideBuilding) return; if (window.cine) return; doorCine(() => _exitBuildingNow()); }
+function exitBuilding() { if(window.FZBuildings?.requestExit())return; if(window.FZMetro?.active()){if(FZMetro.ride())showNotification('Дождитесь остановки поезда.','info');else FZMetro.requestExit();return;} if (!isInsideBuilding) return; if (window.cine) return; doorCine(() => _exitBuildingNow()); }
 function _exitBuildingNow() {
   if (!isInsideBuilding) return;
+  window.FZBuildingDirectory?.close();
+  window.FZBuildings?.release();
+  window.FZCranes?.release();
+  window.FZVenues?.release();
   if (window.FZ8B) window.FZ8B.release();
   isInsideBuilding = false;
 
@@ -19708,6 +19654,7 @@ function _exitBuildingNow() {
 }
 
 function changeFloor(delta) {
+  if(window.FZBuildings?.changeFloor(delta))return;
   const newFloor = currentFloor + delta;
   if (newFloor < 0 || newFloor >= maxFloors) {
     showNotification(newFloor < 0 ? 'Это первый этаж!' : 'Это последний этаж!', 'error');
@@ -19764,6 +19711,9 @@ function animate(timestamp) {
   try { if (typeof FZ8K_update === 'function') FZ8K_update(delta); } catch (e) {}
   try { if (typeof FZ8M_update === 'function') FZ8M_update(delta); } catch (e) {}
   if (window.FZ8B_update) window.FZ8B_update(delta);
+  window.FZVenues?.update(delta);
+  window.FZBuildings?.update(delta);
+  window.FZCranes?.update(delta);
   if (window.FZ8SEA) FZ8SEA.update(delta);
   if (window.FZCITY) FZCITY.update();
   if (window.FZLeisure) FZLeisure.update(delta);
@@ -19799,7 +19749,7 @@ function animate(timestamp) {
     isCrouching = false;
   }
 
-  if ((isPointerLocked || window.mobileReady || (localPlayer && localPlayer.isOffline)) && !currentDance && !sittingOn && !window.elevatorCut && !DLC.hidden && !window._loadingGate) {
+  if ((isPointerLocked || window.mobileReady || (localPlayer && localPlayer.isOffline)) && !currentDance && !sittingOn && !window.elevatorCut && !window.FZCranes?.locked() && !DLC.hidden && !window._loadingGate) {
     const isSprint = (keys['ShiftLeft'] || keys['ShiftRight'] || mobileSprintOn) && !isCrouching;
     const speed = (isCrouching ? CONFIG.CROUCH_SPEED : (isSprint ? CONFIG.SPRINT_SPEED : CONFIG.MOVE_SPEED)) * (typeof FZ8_speedMul === 'function' ? FZ8_speedMul() : 1);
 
@@ -20001,7 +19951,7 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
     if (window._camPrev && !window.cine) { const tgt = camera.position.clone(); if (tgt.distanceTo(window._camPrev) < 12) camera.position.copy(window._camPrev).lerp(tgt, 1 - Math.exp(-16 * delta)); }
     // Камера не выходит за стены/потолок помещений
     let cb = null, cbase = null, ceilH = 3.3, floorY = 0;
-    if (isInsideBuilding) { cb = interiorBounds || { W: 14.5, D: 11.5 }; cbase = INTERIOR_BASE; floorY = currentFloor * 3.5; ceilH = currentBuildingType === 'mall' ? 6.8 : 3.3; }
+    if (isInsideBuilding && !window.FZMetro?.active() && !window.FZBuildings?.active()) { cb = interiorBounds || { W: 14.5, D: 11.5 }; cbase = INTERIOR_BASE; floorY = currentFloor * 3.5; ceilH = ['bank','biz_bank','cinema'].includes(currentBuildingType) ? 7.2 : currentBuildingType === 'mall' ? 6.8 : 3.3; }
     else if (isInFactory) { cb = window.FACTORY_BOUNDS || { W: 14.5, D: 11.5 }; cbase = FACTORY_BASE; ceilH = (window.FACTORY_BOUNDS ? window.FACTORY_BOUNDS.H : 6) - 0.3; }
     else if (isInBasement) { cb = window.BASEMENT_BOUNDS || { W: 14.5, D: 11.5 }; cbase = BASEMENT_BASE; ceilH = (window.BASEMENT_BOUNDS ? window.BASEMENT_BOUNDS.H : 4.5) - 0.3; if (cb.hubH && mesh.position.z < cbase.z + 3) ceilH = cb.hubH - 0.3; }
     if (cb && isInFactory) { if (window._factoryCeil) ceilH = window._factoryCeil(mesh.position) - 0.3; floorY = Math.max(0, mesh.position.y - 0.3); }
@@ -20076,8 +20026,7 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
   if (window.cine) updateCine();
   if (SETTINGS.perf && renderer.shadowMap && (_fpsFrames % 3 === 0)) renderer.shadowMap.needsUpdate = true;
   cullPointLights(delta);
-  updateFlashlight();
-  updateViewModel(delta); updateSkyLife(delta); if (!window.cine) updateDoorTween(delta); updateFootsteps(delta);
+  updateViewModel(delta); updateFlashlight(); updateSkyLife(delta); if (!window.cine) updateDoorTween(delta); updateFootsteps(delta);
   _fpsFrames++;
   if (localPlayer && localPlayer.mesh) updatePlayerFace(localPlayer.mesh, delta);
   if (window.sunLight && localPlayer && localPlayer.mesh) { const p = localPlayer.mesh.position; window.sunLight.position.set(p.x + 60, 90, p.z + 40); window.sunLight.target.position.set(p.x, 0, p.z); window.sunLight.target.updateMatrixWorld(); if (window.skyDome) window.skyDome.position.set(p.x, 0, p.z); }
@@ -20160,6 +20109,8 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
   }
 
   window.FZSky?.beforeRender();
+  window.FZMetro?.beforeRender();
+  window.FZBuildings?.beforeRender();
   renderer.render(scene, camera);
 }
 
@@ -20202,6 +20153,11 @@ function joinByCode() {
 }
 
 function logoutUser() {
+  window.FZMetro?.exit();
+  window.FZBuildingDirectory?.close();
+  window.FZBuildings?.release();
+  window.FZCranes?.release();
+  window.FZVenues?.release();
   window.FZJourney?.capture();
   window.FZJourney?.close();
   if (typeof localPlayer !== 'undefined' && localPlayer) backToServers();
@@ -20469,6 +20425,15 @@ async function hashPassword(password) {
   return hashArray.map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
+// Link an ordinary login to its server account; no extra stage credentials.
+async function linkServerAccount(username, password, action) {
+  const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 6000);
+  try {
+    const response = await fetch('/api/auth/' + action, {method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
+    const result = await response.json();
+    return result.ok && result.token && result.username.toLowerCase() === username.toLowerCase() ? result : null;
+  } catch (_) { return null; } finally { clearTimeout(timer); } // Local accounts can still play without server account access.
+}
 // ── Вход по нику + паролю ──
 async function doLogin() {
   const err = document.getElementById('authError');
@@ -20480,13 +20445,14 @@ async function doLogin() {
 
   const accounts = getAccounts();
   const key = 'nick_' + username.toLowerCase();
-  if (!accounts[key]) { err.textContent = '❌ Аккаунт не найден. Сначала зарегистрируйтесь'; return; }
-  if (accounts[key].provider === 'google') { err.textContent = '❌ Этот аккаунт создан через Google'; return; }
-
+  const serverAccount = await linkServerAccount(username, password, 'login');
   const hashed = await hashPassword(password);
-  if (accounts[key].passwordHash !== hashed) { err.textContent = '❌ Неверный пароль'; return; }
-
-  currentUser = { username: key, displayName: accounts[key].displayName, email: '', isAdmin: checkIfAdmin(accounts[key].displayName || key) };
+  if (!serverAccount && accounts[key]?.passwordHash !== hashed) { err.textContent = '❌ Аккаунт не найден или неверный пароль'; return; }
+  if (serverAccount) {
+    accounts[key] = {...accounts[key], displayName:serverAccount.username,passwordHash:hashed,provider:'nickname'};
+    saveAccounts(accounts);
+  }
+  currentUser = { username: key, displayName: accounts[key].displayName, email: '', token: serverAccount?.token || null, isAdmin: serverAccount?.isAdmin === true };
   localStorage.setItem('fz_currentUser', JSON.stringify(currentUser));
 
   document.getElementById('authSuccessName').textContent  = accounts[key].displayName;
@@ -20522,7 +20488,8 @@ async function doRegister() {
     provider: 'nickname', createdAt: new Date().toISOString()
   };
   saveAccounts(accounts);
-  currentUser = { username: key, displayName: username, email: '' };
+  const serverAccount = await linkServerAccount(username, password, 'register');
+  currentUser = { username: key, displayName: username, email: '', token: serverAccount?.token || null, isAdmin: false };
   localStorage.setItem('fz_currentUser', JSON.stringify(currentUser));
 
   document.getElementById('authSuccessName').textContent  = username;
@@ -20805,6 +20772,12 @@ function openSettingsFromPause() {
 }
 
 function backToServers() {
+  window.FZSound?.close(); window.FZSound?.silence(); if(typeof _musicStop==="function")_musicStop();
+  window.FZMetro?.exit();
+  window.FZBuildingDirectory?.close();
+  window.FZBuildings?.release();
+  window.FZCranes?.release();
+  window.FZVenues?.release();
   window.FZJourney?.capture();
   window.FZJourney?.close();
   window.FZGuide?.pause();
@@ -24287,7 +24260,7 @@ function dnRainAudio(on) {
         const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
         const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 1600;
         const g = ctx.createGain(); g.gain.value = 0;
-        src.connect(f); f.connect(g); g.connect(ctx.destination); src.start();
+        src.connect(f); f.connect(g); g.connect(window.FZSound?.bus("ambience") || ctx.destination); src.start();
         DN.rainAudio = { g, ctx };
       }
       DN.rainAudio.g.gain.setTargetAtTime(DN.rain * 0.10, DN.rainAudio.ctx.currentTime, 0.6);
@@ -25088,38 +25061,57 @@ window.FZV5_update = FZV5_update;
 <script src="assets/fz-landmarks.js?v=14.0"></script>
 <script src="assets/fz-city-refresh.js?v=14.0"></script>
 <script src="assets/fz-v7.js?v=11.1"></script>
-<script src="assets/fz-v8gfx.js?v=18.0"></script>
+<script src="assets/fz-v8gfx.js?v=23.0"></script>
 <script src="assets/fz-v8life.js?v=8.8"></script>
 <script src="assets/fz-v8world.js?v=8.0"></script>
 <script src="assets/fz-v8city.js?v=11.0"></script>
 <script src="assets/fz-v8content.js?v=8.7.1"></script>
 <script src="assets/fz-v8combat.js?v=8.9"></script>
 <script src="assets/fz-v8metro.js?v=8.7.1"></script>
-<script src="assets/fz-v8home.js?v=8.7.1"></script>
+<script src="assets/fz-v8home.js?v=28.0"></script>
 <script src="assets/fz-v8sea.js?v=14.0"></script>
-<script src="assets/superrig-player.js?v=anim-13"></script>
-<script src="assets/fz-ui.js?v=19.0"></script>
-<script src="assets/fz-classic-world.js?v=14.0"></script>
+<script src="assets/superrig-player.js?v=anim-26"></script>
+<script src="assets/fz-ui.js?v=28.0"></script>
+<script src="assets/fz-classic-world.js?v=27.0"></script>
 <script src="assets/fz-city-spaces.js?v=8.9"></script>
 <script>window.FZ_CITY_ARRIVAL = false;</script>
 <script src="assets/fz-city-urban.js?v=10.0"></script>
 <script src="assets/fz-city-stream.js?v=11.0"></script>
 <script src="assets/fz-city-leisure.js?v=8.9"></script>
-<script src="assets/fz-opening-plan.js?v=19.0"></script>
-<script src="assets/fz-letter-portal.js?v=20.0"></script>
-<script src="assets/fz-opening-cast.js?v=17.0"></script>
-<script src="assets/fz-front.js?v=19.0"></script>
+<script src="assets/fz-opening-plan.js?v=27.0"></script>
+<script src="assets/fz-letter-portal.js?v=27.0"></script>
+<script src="assets/fz-opening-avatar.js?v=26.0"></script>
+<script src="assets/fz-opening-cast.js?v=26.0"></script>
+<script src="assets/fz-loading-dancer.js?v=27.0"></script>
+<script src="assets/fz-venues.js?v=27.0"></script>
+<script src="assets/fz-building-policy.js?v=28.0"></script>
+<script src="assets/fz-residence-tasks.js?v=28.0"></script>
+<script src="assets/fz-building-kit.js?v=28.0"></script>
+<script src="assets/fz-building-details.js?v=28.0"></script>
+<script src="assets/fz-building-layouts.js?v=28.0"></script>
+<script src="assets/fz-cinema-film.js?v=28.0"></script>
+<script src="assets/fz-buildings.js?v=28.0"></script>
+<script src="assets/fz-cranes.js?v=28.0"></script>
+<script src="assets/fz-building-directory.js?v=28.0"></script>
+<script src="assets/fz-front.js?v=28.0"></script>
 <script src="assets/fz-motion.js?v=15.0"></script>
 <script src="assets/fz-journey-policy.js?v=15.0"></script>
 <script src="assets/fz-touch.js?v=15.0"></script>
-<script src="assets/fz-play-policy.js?v=13.0"></script>
+<script src="assets/fz-play-policy.js?v=21.0"></script>
 <script src="assets/fz-city-guide.js?v=15.0"></script>
-<script src="assets/fz-play.js?v=16.0"></script>
+<script src="assets/fz-play.js?v=21.0"></script>
 <script src="assets/fz-photo.js?v=13.0"></script>
-<script src="assets/fz-sky-policy.js?v=19.0"></script>
-<script src="assets/fz-sky-visual.js?v=20.0"></script>
-<script src="assets/fz-sky-garden.js?v=20.0"></script>
-<script src="assets/fz-sky.js?v=20.0"></script>
+<script src="assets/fz-sky-policy.js?v=23.0"></script>
+<script src="assets/fz-sky-visual.js?v=23.0"></script>
+<script src="assets/fz-sky-garden.js?v=21.0"></script>
+<script src="assets/fz-sky-neon.js?v=21.0"></script>
+<script src="assets/fz-sky-descent.js?v=26.0"></script>
+<script src="assets/fz-sky.js?v=26.0"></script>
+<script src="assets/fz-flash-grip.js?v=27.0"></script>
+<script src="assets/fz-metro-policy.js?v=27.0"></script>
+<script src="assets/fz-sound.js?v=24.0"></script>
+<script src="assets/fz-metro-audio.js?v=24.0"></script>
+<script src="assets/fz-metro.js?v=27.0"></script>
 <script src="assets/fz-journey.js?v=15.0"></script>
 
 

@@ -15,6 +15,8 @@
     { x: 11, z: -22, r: 1.5 },
   ];
   const gardenSupports = [
+    { x: -5.8, z: 16, r: 0.35 },
+    { x: 5.8, z: 16, r: 0.35 },
     { x: -25, z: -6, r: 0.55 },
     { x: 25, z: -6, r: 0.55 },
     { x: -25, z: -3, r: 0.55 },
@@ -46,6 +48,7 @@
     );
     const furniture =
       garden ||
+      (Math.abs(x + 11) < 3.35 && Math.abs(dz - 16) < 0.75) ||
       [-7.1, 7.1].some((px) => Math.hypot(x - px, dz + 12) < 0.4) ||
       (Math.abs(x + 14) < 1.45 && Math.abs(dz - 2) < 0.7) ||
       (Math.abs(x + 20) < 3 &&

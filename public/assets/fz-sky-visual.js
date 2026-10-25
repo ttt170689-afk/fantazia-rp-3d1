@@ -143,7 +143,7 @@
       return m;
     }
     material("stone", {
-      color: 0xaeb9d0,
+      color: 0x657594,
       map: maps.stone,
       bumpMap: maps.height,
       bumpScale: 0.025,
@@ -198,6 +198,7 @@
     mats.neonPink = own(
       new THREE.MeshBasicMaterial({ color: 0xff52bd, toneMapped: false }),
     );
+    mats.light.userData.fzNeon = mats.neonPink.userData.fzNeon = true;
     mats.leaf = own(
       new THREE.MeshLambertMaterial({
         color: 0x586d48,

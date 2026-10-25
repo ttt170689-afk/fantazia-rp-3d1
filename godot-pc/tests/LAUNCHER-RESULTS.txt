@@ -1,0 +1,97 @@
+Godot Engine v4.5.1.stable.custom_build - https://godotengine.org
+
+PASS launcher03: current Godot version supported
+PASS launcher03: main menu starts with zero 3D nodes
+PASS launcher03: no player created before Play
+PASS launcher03: no city interactions allocated before Play
+PASS launcher03: native city not loaded by menu
+PASS launcher03: no hidden game instance
+PASS launcher03: main menu visible on boot
+PASS launcher03: no startup modal blocks menu
+PASS launcher03: safe graphics default enabled
+PASS launcher03: keyboard focus starts on Play
+PASS launcher03: native theme uses the web lobby text palette
+PASS launcher03: primary action styled
+PASS launcher03: native model headers and checksums valid
+PASS launcher03: legacy main scene also starts with the menu
+PASS launcher03: Settings button opens real controls
+PASS launcher03: pre-game settings receive UI changes
+PASS launcher03: front settings save path responds
+PASS launcher03: Controls button opens route
+PASS launcher03: migration status button opens honest scope
+PASS launcher03: diagnostics button opens help
+PASS launcher03: diagnostics include engine version
+PASS launcher03: report excludes user directory
+PASS launcher03: all front panels work without a 3D world
+PASS launcher03: tests never write the real crash marker
+PASS launcher03: missing file yields a readable error
+PASS launcher03: short native resource rejected before parser
+PASS launcher03: GLB signature rejected by native-only preflight
+PASS launcher03: preflight fixture removed
+PASS launcher03: missing marker is not treated as a crash
+PASS launcher03: unfinished load detected on next launch
+PASS launcher03: last completed stage preserved
+PASS launcher03: unclean gameplay stop detected
+PASS launcher03: intentional quit is not reported as a crash
+PASS launcher03: handled failure retains diagnostic details
+PASS launcher03: marker fixture removed
+PASS launcher03: Play starts a loading page
+PASS launcher03: cancel releases the in-progress world
+PASS launcher03: cancel leaves no 3D nodes
+PASS launcher03: cancel has an explanatory message
+PASS launcher03: cancel offers a path back to menu
+PASS launcher03: Back returns from error to main menu
+PASS launcher03: collision batches yield before the world is ready
+PASS launcher03: Escape reaches launcher instead of hidden game HUD
+PASS launcher03: mid-physics cancellation frees geometry
+PASS launcher03: mid-physics cancellation reports correctly
+PASS launcher03: game reaches ready state 0
+PASS launcher03: main menu hides only after successful load
+PASS launcher03: loading overlay released
+PASS launcher03: game HUD visible after load
+PASS launcher03: gameplay camera activated at readiness
+PASS launcher03: real city imported
+PASS launcher03: city retains actual imported texture resources
+PASS launcher03: city collision construction completed
+PASS launcher03: exactly one player after restart
+PASS launcher03: safe mode disables sun shadows
+PASS launcher03: safe mode disables MSAA
+PASS launcher03: safe preset reflected in saved settings
+PASS launcher03: player safely grounded after managed boot
+PASS launcher03: running state recorded
+PASS launcher03: managed world does not inherit ALWAYS mode
+PASS launcher03: managed world clock freezes during pause
+PASS launcher03: managed character animation freezes during pause
+PASS launcher03: pause controls remain active
+PASS launcher03: return frees all 3D nodes 0
+PASS launcher03: no player left in main menu
+PASS launcher03: no stale interactions after return
+PASS launcher03: main menu usable after paused game
+PASS launcher03: return records a clean stop
+PASS launcher03: game reaches ready state 1
+PASS launcher03: main menu hides only after successful load
+PASS launcher03: loading overlay released
+PASS launcher03: game HUD visible after load
+PASS launcher03: gameplay camera activated at readiness
+PASS launcher03: real city imported
+PASS launcher03: city retains actual imported texture resources
+PASS launcher03: city collision construction completed
+PASS launcher03: exactly one player after restart
+PASS launcher03: safe mode disables sun shadows
+PASS launcher03: safe mode disables MSAA
+PASS launcher03: safe preset reflected in saved settings
+PASS launcher03: player safely grounded after managed boot
+PASS launcher03: running state recorded
+PASS launcher03: managed world does not inherit ALWAYS mode
+PASS launcher03: managed world clock freezes during pause
+PASS launcher03: managed character animation freezes during pause
+PASS launcher03: pause controls remain active
+PASS launcher03: return frees all 3D nodes 1
+PASS launcher03: no player left in main menu
+PASS launcher03: no stale interactions after return
+PASS launcher03: main menu usable after paused game
+PASS launcher03: return records a clean stop
+PASS launcher03: failure is a visible page
+PASS launcher03: recoverable failure does not permanently disable Play
+PASS launcher03: failure returns to a lightweight menu
+LAUNCHER_RESULT checks=94 failures=0

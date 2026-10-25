@@ -1,0 +1,267 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/main_menu.gd" id="1_boot"]
+[ext_resource type="Script" path="res://scripts/menu_backdrop.gd" id="2_backdrop"]
+
+[ext_resource type="Theme" path="res://ui/native_theme.tres" id="3_theme"]
+
+[node name="FantaziaLauncher" type="Node"]
+script = ExtResource("1_boot")
+
+[node name="FrontLayer" type="CanvasLayer" parent="."]
+layer = 20
+
+[node name="MenuView" type="Control" parent="FrontLayer"]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+theme = ExtResource("3_theme")
+
+[node name="Backdrop" type="Control" parent="FrontLayer/MenuView"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_backdrop")
+
+[node name="Margin" type="MarginContainer" parent="FrontLayer/MenuView"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 48
+theme_override_constants/margin_bottom = 24
+
+[node name="Scroll" type="ScrollContainer" parent="FrontLayer/MenuView/Margin"]
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="Layout" type="VBoxContainer" parent="FrontLayer/MenuView/Margin/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 18
+
+[node name="Header" type="HBoxContainer" parent="FrontLayer/MenuView/Margin/Scroll/Layout"]
+layout_mode = 2
+
+[node name="Profile" type="Label" parent="FrontLayer/MenuView/Margin/Scroll/Layout/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.533, 0.851, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "FANTAZIA  /  ЛОКАЛЬНАЯ ИГРА НА ПК"
+
+[node name="Version" type="Label" parent="FrontLayer/MenuView/Margin/Scroll/Layout/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.65, 0.78, 1)
+theme_override_font_sizes/font_size = 13
+text = "GODOT PC 05 · МИР FANTAZIA"
+
+[node name="Columns" type="HBoxContainer" parent="FrontLayer/MenuView/Margin/Scroll/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 40
+
+[node name="Navigation" type="VBoxContainer" parent="FrontLayer/MenuView/Margin/Scroll/Layout/Columns"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.1
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="FrontLayer/MenuView/Margin/Scroll/Layout/Columns/Navigation"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.945, 0.953, 1, 1)
+theme_override_font_sizes/font_size = 68
+text = "FANTAZIA"
+
+[node name="Subtitle" type="Label" parent="FrontLayer/MenuView/Margin/Scroll/Layout/Columns/Navigation"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.67, 0.624, 1, 1)
+theme_override_font_sizes/font_size = 37
+text = "R P   3 D"
+
+[node name="Tagline" type="Label" parent="FrontLayer/MenuView/Margin/Scroll/Layout/Columns/Navigation"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.533, 0.851, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "ТВОЯ ИСТОРИЯ НАЧИНАЕТСЯ ЗДЕСЬ"
+
+[node name="Play" type="Button" parent="FrontLayer/MenuView/Margin/Scroll/Layout/Columns/Navigation"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(380, 66)
+layout_mode = 2
+theme_type_variation = &"PrimaryButton"
+text = "ИГРАТЬ  →"
+alignment = 0
+
+[node name="Destinations" type="Button" parent="FrontLayer/MenuView/Margin/Scroll/Layout/Columns/Navigation"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "КАРТЫ И СПАВНЫ  ↗"
+alignment = 0
+
+[node name="Settings" type="Button" parent="FrontLayer/MenuView/Margin/Scroll/Layout/Columns/Navigation"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "НАСТРОЙКИ"
+alignment = 0
+
+[node name="Controls" type="Button" parent="FrontLayer/MenuView/Margin/Scroll/Layout/Columns/Navigation"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "УПРАВЛЕНИЕ И МАРШРУТ"
+alignment = 0
+
+[node name="News" type="Button" parent="FrontLayer/MenuView/Margin/Scroll/Layout/Columns/Navigation"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "ЧТО ПЕРЕНЕСЕНО"
+alignment = 0
+
+[node name="Diagnostics" type="Button" parent="FrontLayer/MenuView/Margin/Scroll/Layout/Columns/Navigation"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "ПОМОЩЬ ПРИ ВЫЛЕТЕ"
+alignment = 0
+
+[node name="Quit" type="Button" parent="FrontLayer/MenuView/Margin/Scroll/Layout/Columns/Navigation"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "ВЫЙТИ"
+alignment = 0
+
+[node name="Story" type="PanelContainer" parent="FrontLayer/MenuView/Margin/Scroll/Layout/Columns"]
+custom_minimum_size = Vector2(370, 0)
+layout_mode = 2
+theme_type_variation = &"StoryPanel"
+size_flags_horizontal = 3
+size_flags_vertical = 4
+
+[node name="Content" type="VBoxContainer" parent="FrontLayer/MenuView/Margin/Scroll/Layout/Columns/Story"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Small" type="Label" parent="FrontLayer/MenuView/Margin/Scroll/Layout/Columns/Story/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.847, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "ГОРОД ЖДЁТ ТЕБЯ"
+
+[node name="Heading" type="Label" parent="FrontLayer/MenuView/Margin/Scroll/Layout/Columns/Story/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Один мир.\nРазные маршруты."
+
+[node name="Description" type="Label" parent="FrontLayer/MenuView/Margin/Scroll/Layout/Columns/Story/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.74, 0.79, 0.898, 1)
+text = "Карта веб-версии · GRAND MALL и районы.\nНебесная площадь · морской район.\nПять станций метро · выбор спавна."
+autowrap_mode = 2
+
+[node name="Line" type="HSeparator" parent="FrontLayer/MenuView/Margin/Scroll/Layout/Columns/Story/Content"]
+layout_mode = 2
+
+[node name="SafeMode" type="CheckButton" parent="FrontLayer/MenuView/Margin/Scroll/Layout/Columns/Story/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "БЕЗОПАСНЫЙ ЗАПУСК"
+button_pressed = true
+
+[node name="SafeNote" type="Label" parent="FrontLayer/MenuView/Margin/Scroll/Layout/Columns/Story/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.74, 0.79, 0.898, 1)
+text = "Без теней и MSAA, с поэтапной загрузкой.\nПока ты в меню, 3D-мир не создаётся."
+autowrap_mode = 2
+
+[node name="Notice" type="Label" parent="FrontLayer/MenuView/Margin/Scroll/Layout/Columns/Story/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.67, 0.624, 1, 1)
+text = "Это локальная Godot-версия. Онлайн и все системы v28 пока не перенесены."
+autowrap_mode = 2
+
+[node name="Footer" type="Label" parent="FrontLayer/MenuView/Margin/Scroll/Layout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.65, 0.78, 1)
+theme_override_font_sizes/font_size = 13
+text = "Создано при помощи TEMKA_PLAY_OFFICIAL"
+
+[node name="Overlay" type="Control" parent="FrontLayer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+theme = ExtResource("3_theme")
+
+[node name="Dim" type="ColorRect" parent="FrontLayer/Overlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.01, 0.025, 0.07, 0.94)
+
+[node name="Center" type="MarginContainer" parent="FrontLayer/Overlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/margin_left = 96
+theme_override_constants/margin_top = 44
+theme_override_constants/margin_right = 96
+theme_override_constants/margin_bottom = 44
+
+[node name="Card" type="PanelContainer" parent="FrontLayer/Overlay/Center"]
+layout_mode = 2
+
+[node name="Layout" type="VBoxContainer" parent="FrontLayer/Overlay/Center/Card"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="PanelTitle" type="Label" parent="FrontLayer/Overlay/Center/Card/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "НАСТРОЙКИ"
+
+[node name="PanelScroll" type="ScrollContainer" parent="FrontLayer/Overlay/Center/Card/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="PanelContent" type="VBoxContainer" parent="FrontLayer/Overlay/Center/Card/Layout/PanelScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="Back" type="Button" parent="FrontLayer/Overlay/Center/Card/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "НАЗАД В МЕНЮ"

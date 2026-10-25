@@ -140,6 +140,27 @@
     group.add(backdrop);
     extra.add(bgGeo);
     extra.add(bgMat);
+    // Pick out the ACTUAL first A before the lens enters its counter.
+    const selectSolid = new THREE.ExtrudeBufferGeometry([aShape], {
+      depth: 0.02,
+      bevelEnabled: false,
+      curveSegments: 6,
+    });
+    selectSolid.translate(-center.x, -center.y, DEPTH / 2 + 0.06);
+    const selectGeo = new THREE.EdgesGeometry(selectSolid, 28);
+    selectSolid.dispose();
+    const selectMat = new THREE.LineBasicMaterial({
+      color: 0xa1edff,
+      transparent: true,
+      opacity: 0,
+      fog: false,
+      depthWrite: false,
+    });
+    const selection = new THREE.LineSegments(selectGeo, selectMat);
+    selection.name = "opening_A_selection";
+    group.add(selection);
+    extra.add(selectGeo);
+    extra.add(selectMat);
     const dustGeo = new THREE.BufferGeometry(),
       dustPositions = [];
     for (let i = 0; i < 100; i++)
@@ -178,7 +199,7 @@
       crossed = false,
       disposed = false;
     function configure(aspect, portrait) {
-      const frame = P.framedSample(9, anchors, false, portrait);
+      const frame = P.framedSample(2.1, anchors, false, portrait);
       end.fromArray(frame.position);
       look.fromArray(frame.look);
       normal.copy(end).sub(look).normalize();
@@ -208,7 +229,7 @@
       z = far;
       let yaw = reduced
         ? 0
-        : 0.16 * (1 - P.smooth(Math.max(0, time - 3) / 1.8));
+        : 0.28 * (1 - P.smooth(Math.max(0, time - 3) / 1.8));
       if (!reduced && q > 0) {
         if (q < 1 / 3) {
           const k = P.smooth(q * 3);
@@ -225,9 +246,12 @@
         }
       }
       const lateral = Math.sin(yaw) * z;
+      const pitch = reduced ? 0 : 0.065 * (1 - P.smooth(q * 3));
       local.set(
         x + lateral,
-        y + (reduced ? 0 : Math.sin(time * 0.8) * 0.08 * (1 - P.smooth(q * 3))),
+        y +
+          Math.sin(pitch) * z +
+          (reduced ? 0 : Math.sin(time * 0.8) * 0.08 * (1 - P.smooth(q * 3))),
         z,
       );
       camera.position
@@ -236,6 +260,12 @@
         .add(group.position);
       camera.quaternion.copy(group.quaternion);
       if (yaw) camera.rotateY(yaw);
+      if (pitch) camera.rotateX(-pitch);
+      selectMat.opacity = reduced
+        ? 0
+        : 0.8 *
+          P.smooth((time - 1.8) / 1.2) *
+          (1 - P.smooth((time - 4.8) / 0.6));
       bgMat.opacity = 1 - P.smooth((time - 3.1) / 1.3);
       backdrop.visible = bgMat.opacity > 0.001;
       dustMat.opacity = reduced ? 0 : 0.45 * (1 - P.smooth((time - 3) / 2));
@@ -246,14 +276,15 @@
       crossed = z < -DEPTH / 2;
       return true;
     }
-    function render(renderer, world, camera) {
+    function render(renderer, world, camera, showCity = true) {
       // Keep city/depth out of the lettering pass so a distant foreground building
       // cannot cover the credit. The actual glyph hole remains unfilled and ray-testable.
       const mask = camera.layers.mask,
         background = world.background,
         auto = renderer.autoClear;
       try {
-        camera.layers.set(0);
+        camera.layers.set(showCity ? 0 : 30);
+        if (!showCity) world.background = new THREE.Color(0x090716);
         renderer.render(world, camera);
         if (group.visible) {
           renderer.clearDepth();

@@ -4,6 +4,7 @@
 // ============================================================
 (function () {
 'use strict';
+if(window.FZ_METRO23)return;
 function G(n) { try { return window[n]; } catch (e) { return undefined; } }
 function $(id) { try { return document.getElementById(id); } catch (e) { return null; } }
 function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }

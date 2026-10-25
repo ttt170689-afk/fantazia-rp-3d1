@@ -1,0 +1,168 @@
+/* Sound controls share the game's modal/input ownership, not a new HUD row. */
+#fzSoundPanel[hidden],
+#fzSoundCaption[hidden] {
+  display: none !important;
+}
+#fzSoundPanel {
+  position: fixed;
+  inset: 0;
+  z-index: 15000;
+  background: #060b16c9;
+  padding: 20px;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  overscroll-behavior: contain;
+  color: #edf2ff;
+  font:
+    15px/1.5 system-ui,
+    sans-serif;
+  touch-action: pan-y;
+}
+#fzSoundPanel * {
+  box-sizing: border-box;
+}
+#fzSoundPanel article {
+  width: min(600px, 100%);
+  max-height: calc(100dvh - 40px);
+  overflow: auto;
+  border: 1px solid #7885b5;
+  border-radius: 24px;
+  padding: 24px;
+  background: linear-gradient(140deg, #202b47, #11182d);
+  box-shadow: 0 20px 90px #0009;
+}
+#fzSoundPanel header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+#fzSoundPanel small {
+  color: #91d8ff;
+  letter-spacing: 0.15em;
+  font-size: 11px;
+}
+#fzSoundPanel h2 {
+  font-size: 28px;
+  margin: 4px 0 20px;
+}
+#fzSoundPanel h3 {
+  margin: 22px 0 10px;
+  font-size: 16px;
+}
+#fzSoundPanel button,
+.fz-sound-settings {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid #a4b4e347;
+  border-radius: 12px;
+  background: #263956;
+  color: #f1f4ff;
+  font: 600 14px system-ui;
+  cursor: pointer;
+}
+#fzSoundPanel button:hover {
+  background: #3b4670;
+}
+#fzSoundPanel button:focus-visible,
+#fzSoundPanel input:focus-visible {
+  outline: 3px solid #8ed7ff;
+  outline-offset: 3px;
+}
+#fzSoundPanel [data-close] {
+  background: #4d4574;
+}
+#fzSoundPanel [data-tracks],
+#fzSoundPanel [data-demos] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+#fzSoundPanel .sound-enable {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 15px;
+}
+#fzSoundPanel input[type="checkbox"] {
+  width: 24px;
+  height: 24px;
+  accent-color: #afa0ff;
+}
+#fzSoundPanel .sound-level {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px;
+  padding: 9px 0;
+}
+#fzSoundPanel input[type="range"] {
+  grid-column: 1/-1;
+  width: 100%;
+  min-height: 30px;
+  accent-color: #a9a4ff;
+  touch-action: pan-x;
+}
+#fzSoundPanel output {
+  color: #9bdfff;
+  font-variant-numeric: tabular-nums;
+}
+#fzSoundPanel [data-status],
+#fzSoundPanel .sound-note {
+  font-size: 12px;
+  color: #b7c7e0;
+}
+#fzSoundCaption {
+  position: fixed;
+  z-index: 12000;
+  bottom: 8vh;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(640px, 90vw);
+  padding: 13px 20px;
+  border: 1px solid #a0b6df55;
+  border-radius: 14px;
+  background: #091426e8;
+  color: #edf4ff;
+  font: 600 14px/1.5 system-ui;
+  text-align: center;
+  pointer-events: none;
+}
+@media (max-width: 600px) {
+  #fzSoundPanel {
+    padding: 10px;
+  }
+  #fzSoundPanel article {
+    padding: 18px;
+    max-height: calc(100dvh - 20px);
+  }
+  #fzSoundPanel h2 {
+    font-size: 24px;
+  }
+  body.game-active #fzSoundCaption {
+    bottom: max(270px, 32dvh);
+    width: 90vw;
+    font-size: 12px;
+    padding: 10px;
+  }
+}
+@media (max-height: 500px) {
+  body.game-active #fzSoundCaption {
+    bottom: 110px;
+    width: 44vw;
+    font-size: 12px;
+  }
+}
+
+#fzSoundPanel header {
+  position: sticky;
+  top: -24px;
+  z-index: 2;
+  padding: 10px 0;
+  background: #1b2540;
+}
+@media (max-width: 600px) {
+  #fzSoundPanel header {
+    top: -18px;
+  }
+}

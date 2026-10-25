@@ -35,6 +35,9 @@ var SR = global.SuperRig = {
   clips: []
 };
 
+var resolveSource;
+SR.sourceReady = new Promise(function(resolve) { resolveSource = resolve; });
+
 // --- какая игровая анимация каким клипом рига играется ---
 var MAP = {
   idle:      'ANIM_Idle_Loop',
@@ -640,6 +643,7 @@ function load() {
       loadHold(function () {
         try {
           SR.ready = true;
+          resolveSource(g);
           SR._tries = 0;
           SR._why = 'ok';
           console.log('[SuperRig] player_super.glb загружен: ' + g.animations.length + ' анимаций');

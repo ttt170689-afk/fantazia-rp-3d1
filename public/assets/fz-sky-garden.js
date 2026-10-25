@@ -59,6 +59,8 @@
         toneMapped: false,
       }),
     );
+    for (const material of [cyan, pink, lettering, blueHalo, pinkHalo])
+      material.userData.fzNeon = true;
     function mesh(g, m, x = 0, y = 0, z = 0) {
       own(g);
       const o = new THREE.Mesh(g, m);
@@ -359,6 +361,7 @@
     );
     group.remove(gem);
     sculpture.add(gem);
+    gem.material.userData.fzNeon = true;
     for (let i = 0; i < 2; i++) {
       const ring = mesh(
         new THREE.TorusGeometry(1.65 + i * 0.15, 0.028, 8, 72),
@@ -387,6 +390,7 @@
             toneMapped: false,
           }),
         );
+        gm.userData.fzNeon = true;
         const g = mesh(new THREE.PlaneGeometry(w, d), gm, x, 0.035, z);
         g.rotation.x = -Math.PI / 2;
         g.castShadow = false;

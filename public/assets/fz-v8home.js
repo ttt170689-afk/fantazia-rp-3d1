@@ -974,7 +974,7 @@ function directory() {
   if(window.FZ8L && window.FZ8L.close) window.FZ8L.close();
   const body=showPanel('Школа и жилые интерьеры');
   text(body,'p','Исследуй комнаты, открывай двери, пользуйся вещами. На компьютере — E рядом с предметом, на телефоне — «Действие».','b-muted');
-  [['school','🏫 Школа №1','3 этажа • 18 помещений • уроки и дневник'],['house','🏡 Особняк «Закат»','2 этажа • кухня, спальни, ванная, кабинет и зимний сад'],['apartment','🏢 Жилой дом «Липы»','3 квартиры • компактная, семейная и пентхаус']].forEach(([type,title,desc])=>{
+  [['school','🏫 Школа №1','3 этажа • 18 помещений • уроки и дневник'],['house','🏡 Особняк «Закат»','2 этажа • подъезд, лифт, 4 квартиры и консьержка'],['apartment','🏢 Жилой дом «Липы»','4 этажа • лестница, лифт, 8 квартир, двери и почта']].forEach(([type,title,desc])=>{
     const card=text(body,'section','', 'b-line'); text(card,'h3',title); text(card,'p',desc);
     button(card,'Посетить интерьер',()=>visit(type));
   });
@@ -982,6 +982,7 @@ function directory() {
   if(active) button(body,'План текущего этажа',showPlan);
 }
 function visit(type) {
+  if(window.FZSky?.active() || window.FZCranes?.active()) { notify('Сначала спуститесь на улицу.'); return false; }
   if(!PLANS[type] || !available()) return false;
   if(window.FZ8SEA && window.FZ8SEA.aboard()) { notify('Сначала сойди на причал.'); return false; }
   if(inside() || (typeof isInFactory!=='undefined'&&isInFactory) || (typeof isInBasement!=='undefined'&&isInBasement)) { notify('Сначала выйди из текущего помещения.'); return false; }
@@ -1099,8 +1100,8 @@ let audio=null;
 function playNotes() {
   try {
     const Audio=window.AudioContext||window.webkitAudioContext; if(!Audio) return notify('Аудио в этом браузере недоступно.');
-    audio=audio||new Audio(); audio.resume(); const at=audio.currentTime;
-    [261.63,329.63,392,523.25].forEach((hz,i)=>{const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=hz;o.type='triangle';o.connect(g);g.connect(audio.destination);g.gain.setValueAtTime(.08,at+i*.22);g.gain.exponentialRampToValueAtTime(.001,at+i*.22+.5);o.start(at+i*.22);o.stop(at+i*.22+.55);o.onended=()=>{o.disconnect();g.disconnect();};});
+    audio=audio||(window.FZSound ? getAudioCtx() : new Audio()); if(!document.hidden)audio.resume(); const at=audio.currentTime;
+    [261.63,329.63,392,523.25].forEach((hz,i)=>{const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=hz;o.type='triangle';o.connect(g);g.connect(window.FZSound?.bus("sfx") || audio.destination);g.gain.setValueAtTime(.08,at+i*.22);g.gain.exponentialRampToValueAtTime(.001,at+i*.22+.5);o.start(at+i*.22);o.stop(at+i*.22+.55);o.onended=()=>{o.disconnect();g.disconnect();};});
     notify('На пианино звучит короткое арпеджио.');
   } catch(_){notify('Разреши звук в браузере.');}
 }

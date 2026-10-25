@@ -9,12 +9,14 @@
     allowed = false,
     connection = null,
     flight = null,
-    ui = null,
+    stagePending = false,
     priorWorld = false,
     restoreFog = null,
     visual = null,
     clouds = null,
-    garden = null;
+    garden = null,
+    neon = null,
+    descentClouds = null;
   const resources = new Set();
   function active() {
     return (
@@ -40,6 +42,8 @@
   function build() {
     if (root && owner === scene) return;
     if (root) {
+      descentClouds?.dispose();
+      neon?.dispose();
       garden?.dispose();
       visual?.dispose();
       root.parent?.remove(root);
@@ -255,16 +259,7 @@
       3.2,
       18,
     );
-    const portal = ownMaterial(
-      new THREE.MeshBasicMaterial({
-        color: 0xf7fbff,
-        transparent: true,
-        opacity: 0.68,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-      }),
-    );
-    add(geometry(new THREE.PlaneGeometry(4.8, 5)), portal, 18, 0.5, 17.9);
+    descentClouds = FZSkyDescent.create(root, resources, visual.maps);
     sign("В ГОРОД ↓", 18, 5.8, 18, 6, 1);
     for (const z of [-5, 8]) {
       for (let i = 0; i < 7; i++)
@@ -338,6 +333,37 @@
         sky: true,
       },
     );
+    // A new arrival gateway and an in-world transit concierge, outside the main paths.
+    for (const x of [-5.8, 5.8]) {
+      box(x, 3.4, 16, 0.4, 6.8, 0.5, M.dark);
+      box(x - 0.22, 3.4, 16, 0.07, 6.4, 0.56, M.light);
+    }
+    box(0, 6.8, 16, 12.2, 0.5, 0.7, M.dark);
+    box(0, 6.5, 16, 11.8, 0.07, 0.76, M.neonPink);
+    sign("FANTAZIA / ARRIVAL 23", 0, 6.78, 16.38, 10, 0.45);
+    box(-11, 1.9, 16, 6.2, 3.8, 0.65, M.dark);
+    box(-14.16, 1.9, 16, 0.06, 3.8, 0.7, M.light);
+    box(-7.84, 1.9, 16, 0.06, 3.8, 0.7, M.neonPink);
+    sign("M  КОЛЬЦЕВАЯ ЛИНИЯ", -11, 3.05, 15.64, 5.7, 0.7).rotation.y = Math.PI;
+    sign(
+      "5 СТАНЦИЙ · ГОЛОС · НОВЫЙ ПОЕЗД",
+      -11,
+      2.05,
+      15.63,
+      5.7,
+      0.45,
+    ).rotation.y = Math.PI;
+    sign("СХЕМА МЕТРО — ДЕЙСТВИЕ", -11, 1.15, 15.63, 5.7, 0.42).rotation.y =
+      Math.PI;
+    interactables.push({
+      type: "metro_map",
+      name: "Схема метро и голос",
+      position: { x: -11, y: D.y, z: D.z + 13 },
+      range: 3,
+      sky: true,
+      fzMetro: true,
+    });
+    neon = FZSkyNeon.create(root, resources, P);
     visual.setLayers();
     root.visible = false;
   }
@@ -366,7 +392,7 @@
       toneMapped: false,
     });
     resources.add(m);
-    add(geometry(new THREE.PlaneGeometry(w, h)), m, x, y, z);
+    return add(geometry(new THREE.PlaneGeometry(w, h)), m, x, y, z);
   }
   function spawn(mesh) {
     build();
@@ -483,10 +509,7 @@
   function cancel() {
     leaveVisual();
     if (flight) flight.onArrival = null;
-    if (ui) {
-      ui.hidden = true;
-      ui.querySelector("input").value = "";
-    }
+    stagePending = false;
     allowed = false;
     if (flight && localPlayer?.mesh && window.cine === flight.cine) {
       window.cine.t = window.cine.steps[0].dur;
@@ -531,9 +554,22 @@
       connection = socket;
       allowed = false;
       if (socket?.on) {
+        const connectedSocket = socket;
+        const refreshAccess = () => {
+          allowed = false;
+          connectedSocket
+            .timeout(4000)
+            .emit("sky:status", {}, (error, result) => {
+              if (connection === connectedSocket && connectedSocket.connected)
+                allowed = !error && result?.allowed === true;
+            });
+        };
         socket.on("disconnect", () => {
           allowed = false;
+          stagePending = false;
         });
+        socket.on("registered", refreshAccess);
+        if (socket.connected) refreshAccess();
         socket.on("sky:correction", (p) => {
           if (localPlayer?.mesh) {
             localPlayer.mesh.position.set(p.x, p.y, p.z);
@@ -599,80 +635,51 @@
       extras,
     );
     if (on && clouds && q) {
-      garden?.update(performance.now() * 0.001, FZPlay.reducedMotion());
+      const time = performance.now() * 0.001,
+        info = FZPlay.info(),
+        battery = info.profile === "battery";
+      const reduced =
+        FZPlay.reducedMotion() || info.prefs.neonMotion === false || battery;
+      neon?.update(
+        time,
+        info.prefs,
+        FZPlay.reducedMotion(),
+        battery,
+        localPlayer.mesh.position,
+      );
+      garden?.update(time, reduced);
+      descentClouds?.update(time, reduced, battery || q.clouds < 24);
       clouds.count = q.clouds;
       clouds.visible = SETTINGS.sky !== false;
-      clouds.rotation.y = FZPlay.reducedMotion()
+      clouds.rotation.y = reduced
         ? 0
         : Math.sin(performance.now() * 0.000025) * 0.012;
     }
   }
   function openStage() {
-    if (!active() || window.cine) return;
-    if (allowed) {
-      socket.emit("sky:stage", {}, (r) => {
-        if (r?.ok) {
-          localPlayer.mesh.position.set(S.x, D.y + S.h, S.z + 2);
-          FZPlay.release();
-        } else {
-          allowed = false;
-          notice("Сервер не разрешил вход на сцену.");
-        }
-      });
+    if (!active() || window.cine || stagePending) return;
+    if (!socket?.connected) {
+      notice("Нужна связь с сервером.");
       return;
     }
-    if (!ui) {
-      ui = document.createElement("section");
-      ui.id = "fzStageAccess";
-      ui.className = "fz-play-dialog";
-      ui.hidden = true;
-      ui.setAttribute("role", "dialog");
-      ui.setAttribute("aria-modal", "true");
-      ui.setAttribute("aria-label", "Доступ администратора на сцену");
-      ui.innerHTML =
-        '<form class="fz-play-card"><header><h2>Сцена администратора</h2><button type="button" data-close>Закрыть</button></header><p>Площадь и город открыты всем. Сцена требует отдельного подтверждения сервера.</p><label>Ключ доступа к сцене<input type="password" autocomplete="off" maxlength="200" required></label><button type="submit">Подтвердить доступ</button><p role="status"></p></form>';
-      document.body.appendChild(ui);
-      ui.querySelector("[data-close]").onclick = () => {
-        ui.hidden = true;
-        ui.querySelector("input").value = "";
+    const requesting = socket;
+    stagePending = true;
+    requesting.timeout(6000).emit("sky:stage", {}, (error, result) => {
+      stagePending = false;
+      if (socket !== requesting || !requesting.connected || !active()) return;
+      if (error) {
+        notice("Нет ответа сервера. Попробуй ещё раз.");
+        return;
+      }
+      allowed = result?.ok === true;
+      if (allowed) {
+        localPlayer.mesh.position.set(S.x, D.y + S.h, S.z + 2);
         FZPlay.release();
-      };
-      ui.querySelector("form").onsubmit = (e) => {
-        e.preventDefault();
-        if (!socket?.connected) {
-          ui.querySelector("[role=status]").textContent =
-            "Нужна связь с сервером.";
-          return;
-        }
-        const field = ui.querySelector("input"),
-          key = field.value;
-        field.value = "";
-        socket.timeout(6000).emit("sky:authorize", { key }, (err, r) => {
-          if (err || !r?.ok) {
-            ui.querySelector("[role=status]").textContent =
-              r?.error || "Нет ответа сервера. Повтори позже.";
-            return;
-          }
-          allowed = true;
-          ui.hidden = true;
-          openStage();
-        });
-      };
-      ui.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") ui.querySelector("[data-close]").click();
-        if (e.key === "Tab") {
-          e.preventDefault();
-          const els = [...ui.querySelectorAll("input,button")],
-            i = els.indexOf(document.activeElement);
-          els[(i + (e.shiftKey ? -1 : 1) + els.length) % els.length].focus();
-        }
-        e.stopPropagation();
-      });
-    }
-    ui.hidden = false;
-    FZPlay.release();
-    document.exitPointerLock?.();
-    ui.querySelector("[data-close]").focus();
+      } else
+        notice(
+          "Сцена только для администратора. Площадь и лестница открыты всем.",
+        );
+    });
   }
   function interact(e) {
     if (!e.sky) return false;
@@ -710,7 +717,9 @@
       objects: root?.children.length || 0,
       look: visual?.info() || null,
       cloudInstances: clouds?.count || 0,
+      descentClouds: descentClouds?.info() || null,
       garden: garden?.info() || null,
+      neon: neon?.info() || null,
     }),
   };
 })();

@@ -158,7 +158,7 @@ function compose(sc, cam) {
     const u = compMat.uniforms;
     u.tDiffuse.value = rtScene.texture;
     u.tBloom.value = rtB[0].texture;
-    const sky = cam.layers.mask === 4 && window.FZSky?.active();
+    const sky = (cam.layers.mask === 4 && window.FZSky?.active()) || (cam.layers.mask === 8 && window.FZMetro?.active());
     u.bloom.value = P.bloom * (sky ? .18 : 1) * (1 + shockLevel * 0.6);
     u.exposure.value = P.exposure * (1 + shockLevel * 0.35);
     u.saturation.value = P.saturation;
@@ -181,6 +181,9 @@ function patchRenderer() {
   if (patched || !renderer || !renderer.render) return;
   origRender = renderer.render.bind(renderer);
   renderer.render = function (sc, cam) {
+    // The director owns an atomic world + glyph overlay. PostFX would clear the
+    // first pass again and bloom/blur the second: never intercept these cameras.
+    if (cam?.userData?.fzOpeningPass) return origRender(sc, cam);
     try { applyShakeToCamera(); } catch (e) {}
     compose(sc, cam);
   };

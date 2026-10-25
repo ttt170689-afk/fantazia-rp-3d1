@@ -1,0 +1,13 @@
+{
+  "name": "fantazia-interior-tests",
+  "private": true,
+  "scripts": {
+    "test": "node home.test.cjs && node sea.test.cjs && node city.test.cjs && node retired-needs.test.cjs && node city-leisure.test.cjs && node road-layout.test.cjs && node play-policy.test.cjs && node play-integration.test.cjs && node sky-access.test.cjs && node account-stage.integration.test.cjs && node journey-policy.test.cjs && node opening-plan.test.cjs && node letter-portal.test.cjs && node opening-cast.test.cjs && node sky-visual.test.cjs && node sky-garden.test.cjs && node sky-neon.test.cjs && node sky-descent.test.cjs && node metro23.test.cjs && node sound24.test.cjs && node buildings28.test.cjs && node cranes28.test.cjs && node film28.test.cjs && node residence28.test.cjs"
+  },
+  "devDependencies": {
+    "acorn": "8.15.0",
+    "jsdom": "26.1.0",
+    "socket.io-client": "^4.8.1",
+    "three": "0.128.0"
+  }
+}

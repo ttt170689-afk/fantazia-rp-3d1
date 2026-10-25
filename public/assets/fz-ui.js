@@ -100,6 +100,13 @@
   }
   function actions() {
     const items = [
+      action("🏢 Здания и краны — пешие маршруты", () =>
+        window.FZBuildingDirectory?.open(),
+      ),
+      action("Настройки звука — музыка, озвучка и SFX", () =>
+        window.FZSound?.open(),
+      ),
+      action("🚇 Метро — станции и голос", () => window.FZMetro?.open()),
       action("☁ Небесная площадь", () => window.FZSky?.arrive()),
       action("↓ Спуститься с облаков в город", () => window.FZSky?.descend()),
       action("🧭 Город — места, избранное и прогулки", () =>
@@ -109,15 +116,6 @@
         window.FZJourney?.open(),
       ),
       action("📱 Настройки игры на телефоне", () => window.FZPlay?.open()),
-      action(
-        window.FZ_CLASSIC_WORLD
-          ? "🗺 Старый город — GRAND MALL и лаборатория"
-          : "🗺 Большой город — районы",
-        () =>
-          window.FZ_CLASSIC_WORLD
-            ? FZClassic.open()
-            : window.FZCITY && FZCITY.open(),
-      ),
       action("🏫 Школа и квартиры", () => FZ8B.directory()),
       action("⚓ Море, мосты и корабли", () => FZ8SEA.map()),
       action(
@@ -153,7 +151,9 @@
       action("📱 Телефон", () => togglePhone()),
       action("🎟 Fantazia Pass", () => openFPassPanel()),
       action("Настройки управления", () => window.FZTouch && FZTouch.open()),
-      action("⚙ Графика и производительность", () => window.FZPlay?.open()),
+      action("⚙ Графика и производительность · Неон", () =>
+        window.FZPlay?.open(),
+      ),
     );
     return items;
   }

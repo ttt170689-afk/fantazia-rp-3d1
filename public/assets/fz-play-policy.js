@@ -9,6 +9,8 @@
     haptics: false,
     reduceMotion: false,
     keepAwake: false,
+    neonBrightness: 1,
+    neonMotion: true,
   };
   const profiles = {
     battery: {
@@ -44,10 +46,18 @@
       ["auto", "battery", "balanced", "quality", "custom"].includes(v.quality)
     )
       out.quality = v.quality;
-    for (const k of ["leftHand", "haptics", "reduceMotion", "keepAwake"])
+    for (const k of [
+      "leftHand",
+      "haptics",
+      "reduceMotion",
+      "keepAwake",
+      "neonMotion",
+    ])
       if (typeof v[k] === "boolean") out[k] = v[k];
     if (Number.isFinite(v.size)) out.size = clamp(v.size, 0.85, 1.2);
     if (Number.isFinite(v.opacity)) out.opacity = clamp(v.opacity, 0.5, 1);
+    if (Number.isFinite(v.neonBrightness))
+      out.neonBrightness = clamp(v.neonBrightness, 0.35, 1.3);
     return out;
   }
   function choose(p, mobile, cores = 8, memory = 8) {

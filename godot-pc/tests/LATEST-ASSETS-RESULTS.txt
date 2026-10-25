@@ -1,0 +1,27 @@
+Godot Engine v4.5.1.stable.custom_build - https://godotengine.org
+
+PASS native04: embedded sector: city
+PASS native04: native scene loads: city
+PASS native04: all captured meshes: city
+PASS native04: pixel hashes: city
+PASS native04: populated sector: city
+PASS native04: no empty images: city
+PASS native04: embedded texture pixels present: city
+LATEST_NATIVE_MODEL city meshes=2698 unique_albedo=338 texture_bindings=352
+PASS native04: embedded sector: sky
+PASS native04: native scene loads: sky
+PASS native04: all captured meshes: sky
+PASS native04: pixel hashes: sky
+PASS native04: populated sector: sky
+PASS native04: no empty images: sky
+PASS native04: embedded texture pixels present: sky
+LATEST_NATIVE_MODEL sky meshes=1734 unique_albedo=21 texture_bindings=126
+PASS native04: embedded sector: sea
+PASS native04: native scene loads: sea
+PASS native04: all captured meshes: sea
+PASS native04: pixel hashes: sea
+PASS native04: populated sector: sea
+PASS native04: no empty images: sea
+PASS native04: embedded texture pixels present: sea
+LATEST_NATIVE_MODEL sea meshes=3340 unique_albedo=40 texture_bindings=40
+LATEST_ASSETS_RESULT checks=21 failures=0

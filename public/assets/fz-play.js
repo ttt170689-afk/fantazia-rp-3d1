@@ -344,7 +344,7 @@
       panel.setAttribute("aria-modal", "true");
       panel.setAttribute("aria-labelledby", "fzPlayTitle");
       panel.innerHTML =
-        '<div class="fz-play-card"><header><div><small>FANTAZIA / КОМФОРТ</small><h2 id="fzPlayTitle">Игра на телефоне</h2></div><button data-close>Закрыть</button></header><p>Настройки применяются сразу и сохраняются в этом браузере.</p><label>Качество<select data-pref="quality"><option value="auto">Авто — по устройству</option><option value="battery">Экономия — 30 кадров/с</option><option value="balanced">Баланс — цель 30 кадров/с</option><option value="quality">Чёткость — цель 60 кадров/с</option><option value="custom">Свои настройки графики</option></select></label><p class="fz-muted" data-runtime></p><label>Размер управления <output data-value="size"></output><input data-pref="size" type="range" min="0.85" max="1.2" step="0.05"></label><label>Непрозрачность кнопок <output data-value="opacity"></output><input data-pref="opacity" type="range" min="0.5" max="1" step="0.05"></label><label class="fz-check"><input data-pref="leftHand" type="checkbox"> Джойстик справа (для левши)</label><label class="fz-check"><input data-pref="haptics" type="checkbox"> Короткая вибрация кнопок, если доступна</label><label class="fz-check"><input data-pref="reduceMotion" type="checkbox"> Меньше тряски и анимаций интерфейса</label><label class="fz-check"><input data-pref="keepAwake" type="checkbox"> Не гасить экран во время игры, если браузер позволяет</label><div class="fz-play-tools"><button data-fullscreen>На весь экран</button><button data-controls>Чувствительность и кнопки</button><button data-advanced>Расширенная графика</button><button data-rescue>Я застрял — на площадь</button></div><details><summary>Как открыть на телефоне</summary><p>Открой ссылку игры в отдельной вкладке. Android: меню браузера → «Добавить на главный экран». iPhone: Safari → «Поделиться» → «На экран Домой».</p><p>Можно играть вертикально и горизонтально. Для сетевых функций нужен интернет; это не офлайн-копия игры.</p></details><p role="status" data-message></p></div>';
+        '<div class="fz-play-card"><header><div><small>FANTAZIA / КОМФОРТ</small><h2 id="fzPlayTitle">Игра и оформление</h2></div><button data-close>Закрыть</button></header><p>Настройки применяются сразу и сохраняются в этом браузере.</p><label>Качество<select data-pref="quality"><option value="auto">Авто — по устройству</option><option value="battery">Экономия — 30 кадров/с</option><option value="balanced">Баланс — цель 30 кадров/с</option><option value="quality">Чёткость — цель 60 кадров/с</option><option value="custom">Свои настройки графики</option></select></label><p class="fz-muted" data-runtime></p><label>Размер управления <output data-value="size"></output><input data-pref="size" type="range" min="0.85" max="1.2" step="0.05"></label><label>Непрозрачность кнопок <output data-value="opacity"></output><input data-pref="opacity" type="range" min="0.5" max="1" step="0.05"></label><fieldset class="fz-neon-preferences"><legend>Неоновый спавн</legend><label>Яркость подсветки <output data-value="neonBrightness"></output><input data-pref="neonBrightness" type="range" min="0.35" max="1.3" step="0.05" aria-label="Яркость неона спавна"></label><label class="fz-check"><input data-pref="neonMotion" type="checkbox"> Плавные эффекты спавна</label><p class="fz-muted">Меняется подсветка. Обычные подписи и интерфейс не затемняются. В экономном режиме и при уменьшении движения эффекты неподвижны.</p></fieldset><label class="fz-check"><input data-pref="leftHand" type="checkbox"> Джойстик справа (для левши)</label><label class="fz-check"><input data-pref="haptics" type="checkbox"> Короткая вибрация кнопок, если доступна</label><label class="fz-check"><input data-pref="reduceMotion" type="checkbox"> Меньше тряски и анимаций интерфейса</label><label class="fz-check"><input data-pref="keepAwake" type="checkbox"> Не гасить экран во время игры, если браузер позволяет</label><div class="fz-play-tools"><button data-fullscreen>На весь экран</button><button data-controls>Чувствительность и кнопки</button><button data-advanced>Расширенная графика</button><button data-rescue>Я застрял — на площадь</button></div><details><summary>Как открыть на телефоне</summary><p>Открой ссылку игры в отдельной вкладке. Android: меню браузера → «Добавить на главный экран». iPhone: Safari → «Поделиться» → «На экран Домой».</p><p>Можно играть вертикально и горизонтально. Для сетевых функций нужен интернет; это не офлайн-копия игры.</p></details><p role="status" data-message></p></div>';
       document.body.appendChild(panel);
       panel.querySelector("[data-close]").onclick = close;
       panel.querySelectorAll("[data-pref]").forEach((el) => {
@@ -433,8 +433,14 @@
   });
   const viewport = () => {
     const style = document.documentElement.style;
-    style.setProperty("--fz-viewport-height", Math.round(window.visualViewport?.height || innerHeight) + "px");
-    style.setProperty("--fz-viewport-top", Math.round(window.visualViewport?.offsetTop || 0) + "px");
+    style.setProperty(
+      "--fz-viewport-height",
+      Math.round(window.visualViewport?.height || innerHeight) + "px",
+    );
+    style.setProperty(
+      "--fz-viewport-top",
+      Math.round(window.visualViewport?.offsetTop || 0) + "px",
+    );
   };
   window.visualViewport?.addEventListener("scroll", viewport);
   window.visualViewport?.addEventListener("resize", viewport);
@@ -442,7 +448,9 @@
   viewport();
   controls();
   window.FZPlay = {
-    reducedMotion: () => prefs.reduceMotion,
+    reducedMotion: () =>
+      prefs.reduceMotion ||
+      matchMedia("(prefers-reduced-motion: reduce)").matches,
     prepare,
     apply,
     frame,

@@ -67,16 +67,15 @@
     }
     function person(id, x, z, color) {
       const index = actors.length,
-        g = FZNativeCharacter(
-          {
-            skinColor: skins[index % skins.length],
-            shirtColor: color,
-            pantsColor: [0x303c4d, 0x49473f, 0x334d54][index % 3],
-            hairColor: [0x302b27, 0x5f4131, 0x958473][index % 3],
-            hairStyle: index % 2,
-          },
-          false,
-        );
+        appearance = {
+          skinColor: skins[index % skins.length],
+          shirtColor: color,
+          pantsColor: [0x303c4d, 0x49473f, 0x334d54][index % 3],
+          hairColor: [0x302b27, 0x5f4131, 0x958473][index % 3],
+          hairStyle: index % 2,
+        },
+        g = FZNativeCharacter(appearance, false);
+      FZOpeningAvatar.refine(g, index, appearance);
       g.position.set(x, 0, z);
       g.name = "opening_" + id;
       root.add(g);
@@ -135,6 +134,7 @@
         );
         hand.userData.thumb.rotation.x = 0.15;
       }
+      FZOpeningAvatar.gait(u, 0, 0);
       a.shadow.position.y = 0.075 - a.g.position.y;
     }
     function grip(a, amount = 0.9) {
@@ -146,10 +146,7 @@
         ph = distance * 7.2,
         w = Math.sin(ph),
         q = w * 0.5 * strength;
-      u.leftLeg.rotation.x = -q;
-      u.rightLeg.rotation.x = q;
-      u.leftKnee.rotation.x = 0.04 + Math.max(0, w) * 0.6 * strength;
-      u.rightKnee.rotation.x = 0.04 + Math.max(0, -w) * 0.6 * strength;
+      FZOpeningAvatar.gait(u, distance, strength);
       u.leftArm.rotation.x = q * 0.75;
       u.rightArm.rotation.x = -q * 0.75;
       u.body.rotation.y = w * 0.07 * strength;
@@ -213,6 +210,7 @@
     function collect() {
       root.traverse((o) => {
         if (o.geometry) geos.add(o.geometry);
+        if (o.skeleton?.boneTexture) textures.add(o.skeleton.boneTexture);
         for (const m of o.material
           ? Array.isArray(o.material)
             ? o.material
@@ -235,8 +233,8 @@
       actors.length = 0;
     }
     try {
-      const courier = person("courier", s.x - 5, s.z + 2, 0x668da3),
-        receiver = person("receiver", s.x + 5, s.z + 2, 0xb28259);
+      const courier = person("courier", s.x - 5, s.z + 2, 0x285673),
+        receiver = person("receiver", s.x + 5, s.z + 2, 0x80633f);
       receiver.g.rotation.y = -Math.PI / 2;
       const parcel = box(root, 0xb78c5b, [0.68, 0.5, 0.5], [0, 0, 0]);
       box(parcel, 0xe4d1a9, [0.12, 0.505, 0.505], [0, 0, 0]);
@@ -247,8 +245,8 @@
         [0.15, 0.03, 0.255],
       );
       box(label, 0x59636b, [0.16, 0.025, 0.01], [0, 0.02, 0.007]);
-      const reader = person("reader", b.x, b.z, 0x7c739a);
-      reader.g.position.y = b.y - 0.96;
+      const reader = person("reader", b.x, b.z, 0x584968);
+      reader.g.position.y = b.y - 0.817;
       reader.g.rotation.y = b.rot;
       const book = box(root, 0x405b73, [0.68, 0.05, 0.43], [0, 0, 0]);
       box(book, 0xf0e5cb, [0.63, 0.025, 0.39], [0, 0.035, 0]);
@@ -258,8 +256,8 @@
       box(hinge, 0xe8dfcc, [0.31, 0.006, 0.36], [0.155, 0, 0]);
       const f1 = spot(s.x - 2, s.z - 3),
         f2 = spot(f1.x + 1.7, f1.z + 0.15);
-      const friend = person("conversation", f1.x, f1.z, 0x8e574d),
-        listener = person("coffee", f2.x, f2.z, 0x668064);
+      const friend = person("conversation", f1.x, f1.z, 0x8d4438),
+        listener = person("coffee", f2.x, f2.z, 0x496747);
       friend.g.rotation.y = Math.atan2(f2.x - f1.x, f2.z - f1.z);
       listener.g.rotation.y = friend.g.rotation.y + Math.PI;
       const cup = new THREE.Mesh(
@@ -275,16 +273,16 @@
       coffee.position.y = 0.131;
       cup.add(coffee);
       const c = spot(s.x + 8, s.z - 5),
-        cleaner = person("sweeper", c.x, c.z, 0xbca047);
+        cleaner = person("sweeper", c.x, c.z, 0xa5a534);
       const broom = new THREE.Group();
       cleaner.g.add(broom);
-      broom.position.set(0.75, 0.1, 0.65);
-      box(broom, 0x927146, [0.045, 1.65, 0.045], [0, 0.825, 0]);
+      broom.position.set(0.05, 0.1, 0.45);
+      box(broom, 0x927146, [0.045, 1.95, 0.045], [0, 0.975, 0]);
       box(broom, 0x5c6754, [0.6, 0.13, 0.2], [0, 0.04, 0]);
       const m1 = spot(e.x - 5, e.z + 6),
         m2 = spot(e.x + 5, e.z + 6),
-        shopper = person("shopping", m1.x, m1.z, 0x916657),
-        phone = person("phone", m2.x, m2.z, 0x485f88);
+        shopper = person("shopping", m1.x, m1.z, 0x75483c),
+        phone = person("phone", m2.x, m2.z, 0x344969);
       const bag = box(root, 0xba9b6a, [0.37, 0.5, 0.25], [0, 0, 0]);
       box(bag, 0x8d744e, [0.18, 0.04, 0.04], [0, 0.38, 0]);
       for (const x of [-0.09, 0.09])
@@ -306,8 +304,8 @@
         walk(courier, travel, Math.min(1, speed));
         const giving = smooth((t - 14.2) / 1.5);
         state = t < 14.2 ? "approach" : t < 15.7 ? "transfer" : "received";
-        const source = localPoint(courier, [0, 1.3, 0.65]),
-          dest = localPoint(receiver, [0, 1.3, 0.65]);
+        const source = localPoint(courier, [0, 1.45, 0.65]),
+          dest = localPoint(receiver, [0, 1.45, 0.65]);
         parcel.position.copy(source).lerp(dest, giving);
         parcel.rotation.set(0, Math.PI / 2, 0);
         if (giving < 1) holdBox(courier, parcel.position);
@@ -330,17 +328,19 @@
           -Math.PI / 2;
         reader.parts.leftKnee.rotation.x = reader.parts.rightKnee.rotation.x =
           Math.PI / 2;
-        reader.parts.head.rotation.x = 0.18;
+        reader.parts.leftFoot.rotation.x =
+          reader.parts.rightFoot.rotation.x = 0;
+        reader.parts.head.rotation.x = 0.48;
         reader.parts.head.rotation.y = Math.sin(t * 0.6) * 0.04;
         const turn = smooth(clamp((((t + 1) % 6) - 4.5) / 1.2));
-        reach(reader, "left", [-0.32, 1.14, 0.6]);
+        reach(reader, "left", [-0.32, 1.18, 0.6]);
         reach(reader, "right", [
           0.32 - turn * 0.48,
-          1.14 + Math.sin(turn * Math.PI) * 0.12,
+          1.18 + Math.sin(turn * Math.PI) * 0.12,
           0.6,
         ]);
         grip(reader, 0.5);
-        book.position.copy(localPoint(reader, [0, 1.12, 0.6]));
+        book.position.copy(localPoint(reader, [0, 1.16, 0.6]));
         book.quaternion.copy(reader.g.quaternion);
         hinge.rotation.z = -turn * Math.PI;
         // Conversation alternates gesture and listening, with short mouth/blink motions.
@@ -351,7 +351,11 @@
         friend.parts.face.mouth.scale.y =
           1 + talk * Math.abs(Math.sin(t * 8)) * 0.8;
         const sip = smooth(clamp((Math.sin(t * 0.65) - 0.35) / 0.65));
-        reach(listener, "left", [-0.24, 1.36 + sip * 0.84, 0.5 - sip * 0.07]);
+        reach(listener, "left", [
+          -0.24 + sip * 0.18,
+          1.28 + sip * 0.76,
+          0.52 - sip * 0.04,
+        ]);
         grip(listener, 0.8);
         handPoint(listener, "left", temp);
         cup.position.copy(temp).add(new THREE.Vector3(0, 0.04, 0));
@@ -359,10 +363,18 @@
         cup.rotateX(-sip * 0.3);
         listener.parts.head.rotation.x =
           -sip * 0.035 + Math.sin(t * 1.5) * 0.025;
-        const sweep = Math.sin(t * 1.8) * 0.24;
+        const sweep = Math.sin(t * 1.8) * 0.1;
         broom.rotation.z = sweep;
-        reach(cleaner, "left", [0.48 - sweep * 0.5, 1.35, 0.65]);
-        reach(cleaner, "right", [0.65 - sweep * 0.3, 0.9, 0.65]);
+        reach(cleaner, "left", [
+          0.05 - Math.sin(sweep) * 1.7,
+          0.1 + Math.cos(sweep) * 1.7,
+          0.45,
+        ]);
+        reach(cleaner, "right", [
+          0.05 - Math.sin(sweep) * 1.35,
+          0.1 + Math.cos(sweep) * 1.35,
+          0.45,
+        ]);
         grip(cleaner, 0.9);
         cleaner.parts.body.rotation.z = -sweep * 0.12;
         cleaner.parts.head.rotation.x = 0.12;
@@ -385,11 +397,12 @@
         reach(phone, "left", [-0.3, 1.65, 0.58]);
         reach(phone, "right", [-0.05, 1.65, 0.63 + Math.sin(t * 5) * 0.02]);
         grip(phone, 0.65);
-        phone.parts.head.rotation.x = 0.2;
+        phone.parts.head.rotation.x = 0.35;
         handPoint(phone, "left", temp);
         mobile.position.copy(temp);
         mobile.quaternion.copy(phone.g.quaternion);
         mobile.rotateX(-0.15);
+        for (const actor of actors) FZOpeningAvatar.pose(actor.parts);
       }
       collect();
       return {
@@ -400,7 +413,9 @@
           actors.map((a) => ({
             id: a.id,
             position: a.g.position.toArray(),
-            source: "native-articulated-avatar",
+            source: "game-character",
+            asset: a.parts.cinemaAsset || "native-createCharacter",
+            model: a.parts.cinemaModel,
             joints: !!a.parts.leftElbow && !!a.parts.leftKnee,
             uuid: a.g.uuid,
           })),
