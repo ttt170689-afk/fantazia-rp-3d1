@@ -1,0 +1,242 @@
+/* v20 — neon, not a green tint. Existing layout, controls and focus management stay.
+   Cyan = action/navigation; magenta = selected/secondary accent. No flashing loops. */
+:root {
+  --fz-neon-cyan: #61dcff;
+  --fz-neon-pink: #fa6acd;
+  --fz-neon-violet: #a38bff;
+}
+#htmlRoot #fzUIBar button {
+  background: linear-gradient(150deg, #161a36f5, #090e24f5);
+  border-color: #61dcff85;
+  color: #eaf7ff;
+  box-shadow:
+    inset 0 0 10px #3a96ff12,
+    0 0 12px #39aaff24,
+    0 5px 18px #03081766;
+}
+#htmlRoot #fzUIBar #fzUIOpen {
+  background: linear-gradient(125deg, #51349eef, #223b83f5);
+  border-color: #c299ff;
+  box-shadow:
+    inset 0 0 14px #e68aff19,
+    0 0 15px #b15bff45,
+    0 5px 18px #05071666;
+}
+#htmlRoot #fzUIBar #fzUINews {
+  border-color: #fa6acd99;
+  box-shadow:
+    inset 0 0 10px #ff49be12,
+    0 0 13px #f658c22b,
+    0 5px 18px #03081766;
+}
+#htmlRoot #fzUIBar button[aria-pressed="true"] {
+  background: linear-gradient(120deg, #132d60, #284c81);
+  color: #d0f6ff;
+  border-color: #86e9ff;
+  box-shadow:
+    inset 0 0 16px #4bceff30,
+    0 0 20px #40bbff55;
+}
+#htmlRoot #fzUIBar button:before {
+  filter: drop-shadow(0 0 4px #6bcfff70);
+}
+#htmlRoot #fzUIMenu {
+  background: #030513b3;
+}
+#htmlRoot #fzUIMenu .ui-card {
+  background: radial-gradient(ellipse at 100% 0, #7a2b8138, transparent 48%),
+    radial-gradient(ellipse at 0 100%, #164f8738, transparent 50%), #0b1023;
+  border-color: #a28bff66;
+  box-shadow:
+    0 0 0 1px #819cff0c,
+    0 0 42px #7541cc24,
+    0 28px 90px #02030bd9;
+}
+#htmlRoot #fzUIMenu header small {
+  color: #9dddff;
+}
+#htmlRoot #fzUIMenu h2 {
+  color: #f0eeff;
+  text-shadow: 0 0 24px #9978ff28;
+}
+#htmlRoot #fzUIMenu #fzUISummary {
+  color: #aeb9d8;
+}
+#htmlRoot #fzUICategories {
+  background: #060b1c;
+  border: 1px solid #a5aaff20;
+}
+#htmlRoot #fzUICategories button[aria-pressed="true"] {
+  background: linear-gradient(125deg, #40326d, #263d65);
+  color: #f4eaff;
+  border-color: #d07eea;
+  box-shadow:
+    inset 0 0 12px #ff5ac01c,
+    0 0 12px #c156e22c;
+}
+#htmlRoot #fzUISearch {
+  background: #080d20;
+  border-color: #84aaff42;
+}
+#htmlRoot #fzUIList button.ui-action {
+  background: linear-gradient(130deg, #141a34, #10162c);
+  border-color: #7593d339;
+  box-shadow:
+    inset 2px 0 #4ca8da6e,
+    inset 0 1px #ffffff05;
+}
+#htmlRoot #fzUIList button.ui-action:nth-child(even) {
+  box-shadow:
+    inset 2px 0 #c167c575,
+    inset 0 1px #ffffff05;
+}
+#htmlRoot .ui-action .ui-action-icon {
+  background: #152a49;
+  border: 1px solid #5ddfff35;
+  color: #8de1ff;
+  box-shadow: 0 0 12px #379fee12;
+}
+#htmlRoot .ui-action:nth-child(even) .ui-action-icon {
+  background: #2c1d45;
+  border-color: #ff7cce35;
+  color: #efb0e9;
+}
+#htmlRoot .ui-action .ui-action-arrow {
+  color: #9dbce8;
+}
+#htmlRoot #fzUIMenu #fzUIClose {
+  background: #19162d;
+  border-color: #cf81cf50;
+  color: #f0d9ed;
+}
+@media (hover: hover) {
+  #htmlRoot #fzUIBar button:hover,
+  #htmlRoot #fzUIList button.ui-action:hover {
+    border-color: #7de5ff;
+    background: linear-gradient(130deg, #1a2c4e, #242047);
+    box-shadow:
+      inset 0 0 14px #62b9ff12,
+      0 0 20px #5a95ff35;
+  }
+}
+#htmlRoot #fzTouch button {
+  background: linear-gradient(145deg, #171e3bf0, #0a1028f0);
+  color: #eff6ff;
+  border-color: #72c7ff8c;
+  box-shadow:
+    inset 0 1px #b8d9ff17,
+    0 0 12px #47a4ff26,
+    0 4px 14px #0005;
+}
+#htmlRoot #fzTouch #fzTouchUse {
+  background: linear-gradient(125deg, #56358edb, #293d80f2) !important;
+  color: #f7edff !important;
+  border-color: #ee9be8;
+  box-shadow:
+    inset 0 0 13px #e583ff25,
+    0 0 16px #ec6ac338;
+}
+#htmlRoot #fzTouch button[aria-pressed="true"] {
+  background: #263978;
+  color: #d8f2ff;
+  border-color: #9be6ff;
+  box-shadow: 0 0 17px #6aa7ff5c;
+}
+#htmlRoot #fzTouchStick {
+  background: radial-gradient(circle, #132c555e, #0c102a99);
+  border-color: #79cbff70;
+  box-shadow:
+    inset 0 0 0 8px #91adff0a,
+    0 0 20px #438bfd2e;
+}
+#htmlRoot #fzTouchKnob {
+  background: radial-gradient(circle at 35% 25%, #8fbcf5, #4c3b89);
+  border-color: #c8dfff;
+  box-shadow:
+    0 0 15px #729dff88,
+    inset 0 1px 7px #ffffff66;
+}
+#htmlRoot #fzTouchPanel .touch-card,
+#htmlRoot .fz-play-dialog .fz-play-card {
+  background: linear-gradient(145deg, #16152e, #0c162b);
+  border-color: #aa8beb69;
+  box-shadow:
+    0 0 25px #7857b826,
+    0 15px 55px #0008;
+}
+#htmlRoot :is(#fzTouchPanel, .fz-play-dialog) button {
+  background: #1c2140;
+  border-color: #88b7e95c;
+  color: #edf6ff;
+}
+#htmlRoot :is(.auth-submit-btn, .fz-play, #cityIntroSkip) {
+  background: linear-gradient(115deg, #6344aa, #334f9b);
+  border-color: #c5a1ff;
+  box-shadow:
+    inset 0 1px #ffffff30,
+    0 0 23px #9565ff40;
+  color: #faf6ff;
+}
+#htmlRoot #fzIntroSkip {
+  background: #0e122be8;
+  border-color: #73b8ff8a;
+  box-shadow: 0 0 15px #558bef2e;
+  color: #e6f2ff;
+}
+#htmlRoot #fzIntro .front-progress i {
+  background: linear-gradient(90deg, #60dcff, #9d88ff, #fa6acd);
+  box-shadow: 0 0 10px #a07bff;
+}
+#htmlRoot #fzIntro .front-chapter {
+  color: #8edcff;
+}
+#htmlRoot #fzIntro[data-letter="true"] .front-credit-type > span {
+  color: #d3c9ff;
+}
+#htmlRoot
+  :is(#fzUIBar, #fzUIMenu, #fzTouch, #fzTouchPanel, .fz-play-dialog)
+  :focus-visible {
+  outline-color: #9aeaff;
+}
+/* Explicitly preserve the hidden/disabled states; glow is decoration, not a hitbox. */
+#htmlRoot :is(#fzUIBar, #fzUIMenu, #fzTouch) button:disabled {
+  box-shadow: none;
+  opacity: 0.45;
+}
+@media (prefers-reduced-motion: reduce) {
+  #htmlRoot :is(#fzUIBar, #fzUIMenu, #fzTouch) button {
+    transition: none !important;
+  }
+}
+
+/* v21: real preferences in the existing settings dialog, never a new floating bar. */
+#htmlRoot #fzPlayPanel .fz-neon-preferences {
+  margin: 18px 0;
+  padding: 12px 14px;
+  border: 1px solid #b786db5c;
+  border-radius: 14px;
+  background: linear-gradient(120deg, #1d18354d, #122c404d);
+  min-width: 0;
+}
+#htmlRoot #fzPlayPanel .fz-neon-preferences legend {
+  padding: 0 8px;
+  color: #dec5f5;
+  font-size: 13px;
+  font-weight: 700;
+}
+#htmlRoot #fzPlayPanel .fz-neon-preferences label {
+  line-height: 1.5;
+}
+#htmlRoot #fzPlayPanel .fz-neon-preferences input[type="range"] {
+  width: 100%;
+  accent-color: #a89bff;
+  min-height: 32px;
+}
+#htmlRoot #fzPlayPanel .fz-neon-preferences input[type="checkbox"] {
+  accent-color: #98ceff;
+}
+#htmlRoot #fzPlayPanel .fz-neon-preferences p {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #b9c4dc;
+}

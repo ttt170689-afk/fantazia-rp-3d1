@@ -1,6 +1,6 @@
 {
   "name": "fantazia-rp-3d",
-  "version": "1.0.0",
+  "version": "3.0.0",
   "description": "Fantazia RP 3D multiplayer game",
   "main": "server.js",
   "scripts": {

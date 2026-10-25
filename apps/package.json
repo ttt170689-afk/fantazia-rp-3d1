@@ -1,0 +1,22 @@
+{
+  "name": "fantazia-app-shells",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Source-only Android and Windows wrappers for the hosted Fantazia game",
+  "scripts": {
+    "configure": "node configure.cjs",
+    "android:add": "npm run configure && cap add android",
+    "android:sync": "npm run configure && cap sync android",
+    "android:open": "cap open android",
+    "desktop": "npm run configure && electron desktop/main.cjs",
+    "windows:build": "npm run configure && electron-builder --win nsis --config desktop/builder.json",
+    "check": "node --check configure.cjs && node --check desktop/main.cjs && node config.test.cjs"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.3",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/android": "8.5.3",
+    "electron": "44.9.0",
+    "electron-builder": "26.15.3"
+  }
+}

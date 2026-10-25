@@ -1,0 +1,59 @@
+Godot Engine v4.5.1.stable.custom_build - https://godotengine.org
+
+PASS latest05: map selector opens without a world
+PASS latest05: actual current web scene, not the legacy 320-mesh GLB
+PASS latest05: 322 source buildings catalogued
+PASS latest05: sky spawn retained at source coordinates
+PASS latest05: sky spawn grounded
+PASS latest05: five original stations
+PASS latest05: grounded spawn: sky
+PASS latest05: spawn position: sky
+PASS latest05: grounded spawn: center
+PASS latest05: spawn position: center
+PASS latest05: grounded spawn: factory
+PASS latest05: spawn position: factory
+PASS latest05: grounded spawn: park
+PASS latest05: spawn position: park
+PASS latest05: grounded spawn: port
+PASS latest05: spawn position: port
+PASS latest05: grounded spawn: business
+PASS latest05: spawn position: business
+PASS latest05: grounded spawn: sea
+PASS latest05: spawn position: sea
+PASS latest05: walk from city to underground platform
+PASS latest05: walk down: Центральная(215.0, -7.838237, -16.41617)
+PASS latest05: walk back to street: Центральная(215.0, 0.212847, -45.18326)
+PASS latest05: walk down: Заводская(320.0, -7.837282, 67.58071)
+PASS latest05: walk back to street: Заводская(320.0, 0.21283, 38.82978)
+PASS latest05: walk down: Парковая(276.0, -8.049924, 318.0318)
+PASS latest05: walk back to street: Парковая(276.0, 0.212835, 281.8228)
+PASS latest05: walk down: Портовая(-225.0, -7.837008, 253.5796)
+PASS latest05: walk back to street: Портовая(-225.0, 0.212835, 224.8241)
+PASS latest05: walk down: Деловая(245.0, -7.836389, -191.4225)
+PASS latest05: walk back to street: Деловая(245.0, 0.212874, -220.1888)
+PASS latest05: walk from track pit back to platform
+PASS latest05: latest checkpoint uses its own zone
+PASS latest05: latest checkpoint written
+PASS latest05: latest checkpoint accepted
+PASS latest05: saved sea spawn restored, not city fallback
+PASS latest05: occupied doorway prevents departure
+PASS latest05: walk through train doorway
+PASS latest05: doors close before departure
+PASS latest05: pause freezes moving train
+PASS latest05: train reaches next source station
+PASS latest05: standing passenger carried to destination
+PASS latest05: passenger remains on actual floor
+PASS latest05: full loop arrival: 2 actual=2/open/0.05
+PASS latest05: full loop standing rider: 2
+PASS latest05: full loop arrival: 3 actual=3/open/0.05
+PASS latest05: full loop standing rider: 3
+PASS latest05: full loop arrival: 4 actual=4/open/0.05
+PASS latest05: full loop standing rider: 4
+PASS latest05: full loop arrival: 0 actual=0/open/0.05
+PASS latest05: full loop standing rider: 0
+PASS latest05: walk out of train onto platform
+PASS latest05: exit crosses real doorway
+PASS latest05: latest world released on return
+LATEST_RESULT checks=54 failures=0
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+     at: cleanup (core/object/object.cpp:2514)

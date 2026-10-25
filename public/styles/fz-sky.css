@@ -1,0 +1,163 @@
+/* Cloud plaza additions; no replacement of the classic account/menu UI. */
+#fzSkyWhite {
+  position: fixed;
+  inset: 0;
+  z-index: 18000;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 18px;
+  color: #182c44;
+  font: 16px Arial;
+  transition: none;
+}
+#fzSkyWhite[hidden] {
+  display: none !important;
+}
+#fzSkyWhite strong {
+  font-size: clamp(25px, 6vw, 64px);
+  letter-spacing: 0.08em;
+  text-align: center;
+  padding: 0 20px;
+}
+#cityIntroSkip {
+  position: fixed;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(24px, env(safe-area-inset-bottom));
+  z-index: 28000;
+  min-height: 48px;
+  max-width: 85vw;
+  padding: 12px 20px;
+  color: #fff;
+  background: #223449;
+  border: 1px solid #d4bb85;
+  border-radius: 12px;
+  font: 600 15px Arial;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+body.fz-in-sky :is(#minimap, #navHUD) {
+  visibility: hidden !important;
+}
+body.fz-sky-cine
+  :is(
+    #hud,
+    #fzUIBar,
+    #fzTouch,
+    #notifications,
+    #questHUD,
+    #chatPanel,
+    #navHUD
+  ) {
+  visibility: hidden !important;
+}
+#fzStageAccess input {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid #718293;
+  background: #0e2032;
+  color: #fff;
+  border-radius: 8px;
+  padding: 12px;
+  font: 16px Arial;
+  margin: 12px 0;
+}
+#newsModal .news-box {
+  width: min(620px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+  max-height: calc(var(--fz-viewport-height, 100dvh) - 28px);
+  box-sizing: border-box;
+  overflow: auto;
+}
+#newsModal .news-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #1a1a2e;
+  padding-top: 12px;
+}
+#newsModal .news-close {
+  min-width: 46px;
+  min-height: 46px;
+  touch-action: manipulation;
+}
+#newsModal .news-scroll {
+  max-height: none;
+  overflow: visible;
+}
+#newsModal .news-banner {
+  width: 100%;
+  height: auto;
+  max-height: 170px;
+}
+.fz-play-card button:hover {
+  transform: none;
+  box-shadow: none;
+}
+#fzIntro .front-credit {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+  text-align: center;
+  background: #101b2cfa;
+  padding: 25px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.55s;
+  font-size: clamp(15px, 2vw, 22px);
+  box-sizing: border-box;
+}
+#fzIntro .front-credit strong {
+  font-size: clamp(19px, 4.5vw, 48px);
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+  color: #f1d59e;
+}
+#fzIntro[data-phase="credit"] .front-credit {
+  opacity: 1;
+}
+#fzIntroSkip {
+  z-index: 3;
+  min-width: 44px;
+  min-height: 46px;
+  max-width: 80vw;
+}
+#fzIntro .front-progress {
+  z-index: 2;
+}
+@media (max-height: 450px) {
+  #newsModal .news-banner {
+    display: none;
+  }
+  #newsModal .news-box {
+    padding: 12px;
+  }
+  #fzIntro .front-credit {
+    gap: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #fzIntro .front-credit {
+    transition: none;
+  }
+}
+
+/* Let the real lighting/material contrast carry the pavilion, not dark screen edges. */
+body.fz-in-sky #vignetteFX {
+  opacity: 0.22;
+}
+
+/* Static native ambient vignette, not the separate damage feedback overlay. */
+body.fz-in-sky #vignetteOverlay {
+  opacity: 0.15;
+}

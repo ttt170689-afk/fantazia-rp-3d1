@@ -1,0 +1,304 @@
+/* v23: an actual new lobby composition, retaining the existing login/Play handlers. */
+#htmlRoot #serverScreen {
+  background: radial-gradient(ellipse at 75% 35%, #35225b80, transparent 60%),
+    #080e1c !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+  overflow: auto;
+  padding: 80px 6vw 50px;
+  box-sizing: border-box;
+}
+#htmlRoot #serverScreen #menuCityCanvas {
+  opacity: 0.18;
+  filter: saturate(0.5);
+}
+#htmlRoot #serverScreen .fz-menu-content {
+  position: relative;
+  text-align: left;
+  align-self: flex-start;
+  z-index: 2;
+  margin: 0;
+  max-width: 60%;
+}
+#htmlRoot #serverScreen .fz-menu-bolt {
+  display: none;
+}
+#htmlRoot #serverScreen .fz-menu-title {
+  font-family: ui-sans-serif, system-ui;
+  font-size: clamp(42px, 6.4vw, 90px);
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+  color: #f1f3ff;
+  text-shadow: none;
+  animation: none;
+}
+#htmlRoot #serverScreen .fz-menu-title em {
+  display: block;
+  color: #ab9fff;
+  text-shadow: none;
+  font-size: 0.58em;
+  letter-spacing: 0.12em;
+  padding-top: 10px;
+}
+#htmlRoot #serverScreen .fz-menu-subtitle {
+  font: 600 12px system-ui;
+  letter-spacing: 0.22em;
+  color: #88d9ff;
+  padding: 18px 0;
+}
+#htmlRoot #serverScreen .fz-menu-nav {
+  align-self: flex-start;
+  width: min(380px, 44%);
+  gap: 10px;
+}
+#htmlRoot #serverScreen .fz-menu-btn {
+  font: 700 14px system-ui;
+  letter-spacing: 0.06em;
+  min-height: 54px;
+  border-radius: 12px;
+  animation: none;
+  justify-content: flex-start;
+  padding: 18px 24px;
+  background: #18243dca !important;
+  border-color: #b6c6ef30 !important;
+  box-shadow: none !important;
+}
+#htmlRoot #serverScreen .fz-play {
+  background: linear-gradient(110deg, #a99cff, #71cfff) !important;
+  color: #101a34 !important;
+  min-height: 70px;
+  font-size: 19px;
+}
+#htmlRoot .fz-lobby-story {
+  position: absolute;
+  right: 6vw;
+  top: 23%;
+  width: 40%;
+  max-width: 560px;
+  box-sizing: border-box;
+  padding: 30px;
+  border: 1px solid #aac2ff35;
+  border-radius: 28px;
+  background: linear-gradient(155deg, #283057dd, #101c33e8);
+  color: #eff4ff;
+  z-index: 2;
+  box-shadow: 0 30px 90px #02061188;
+}
+#htmlRoot .fz-lobby-story small {
+  font: 600 11px system-ui;
+  letter-spacing: 0.2em;
+  color: #8cd8ff;
+}
+#htmlRoot .fz-lobby-story h2 {
+  font: 800 clamp(26px, 3vw, 44px) / 1.05 system-ui;
+  letter-spacing: -0.04em;
+  margin: 18px 0;
+}
+#htmlRoot .fz-lobby-story p {
+  font: 14px/1.6 system-ui;
+  color: #bdc9e5;
+}
+#htmlRoot .fz-lobby-line {
+  position: relative;
+  display: grid;
+  gap: 15px;
+  padding: 18px 0 18px 28px;
+  margin: 20px 0;
+  border-left: 3px solid #a895ff;
+}
+#htmlRoot .fz-lobby-line span {
+  font: 600 13px system-ui;
+  position: relative;
+}
+#htmlRoot .fz-lobby-line span:before {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  left: -35px;
+  top: 3px;
+  background: #a1dfff;
+  border: 3px solid #24314b;
+  border-radius: 50%;
+}
+#htmlRoot #serverScreen .fz-menu-logged {
+  top: 22px;
+  left: 6vw;
+  right: auto;
+  background: #15223c !important;
+  color: #d7e3ff !important;
+  border-color: #91b9f633 !important;
+}
+#htmlRoot #serverScreen .fz-menu-footer {
+  color: #94a7c8;
+  letter-spacing: 0.14em;
+}
+#fzMetroPanel {
+  position: fixed;
+  inset: 0;
+  z-index: 205000;
+  background: #030816cc;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  color: #e8efff;
+  font-family: system-ui;
+}
+#fzMetroPanel article {
+  width: min(680px, 100%);
+  max-height: 90dvh;
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 24px;
+  background: #101c31;
+  border: 1px solid #aabdf344;
+  border-radius: 24px;
+}
+#fzMetroPanel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+#fzMetroPanel h2 {
+  margin: 8px 0;
+}
+#fzMetroPanel small {
+  color: #9ebcda;
+}
+#fzMetroPanel p {
+  color: #b5c7df;
+  line-height: 1.6;
+  font-size: 14px;
+}
+#fzMetroPanel button {
+  min-height: 44px;
+  border: 1px solid #95bbff44;
+  border-radius: 10px;
+  padding: 10px 16px;
+  background: #233857;
+  color: white;
+  cursor: pointer;
+}
+#fzMetroPanel .metro-stations {
+  display: grid;
+  gap: 10px;
+  margin: 20px 0;
+}
+#fzMetroPanel .metro-stations > div {
+  border-left: 3px solid var(--station);
+  padding: 10px 16px;
+  background: #ffffff05;
+  display: grid;
+  gap: 5px;
+}
+#fzMetroPanel .metro-stations span {
+  font-size: 13px;
+  color: #bacce4;
+}
+#fzMetroPanel fieldset {
+  border: 1px solid #8fb2e644;
+  border-radius: 14px;
+  padding: 16px;
+}
+#fzMetroPanel label {
+  display: block;
+  padding: 10px 0;
+}
+#fzMetroPanel input[type="range"] {
+  width: 100%;
+  accent-color: #a99fff;
+  min-height: 32px;
+}
+#fzMetroPanel input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+  accent-color: #a99fff;
+}
+#fzMetroSubtitle {
+  position: fixed;
+  bottom: max(105px, 16vh);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(640px, 85vw);
+  box-sizing: border-box;
+  padding: 14px 20px;
+  border: 1px solid #91bfff55;
+  background: #081526ee;
+  color: #f0f6ff;
+  font: 600 14px/1.5 system-ui;
+  text-align: center;
+  z-index: 1800;
+  border-radius: 12px;
+  pointer-events: none;
+}
+#fzMetroSubtitle[hidden] {
+  display: none;
+}
+@media (max-width: 720px) {
+  #htmlRoot #serverScreen {
+    padding: 86px 24px 46px;
+    justify-content: flex-start;
+    gap: 16px;
+  }
+  #htmlRoot #serverScreen .fz-menu-content {
+    max-width: 100%;
+  }
+  #htmlRoot #serverScreen .fz-menu-nav {
+    width: 100%;
+  }
+  #htmlRoot .fz-lobby-story {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: 100%;
+    padding: 20px;
+    margin-top: 8px;
+  }
+  #htmlRoot .fz-lobby-story h2 {
+    font-size: 28px;
+  }
+  #htmlRoot .fz-lobby-line {
+    grid-template-columns: 1fr 1fr;
+    border-left: 0;
+    padding: 0;
+    gap: 12px;
+  }
+  #htmlRoot .fz-lobby-line span:before {
+    display: none;
+  }
+  #htmlRoot #serverScreen .fz-menu-footer {
+    position: relative;
+    bottom: auto;
+    font-size: 10px;
+  }
+  #htmlRoot #serverScreen .fz-menu-logged {
+    left: 24px;
+  }
+}
+@media (max-height: 500px) and (min-width: 721px) {
+  #htmlRoot #serverScreen {
+    padding-top: 65px;
+    justify-content: flex-start;
+  }
+  #htmlRoot .fz-lobby-story {
+    top: 70px;
+    padding: 18px;
+  }
+  #htmlRoot .fz-lobby-line {
+    gap: 8px;
+    margin: 10px 0;
+  }
+}
+
+#htmlRoot body.fz-in-metro #minimap {
+  display: none !important;
+}
+
+@media(max-width:720px){#fzMetroSubtitle{bottom:max(270px,32dvh);font-size:12px;width:calc(100vw - 36px);padding:10px 14px;}}
+@media(max-height:500px){#fzMetroSubtitle{bottom:110px;width:44vw;font-size:12px;padding:8px 10px;}}

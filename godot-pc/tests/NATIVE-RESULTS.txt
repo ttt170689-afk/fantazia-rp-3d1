@@ -1,0 +1,32 @@
+Godot Engine v4.5.1.stable.custom_build - https://godotengine.org
+
+PASS native04: GLB folder excluded from editor scan
+PASS native04: city requires no import recipe
+PASS native04: avatar requires no import recipe
+PASS native04: shipped scenes match their size and SHA-256
+PASS native04: no external dependencies: res://assets/city.scn
+PASS native04: native PackedScene loads: res://assets/city.scn
+PASS native04: native root is 3D: res://assets/city.scn
+PASS native04: all texture-slot pixel hashes match the source GLB: res://assets/city.scn
+PASS native04: geometry retained: res://assets/city.scn
+PASS native04: no empty embedded images: res://assets/city.scn
+PASS native04: city textures bundled rather than external PNGs
+PASS native04: real pixel data retained, not placeholders
+NATIVE_MODEL res://assets/city.scn meshes=320 textures=88
+PASS native04: no external dependencies: res://assets/player.scn
+PASS native04: native PackedScene loads: res://assets/player.scn
+PASS native04: native root is 3D: res://assets/player.scn
+PASS native04: all texture-slot pixel hashes match the source GLB: res://assets/player.scn
+PASS native04: geometry retained: res://assets/player.scn
+PASS native04: no empty embedded images: res://assets/player.scn
+PASS native04: avatar AnimationPlayer retained
+PASS native04: 27 avatar animation clips retained
+NATIVE_MODEL res://assets/player.scn meshes=27 textures=0
+PASS native04: integrity fixture packed
+PASS native04: fixture saved
+PASS native04: valid native fixture accepted
+PASS native04: same-size corruption rejected
+PASS native04: size corruption rejected
+PASS native04: native fixture removed
+PASS native04: fixture manifest removed
+NATIVE_RESULT checks=27 failures=0

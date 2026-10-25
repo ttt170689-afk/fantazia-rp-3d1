@@ -1,0 +1,435 @@
+/* v19: explicitly requested button redesign. Existing controls/IDs/handlers stay.
+   No remotely loaded fonts, hover-only actions, decorative blockers or fake links. */
+:root {
+  --fz19-ink: #eef2ff;
+  --fz19-panel: #12192c;
+  --fz19-line: #ffffff22;
+  --fz19-accent: #7887ff;
+  --fz19-cyan: #8ae4f5;
+}
+#htmlRoot :is(#fzUIBar, #fzUIMenu, #fzTouch, #fzTouchPanel, .fz-play-dialog) {
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+  color: var(--fz19-ink);
+}
+#htmlRoot #fzUIBar {
+  top: max(16px, env(safe-area-inset-top));
+  left: max(16px, env(safe-area-inset-left));
+  gap: 8px;
+  align-items: center;
+}
+#htmlRoot #fzUIBar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 48px;
+  padding: 12px 17px;
+  border: 1px solid #ffffff30;
+  border-radius: 16px;
+  background: linear-gradient(155deg, #202d45ef, #101a2cee);
+  box-shadow:
+    inset 0 1px #ffffff13,
+    0 5px 16px #07101b28;
+  color: #f6f8ff;
+  font:
+    650 13px/1.2 ui-sans-serif,
+    system-ui;
+  transition:
+    background 0.15s,
+    transform 0.12s,
+    box-shadow 0.15s;
+  touch-action: manipulation;
+}
+#htmlRoot #fzUIBar #fzUIOpen {
+  background: linear-gradient(135deg, #798bff, #5d59dc);
+  border-color: #bac4ff88;
+  box-shadow:
+    inset 0 1px #ffffff44,
+    0 5px 22px #28339840;
+}
+#htmlRoot #fzUIBar button:before {
+  content: "";
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  background: currentColor;
+  mask: var(--ui-icon) center/contain no-repeat;
+  -webkit-mask: var(--ui-icon) center/contain no-repeat;
+}
+#fzUIOpen {
+  --ui-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M3 4h7v7H3zm11 0h7v7h-7zM3 15h7v7H3zm11 0h7v7h-7z'/%3E%3C/svg%3E");
+}
+#fzUIFlash {
+  --ui-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M7 2h10v5l-3 4v10H10V11L7 7zm3 2v2h4V4zM11 13v5h2v-5z'/%3E%3C/svg%3E");
+}
+#fzUINews {
+  --ui-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M4 3h16v18H4zm3 4v4h5V7zm7 0v2h3V7zm0 4v2h3v-2zM7 14v2h10v-2zm0 4v1h7v-1z'/%3E%3C/svg%3E");
+}
+#htmlRoot #fzUIBar button[aria-pressed="true"] {
+  color: #071c26;
+  background: linear-gradient(135deg, #b8f1e8, #8ad6fa);
+  border-color: #d6ffff;
+}
+#htmlRoot #fzUIMenu {
+  background: #050a16aa;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 20px;
+}
+#htmlRoot #fzUIMenu .ui-card {
+  background: radial-gradient(ellipse at 90% 0, #32416c55, transparent 55%),
+    #111a2b;
+  border: 1px solid #ffffff20;
+  border-radius: 24px;
+  padding: 26px;
+  width: min(860px, 100%);
+  box-shadow: 0 28px 90px #02050cb0;
+}
+#htmlRoot #fzUIMenu header small {
+  color: #a5b4ff;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.2em;
+}
+#htmlRoot #fzUIMenu h2 {
+  font-size: 30px;
+  letter-spacing: -0.045em;
+  color: #f4f7ff;
+}
+#htmlRoot #fzUIMenu #fzUISummary {
+  color: #a8b4c9;
+  font-size: 12px;
+}
+#htmlRoot #fzUIMenu button {
+  color: #eef2ff;
+  background: #202c42;
+  border: 1px solid #ffffff1e;
+  border-radius: 12px;
+  min-height: 46px;
+  font-family: inherit;
+  touch-action: manipulation;
+  transition:
+    transform 0.12s,
+    background 0.15s,
+    border-color 0.15s;
+}
+#htmlRoot #fzUICategories {
+  display: flex;
+  gap: 5px;
+  padding: 5px;
+  border-radius: 15px;
+  background: #080f1b;
+  margin: 16px 0 0;
+}
+#htmlRoot #fzUICategories button {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border-color: transparent;
+  font-size: 12px;
+  padding: 8px;
+}
+#htmlRoot #fzUICategories button[aria-pressed="true"] {
+  background: #7887ff;
+  color: #09132c;
+  box-shadow: 0 2px 12px #0003;
+  font-weight: 800;
+}
+#htmlRoot #fzUISearch {
+  color: #f4f6ff;
+  background: #0c1423;
+  border: 1px solid #ffffff20;
+  border-radius: 12px;
+  min-height: 48px;
+  font-size: 14px;
+  line-height: 1.4;
+  font-family: inherit;
+  padding: 14px 16px;
+}
+#htmlRoot #fzUIList {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+#htmlRoot #fzUIList button.ui-action {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  min-height: 80px;
+  padding: 14px;
+  background: linear-gradient(120deg, #1c293f, #182236);
+  border-color: #ffffff13;
+  border-radius: 16px;
+}
+#htmlRoot .ui-action .ui-action-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 40px;
+  border-radius: 11px;
+  background: #7887ff1f;
+  color: #a9c0ff;
+  font-size: 21px;
+}
+#htmlRoot .ui-action .ui-action-label {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.5;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+#htmlRoot .ui-action .ui-action-arrow {
+  color: #7e92b1;
+  font-size: 20px;
+}
+#htmlRoot #fzUIClose {
+  background: #ffffff08;
+  padding: 9px 14px;
+}
+#htmlRoot
+  :is(#fzUIBar, #fzUIMenu, #fzTouch, #fzTouchPanel, .fz-play-dialog)
+  button:focus-visible {
+  outline: 3px solid #9ddff8;
+  outline-offset: 3px;
+}
+@media (hover: hover) {
+  #htmlRoot #fzUIBar button:hover,
+  #htmlRoot #fzUIList button.ui-action:hover {
+    transform: translateY(-2px);
+    border-color: #98adff88;
+    box-shadow: 0 8px 24px #0003;
+  }
+  #htmlRoot #fzUIMenu button:hover {
+    background: #304269;
+  }
+}
+#htmlRoot
+  :is(#fzUIBar, #fzUIMenu, #fzTouch, #fzTouchPanel, .fz-play-dialog)
+  button:active {
+  transform: translateY(1px);
+  filter: brightness(1.12);
+}
+#htmlRoot :is(#fzUIBar, #fzUIMenu, #fzTouch) button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+/* Keep tested joystick/button placement and simultaneous pointer ownership intact. */
+#htmlRoot #fzTouch button {
+  background: linear-gradient(145deg, #22324be8, #101c31e8);
+  border: 1px solid #c3d8ff40;
+  color: #f1f6ff;
+  border-radius: 18px;
+  box-shadow:
+    inset 0 1px #ffffff12,
+    0 4px 14px #0002;
+  font-weight: 650;
+  text-shadow: none;
+}
+#htmlRoot #fzTouch #fzTouchUse {
+  background: linear-gradient(125deg, #a4b4ff, #787fea) !important;
+  color: #0a1736 !important;
+  border-color: #e1e6ff99;
+  box-shadow:
+    inset 0 1px #fff7,
+    0 5px 24px #4e57a750;
+}
+#htmlRoot #fzTouch button[aria-pressed="true"] {
+  background: #9bddf4;
+  color: #0a1b2e;
+  border-color: #d4f5ff;
+}
+#htmlRoot #fzTouchStick {
+  border-color: #d0e4ff4a;
+  background: radial-gradient(circle, #1c345128, #101c314f);
+  box-shadow:
+    inset 0 0 0 8px #e2eeff0a,
+    0 4px 20px #0001;
+}
+#htmlRoot #fzTouchKnob {
+  background: radial-gradient(circle at 36% 24%, #b9d5f4bb, #657daaaa);
+  border: 2px solid #d7eaffbd;
+  box-shadow:
+    0 6px 16px #0003,
+    inset 0 1px 4px #ffffff44;
+}
+#htmlRoot #fzTouchStick > span {
+  color: #ecf3ff;
+  text-shadow: 0 1px 5px #102037;
+  letter-spacing: 0.12em;
+  font-size: 10px;
+}
+#htmlRoot #fzTouchPanel .touch-card,
+#htmlRoot .fz-play-dialog .fz-play-card {
+  background: #131e31;
+  border-color: #ffffff25;
+  border-radius: 22px;
+  color: #f0f5ff;
+}
+#htmlRoot :is(#fzTouchPanel, .fz-play-dialog) button {
+  background: #263751;
+  color: #f0f4ff;
+  border: 1px solid #ffffff25;
+  border-radius: 12px;
+  min-height: 46px;
+}
+/* Existing classic auth/server layouts, refreshed buttons only. */
+#htmlRoot :is(.auth-submit-btn, .fz-play, #fzIntroSkip, #cityIntroSkip) {
+  border: 1px solid #c8d0ff80;
+  border-radius: 14px;
+  background: linear-gradient(125deg, #8b9dff, #6666de);
+  color: #fff;
+  box-shadow:
+    inset 0 1px #fff4,
+    0 7px 22px #26328533;
+  min-height: 48px;
+  font-weight: 700;
+  touch-action: manipulation;
+}
+#htmlRoot
+  :is(.auth-submit-btn, .fz-play, #fzIntroSkip, #cityIntroSkip):focus-visible {
+  outline: 3px solid #b4eaff;
+  outline-offset: 4px;
+}
+#htmlRoot :is(.auth-submit-btn, .fz-play, #fzIntroSkip, #cityIntroSkip):active {
+  transform: translateY(1px);
+}
+#htmlRoot #fzIntroSkip {
+  background: #10192dda;
+  border-color: #c6d6ff40;
+  box-shadow: inset 0 1px #ffffff14;
+  backdrop-filter: blur(8px);
+  font-size: 12px;
+  letter-spacing: 0.035em;
+}
+#htmlRoot #fzIntro[data-letter="true"] .front-credit-type > span {
+  top: calc(50% - 92px);
+  font-family: ui-sans-serif, system-ui;
+  font-size: 13px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #b8c8f0;
+}
+#htmlRoot #fzIntro[data-letter="true"] .front-identity {
+  font-family: ui-sans-serif, system-ui;
+  letter-spacing: 0.23em;
+  color: #adc0eb;
+}
+#htmlRoot #fzIntro .front-progress i {
+  background: linear-gradient(90deg, #787fff, #9be4ff);
+}
+#htmlRoot #fzIntro .front-chapter {
+  color: #bfd8ff;
+  letter-spacing: 0.16em;
+}
+@media (max-width: 650px) {
+  #htmlRoot #fzUIBar {
+    left: max(10px, env(safe-area-inset-left));
+    top: max(10px, env(safe-area-inset-top));
+    gap: 6px;
+  }
+  #htmlRoot #fzUIBar button {
+    min-height: 46px;
+    padding: 10px 12px;
+    gap: 7px;
+    border-radius: 14px;
+    font-size: 12px;
+  }
+  #htmlRoot #fzUIMenu {
+    padding: 10px;
+  }
+  #htmlRoot #fzUIMenu .ui-card {
+    padding: 16px;
+    border-radius: 20px;
+    max-height: calc(var(--fz-viewport-height, 100dvh) - 20px);
+  }
+  #htmlRoot #fzUIMenu h2 {
+    font-size: 26px;
+  }
+  #htmlRoot #fzUIList button.ui-action {
+    min-height: 84px;
+    padding: 10px;
+    gap: 8px;
+  }
+  #htmlRoot .ui-action .ui-action-icon {
+    flex-basis: 28px;
+    width: 28px;
+    height: 34px;
+    font-size: 18px;
+  }
+  #htmlRoot .ui-action .ui-action-label {
+    font-size: 12px;
+  }
+  #htmlRoot .ui-action .ui-action-arrow {
+    display: none;
+  }
+  #htmlRoot #fzIntro[data-letter="true"] .front-credit-type > span {
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    top: calc(50% - 65px);
+  }
+}
+@media (max-width: 350px) {
+  #htmlRoot #fzUIBar button {
+    padding: 10px 9px;
+    font-size: 11px;
+  }
+  #htmlRoot #fzUIList {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-height: 450px) {
+  #htmlRoot #fzUIBar {
+    top: max(7px, env(safe-area-inset-top));
+  }
+  #htmlRoot #fzUIBar button {
+    min-height: 42px;
+    padding: 9px 13px;
+  }
+  #htmlRoot #fzUIMenu .ui-card {
+    max-height: calc(var(--fz-viewport-height, 100dvh) - 20px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #htmlRoot :is(#fzUIBar, #fzUIMenu, #fzTouch) button {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+#htmlRoot #fzUISearch:focus-visible {
+  outline: 3px solid #9ddff8;
+  outline-offset: 3px;
+}
+#htmlRoot .ui-action-icon svg {
+  width: 21px;
+  height: 21px;
+  display: block;
+}
+
+@media (max-width: 650px) {
+  #htmlRoot #fzUIBar {
+    right: max(10px, env(safe-area-inset-right));
+    max-width: 370px;
+  }
+  #htmlRoot #fzUIBar button {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 8px;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  #htmlRoot #fzUIBar button:before {
+    width: 16px;
+    height: 16px;
+  }
+}

@@ -1,1 +1,21 @@
 node_modules/
+shop-users.json
+accounts.json
+
+# Native wrapper outputs and local configuration
+apps/node_modules/
+apps/android/
+apps/capacitor.config.json
+apps/game-config.json
+apps/release/
+.env*
+*.jks
+*.keystore
+
+# Restore inputs and generated delivery archives
+dropbox/
+*.zip
+
+# Separate Godot PC prototype: editor caches and compiled exports
+godot-pc/.godot/
+godot-pc/exports/

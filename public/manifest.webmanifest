@@ -1,0 +1,27 @@
+{
+  "id": "/",
+  "name": "Fantazia RP 3D",
+  "short_name": "Fantazia",
+  "lang": "ru",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#172435",
+  "theme_color": "#172435",
+  "description": "Городская 3D-игра. Для сетевых функций нужен интернет.",
+  "icons": [
+    {
+      "src": "icons/app-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/app-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
