@@ -2,7 +2,6 @@ package org.fantazia.rp3d;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -37,6 +36,8 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.activity.ComponentActivity;
+import androidx.activity.OnBackPressedCallback;
 import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -47,7 +48,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import javax.net.ssl.HttpsURLConnection;
 
-public final class MainActivity extends Activity {
+public final class MainActivity extends ComponentActivity {
     private static final int MIC_PERMISSION = 100;
     private FrameLayout root;
     private EditText address;
@@ -75,6 +76,13 @@ public final class MainActivity extends Activity {
                 view.setPadding(bars.left,bars.top,bars.right,bars.bottom);
             } else view.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());
             return insets;
+        });
+        getOnBackPressedDispatcher().addCallback(this,new OnBackPressedCallback(true) {
+            @Override public void handleOnBackPressed() {
+                if(fullscreen){leaveFullscreen();return;}
+                if(web!=null){confirmLeave();return;}
+                finish();
+            }
         });
         showConnection("");
     }
@@ -185,7 +193,6 @@ public final class MainActivity extends Activity {
     private void destroyWeb(){finishMicrophone(false);if(web!=null){WebView old=web;web=null;old.stopLoading();if(old.getParent() instanceof ViewGroup)((ViewGroup)old.getParent()).removeView(old);old.destroy();}CookieManager.getInstance().flush();}
     private void enterFullscreen(){fullscreen=true;toolbar.setVisibility(View.GONE);if(Build.VERSION.SDK_INT>=30){WindowInsetsController c=getWindow().getInsetsController();if(c!=null){c.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);c.hide(WindowInsets.Type.systemBars());}}else getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);}
     private void leaveFullscreen(){fullscreen=false;if(toolbar!=null)toolbar.setVisibility(View.VISIBLE);if(Build.VERSION.SDK_INT>=30){WindowInsetsController c=getWindow().getInsetsController();if(c!=null)c.show(WindowInsets.Type.systemBars());}else getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);}
-    @Override public void onBackPressed(){if(fullscreen){leaveFullscreen();return;}if(web!=null){confirmLeave();return;}super.onBackPressed();}
     @Override public void onPause(){if(web!=null){web.evaluateJavascript("try{window.FZSave41?.flush(true)}catch(e){}",null);web.onPause();}CookieManager.getInstance().flush();super.onPause();}
     @Override public void onResume(){super.onResume();if(web!=null)web.onResume();}
     @Override public void onDestroy(){cancelProbe();destroyWeb();executor.shutdownNow();super.onDestroy();}
