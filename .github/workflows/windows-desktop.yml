@@ -2,7 +2,7 @@ name: Windows desktop files
 on:
   push:
     branches: [arena/95a3da60-fantazia-rp-3d1]
-    paths: [apps/**, .github/workflows/windows-desktop.yml]
+    paths: [apps/desktop/**, apps/package.json, apps/package-lock.json, apps/url-policy.cjs, apps/configure.cjs, apps/config.test.cjs, apps/tests/**, apps/PORTABLE-WINDOWS-RU.txt, .github/workflows/windows-desktop.yml]
   workflow_dispatch:
 permissions:
   contents: read

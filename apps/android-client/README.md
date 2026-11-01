@@ -7,7 +7,7 @@ URL вводится пользователем, поэтому постоянн
 
 ## Сборка
 
-JDK 17, Gradle 8.13, Android SDK 36 / Build Tools 36.0.0:
+JDK 21 (совместимость исходников Java 17), Gradle 8.13, Android SDK 36 / Build Tools 36.0.0:
 
 ```sh
 gradle --no-daemon testDebugUnitTest lintDebug assembleDebug
