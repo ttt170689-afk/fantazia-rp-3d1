@@ -1,4 +1,4 @@
-name: Windows desktop installer
+name: Windows desktop files
 on:
   push:
     branches: [arena/95a3da60-fantazia-rp-3d1]
@@ -33,22 +33,22 @@ jobs:
         run: npm run check
       - name: Native Windows Electron isolation and connection tests
         run: npm run test:native
-      - name: Build Windows x64 NSIS installer (no publishing)
-        run: npm run windows:build
-      - name: Install, launch and uninstall on Windows
+      - name: Build Windows x64 portable ZIP (no installer)
+        run: npm run windows:portable
+      - name: Extract and launch portable files on Windows
         shell: pwsh
-        run: ./tests/install-smoke.ps1
+        run: ./tests/portable-smoke.ps1
       - name: Add end-user instructions
         shell: pwsh
-        run: Copy-Item INSTALL-WINDOWS-RU.txt release/INSTALL-WINDOWS-RU.txt
-      - name: Upload installer and checksum
+        run: Copy-Item PORTABLE-WINDOWS-RU.txt release/PORTABLE-WINDOWS-RU.txt
+      - name: Upload game client files and checksum
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: Fantazia-RP-Windows-x64
+          name: Fantazia-RP-Windows-Portable-x64
           path: |
-            apps/release/Fantazia-RP-Setup-*-x64.exe
+            apps/release/Fantazia-RP-Portable-*-win-x64.zip
             apps/release/SHA256SUMS.txt
-            apps/release/INSTALL-WINDOWS-RU.txt
+            apps/release/PORTABLE-WINDOWS-RU.txt
           if-no-files-found: error
           compression-level: 0
           retention-days: 14

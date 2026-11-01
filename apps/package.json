@@ -1,6 +1,6 @@
 {
   "name": "fantazia-rp-desktop",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Fantazia RP online desktop client",
   "scripts": {
@@ -11,7 +11,8 @@
     "desktop": "electron .",
     "windows:build": "npm run check && electron-builder --win nsis --x64 --publish never --config desktop/builder.json",
     "check": "node --check desktop/main.cjs && node --check desktop/preload.cjs && node --check desktop/launcher.js && node config.test.cjs && node --test tests/*.test.cjs",
-    "test:native": "electron tests/native-smoke.cjs"
+    "test:native": "electron tests/native-smoke.cjs",
+    "windows:portable": "npm run check && electron-builder --win zip --x64 --publish never --config desktop/builder.json"
   },
   "devDependencies": {
     "@capacitor/cli": "8.5.3",
