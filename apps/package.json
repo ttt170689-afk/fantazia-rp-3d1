@@ -1,22 +1,24 @@
 {
-  "name": "fantazia-app-shells",
-  "version": "0.1.0",
+  "name": "fantazia-rp-desktop",
+  "version": "1.0.0",
   "private": true,
-  "description": "Source-only Android and Windows wrappers for the hosted Fantazia game",
+  "description": "Fantazia RP online desktop client",
   "scripts": {
     "configure": "node configure.cjs",
     "android:add": "npm run configure && cap add android",
     "android:sync": "npm run configure && cap sync android",
     "android:open": "cap open android",
-    "desktop": "npm run configure && electron desktop/main.cjs",
-    "windows:build": "npm run configure && electron-builder --win nsis --config desktop/builder.json",
-    "check": "node --check configure.cjs && node --check desktop/main.cjs && node config.test.cjs"
+    "desktop": "electron .",
+    "windows:build": "npm run check && electron-builder --win nsis --x64 --publish never --config desktop/builder.json",
+    "check": "node --check desktop/main.cjs && node --check desktop/preload.cjs && node --check desktop/launcher.js && node config.test.cjs && node --test tests/*.test.cjs",
+    "test:native": "electron tests/native-smoke.cjs"
   },
   "devDependencies": {
     "@capacitor/cli": "8.5.3",
     "@capacitor/core": "8.5.3",
     "@capacitor/android": "8.5.3",
-    "electron": "44.9.0",
-    "electron-builder": "26.15.3"
-  }
+    "electron": "45.2.1",
+    "electron-builder": "26.18.0"
+  },
+  "main": "desktop/main.cjs"
 }

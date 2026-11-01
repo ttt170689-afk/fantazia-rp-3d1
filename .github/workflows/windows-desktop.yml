@@ -1,0 +1,62 @@
+name: Windows desktop installer
+on:
+  push:
+    branches: [arena/95a3da60-fantazia-rp-3d1]
+    paths: [apps/**, .github/workflows/windows-desktop.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: windows-desktop-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: apps
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/package-lock.json
+      - name: Install pinned dependencies
+        run: npm ci --no-audit --no-fund
+      - name: URL, permission, packaging and syntax tests
+        run: npm run check
+      - name: Native Windows Electron isolation and connection tests
+        run: npm run test:native
+      - name: Build Windows x64 NSIS installer (no publishing)
+        run: npm run windows:build
+      - name: Install, launch and uninstall on Windows
+        shell: pwsh
+        run: ./tests/install-smoke.ps1
+      - name: Add end-user instructions
+        shell: pwsh
+        run: Copy-Item INSTALL-WINDOWS-RU.txt release/INSTALL-WINDOWS-RU.txt
+      - name: Upload installer and checksum
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: Fantazia-RP-Windows-x64
+          path: |
+            apps/release/Fantazia-RP-Setup-*-x64.exe
+            apps/release/SHA256SUMS.txt
+            apps/release/INSTALL-WINDOWS-RU.txt
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+      - name: Upload test screenshot
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: Windows-desktop-test-report
+          path: apps/tests/reports/
+          if-no-files-found: ignore
+          retention-days: 14
