@@ -4,6 +4,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { validate, sameOrigin, microphoneRequest, readHealth } = require('../url-policy.cjs');
+const DEFAULT_SERVER = 'https://fantazia-rp-3d1.onrender.com/';
+const CONNECTION_TIMEOUT_MS = 120000;
 const launcherFile = path.join(__dirname, 'launcher.html');
 const launcherURL = pathToFileURL(launcherFile).href;
 
@@ -59,7 +61,7 @@ function createDesktop() {
     let url; try {url=validate(raw);}catch(e){return {ok:false,error:e.message};}
     if(game && !game.isDestroyed())return {ok:false,error:'Сначала закрой текущее окно игры.'};
     cancel(); const id=generation,controller=new AbortController();pending=controller;
-    const timer=setTimeout(()=>controller.abort(),15000);
+    const timer=setTimeout(()=>controller.abort(),CONNECTION_TIMEOUT_MS);
     try {
       const response=await net.fetch(new URL('/api/health',url).href,{signal:controller.signal,redirect:'error',credentials:'omit'});
       await readHealth(response);
@@ -79,7 +81,7 @@ function createDesktop() {
   launcher.webContents.on('will-attach-webview',e=>e.preventDefault());
   launcher.on('close',e=>{if(!quitting){e.preventDefault();quit();}});
   launcher.once('ready-to-show',()=>launcher.show());
-  ipcMain.handle('desktop:read',e=>validIPC(e)?{url:lastURL(),version:app.getVersion()}:{url:'',version:''});
+  ipcMain.handle('desktop:read',e=>validIPC(e)?{url:lastURL(),defaultURL:DEFAULT_SERVER,version:app.getVersion()}:{url:'',version:''});
   ipcMain.handle('desktop:connect',(e,url)=>validIPC(e)?connect(url):{ok:false,error:'Доступ запрещён.'});
   ipcMain.handle('desktop:cancel',async e=>{if(validIPC(e)){cancel();await closeGame();showLauncher();}});
   Menu.setApplicationMenu(Menu.buildFromTemplate([
@@ -98,4 +100,4 @@ function start(){
   app.whenReady().then(()=>{desktop=createDesktop();});app.on('window-all-closed',()=>app.quit());
 }
 if(require.main===module)start();
-module.exports={createDesktop};
+module.exports={createDesktop,DEFAULT_SERVER,CONNECTION_TIMEOUT_MS};
