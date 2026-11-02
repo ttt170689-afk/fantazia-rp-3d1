@@ -36,10 +36,11 @@ function loadAccounts() {
 }
 
 function saveAccounts() {
-  try { fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2)); } catch(e) {}
+  try { fs.writeFileSync(ACCOUNTS_FILE + '.tmp', JSON.stringify(accounts, null, 2)); fs.renameSync(ACCOUNTS_FILE + '.tmp', ACCOUNTS_FILE); return true; } catch(e) { return false; }
 }
 
 let accounts = loadAccounts();
+require('./server/resume-save').attach(app,{accounts,commit:saveAccounts,players:()=>players,sockets:()=>io.sockets.sockets});
 
 function hashPassword(password) {
   return crypto.createHash('sha256').update(password + 'fantazia_salt_2026').digest('hex');
@@ -832,21 +833,21 @@ io.on('connection', (socket) => {
         position: { ...SkyPolicy.spawn },
         rotation: { y: 0 },
         appearance: {
-          skinColor: data.skinColor || '#FFD1A4',
-          shirtColor: data.shirtColor || '#3498DB',
-          pantsColor: data.pantsColor || '#2C3E50',
-          hairColor: data.hairColor || '#4A2F1B',
-          hairStyle: Number.isInteger(data.hairStyle) ? data.hairStyle : 0,
+          skinColor: savedData?.appearance?.skinColor || data.skinColor || '#FFD1A4',
+          shirtColor: savedData?.appearance?.shirtColor || data.shirtColor || '#3498DB',
+          pantsColor: savedData?.appearance?.pantsColor || data.pantsColor || '#2C3E50',
+          hairColor: savedData?.appearance?.hairColor || data.hairColor || '#4A2F1B',
+          hairStyle: Number.isInteger(savedData?.appearance?.hairStyle) ? savedData.appearance.hairStyle : Number.isInteger(data.hairStyle) ? data.hairStyle : 0,
           cosmetics: sanitizeCosmetics(savedData && savedData.appearance ? savedData.appearance.cosmetics : null)
         },
-        job: null,
+        job: savedData?.job && jobDefinitions[savedData.job] ? savedData.job : null,
         dance: null,
         animation: 'idle',
         isTalking: false,
         money: savedData ? savedData.money : 1000,
         level: savedData ? savedData.level : 1,
         exp: savedData ? savedData.exp : 0,
-        health: 100,
+        health: savedData?.resume41?.snapshot?.health || 100,
         maxHealth: 100,
         apartment: null,
         pet: null,
@@ -1575,7 +1576,7 @@ io.on('connection', (socket) => {
       // Автосохранение прогресса если есть аккаунт
       if (player.hasAccount) {
         const key = player.name.toLowerCase();
-        if (accounts[key]) {
+        if (accounts[key] && accounts[key].token === socket.data.accountToken) {
           accounts[key].money = player.money;
           accounts[key].level = player.level;
           accounts[key].exp = player.exp;
