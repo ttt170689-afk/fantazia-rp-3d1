@@ -111,6 +111,7 @@
     r.domElement.addEventListener("webglcontextlost", (e) => {
       e.preventDefault();
       lost = true;
+      window.FZStory30?.cancel();
       release();
       sampler.pause();
       if (active()) gpuOverlay(true);
@@ -296,6 +297,7 @@
       }
     }
     window.FZGuide?.update(now);
+    window.FZDeliveries?.update(now);
   }
   function uiDue(now) {
     if (now - lastUI < 100) return false;
@@ -303,6 +305,7 @@
     return true;
   }
   function rescue() {
+    if(outdoor()&&window.FZForest40?.rescue()){close();return true;}
     if (window.FZSky?.active() && !window.cine) {
       FZSky.spawn(localPlayer.mesh);
       close();

@@ -766,7 +766,7 @@
       k.groups[i].visible = Math.abs(i - f) <= 1;
     for (const [i, g] of k.staff.entries()) {
       g.userData.head.rotation.y = Math.sin(k.time * 0.5 + i) * 0.1;
-      FZOpeningAvatar.pose(g.userData);
+      window.FZOpeningAvatar?.pose(g.userData);
     }
     for (const s of k.screens) if (!s.paused) s.time += d;
     updateQueue();

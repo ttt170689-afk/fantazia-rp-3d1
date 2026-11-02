@@ -65,6 +65,8 @@
         if (subtitle) subtitle.hidden = true;
       };
     }
+    const recorded=["arrival","close","center","factory","park","port","business"];
+    if(!recorded.includes(id))return; // New station names have honest text announcements, no missing audio requests.
     audio.src = "audio/metro/" + id + ".mp3";
     audio.volume = volume;
     const token = generation;

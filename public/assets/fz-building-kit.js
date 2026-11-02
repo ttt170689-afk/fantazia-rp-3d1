@@ -366,7 +366,7 @@
         hairStyle: this.staff.length % 3,
       };
       const g = FZNativeCharacter(appearance, false);
-      FZOpeningAvatar.refine(g, this.staff.length, appearance);
+      window.FZOpeningAvatar?.refine(g, this.staff.length, appearance);
       g.position.set(x, 0, z);
       g.rotation.y = rot;
       g.name = "staff28_" + name;

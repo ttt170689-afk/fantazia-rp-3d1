@@ -9,6 +9,7 @@
     focus = null;
   }
   function travel(id) {
+    if(window.FZForest40?.required()){showNotification("Прямой путь закрыт. Иди по тропе к метро «Лесная».","info");return false;}
     if (
       !window.FZ_CLASSIC_WORLD ||
       !window.FZUI?.playing() ||

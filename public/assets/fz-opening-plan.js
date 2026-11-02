@@ -1,27 +1,27 @@
 /* Opening shot data uses LIVE world-space anchors. No city geometry lives here. */
 (function (root) {
   "use strict";
-  const duration = 7;
+  const duration = 10;
   const smooth = (value) => {
     const t = Math.max(0, Math.min(1, value));
     return t * t * t * (t * (t * 6 - 15) + 10);
   };
   const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * smooth(t));
   const phases = [
-    { id: "credit", start: 0, end: 1.2, label: "", caption: "" },
-    { id: "gateway", start: 1.2, end: 2.1, label: "FANTAZIA", caption: "" },
+    { id: "credit", start: 0, end: 1.6, label: "", caption: "" },
+    { id: "gateway", start: 1.6, end: 3, label: "FANTAZIA", caption: "" },
     {
       id: "life",
-      start: 2.1,
-      end: 5.5,
+      start: 3,
+      end: 8,
       label: "ТВОЙ ГОРОД",
       caption: "Встречаемся в Fantazia.",
     },
-    { id: "title", start: 5.5, end: 7, label: "", caption: "" },
+    { id: "title", start: 8, end: 10, label: "", caption: "" },
   ];
   function at(time, reduced = false) {
     const t = Number.isFinite(time) ? Math.max(0, time) : 0;
-    return reduced && t >= 1.2 && t < 5.5
+    return reduced && t >= 1.6 && t < 8
       ? phases[2]
       : phases.find((p) => t < p.end) || phases[3];
   }
@@ -90,9 +90,11 @@
     const p = at(time, reduced),
       shot = shots(anchors)[reduced && p.id !== "credit" ? "life" : p.id];
     const t = reduced ? 0 : (time - p.start) / (p.end - p.start);
+    const position=mix(shot.from,shot.to,t);
+    if(!reduced&&['life','title'].includes(p.id)){const arc=Math.sin(Math.PI*Math.max(0,Math.min(1,t)))**2;position[0]+=arc*(p.id==='life'?.65:2);position[2]+=arc*(p.id==='life'?.35:1.2);}
     return {
       phase: p.id,
-      position: mix(shot.from, shot.to, t),
+      position,
       look: mix(shot.lookA, shot.lookB, t),
       progress: Math.min(1, Math.max(0, time / duration)),
     };
@@ -102,7 +104,7 @@
     if (portrait) {
       const distance =
         frame.phase === "life" && !reduced
-          ? 11 - 6.5 * smooth((time - 2.1) / 3.4)
+          ? 11 - 6.5 * smooth((time - 3) / 5)
           : frame.phase === "mall" && !reduced
             ? 3 + 15 * smooth((time - 24) / 7)
             : ["credit", "gateway", "life"].includes(frame.phase)

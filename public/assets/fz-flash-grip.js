@@ -78,25 +78,27 @@
       palm = a.children[1],
       fingers = a.children[2],
       thumb = a.children[3];
-    fore.geometry.dispose();
-    fore.geometry = new THREE.CylinderGeometry(0.055, 0.085, 0.46, 12);
-    fore.geometry.rotateX(Math.PI / 2);
-    fore.position.set(0.07, -0.055, -0.025);
-    palm.geometry.dispose();
-    palm.geometry = new THREE.BoxGeometry(0.05, 0.1, 0.15);
-    palm.position.set(0.065, -0.015, -0.3);
-    fingers.visible = false;
-    thumb.position.set(-0.015, 0.065, -0.29);
-    thumb.rotation.z = -0.5;
-    for (let i = 0; i < 4; i++) {
-      const f = new THREE.Mesh(
-        new THREE.TorusGeometry(0.072, 0.016, 6, 12, Math.PI * 1.45),
-        palm.material,
-      );
-      f.rotation.z = 0.3 * Math.PI;
-      f.position.set(0, -0.008, -0.245 - i * 0.035);
-      a.add(f);
+    // Bevelled phalanges instead of four torus rings. One shared geometry,
+    // no new objects during update and no changes to the articulated story rig.
+    const outline=new THREE.Shape();outline.moveTo(-.38,-.5);outline.lineTo(.38,-.5);outline.lineTo(.5,-.38);outline.lineTo(.5,.38);outline.lineTo(.38,.5);outline.lineTo(-.38,.5);outline.lineTo(-.5,.38);outline.lineTo(-.5,-.38);outline.closePath();
+    const segment=new THREE.ExtrudeGeometry(outline,{depth:.84,steps:1,bevelEnabled:true,bevelThickness:.08,bevelSize:.05,bevelSegments:1});segment.translate(0,0,-.42);
+    fore.geometry.dispose();fore.geometry=segment;fore.scale.set(.085,.09,.44);fore.position.set(.07,-.055,-.025);
+    palm.geometry.dispose();palm.geometry=segment;palm.scale.set(.045,.085,.15);palm.position.set(.065,-.015,-.3);
+    fingers.visible=false;thumb.visible=false;
+    const bone=(parent,from,to,width,depth,name)=>{
+      const start=new THREE.Vector3(...from),end=new THREE.Vector3(...to),delta=end.clone().sub(start);
+      const m=new THREE.Mesh(segment,palm.material);m.name=name;m.position.copy(start.add(end).multiplyScalar(.5));m.scale.set(width,delta.length()+.003,depth);m.quaternion.setFromUnitVectors(up,delta.normalize());parent.add(m);return m;
+    };
+    u.fingers44=[];
+    for(let i=0;i<4;i++){
+      const finger=new THREE.Group();finger.name=['Little','Ring','Middle','Index'][i]+' finger · three phalanges';a.add(finger);
+      const z=-.245-i*.035,reach=[.86,.96,1,.93][i];
+      const joints=[[.064,-.006,z],[.045,.049,z-.002],[-.012*reach,.061,z-.004],[-.049*reach,.033,z-.007]];
+      for(let j=0;j<3;j++)bone(finger,joints[j],joints[j+1],.026-j*.002,.025-j*.001,'Phalanx '+(j+1));
+      u.fingers44.push(finger);
     }
+    const thumbGrip=new THREE.Group();thumbGrip.name='Opposing thumb · two phalanges';thumbGrip.position.set(.06,.018,-.36);a.add(thumbGrip);
+    bone(thumbGrip,[0,0,0],[-.025,.043,-.035],.033,.029,'Thumb proximal');bone(thumbGrip,[-.025,.043,-.035],[-.06,.042,-.055],.028,.025,'Thumb distal');u.thumb44=thumbGrip;
     u.holder.position.set(0, -0.008, -0.3);
     u.base.set(0.28, -0.27, -0.38);
     vm.userData.grip23 = true;

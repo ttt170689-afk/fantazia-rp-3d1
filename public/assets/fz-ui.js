@@ -56,11 +56,11 @@
   function action(label, fn) {
     label = label.replace(/\s*v[78](?:\.\d+)?/gi, "").trim();
     const category =
-      /город|район|школ|квартир|море|метро|фото|транспорт|небес|площад/i.test(
+      /город|район|школ|квартир|море|метро|фото|транспорт|небес|площад|карта/i.test(
         label,
       )
         ? "city"
-        : /настрой|график|пауза|журнал/i.test(label)
+        : /настрой|график|пауза|журнал|звук/i.test(label)
           ? "settings"
           : /инвентарь|крафт|персонаж|одеж|скин|друз|игрок|телефон|чат|магазин|pass|навык|питом|танц|автомоб/i.test(
                 label,
@@ -99,64 +99,23 @@
         .join("  ·  ");
   }
   function actions() {
-    const items = [
-      action("🏢 Здания и краны — пешие маршруты", () =>
-        window.FZBuildingDirectory?.open(),
-      ),
-      action("Настройки звука — музыка, озвучка и SFX", () =>
-        window.FZSound?.open(),
-      ),
-      action("🚇 Метро — станции и голос", () => window.FZMetro?.open()),
-      action("☁ Небесная площадь", () => window.FZSky?.arrive()),
-      action("↓ Спуститься с облаков в город", () => window.FZSky?.descend()),
-      action("🧭 Город — места, избранное и прогулки", () =>
-        window.FZGuide?.open(),
-      ),
-      action("📌 Мой город — сохранённые места и копия журнала", () =>
-        window.FZJourney?.open(),
-      ),
-      action("📱 Настройки игры на телефоне", () => window.FZPlay?.open()),
-      action("🏫 Школа и квартиры", () => FZ8B.directory()),
-      action("⚓ Море, мосты и корабли", () => FZ8SEA.map()),
-      action(
-        "🏀 Дворы рядом — спорт и отдых",
-        () => window.FZLeisure && FZLeisure.directory(),
-      ),
-      action("📰 Новости города", () => openNewsModal()),
+    // Deliberately curated: no scraping dozens of hidden legacy docks.
+    return [
+      action("🧭 Карта и места", () => window.FZGuide?.open()),
+      action("🏢 Здания и квартиры", () => window.FZBuildingDirectory?.open()),
+      action("🚇 Станции метро", () => window.FZMetro?.open()),
       action("📷 Сделать фото", () => takePhoto()),
-      action("📒 Журнал уведомлений", showJournal),
-      action("💼 Работа", () => togglePanel("jobs")),
+      action("🎒 Инвентарь и дневник", () => window.FZLore45?.openBag()),
       action("🚗 Автомобили", () => togglePanel("cars")),
-    ];
-    const names = new Set(items.map((i) => i.label));
-    document
-      .querySelectorAll(
-        "#fz8Dock button,#fz7Dock button,#sideMenuPanel .side-btn",
-      )
-      .forEach((b) => {
-        if (
-          ["events", "interiors", "sea"].includes(b.dataset.id) ||
-          b.id === "cityGoBtn" ||
-          /Экспорт|Сделать фото/.test(b.title)
-        )
-          return;
-        if (b.style.display === "none") return;
-        const label = b.title || b.textContent.trim();
-        if (!label || names.has(label) || /новости/i.test(label)) return;
-        names.add(label);
-        items.push(action(label, () => b.click()));
-      });
-    items.push(
-      action("💬 Чат", openChat),
       action("📱 Телефон", () => togglePhone()),
-      action("🎟 Fantazia Pass", () => openFPassPanel()),
-      action("Настройки управления", () => window.FZTouch && FZTouch.open()),
-      action("⚙ Графика и производительность · Неон", () =>
-        window.FZPlay?.open(),
-      ),
-    );
-    return items;
+      action("💼 Работа", () => togglePanel("jobs")),
+      action("📦 Доставки", () => window.FZDeliveries?.open()),
+      action("⚙ Настройки игры и телефона", () => window.FZPlay?.open()),
+      action("Звук и озвучка", () => window.FZSound?.open()),
+      action("Настройки управления", () => window.FZTouch?.open()),
+    ];
   }
+
   function drawList(query = "") {
     const list = document.getElementById("fzUIList");
     list.replaceChildren();
@@ -262,11 +221,13 @@
   function toggleLight() {
     if (!active) return;
     grantLight();
+    if(DLC.hasFlashlight && ITEMS.slot!==2)setHeldItem(2);
     toggleFlashlight();
     updateFlashlight();
     syncLight();
   }
   function grantLight() {
+    if(window.FZFlash40?.needsPickup())return;
     if (typeof DLC === "undefined" || typeof scene === "undefined" || !scene)
       return;
     if (window._flashSpill && window._flashSpill.parent !== scene)
@@ -302,6 +263,23 @@
     bar.innerHTML =
       '<button id="fzUIOpen" aria-expanded="false">☰ Меню · M</button><button id="fzUIFlash" aria-pressed="false">🔦 Фонарик · F</button><button id="fzUINews" type="button" aria-haspopup="dialog">Новости</button>';
     document.body.appendChild(bar);
+    const hud=document.createElement('aside');hud.id='fzHUD39';hud.hidden=true;hud.setAttribute('aria-label','Здоровье и быстрые действия');
+    hud.innerHTML='<div class="fz-hp-label">ЗДОРОВЬЕ · HP</div><button id="fzHUDPass" type="button">Fantazia Pass ↗</button>';
+    const hp=document.querySelector('.health-bar-container');if(hp)hud.insertBefore(hp,hud.lastElementChild);
+    hud.append(document.getElementById('fzUINews'));document.body.append(hud);
+    document.getElementById('fzHUDPass').onclick=()=>{if(active){FZPlay.release();openFPassPanel();}};
+    const chat=document.getElementById('chatPanel'),input=document.getElementById('chatInput');
+    if(chat&&input){
+      // A body-level layer lets the expanded phone composer sit above quick actions,
+      // rather than being trapped in the legacy #hud stacking context.
+      document.body.append(chat);
+      chat.querySelectorAll('.chat-type-btn').forEach((b,i)=>b.textContent=i?'Местный':'Общий');
+      const send=document.createElement('button');send.id='fzChatSend39';send.type='button';send.textContent='➤';send.setAttribute('aria-label','Отправить сообщение');
+      send.onclick=()=>{if(active){sendChatMessage();input.focus();}};document.getElementById('chatInputArea').append(send);
+      input.addEventListener('focus',()=>FZPlay.release());
+      for(const name of ['pointerdown','mousedown','touchstart'])chat.addEventListener(name,e=>e.stopPropagation());
+    }
+    for(const name of ['pointerdown','mousedown','touchstart'])hud.addEventListener(name,e=>e.stopPropagation());
     document.getElementById("fzUIOpen").onclick = open;
     document.getElementById("fzUIFlash").onclick = toggleLight;
     document.getElementById("fzUINews").onclick = () => {
@@ -317,7 +295,7 @@
     drawer.setAttribute("aria-modal", "true");
     drawer.setAttribute("aria-labelledby", "fzUITitle");
     drawer.innerHTML =
-      '<section class="ui-card"><header><div><small>FANTAZIA RP</small><h2 id="fzUITitle">Твой город</h2></div><button id="fzUIClose">Закрыть</button></header><p id="fzUISummary"></p><nav id="fzUICategories" aria-label="Разделы меню"><button data-section="city">Город</button><button data-section="player">Персонаж</button><button data-section="activities">Занятия</button><button data-section="settings">Настройки</button></nav><input id="fzUISearch" type="search" placeholder="Найти: метро, школа, настройки…" aria-label="Поиск раздела"><div id="fzUIList"></div></section>';
+      '<section class="ui-card"><header><div><small>FANTAZIA RP</small><h2 id="fzUITitle">Твой город</h2></div><button id="fzUIClose">Закрыть</button></header><p id="fzUISummary"></p><nav id="fzUICategories" aria-label="Разделы меню"><button data-section="city">Город</button><button data-section="player">Персонаж</button><button data-section="activities">Занятия</button><button data-section="settings">Настройки</button></nav><input id="fzUISearch" type="search" placeholder="Найти нужный раздел…" aria-label="Поиск раздела"><div id="fzUIList"></div></section>';
     document.body.appendChild(drawer);
     document.getElementById("fzUIClose").onclick = close;
     document.querySelectorAll("#fzUICategories button").forEach(
@@ -342,6 +320,7 @@
         if (
           !active ||
           !!document.querySelector(".fz-play-dialog:not([hidden])") ||
+          !!document.getElementById("fzDeliveries") ||
           (window.FZLeisure && FZLeisure.modalOpen()) ||
           (document.getElementById("fzTouchPanel") &&
             !document.getElementById("fzTouchPanel").hidden)
@@ -389,12 +368,14 @@
     );
   }
   function update() {
+    window.FZProgress40?.syncChoice();
     const next = !!ready();
     if (next !== active) {
       active = next;
       document.body.classList.toggle("fz-playing", active);
       init();
-      bar.hidden = !active;
+      bar.hidden = !active;document.getElementById('fzHUD39').hidden=!active;
+      if(active){const chat=document.getElementById('chatPanel');if(chat?.classList.contains('chat-hidden'))toggleChatPanel();const messages=document.getElementById('chatMessages');if(messages)messages.scrollTop=messages.scrollHeight;}
       if (!active) {
         close();
         if (window.FZCITY) FZCITY.close();

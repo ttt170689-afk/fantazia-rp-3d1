@@ -184,7 +184,8 @@
       box(x, 0.012, -1.5, 0.055, 0.018, 18, M.brass);
       box(x + 0.12, 0.012, -1.5, 0.05, 0.018, 18, x < 0 ? cyan : pink);
     }
-    const ripples = [];
+    const ripples = [], sprays = [];
+    const streamMaterial=own(new THREE.MeshBasicMaterial({color:0xb8e5f4,transparent:true,opacity:.40,depthWrite:false}));
     for (const p of P.gardenPools) {
       mesh(
         new THREE.CylinderGeometry(p.r, p.r, 0.42, 64),
@@ -218,13 +219,16 @@
         p.z,
       );
       foot.rotation.x = Math.PI / 2;
-      const stem = mesh(
-        new THREE.CylinderGeometry(0.09, 0.17, 0.7, 12),
-        M.steel,
-        p.x,
-        0.75,
-        p.z,
-      );
+      // Low stone nozzle bowl + eight curved streams returning to the basin.
+      const bowl=mesh(new THREE.CylinderGeometry(.48,.30,.20,32),ivory,p.x,.55,p.z);
+      bowl.name='fountain_nozzle_bowl';
+      for(let j=0;j<8;j++){
+        const angle=j*Math.PI/4,points=[];
+        for(let n=0;n<=24;n++){const u=n/24,r=.25+u*(p.r-.65);points.push(new THREE.Vector3(p.x+Math.cos(angle)*r,.65+3.7*u*(1-u)-.21*u,p.z+Math.sin(angle)*r));}
+        const stream=mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),24,.022,5,false),streamMaterial);stream.name='fountain_water_arc';stream.castShadow=false;
+      }
+      const drops=mesh(new THREE.SphereGeometry(.027,5,4),streamMaterial);group.remove(drops);
+      const spray=new THREE.InstancedMesh(drops.geometry,streamMaterial,96);spray.name='fountain_moving_droplets';spray.frustumCulled=false;group.add(spray);sprays.push({spray,p});
       for (let k = 0; k < 3; k++) {
         const rm = own(
           new THREE.MeshBasicMaterial({
@@ -247,14 +251,6 @@
         rup(ripple, 0, p.r);
         ripples.push({ ripple, r: p.r });
       }
-      const jet = mesh(
-        new THREE.CylinderGeometry(0.028, 0.09, 1.15, 10),
-        cyan,
-        p.x,
-        1.45,
-        p.z,
-      );
-      jet.castShadow = false;
     }
     function rup(o, t, r) {
       const k = (t * 0.18 + o.userData.phase) % 1;
@@ -431,6 +427,9 @@
         sculpture.rotation.y = reduced ? 0.3 : t * 0.13;
         gem.rotation.z = reduced ? 0.2 : Math.sin(t * 0.4) * 0.2;
         for (const { ripple, r } of ripples) rup(ripple, reduced ? 1 : t, r);
+        const dummy=new THREE.Object3D();
+        for(const {spray,p} of sprays){for(let i=0;i<96;i++){const angle=(i%8)*Math.PI/4,u=((reduced?0:t*.55)+Math.floor(i/8)/12)%1,r=.25+u*(p.r-.65);dummy.position.set(p.x+Math.cos(angle)*r,.66+3.7*u*(1-u)-.21*u,p.z+Math.sin(angle)*r);dummy.scale.setScalar(.8+Math.sin(i)*.25);dummy.updateMatrix();spray.setMatrixAt(i,dummy.matrix);}spray.instanceMatrix.needsUpdate=true;}
+
       },
       dispose() {
         disposed = true;
@@ -438,6 +437,7 @@
       info: () => ({
         trees: P.gardenTrees.length,
         pools: P.gardenPools.length,
+        waterArcs: sprays.length*8,
         leafInstances: count,
         brand: !!brand,
         architecture: true,

@@ -274,7 +274,7 @@
       [0.5, 0.5],
       [0, 0],
     ])
-      if (floorAt(x + dx, z + dz) === null) return true;
+      if (floorAt(x + dx, z + dz) === null && !window.FZSurvival45?.waterAt(ORIGIN.x+x+dx,ORIGIN.z+z+dz)) return true;
     return false;
   }
   function ground() {
@@ -380,6 +380,7 @@
   function ocean(g) {
     const geometry = geo('sea', () => new THREE.PlaneGeometry(1600, 1400, 160, 140).rotateX(-Math.PI / 2));
     const material = new THREE.ShaderMaterial({
+      side: THREE.DoubleSide,
       fog: true,
       uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uTime: { value: 0 } }]),
       vertexShader: `uniform float uTime; varying vec3 vWorld; varying vec3 vNormal; varying vec2 vSea;
@@ -447,6 +448,7 @@
     for (const z of [28, 38]) bench(g, -84, 2, z);
     // Two docks and a cargo loading pier. Heights differ only at marked boarding points.
     for (const [id, x0, x1, z0, z1, h] of [
+      ['boatPier43', -76, -48, 88, 104, 2],
       ['westPier', -76, -41, 28, 36, 2.8],
       ['eastPier', 53, 68, 28, 36, 2.8],
       ['cargoPier', -76, -44, -122, -114, 2.8],
@@ -897,11 +899,15 @@
     world.position.set(ORIGIN.x, 0, ORIGIN.z);
     scene.add(world);
     ocean(world);
+    box(world,500,.2,420,0x344e4e,0,-4.75,0);
     land(world);
     bridges(world);
     portDetails(world);
     Object.keys(vesselSpecs).forEach(ship);
     smallBoats(world);
+    window.FZVoyage43?.buildBoats(world);
+    for(let i=0;i<2;i++)spot('motorboat43_'+i,'Моторная лодка '+(i+1)+' · управлять',-50,2,93+i*8,'motor43',{boat:i});
+    label(world,'МОТОРНЫЕ ЛОДКИ • E',-54,4,88,12,Math.PI);
     // Local fill; the game retains control of its own global day/night lighting.
     world.add(new THREE.HemisphereLight(0xc6e3e9, 0x7a8269, 0.7));
     spot('arrival', 'Карта морского района', -91, 2, 12, 'map');
@@ -1337,6 +1343,7 @@
     if (!s || s.type !== 'fz8sea') return false;
     if (!near(s)) return true;
     switch (s.action) {
+      case 'motor43': window.FZVoyage43?.board(s.boat);break;
       case 'map':
         map();
         break;
@@ -1469,7 +1476,7 @@
         ? 'Ждём поклёвку…'
         : s
           ? s.name
-          : 'E у предмета • вода непроходима';
+          : 'E у предмета • C / Ctrl — нырять, отпусти — всплыть';
       $('fzSeaUse').disabled = !s;
       $('fzSeaProgress').hidden = !activity;
       if (activity) $('fzSeaProgress').value = activity.time;
@@ -1512,6 +1519,15 @@
     if (hud) hud.hidden = true;
   }
   window.FZ8SEA = {
+    surfaceAt:(x,z)=>world?floorAt(x-ORIGIN.x,z-ORIGIN.z):null,
+    waterAt:(wx,wz)=>{if(!world||ride||indoors())return false;const x=wx-ORIGIN.x,z=wz-ORIGIN.z;if(Math.abs(x)>245||Math.abs(z)>205||floorAt(x,z)!==null)return false;if(window.FZVoyage43?.info().boats.some(b=>Math.hypot(x-b[0],z-b[2])<2.6))return false;for(const v of Object.values(vesselSpecs)){const p=local(v,x,z);if(inHull(v,p.x,p.z))return false;}return true;},
+    boatWater:(x,z)=>{
+      if(!world||Math.abs(x)>245||Math.abs(z)>205)return false;
+      for(let i=0;i<8;i++){const a=i*Math.PI/4,px=x+Math.cos(a)*3,pz=z+Math.sin(a)*3;
+        if(floorAt(px,pz)!==null||colliders.some(c=>boundsHit(px,pz,c)))return false;
+        for(const v of Object.values(vesselSpecs)){const p=local(v,px,pz);if(inHull(v,p.x,p.z))return false;}
+      }return floorAt(x,z)===null;
+    },
     enter,
     leave,
     map,
