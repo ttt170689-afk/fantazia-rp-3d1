@@ -50,6 +50,10 @@ import javax.net.ssl.HttpsURLConnection;
 
 public final class MainActivity extends ComponentActivity {
     private static final int MIC_PERMISSION = 100;
+    static final String DEFAULT_SERVER = "https://fantazia-rp-3d1.onrender.com/";
+    static final int CONNECTION_TIMEOUT_MS = 120_000;
+    private boolean connecting;
+    private String pendingServer = DEFAULT_SERVER;
     private FrameLayout root;
     private EditText address;
     private TextView status;
@@ -84,7 +88,23 @@ public final class MainActivity extends ComponentActivity {
                 finish();
             }
         });
-        showConnection("");
+        showConnection(state == null ? "" : state.getString("connectionMessage", ""));
+        // Always use the owner's production server on a fresh app launch, not an old preview URL.
+        String resume = state == null ? DEFAULT_SERVER : state.getString("resumeServer", "");
+        address.setText(state == null ? DEFAULT_SERVER : state.getString("address", DEFAULT_SERVER));
+        if (!resume.isEmpty()) connect(resume);
+    }
+    @Override public void onSaveInstanceState(Bundle state) {
+        state.putString("resumeServer", web != null ? server : connecting ? pendingServer : "");
+        state.putString("address", address.getText().toString());
+        state.putString("connectionMessage", connecting ? "" : status.getText().toString());
+        super.onSaveInstanceState(state);
+    }
+    // Also used by native tests to leave a live connection without depending on server latency.
+    void returnToConnection(String message) {
+        cancelProbe();
+        destroyWeb();
+        showConnection(message);
     }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
     private TextView text(String value,int size) {
@@ -96,25 +116,26 @@ public final class MainActivity extends ComponentActivity {
     private void showConnection(String message) {
         if (isFinishing() || isDestroyed()) return;
         leaveFullscreen();
+        connecting = false;
         root.removeAllViews();
         ScrollView scroll = new ScrollView(this);scroll.setFillViewport(true);
         LinearLayout box = new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(24),dp(20),dp(24),dp(24));
         scroll.addView(box);root.addView(scroll,new FrameLayout.LayoutParams(-1,-1));
         ImageView logo = new ImageView(this);logo.setImageResource(R.drawable.fantazia_icon);logo.setContentDescription("Fantazia RP");logo.setScaleType(ImageView.ScaleType.FIT_CENTER);box.addView(logo,new LinearLayout.LayoutParams(-1,dp(130)));
         TextView title = text(BuildConfig.DEBUG ? "Fantazia — тестовый клиент" : "Fantazia RP",28);title.setGravity(Gravity.CENTER);box.addView(title);
-        box.addView(text("Онлайн-игра · Android\nПодключись к своему серверу и войди в аккаунт.",15));
+        box.addView(text("Онлайн-игра · Android\nАвтоматическое подключение к Fantazia RP.",15));
         box.addView(text("HTTPS-адрес игрового сервера",14));
-        address = new EditText(this);address.setTag("server-input");address.setSingleLine(true);address.setTextColor(Color.WHITE);address.setHintTextColor(Color.GRAY);address.setHint("https://game.example.org/");address.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
-        address.setText(getSharedPreferences("connection",MODE_PRIVATE).getString("url",""));box.addView(address,new LinearLayout.LayoutParams(-1,dp(54)));
+        address = new EditText(this);address.setTag("server-input");address.setSingleLine(true);address.setTextColor(Color.WHITE);address.setHintTextColor(Color.GRAY);address.setHint(DEFAULT_SERVER);address.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
+        address.setText(getSharedPreferences("connection",MODE_PRIVATE).getString("url",DEFAULT_SERVER));box.addView(address,new LinearLayout.LayoutParams(-1,dp(54)));
         connect=button("Подключиться");connect.setTag("connect-button");box.addView(connect);connect.setOnClickListener(v->connect(address.getText().toString()));
-        cancel=button("Отменить");cancel.setVisibility(View.GONE);box.addView(cancel);cancel.setOnClickListener(v->{cancelProbe();busy(false);status.setText("Подключение отменено.");});
+        cancel=button("Отменить");cancel.setTag("cancel-button");cancel.setVisibility(View.GONE);box.addView(cancel);cancel.setOnClickListener(v->{cancelProbe();busy(false);status.setText("Подключение отменено.");});
         status=text(message,14);status.setTag("connection-status");status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);box.addView(status);
         box.addView(text("Нужен работающий сервер Fantazia RP с HTTPS. Адрес GitHub или ZIP не подходит. Установкой APK сервер не создаётся.",13));
         box.addView(text("Тот же аккаунт + тот же сервер = серверные сохранения v41+. При обновлении приложения не удаляй его данные.",13));
         if(BuildConfig.DEBUG) box.addView(text("TEST APK: только проверка клиента. Это не подписанный постоянным ключом публичный выпуск. Тестовое приложение имеет отдельный ID и не заменяет основную игру.",13));
         box.addView(text("Клиент "+BuildConfig.VERSION_NAME+" · содержимое игры загружается с сервера",12));
     }
-    private void busy(boolean value) { address.setEnabled(!value);connect.setEnabled(!value);cancel.setVisibility(value?View.VISIBLE:View.GONE); }
+    private void busy(boolean value) { connecting=value;address.setEnabled(!value);connect.setEnabled(!value);cancel.setVisibility(value?View.VISIBLE:View.GONE); }
     private void cancelProbe() {
         generation++;
         if(task!=null)task.cancel(true);
@@ -123,8 +144,8 @@ public final class MainActivity extends ComponentActivity {
     private void connect(String raw) {
         final String url;
         try { url=UrlPolicy.validate(raw); } catch(IllegalArgumentException error) { status.setText(error.getMessage());return; }
-        cancelProbe();final int id=generation;busy(true);status.setText("Проверяем сервер…");
-        root.postDelayed(()->{if(id==generation && !isDestroyed() && task!=null && !task.isDone()){cancelProbe();busy(false);status.setText("Сервер не ответил за 15 секунд. Попробуй ещё раз.");}},15000);
+        cancelProbe();final int id=generation;pendingServer=url;address.setText(url);busy(true);status.setText("Подключаемся к Fantazia RP… Если Render запускает сервер после простоя, подожди до 2 минут.");
+        root.postDelayed(()->{if(id==generation && !isDestroyed() && connecting){cancelProbe();busy(false);status.setText("Сервер не ответил за 2 минуты. Проверь интернет и нажми «Подключиться» ещё раз.");}},CONNECTION_TIMEOUT_MS);
         task=executor.submit(()->{
             if(id!=generation || Thread.currentThread().isInterrupted())return;
             HttpsURLConnection request=null;
@@ -132,7 +153,7 @@ public final class MainActivity extends ComponentActivity {
             try {
                 request=(HttpsURLConnection)new URL(url+"api/health").openConnection();connection=request;
                 if(id!=generation || Thread.currentThread().isInterrupted())return;
-                request.setConnectTimeout(15000);request.setReadTimeout(15000);request.setInstanceFollowRedirects(false);request.setRequestProperty("Accept","application/json");
+                request.setConnectTimeout(CONNECTION_TIMEOUT_MS);request.setReadTimeout(CONNECTION_TIMEOUT_MS);request.setInstanceFollowRedirects(false);request.setRequestProperty("Accept","application/json");
                 if(request.getResponseCode()!=200)throw new Exception("health");
                 ByteArrayOutputStream bytes=new ByteArrayOutputStream();
                 try(InputStream input=request.getInputStream()) { byte[] buffer=new byte[1024];int n;while((n=input.read(buffer))!=-1){if(bytes.size()+n>16384)throw new Exception("size");bytes.write(buffer,0,n);} }
@@ -162,6 +183,7 @@ public final class MainActivity extends ComponentActivity {
         web.setWebViewClient(new WebViewClient(){
             @Override public boolean shouldOverrideUrlLoading(WebView view,WebResourceRequest request){return !UrlPolicy.sameOrigin(request.getUrl().toString(),server);}
             @Override public void onReceivedSslError(WebView view,SslErrorHandler handler,SslError error){handler.cancel();failGame(current,"Ошибка HTTPS-сертификата. Подключение остановлено.");}
+            @Override public void onReceivedHttpError(WebView view,WebResourceRequest request,android.webkit.WebResourceResponse response){if(request.isForMainFrame())failGame(current,"Сервер вернул ошибку HTTP "+response.getStatusCode()+". Попробуй подключиться ещё раз.");}
             @Override public void onReceivedError(WebView view,WebResourceRequest request,WebResourceError error){if(request.isForMainFrame())failGame(current,"Страница не загрузилась. Проверь интернет и доступность сервера.");}
             @Override public boolean onRenderProcessGone(WebView view,RenderProcessGoneDetail detail){failGame(current,"Окно игры остановилось. Можно подключиться заново.");return true;}
         });
@@ -184,11 +206,11 @@ public final class MainActivity extends ComponentActivity {
     }
     private void finishMicrophone(boolean allowed) {PermissionRequest p=microphone;microphone=null;if(p!=null){if(allowed&&web!=null&&UrlPolicy.sameOrigin(p.getOrigin().toString(),server))p.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});else p.deny();}}
     @Override public void onRequestPermissionsResult(int code,String[] permissions,int[] results){super.onRequestPermissionsResult(code,permissions,results);if(code==MIC_PERMISSION)finishMicrophone(results.length>0&&results[0]==PackageManager.PERMISSION_GRANTED);}
-    private void failGame(WebView source,String message){if(web!=source)return;root.post(()->{if(web==source){destroyWeb();showConnection(message);}});}
+    private void failGame(WebView source,String message){if(web!=source)return;root.post(()->{if(web==source){returnToConnection(message);}});}
     private void confirmLeave(){new AlertDialog.Builder(this).setTitle("Вернуться к подключению?").setMessage("Последний прогресс сохраняется на игровом сервере.").setNegativeButton("Остаться",null).setPositiveButton("Выйти",(d,w)->{
         final WebView old=web;if(old==null)return;
         old.evaluateJavascript("try{window.FZSave41?.flush(true)}catch(e){}",null);
-        root.postDelayed(()->{if(web==old){destroyWeb();showConnection("");}},700);
+        root.postDelayed(()->{if(web==old){returnToConnection("");}},700);
     }).show();}
     private void destroyWeb(){finishMicrophone(false);if(web!=null){WebView old=web;web=null;old.stopLoading();if(old.getParent() instanceof ViewGroup)((ViewGroup)old.getParent()).removeView(old);old.destroy();}CookieManager.getInstance().flush();}
     private void enterFullscreen(){fullscreen=true;toolbar.setVisibility(View.GONE);if(Build.VERSION.SDK_INT>=30){WindowInsetsController c=getWindow().getInsetsController();if(c!=null){c.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);c.hide(WindowInsets.Type.systemBars());}}else getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);}
