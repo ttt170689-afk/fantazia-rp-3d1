@@ -1,0 +1,31 @@
+name: Launcher one-time login security
+on:
+  push:
+    branches: [arena/95a3da60-fantazia-rp-3d1]
+    paths:
+      - server/**
+      - server.js
+      - backend/**
+      - tests/closed-*
+      - tests/launcher-login*
+      - package.json
+      - package-lock.json
+      - .github/workflows/launcher-login.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  auth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+      - run: npm run test:closed
+      - run: npm run test:closed:db
+      - run: npm run test:launcher-login

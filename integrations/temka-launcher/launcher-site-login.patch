@@ -1,0 +1,278 @@
+diff --git a/build-tools/restore-native.mjs b/build-tools/restore-native.mjs
+--- a/build-tools/restore-native.mjs
++++ b/build-tools/restore-native.mjs
+@@ -7,6 +7,7 @@
+ import { execFileSync } from 'node:child_process';
+ 
+ export const TARGETS = [
++ 'src/lib/fantaziaSiteLogin.ts','src/components/FantaziaSiteLogin.tsx','tests/fantazia-site-login.test.cjs',
+  'electron/game-server.cjs','tests/game-server.test.cjs',
+  'scripts/smoke-lifecycle.cjs','scripts/fixtures/game-io-main.cjs','tests/smoke-lifecycle.test.cjs',
+  'electron/game-fs.cjs','scripts/smoke-game-io.cjs',
+@@ -60,7 +61,7 @@
+  console.log(`[Temka runtime] protocol 3, direct release feed; restored ${changed}/${TARGETS.length} files from source ZIP.`);
+  if(verify){
+   execFileSync(process.execPath,[path.join(root,'node_modules/typescript/bin/tsc'),'--noEmit'],{cwd:root,stdio:'inherit'});
+-  execFileSync(process.execPath,['--test','tests/game-server.test.cjs','tests/smoke-lifecycle.test.cjs','tests/release-source.test.cjs','tests/updater.test.cjs','tests/folder-picker.test.cjs','tests/native-bundle.test.cjs','tests/beta-contract.test.cjs','tests/ci-smoke.test.cjs','tests/clipboard.test.cjs','tests/player-card.test.cjs','tests/messaging.test.cjs','tests/entry-account.test.cjs','tests/connection.test.cjs','tests/smoke-network.test.cjs','tests/dev.test.cjs','tests/dev-mode.test.cjs','tests/public-beta.test.cjs','tests/closed-game.test.cjs','tests/game-beta-gate.test.cjs','tests/shop-draft.test.cjs','tests/friend-notifications.test.cjs','tests/avatar.test.cjs','tests/no-guide.test.cjs','tests/game-progress.test.cjs','tests/username.test.cjs','tests/news-creator.test.cjs','tests/online-config.test.cjs'],{cwd:root,stdio:'inherit'});
++  execFileSync(process.execPath,['--test','tests/fantazia-site-login.test.cjs','tests/game-server.test.cjs','tests/smoke-lifecycle.test.cjs','tests/release-source.test.cjs','tests/updater.test.cjs','tests/folder-picker.test.cjs','tests/native-bundle.test.cjs','tests/beta-contract.test.cjs','tests/ci-smoke.test.cjs','tests/clipboard.test.cjs','tests/player-card.test.cjs','tests/messaging.test.cjs','tests/entry-account.test.cjs','tests/connection.test.cjs','tests/smoke-network.test.cjs','tests/dev.test.cjs','tests/dev-mode.test.cjs','tests/public-beta.test.cjs','tests/closed-game.test.cjs','tests/game-beta-gate.test.cjs','tests/shop-draft.test.cjs','tests/friend-notifications.test.cjs','tests/avatar.test.cjs','tests/no-guide.test.cjs','tests/game-progress.test.cjs','tests/username.test.cjs','tests/news-creator.test.cjs','tests/online-config.test.cjs'],{cwd:root,stdio:'inherit'});
+   console.log('[Temka runtime] post-restore TypeScript and runtime regression tests passed.');
+  }
+  return {changed};
+diff --git a/src/components/GameProperties.tsx b/src/components/GameProperties.tsx
+--- a/src/components/GameProperties.tsx
++++ b/src/components/GameProperties.tsx
+@@ -1,3 +1,4 @@
++import FantaziaSiteLogin from './FantaziaSiteLogin';
+ import PublicBetaDownload from './PublicBetaDownload';
+ import {useEffect,useRef,useState} from 'react';
+ import {createPortal} from 'react-dom';
+@@ -52,6 +53,7 @@
+   {tab==='about'&&<><p className="gp-eyebrow">ИНФОРМАЦИЯ</p><dl className="gp-facts"><div><dt>Разработчик</dt><dd>{game.developer}</dd></div><div><dt>{isPublic?'План 3D-версии':'Движок'}</dt><dd>{game.engine}</dd></div><div><dt>Стадия</dt><dd>{game.version} · В разработке</dd></div><div><dt>Цена</dt><dd>{game.id==='fantazia'?'Бесплатно':'Пока не объявлена'}</dd></div></dl><div className="gp-note"><strong>{isPublic?'Закрытый бета-тест по заявке':'Сборка игры ещё не подключена'}</strong><p>{isPublic?'Fantazia Beta0.1 для тестеров: отправь заявку во вкладке бета-теста и дождись одобрения автора. На Android установка подтверждается в системе; на Windows загружается и распаковывается полный portable-пакет.':'Одобрение бета-доступа не устанавливает игру. Автор отдельно подготовит файлы для поддерживаемых устройств.'}</p></div><button className="gp-primary" onClick={()=>setTab('beta')}>Перейти к бета-тесту →</button></>}
+   {tab==='beta'&&<><p className="gp-eyebrow">ДОСТУП ПО ЗАЯВКЕ</p><h3>Заявка на бета-тест</h3><p className="gp-muted">Нажми «Отправить заявку». Скачать и запустить игру можно после одобрения temka_play_official.</p>
+    {!onlineEnabled?<div className="gp-note" role="status"><strong>Сервер бета-теста ещё не подключён</strong><p>Панель уже доступна. Отправка заявки заработает после подключения сервера.</p></div>:mode==='checking'?<p className="gp-muted" role="status">Проверяем онлайн-аккаунт…</p>:mode==='error'?<div className="gp-note" role="alert"><strong>Нет связи с онлайн-аккаунтом</strong><p>{accountError}</p><button onClick={()=>void refreshAccount()}>Повторить подключение</button></div>:!connected?<div className="gp-note"><strong>Нужен подтверждённый онлайн-аккаунт</strong><p>Локальное имя не подтверждает личность. Открой профиль и подтверди почту в онлайн-разделе.</p><button onClick={()=>{onClose();onProfile();}}>Открыть профиль</button></div>:<div className={`gp-status gp-state-${status?.state||'unknown'}`} role="status"><strong>{status?BETA_LABELS[status.state]:busy?'Проверяем сервер…':'Статус не подтверждён'}</strong>{status?.state==='pending'&&<p>Заявка отправлена. Дождись решения temka_play_official и нажми «Проверить статус».</p>}{(status?.state==='rejected'||status?.state==='revoked')&&<p>Обратись к автору. Повторная отправка не отменяет уже принятое решение по этому аккаунту.</p>}{status?.state==='approved'&&<p>{game.id==='fantazia'?'Сервер подтвердил доступ аккаунта. Ниже доступны установка и запуск Fantazia.':'Сервер подтвердил доступ аккаунта. Файл бета-сборки ещё не подключён; кнопка запуска не разблокирована.'}</p>}{status?.updated_at&&<p>Изменено: {new Date(status.updated_at).toLocaleString('ru-RU')}</p>}</div>}
++   {isPublic&&connected&&<FantaziaSiteLogin/>}
+    {isPublic&&connected&&status?.state==='approved'&&<PublicBetaDownload gameId={game.id}/>}
+    {isPublic?<button className="gp-primary" disabled={!connected||busy||!status||status.state!=='none'} onClick={()=>void run(async()=>{const next=await client.requestBeta(game.id);if(alive.current)setStatus(next);})}>{busy?'Подожди…':status?.state==='pending'?'Заявка отправлена':'Отправить заявку'}</button>:<p>Заявки для этой игры пока не принимаются.</p>}
+    {connected&&<button disabled={busy} onClick={()=>void run(refresh)}>Проверить статус</button>}
+diff --git a/src/components/FantaziaSiteLogin.tsx b/src/components/FantaziaSiteLogin.tsx
+new file mode 100644
+--- /dev/null
++++ b/src/components/FantaziaSiteLogin.tsx
+@@ -0,0 +1,31 @@
++import {useEffect,useRef,useState} from 'react';
++import {useOnlineAccount} from '../lib/onlineAccount';
++import {copyText} from '../lib/clipboard';
++import {FANTAZIA_LOGIN_URL,issueFantaziaSiteCode} from '../lib/fantaziaSiteLogin';
++import type {FantaziaSiteCode} from '../lib/fantaziaSiteLogin';
++
++export default function FantaziaSiteLogin(){
++ const {client,mode}=useOnlineAccount(),uid=client.session?.user.id;
++ const [code,setCode]=useState<FantaziaSiteCode|null>(null),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[clock,setClock]=useState(Date.now());
++ const generation=useRef(0),pending=useRef(false);
++ useEffect(()=>{generation.current++;pending.current=false;setCode(null);setMessage('');setBusy(false);return()=>{generation.current++;};},[client,uid,mode]);
++ useEffect(()=>{if(!code)return;const timer=setInterval(()=>setClock(Date.now()),1000);return()=>clearInterval(timer);},[code]);
++ const visible=mode==='verified'&&code&&code.accountId===uid&&code.expiresAt>clock?code:null;
++ async function issue(){
++  if(pending.current||mode!=='verified')return;
++  pending.current=true;const op=++generation.current;setBusy(true);setCode(null);setMessage('');
++  try{const next=await issueFantaziaSiteCode(client);if(op===generation.current&&client.session?.user.id===uid){setClock(Date.now());setCode(next);}}
++  catch(error){if(op===generation.current)setMessage(error instanceof Error?error.message:'Не удалось получить код.');}
++  finally{if(op===generation.current){pending.current=false;setBusy(false);}}
++ }
++ async function copy(){if(!visible)return;const op=generation.current;try{await copyText(visible.code);if(op===generation.current)setMessage('Код скопирован. Никому его не передавай.');}catch{if(op===generation.current)setMessage('Выдели код и скопируй вручную.');}}
++ return <section className="gp-note" aria-label="Код входа на сайт Fantazia">
++  <strong>Код входа на сайт</strong><p>Для одобренных тестеров Fantazia и владельца. Вход в тот же MAIN-аккаунт, без отдельной регистрации.</p>
++  <button className="gp-primary" disabled={busy||mode!=='verified'} onClick={()=>void issue()}>{busy?'Получаем код…':'Получить код входа'}</button>
++  {visible&&<><label>Одноразовый код<input aria-label="Одноразовый код входа Fantazia" readOnly value={visible.code} onFocus={e=>e.currentTarget.select()} style={{display:'block',width:'100%',boxSizing:'border-box',padding:12,fontFamily:'monospace',fontSize:20}}/></label><p>Осталось {Math.max(0,Math.ceil((visible.expiresAt-clock)/1000))} сек. Используется один раз.</p><button onClick={()=>void copy()}>Скопировать код</button></>}
++  {code&&!visible&&mode==='verified'&&<p>Код истёк. Получи новый.</p>}
++  <p><a href={FANTAZIA_LOGIN_URL} target="_blank" rel="noopener noreferrer">Открыть страницу входа Fantazia</a></p>
++  <small>Это не код из письма и не бета-ключ. Код не сохраняется в настройках. Если он уже использован, запроси новый через 30 секунд.</small>
++  {message&&<p role="status">{message}</p>}
++ </section>;
++}
+diff --git a/src/lib/fantaziaSiteLogin.ts b/src/lib/fantaziaSiteLogin.ts
+new file mode 100644
+--- /dev/null
++++ b/src/lib/fantaziaSiteLogin.ts
+@@ -0,0 +1,25 @@
++import type {CloudClient} from './online';
++import {onlineFetch} from './onlineTransport';
++export const FANTAZIA_LOGIN_URL = 'https://fantazia-rp-3d1.onrender.com/closed/login';
++const ISSUE_URL = 'https://fantazia-rp-3d1.onrender.com/closed/launcher-code';
++export interface FantaziaSiteCode {code:string; expiresAt:number; accountId:string;}
++export async function requestFantaziaSiteCode(token:string, accountId:string, fetchImpl=onlineFetch):Promise<FantaziaSiteCode> {
++ if(!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token)||token.length>5000)throw Error('Войди в основной онлайн-аккаунт.');
++ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),45000);
++ try {
++  const response=await fetchImpl(ISSUE_URL,{method:'POST',credentials:'omit',redirect:'error',signal:controller.signal,headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:'{}'});
++  const text=await response.text();
++  if(!response.ok)throw Error('Код не выдан. Нужны действующий MAIN-вход и одобрение Fantazia либо роль владельца. Между запросами подожди 30 секунд.');
++  if(text.length>4096)throw Error('Некорректный ответ сервера.');
++  const data=JSON.parse(text),expiresAt=Date.parse(data.expires_at);
++  if(data.ok!==true||typeof data.code!=='string'||!/^FZ-([A-HJ-NP-Z2-9]{4}-){3}[A-HJ-NP-Z2-9]{4}$/.test(data.code)||data.expires_in!==120||!Number.isFinite(expiresAt)||expiresAt<=Date.now()||expiresAt>Date.now()+125000)throw Error('Некорректный код или срок действия. Проверь часы устройства.');
++  return {code:data.code,expiresAt,accountId};
++ } finally { clearTimeout(timer); }
++}
++
++export async function issueFantaziaSiteCode(client:Pick<CloudClient,'session'|'withDevSession'>):Promise<FantaziaSiteCode> {
++ const uid=client.session?.user.id;
++ if(!uid)throw Error('Войди в основной онлайн-аккаунт.');
++ // Existing MAIN token refresh + identity/generation checks. No new auth session.
++ return client.withDevSession(token=>requestFantaziaSiteCode(token,uid));
++}
+diff --git a/tests/fantazia-site-login.test.cjs b/tests/fantazia-site-login.test.cjs
+new file mode 100644
+--- /dev/null
++++ b/tests/fantazia-site-login.test.cjs
+@@ -0,0 +1,31 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{buildSync}=require('esbuild');
++const root=path.resolve(__dirname,'..'),dir=path.join(root,'node_modules/.cache/fantazia-login');fs.mkdirSync(dir,{recursive:true});
++for(const file of ['fantaziaSiteLogin','online'])buildSync({entryPoints:[path.join(root,'src/lib/'+file+'.ts')],outfile:path.join(dir,file+'.cjs'),bundle:true,platform:'node',format:'cjs',define:{'import.meta.env':'{}'}});
++const {requestFantaziaSiteCode,issueFantaziaSiteCode,FANTAZIA_LOGIN_URL}=require(path.join(dir,'fantaziaSiteLogin.cjs'));
++const {CloudClient}=require(path.join(dir,'online.cjs'));
++const uid='11111111-1111-4111-8111-111111111111',answer=()=>({ok:true,code:'FZ-ABCD-EFGH-JKLM-NPQR',expires_in:120,expires_at:new Date(Date.now()+120000).toISOString()});
++test('code request uses fixed HTTPS endpoint and MAIN bearer only, no cookies or refresh token',async()=>{
++ let calls=0;const result=await requestFantaziaSiteCode('main.fixture.token',uid,async(url,opts)=>{calls++;assert.equal(url,'https://fantazia-rp-3d1.onrender.com/closed/launcher-code');assert.equal(opts.credentials,'omit');assert.equal(opts.redirect,'error');assert.equal(opts.headers.Authorization,'Bearer main.fixture.token');assert.equal(opts.body,'{}');assert(opts.signal);return Response.json(answer());});
++ assert.equal(calls,1);assert.equal(result.accountId,uid);assert.match(result.code,/^FZ-/);assert.equal(FANTAZIA_LOGIN_URL,'https://fantazia-rp-3d1.onrender.com/closed/login');
++});
++test('invalid token, refused approval, email/beta code and expired response fail closed',async()=>{
++ let calls=0;await assert.rejects(requestFantaziaSiteCode('local-user',uid,async()=>{calls++;return Response.json(answer());}));assert.equal(calls,0);
++ await assert.rejects(requestFantaziaSiteCode('main.fixture.token',uid,async()=>Response.json({}, {status:403})));
++ for(const value of [{...answer(),code:'123456'},{...answer(),code:'BETA-KEY'},{...answer(),expires_in:900},{...answer(),expires_at:'bad'},{...answer(),expires_at:new Date(0).toISOString()},{...answer(),expires_at:new Date(Date.now()+3600000).toISOString()}])await assert.rejects(requestFantaziaSiteCode('main.fixture.token',uid,async()=>Response.json(value)));
++});
++test('MAIN account switch/logout during request discards the issued code',async()=>{
++ const oldFetch=global.fetch;
++ try{
++  const client=new CloudClient('fixture',true);client.session={access_token:'main.fixture.token',refresh_token:'never-send',expires_at:Date.now()/1000+3600,user:{id:uid}};
++  global.fetch=async()=>{client.clearTransient();return Response.json(answer());};
++  await assert.rejects(issueFantaziaSiteCode(client),/сессия|аккаунт/i);
++  await assert.rejects(issueFantaziaSiteCode(client),/основной онлайн-аккаунт/);
++ }finally{global.fetch=oldFetch;}
++});
++test('UI clears codes on account changes, expiry is displayed, and no secret/persistent code storage exists',()=>{
++ const ui=fs.readFileSync(path.join(root,'src/components/FantaziaSiteLogin.tsx'),'utf8'),lib=fs.readFileSync(path.join(root,'src/lib/fantaziaSiteLogin.ts'),'utf8');
++ assert(ui.includes('[client,uid,mode]'));assert(ui.includes('code.expiresAt>clock'));assert(ui.includes('client.session?.user.id===uid'));assert(ui.includes('copyText(visible.code)'));
++ assert(!/localStorage|sessionStorage|console\.log|FANTAZIA_RUNTIME_SECRET|sb_secret|service_role/.test(ui+lib));
++ assert(!lib.includes('refresh_token'));
++ const properties=fs.readFileSync(path.join(root,'src/components/GameProperties.tsx'),'utf8');assert(properties.includes('{isPublic&&connected&&<FantaziaSiteLogin/>}'));
++});
+diff --git a/native-bundle/src/components/GameProperties.tsx b/native-bundle/src/components/GameProperties.tsx
+--- a/native-bundle/src/components/GameProperties.tsx
++++ b/native-bundle/src/components/GameProperties.tsx
+@@ -1,3 +1,4 @@
++import FantaziaSiteLogin from './FantaziaSiteLogin';
+ import PublicBetaDownload from './PublicBetaDownload';
+ import {useEffect,useRef,useState} from 'react';
+ import {createPortal} from 'react-dom';
+@@ -52,6 +53,7 @@
+   {tab==='about'&&<><p className="gp-eyebrow">ИНФОРМАЦИЯ</p><dl className="gp-facts"><div><dt>Разработчик</dt><dd>{game.developer}</dd></div><div><dt>{isPublic?'План 3D-версии':'Движок'}</dt><dd>{game.engine}</dd></div><div><dt>Стадия</dt><dd>{game.version} · В разработке</dd></div><div><dt>Цена</dt><dd>{game.id==='fantazia'?'Бесплатно':'Пока не объявлена'}</dd></div></dl><div className="gp-note"><strong>{isPublic?'Закрытый бета-тест по заявке':'Сборка игры ещё не подключена'}</strong><p>{isPublic?'Fantazia Beta0.1 для тестеров: отправь заявку во вкладке бета-теста и дождись одобрения автора. На Android установка подтверждается в системе; на Windows загружается и распаковывается полный portable-пакет.':'Одобрение бета-доступа не устанавливает игру. Автор отдельно подготовит файлы для поддерживаемых устройств.'}</p></div><button className="gp-primary" onClick={()=>setTab('beta')}>Перейти к бета-тесту →</button></>}
+   {tab==='beta'&&<><p className="gp-eyebrow">ДОСТУП ПО ЗАЯВКЕ</p><h3>Заявка на бета-тест</h3><p className="gp-muted">Нажми «Отправить заявку». Скачать и запустить игру можно после одобрения temka_play_official.</p>
+    {!onlineEnabled?<div className="gp-note" role="status"><strong>Сервер бета-теста ещё не подключён</strong><p>Панель уже доступна. Отправка заявки заработает после подключения сервера.</p></div>:mode==='checking'?<p className="gp-muted" role="status">Проверяем онлайн-аккаунт…</p>:mode==='error'?<div className="gp-note" role="alert"><strong>Нет связи с онлайн-аккаунтом</strong><p>{accountError}</p><button onClick={()=>void refreshAccount()}>Повторить подключение</button></div>:!connected?<div className="gp-note"><strong>Нужен подтверждённый онлайн-аккаунт</strong><p>Локальное имя не подтверждает личность. Открой профиль и подтверди почту в онлайн-разделе.</p><button onClick={()=>{onClose();onProfile();}}>Открыть профиль</button></div>:<div className={`gp-status gp-state-${status?.state||'unknown'}`} role="status"><strong>{status?BETA_LABELS[status.state]:busy?'Проверяем сервер…':'Статус не подтверждён'}</strong>{status?.state==='pending'&&<p>Заявка отправлена. Дождись решения temka_play_official и нажми «Проверить статус».</p>}{(status?.state==='rejected'||status?.state==='revoked')&&<p>Обратись к автору. Повторная отправка не отменяет уже принятое решение по этому аккаунту.</p>}{status?.state==='approved'&&<p>{game.id==='fantazia'?'Сервер подтвердил доступ аккаунта. Ниже доступны установка и запуск Fantazia.':'Сервер подтвердил доступ аккаунта. Файл бета-сборки ещё не подключён; кнопка запуска не разблокирована.'}</p>}{status?.updated_at&&<p>Изменено: {new Date(status.updated_at).toLocaleString('ru-RU')}</p>}</div>}
++   {isPublic&&connected&&<FantaziaSiteLogin/>}
+    {isPublic&&connected&&status?.state==='approved'&&<PublicBetaDownload gameId={game.id}/>}
+    {isPublic?<button className="gp-primary" disabled={!connected||busy||!status||status.state!=='none'} onClick={()=>void run(async()=>{const next=await client.requestBeta(game.id);if(alive.current)setStatus(next);})}>{busy?'Подожди…':status?.state==='pending'?'Заявка отправлена':'Отправить заявку'}</button>:<p>Заявки для этой игры пока не принимаются.</p>}
+    {connected&&<button disabled={busy} onClick={()=>void run(refresh)}>Проверить статус</button>}
+diff --git a/native-bundle/src/components/FantaziaSiteLogin.tsx b/native-bundle/src/components/FantaziaSiteLogin.tsx
+new file mode 100644
+--- /dev/null
++++ b/native-bundle/src/components/FantaziaSiteLogin.tsx
+@@ -0,0 +1,31 @@
++import {useEffect,useRef,useState} from 'react';
++import {useOnlineAccount} from '../lib/onlineAccount';
++import {copyText} from '../lib/clipboard';
++import {FANTAZIA_LOGIN_URL,issueFantaziaSiteCode} from '../lib/fantaziaSiteLogin';
++import type {FantaziaSiteCode} from '../lib/fantaziaSiteLogin';
++
++export default function FantaziaSiteLogin(){
++ const {client,mode}=useOnlineAccount(),uid=client.session?.user.id;
++ const [code,setCode]=useState<FantaziaSiteCode|null>(null),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[clock,setClock]=useState(Date.now());
++ const generation=useRef(0),pending=useRef(false);
++ useEffect(()=>{generation.current++;pending.current=false;setCode(null);setMessage('');setBusy(false);return()=>{generation.current++;};},[client,uid,mode]);
++ useEffect(()=>{if(!code)return;const timer=setInterval(()=>setClock(Date.now()),1000);return()=>clearInterval(timer);},[code]);
++ const visible=mode==='verified'&&code&&code.accountId===uid&&code.expiresAt>clock?code:null;
++ async function issue(){
++  if(pending.current||mode!=='verified')return;
++  pending.current=true;const op=++generation.current;setBusy(true);setCode(null);setMessage('');
++  try{const next=await issueFantaziaSiteCode(client);if(op===generation.current&&client.session?.user.id===uid){setClock(Date.now());setCode(next);}}
++  catch(error){if(op===generation.current)setMessage(error instanceof Error?error.message:'Не удалось получить код.');}
++  finally{if(op===generation.current){pending.current=false;setBusy(false);}}
++ }
++ async function copy(){if(!visible)return;const op=generation.current;try{await copyText(visible.code);if(op===generation.current)setMessage('Код скопирован. Никому его не передавай.');}catch{if(op===generation.current)setMessage('Выдели код и скопируй вручную.');}}
++ return <section className="gp-note" aria-label="Код входа на сайт Fantazia">
++  <strong>Код входа на сайт</strong><p>Для одобренных тестеров Fantazia и владельца. Вход в тот же MAIN-аккаунт, без отдельной регистрации.</p>
++  <button className="gp-primary" disabled={busy||mode!=='verified'} onClick={()=>void issue()}>{busy?'Получаем код…':'Получить код входа'}</button>
++  {visible&&<><label>Одноразовый код<input aria-label="Одноразовый код входа Fantazia" readOnly value={visible.code} onFocus={e=>e.currentTarget.select()} style={{display:'block',width:'100%',boxSizing:'border-box',padding:12,fontFamily:'monospace',fontSize:20}}/></label><p>Осталось {Math.max(0,Math.ceil((visible.expiresAt-clock)/1000))} сек. Используется один раз.</p><button onClick={()=>void copy()}>Скопировать код</button></>}
++  {code&&!visible&&mode==='verified'&&<p>Код истёк. Получи новый.</p>}
++  <p><a href={FANTAZIA_LOGIN_URL} target="_blank" rel="noopener noreferrer">Открыть страницу входа Fantazia</a></p>
++  <small>Это не код из письма и не бета-ключ. Код не сохраняется в настройках. Если он уже использован, запроси новый через 30 секунд.</small>
++  {message&&<p role="status">{message}</p>}
++ </section>;
++}
+diff --git a/native-bundle/src/lib/fantaziaSiteLogin.ts b/native-bundle/src/lib/fantaziaSiteLogin.ts
+new file mode 100644
+--- /dev/null
++++ b/native-bundle/src/lib/fantaziaSiteLogin.ts
+@@ -0,0 +1,25 @@
++import type {CloudClient} from './online';
++import {onlineFetch} from './onlineTransport';
++export const FANTAZIA_LOGIN_URL = 'https://fantazia-rp-3d1.onrender.com/closed/login';
++const ISSUE_URL = 'https://fantazia-rp-3d1.onrender.com/closed/launcher-code';
++export interface FantaziaSiteCode {code:string; expiresAt:number; accountId:string;}
++export async function requestFantaziaSiteCode(token:string, accountId:string, fetchImpl=onlineFetch):Promise<FantaziaSiteCode> {
++ if(!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token)||token.length>5000)throw Error('Войди в основной онлайн-аккаунт.');
++ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),45000);
++ try {
++  const response=await fetchImpl(ISSUE_URL,{method:'POST',credentials:'omit',redirect:'error',signal:controller.signal,headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:'{}'});
++  const text=await response.text();
++  if(!response.ok)throw Error('Код не выдан. Нужны действующий MAIN-вход и одобрение Fantazia либо роль владельца. Между запросами подожди 30 секунд.');
++  if(text.length>4096)throw Error('Некорректный ответ сервера.');
++  const data=JSON.parse(text),expiresAt=Date.parse(data.expires_at);
++  if(data.ok!==true||typeof data.code!=='string'||!/^FZ-([A-HJ-NP-Z2-9]{4}-){3}[A-HJ-NP-Z2-9]{4}$/.test(data.code)||data.expires_in!==120||!Number.isFinite(expiresAt)||expiresAt<=Date.now()||expiresAt>Date.now()+125000)throw Error('Некорректный код или срок действия. Проверь часы устройства.');
++  return {code:data.code,expiresAt,accountId};
++ } finally { clearTimeout(timer); }
++}
++
++export async function issueFantaziaSiteCode(client:Pick<CloudClient,'session'|'withDevSession'>):Promise<FantaziaSiteCode> {
++ const uid=client.session?.user.id;
++ if(!uid)throw Error('Войди в основной онлайн-аккаунт.');
++ // Existing MAIN token refresh + identity/generation checks. No new auth session.
++ return client.withDevSession(token=>requestFantaziaSiteCode(token,uid));
++}
+diff --git a/native-bundle/tests/fantazia-site-login.test.cjs b/native-bundle/tests/fantazia-site-login.test.cjs
+new file mode 100644
+--- /dev/null
++++ b/native-bundle/tests/fantazia-site-login.test.cjs
+@@ -0,0 +1,31 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{buildSync}=require('esbuild');
++const root=path.resolve(__dirname,'..'),dir=path.join(root,'node_modules/.cache/fantazia-login');fs.mkdirSync(dir,{recursive:true});
++for(const file of ['fantaziaSiteLogin','online'])buildSync({entryPoints:[path.join(root,'src/lib/'+file+'.ts')],outfile:path.join(dir,file+'.cjs'),bundle:true,platform:'node',format:'cjs',define:{'import.meta.env':'{}'}});
++const {requestFantaziaSiteCode,issueFantaziaSiteCode,FANTAZIA_LOGIN_URL}=require(path.join(dir,'fantaziaSiteLogin.cjs'));
++const {CloudClient}=require(path.join(dir,'online.cjs'));
++const uid='11111111-1111-4111-8111-111111111111',answer=()=>({ok:true,code:'FZ-ABCD-EFGH-JKLM-NPQR',expires_in:120,expires_at:new Date(Date.now()+120000).toISOString()});
++test('code request uses fixed HTTPS endpoint and MAIN bearer only, no cookies or refresh token',async()=>{
++ let calls=0;const result=await requestFantaziaSiteCode('main.fixture.token',uid,async(url,opts)=>{calls++;assert.equal(url,'https://fantazia-rp-3d1.onrender.com/closed/launcher-code');assert.equal(opts.credentials,'omit');assert.equal(opts.redirect,'error');assert.equal(opts.headers.Authorization,'Bearer main.fixture.token');assert.equal(opts.body,'{}');assert(opts.signal);return Response.json(answer());});
++ assert.equal(calls,1);assert.equal(result.accountId,uid);assert.match(result.code,/^FZ-/);assert.equal(FANTAZIA_LOGIN_URL,'https://fantazia-rp-3d1.onrender.com/closed/login');
++});
++test('invalid token, refused approval, email/beta code and expired response fail closed',async()=>{
++ let calls=0;await assert.rejects(requestFantaziaSiteCode('local-user',uid,async()=>{calls++;return Response.json(answer());}));assert.equal(calls,0);
++ await assert.rejects(requestFantaziaSiteCode('main.fixture.token',uid,async()=>Response.json({}, {status:403})));
++ for(const value of [{...answer(),code:'123456'},{...answer(),code:'BETA-KEY'},{...answer(),expires_in:900},{...answer(),expires_at:'bad'},{...answer(),expires_at:new Date(0).toISOString()},{...answer(),expires_at:new Date(Date.now()+3600000).toISOString()}])await assert.rejects(requestFantaziaSiteCode('main.fixture.token',uid,async()=>Response.json(value)));
++});
++test('MAIN account switch/logout during request discards the issued code',async()=>{
++ const oldFetch=global.fetch;
++ try{
++  const client=new CloudClient('fixture',true);client.session={access_token:'main.fixture.token',refresh_token:'never-send',expires_at:Date.now()/1000+3600,user:{id:uid}};
++  global.fetch=async()=>{client.clearTransient();return Response.json(answer());};
++  await assert.rejects(issueFantaziaSiteCode(client),/сессия|аккаунт/i);
++  await assert.rejects(issueFantaziaSiteCode(client),/основной онлайн-аккаунт/);
++ }finally{global.fetch=oldFetch;}
++});
++test('UI clears codes on account changes, expiry is displayed, and no secret/persistent code storage exists',()=>{
++ const ui=fs.readFileSync(path.join(root,'src/components/FantaziaSiteLogin.tsx'),'utf8'),lib=fs.readFileSync(path.join(root,'src/lib/fantaziaSiteLogin.ts'),'utf8');
++ assert(ui.includes('[client,uid,mode]'));assert(ui.includes('code.expiresAt>clock'));assert(ui.includes('client.session?.user.id===uid'));assert(ui.includes('copyText(visible.code)'));
++ assert(!/localStorage|sessionStorage|console\.log|FANTAZIA_RUNTIME_SECRET|sb_secret|service_role/.test(ui+lib));
++ assert(!lib.includes('refresh_token'));
++ const properties=fs.readFileSync(path.join(root,'src/components/GameProperties.tsx'),'utf8');assert(properties.includes('{isPublic&&connected&&<FantaziaSiteLogin/>}'));
++});
+diff --git a/native-bundle/manifest.json b/native-bundle/manifest.json
+--- a/native-bundle/manifest.json
++++ b/native-bundle/manifest.json
+@@ -1,6 +1,9 @@
+ {
+   "protocol": 3,
+   "files": {
++    "src/lib/fantaziaSiteLogin.ts": "451f79ddbb877d7b62e71e7e2c3e0390f13b390a4747b1c1e278bfb844b65c38",
++    "src/components/FantaziaSiteLogin.tsx": "620666a29061cd522a5d24cca4d064c20874c619bc55a4b5b32fad392397f918",
++    "tests/fantazia-site-login.test.cjs": "515f7934582509b3c4be5c942053034470e7d41545f3d92366951ecf8a744e06",
+     "electron/game-server.cjs": "f556829a0cdde2c4cfecd8e81ced2d2c8609cc1ca20efcc48bc03947debcc015",
+     "tests/game-server.test.cjs": "f666814969fa32f26783e9a31cff28804d4d2312c89bffdd9a82c0a87d87f8de",
+     "scripts/smoke-lifecycle.cjs": "3bc5c5cbb4d3140a0feebe72a0feaae6ac7cb6ddec97be73a3bb14fe1ddae1f8",
+@@ -72,7 +75,7 @@
+     "tests/player-card.test.cjs": "fa93bc35928c14fbb4a4fab33e6c549ef3bf750df25a4bf5916b61c9142db25c",
+     "CHANGELOG.md": "5b0dbc8d8fa371509aca7e03cd78254973d1be7428bf1ac1fbe9f3407360aade",
+     "TEST-REPORT.md": "6dddbbe88ae09dd299b937c4006a8a30975293b44986c1b751c185804b2de018",
+-    "src/components/GameProperties.tsx": "d69f0f575795cf2db83ce7fe3fb6e7eb76fbf05367642390f5ceade86649e2b9",
++    "src/components/GameProperties.tsx": "9a8ef784ea465f7850841d8ce99bc452412a29e783210d560275858ff4bb8568",
+     "src/lib/online.ts": "224489fcaafd0d33fd3d8f4fe59d7d9680c8be5d9e759349d6629054010618b9",
+     "electron/tracked-game.cjs": "d504940fc8f6c240793e4de3dbd616945a56a30c7920e1de12dda6210c2a7608",
+     "tests/messaging.test.cjs": "0c506adc570453c0e45a72a8e9b76b78ac097632ac167dd56bab7b8734dd3198",
