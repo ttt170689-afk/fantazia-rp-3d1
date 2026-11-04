@@ -7,7 +7,8 @@
     "start": "node server.js",
     "dev": "node server.js",
     "test:closed": "node --test tests/closed-*.test.cjs",
-    "test:closed:db": "node tests/closed-db-check.cjs"
+    "test:closed:db": "node tests/closed-db-check.cjs",
+    "test:launcher-login": "node --test tests/launcher-login*.test.cjs"
   },
   "dependencies": {
     "express": "^4.22.1",
