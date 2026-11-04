@@ -909,6 +909,7 @@ window.FZ7_placeBiz = function (idx, x, z) {
       fl.position.y = -3; fl.rotation.x = Math.PI; fl.visible = false; rocket.add(fl);
       rocket.userData.flame = fl;
       rocket.position.set(padX, 0.4, padZ); scene.add(rocket);
+      window.FZVoyage43?.attachRocket(rocket,padX,padZ);
       try { streetColliders.push({ x: padX, z: padZ, r: 2.2 }); } catch (e) {}
       const tower = new THREE.Mesh(new THREE.BoxGeometry(1.4, 12, 1.4), new THREE.MeshLambertMaterial({ color: 0x8a3030 }));
       tower.position.set(padX + 4.4, 6, padZ); scene.add(tower);

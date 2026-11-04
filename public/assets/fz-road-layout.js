@@ -86,7 +86,7 @@
         d,
         options.ignore === undefined ? owner : options.ignore,
         !!options.props,
-      );
+      ) && (!options.accept || options.accept(a + ox, b + oz));
     if (ok(x, z)) return { x, z };
     const step = options.step || 2,
       limit = options.limit === undefined ? 320 : options.limit;

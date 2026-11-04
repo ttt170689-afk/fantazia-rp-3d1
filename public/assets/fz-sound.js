@@ -235,33 +235,33 @@
     gain.gain.exponentialRampToValueAtTime(0.0001, at + duration);
     source.connect(gain);
     gain.connect(buses.sfx);
-    own(source, [gain]);
+    own(source, [gain]).sfx = true;
     source.start(at);
     source.stop(at + duration + 0.02);
   }
-  function air(duration, volume, frequency, end = frequency) {
+  function air(duration, volume, frequency, end = frequency, delay = 0) {
     if (!allowed() || !prefs.sfx || sources.size >= 40) return;
-    graph();
+    graph();const at=ctx.currentTime+delay;
     const source = ctx.createBufferSource(),
       filter = ctx.createBiquadFilter(),
       gain = ctx.createGain();
     source.buffer = noise();
     source.loop = true;
     filter.type = "lowpass";
-    filter.frequency.setValueAtTime(frequency, ctx.currentTime);
+    filter.frequency.setValueAtTime(frequency, at);
     filter.frequency.exponentialRampToValueAtTime(
       Math.max(40, end),
-      ctx.currentTime + duration,
+      at + duration,
     );
-    gain.gain.setValueAtTime(0, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(volume, ctx.currentTime + 0.015);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+    gain.gain.setValueAtTime(0, at);
+    gain.gain.linearRampToValueAtTime(volume, at + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, at + duration);
     source.connect(filter);
     filter.connect(gain);
     gain.connect(buses.sfx);
-    own(source, [gain, filter]);
-    source.start();
-    source.stop(ctx.currentTime + duration + 0.02);
+    own(source, [gain, filter]).sfx = true;
+    source.start(at);
+    source.stop(at + duration + 0.02);
   }
   function effect(name, options = {}) {
     if (!allowed()) return false;
@@ -276,6 +276,18 @@
     } else if (name === "flash") {
       air(0.055, 0.15, 4200, 1400);
       tone(280, 0.07, 0.04, 190);
+    } else if (name === "drip42") {
+      tone(1450,.1,.025,620);air(.08,.025,1700,700);
+    } else if (name === "rat42") {
+      air(.18,.035,1300,450);tone(1750,.09,.012,1200);
+    } else if (name === "fall") {
+      air(3.4,.18,250,2400);tone(130,2.8,.035,42);
+    } else if (name === "body-impact") {
+      tone(78,.45,.14,29);air(.28,.15,440,100);air(.55,.06,1800,300,.08);
+    } else if (name === "stand") {
+      air(.55,.08,500,180);air(.45,.055,1100,400,.4);tone(76,.14,.025,52,.85);
+    } else if (name === "cloth") {
+      air(.35,.05,1300,400);
     } else if (name === "step") {
       const hard = !!options.hard,
         v = Math.max(0.02, Math.min(0.18, Number(options.volume) || 0.1));
@@ -376,7 +388,7 @@
     }
   }
   function ambience(next) {
-    const key = ["city", "sky", "metro"].includes(next) ? next : "";
+    const key = ["city", "sky", "metro", "forest"].includes(next) ? next : "";
     if (bed?.key === key || (!bed && !key)) return;
     stopBed();
     if (!key || !allowed()) return;
@@ -411,11 +423,21 @@
     else speakers.delete(audio);
     apply();
   }
-  function pipeVoice(audio) {
+  const radios=new WeakMap(),radioPlaying=new Set();
+  function pipeVoice(audio,options={}) {
     graph();
     if (!ctx || media.has(audio)) return;
     const source = ctx.createMediaElementSource(audio);
-    source.connect(buses.voice);
+    if(options.radio){
+      const high=ctx.createBiquadFilter(),low=ctx.createBiquadFilter(),compress=ctx.createDynamicsCompressor(),meter=ctx.createAnalyser();
+      high.type='highpass';high.frequency.value=350;high.Q.value=.7;low.type='lowpass';low.frequency.value=3000;low.Q.value=.7;
+      compress.threshold.value=-24;compress.ratio.value=3;compress.knee.value=12;compress.attack.value=.003;compress.release.value=.12;meter.fftSize=256;
+      source.connect(high);high.connect(low);low.connect(compress);compress.connect(meter);meter.connect(buses.voice);
+      const r={meter,data:new Uint8Array(meter.frequencyBinCount),hiss:null};radios.set(audio,r);
+      const stop=()=>{r.hiss?.stop();r.hiss=null;radioPlaying.delete(audio);};
+      audio.addEventListener('playing',()=>{stop();if(!allowed())return;radioPlaying.add(audio);const src=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),gain=ctx.createGain();src.buffer=noise();src.loop=true;filter.type='bandpass';filter.frequency.value=1800;gain.gain.value=.006;src.connect(filter);filter.connect(gain);gain.connect(buses.voice);r.hiss=own(src,[filter,gain]);src.start();});
+      for(const event of ['pause','ended','error','emptied','waiting'])audio.addEventListener(event,stop);
+    }else source.connect(buses.voice);
     media.set(audio, source);
     audio.addEventListener("playing", () => {
       if (!allowed()) {
@@ -496,6 +518,7 @@
     if (visible("serverScreen")) return "lobby";
     if (!document.body.classList.contains("game-active") || window._loadingGate)
       return "loading";
+    if (window.FZStory30?.locked()) return "story";
     if (window.FZMetro?.active()) return "metro";
     if (window.FZSky?.busy()) return "descent";
     if (window.FZSky?.active()) return "sky";
@@ -504,6 +527,7 @@
       (isInsideBuilding || isInFactory || isInBasement)
     )
       return "interior";
+    if(window.FZStory30Forest?.active())return "forest";
     return "city";
   }
   function tick() {
@@ -521,7 +545,7 @@
       if (next === "descent") effect("whoosh");
     }
     if (!seen.has(next)) {
-      if (["lobby", "sky", "city"].includes(next)) {
+      if ((window.FZStory30 ? ["city"] : ["lobby", "sky", "city"]).includes(next)) {
         say(next === "lobby" ? "welcome" : next);
         seen.add(next);
       } else if (next === "intro" && window.FZFront?.info().elapsed < 4) {
@@ -738,10 +762,13 @@
     effect,
     bus,
     pipeVoice,
+    radioLevel: audio=>{const r=radios.get(audio);if(!r||audio.paused||!allowed())return 0;r.meter.getByteFrequencyData(r.data);let sum=0;for(const n of r.data)sum+=n;return Math.min(1,sum/r.data.length/100);},
+    radioInfo: audio=>({filtered:radios.has(audio),highpass:350,lowpass:3000}),
     stopVoice,
     unlock,
     sanitize,
     unlocked: () => unlocked,
+    stopEffects:()=>{for(const s of [...sources])if(s.sfx)s.stop();},
     audible: allowed,
     stepsEnabled: () => prefs.footsteps && allowed(),
     tick,
@@ -757,6 +784,7 @@
       ducked: !!speakers.size,
       context: ctx?.state || "uninitialized",
       sources: sources.size,
+      radioPlaying:radioPlaying.size,
       loops: Number(!!current) + Number(!!fading),
       buffers: buffers.size,
       musicError,

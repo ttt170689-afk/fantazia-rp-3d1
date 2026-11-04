@@ -1,0 +1,21 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),path=require('node:path'),{fork,spawnSync}=require('node:child_process');const {COOKIE}=require('../server/closed-beta.cjs'),{cookieCodec}=require('../server/closed-runtime.cjs');
+test('actual complete server starts fail-closed without config; configured process hides game and creates MAIN-bound profiles',async()=>{
+ const fs=require('node:fs'),os=require('node:os'),dir=fs.mkdtempSync(path.join(os.tmpdir(),'temka-closed-process-')),control=path.join(dir,'beta');fs.writeFileSync(control,'approved');
+ const root=path.resolve(__dirname,'..'),env={...process.env,PORT:'0'};delete env.FANTAZIA_RUNTIME_SECRET;const no=spawnSync(process.execPath,[path.join(root,'server.js')],{cwd:root,env,encoding:'utf8',timeout:10000});assert.equal(no.status,1);assert(no.stderr.includes('FANTAZIA_RUNTIME_SECRET'));
+ env.FANTAZIA_RUNTIME_SECRET='S'.repeat(43);env.FIXTURE_BETA_FILE=control;const child=fork(path.join(root,'server.js'),{cwd:root,env,execArgv:['--require',path.join(__dirname,'closed-fixture-hook.cjs')],stdio:['ignore','pipe','pipe','ipc']});let logs='';child.stdout.on('data',b=>logs+=b);child.stderr.on('data',b=>logs+=b);
+ try{let timer;const port=await Promise.race([new Promise((resolve,reject)=>{child.once('message',m=>resolve(m.port));child.once('exit',()=>reject(Error(logs)));}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('startup timeout '+logs)),12000);})]).finally(()=>clearTimeout(timer));const origin='http://127.0.0.1:'+port;
+ let r=await fetch(origin+'/api/health');assert.equal((await r.json()).closedBeta,true);
+ for(const p of ['/','/public/index.html','/world/fantazia_city.glb','/api/players']){r=await fetch(origin+p,{redirect:'manual'});assert([303,403].includes(r.status),p);}
+ const cookie=COOKIE+'='+cookieCodec(env.FANTAZIA_RUNTIME_SECRET).seal({access_token:'tester.jwt.token'}),headers={cookie,Origin:origin,'Content-Type':'application/json'};
+ r=await fetch(origin+'/api/closed/me',{headers});let me=await r.json();assert.equal(me.username,'tester_fixture');assert.equal(me.isAdmin,false);assert(me.token.length>=32);
+ r=await fetch(origin+'/api/admin/accounts',{headers});assert.equal(r.status,403);
+ r=await fetch(origin+'/api/auth/register',{method:'POST',headers,body:'{"username":"fake"}'});assert.equal(r.status,410);
+ r=await fetch(origin+'/',{headers});assert.equal(r.status,200);const html=await r.text();assert(html.includes('fetch(\'/api/closed/me\''));assert(!html.includes('if (!serverAccount && accounts[key]?.passwordHash'));
+ const ownerCookie=COOKIE+'='+cookieCodec(env.FANTAZIA_RUNTIME_SECRET).seal({access_token:'owner.jwt.token'});r=await fetch(origin+'/api/closed/me',{headers:{cookie:ownerCookie}});me=await r.json();assert.equal(me.isAdmin,true);assert.equal(me.username,'owner_fixture');
+ r=await fetch(origin+'/api/admin/accounts',{headers:{cookie:ownerCookie}});assert.equal(r.status,200);
+ const {io}=require('socket.io-client');
+ const guest=io(origin,{transports:['websocket'],reconnection:false,timeout:2000});try{await new Promise((resolve,reject)=>{guest.once('connect_error',resolve);guest.once('connect',()=>reject(Error('Anonymous WebSocket entered')));});}finally{guest.close();}
+ const tester=io(origin,{transports:['websocket'],extraHeaders:{Cookie:cookie},reconnection:false,timeout:3000});try{await new Promise((resolve,reject)=>{tester.once('connect',resolve);tester.once('connect_error',reject);});const registered=new Promise(resolve=>tester.once('registered',resolve));tester.emit('registerPlayer',{name:'temka_play_official',token:'stolen-or-local',isAdmin:true});const result=await registered;assert.equal(result.isAdmin,false);assert.equal(result.player.name,'tester_fixture');const denied=new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Revoked socket was not disconnected')),16000);tester.once('closedBetaDenied',()=>{clearTimeout(timer);resolve();});});fs.writeFileSync(control,'revoked');await denied;}finally{tester.close();}
+
+ }finally{child.kill('SIGTERM');await new Promise(resolve=>{if(child.exitCode!==null)return resolve();child.once('exit',resolve);});fs.rmSync(dir,{recursive:true,force:true});}
+});

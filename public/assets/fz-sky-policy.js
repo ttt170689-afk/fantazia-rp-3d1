@@ -39,10 +39,20 @@
       Math.abs(p.z - stage.z) < stage.d / 2 + pad
     );
   }
+  function landing(x, z) {
+    return x > 8.7 && x < 27.3 && z >= deck.z + 17.5 && z < deck.z + 31;
+  }
   function blocked(x, z, allowed) {
     const dz = z - deck.z;
     if (dz > 8 && dz < 18 && [15.3, 20.7].some((px) => Math.abs(x - px) < 0.6))
       return true;
+    // Five public cabins: walk across the lobby, then through any open door.
+    if (landing(x,z)) {
+      if (x < 9.1 || x > 26.9 || dz > 30.65) return true;
+      if (dz < 18.1 && Math.abs(x-18)>2.1) return true;
+      if (dz > 27 && [11.2,14.6,18,21.4,24.8].some(cx=>Math.abs(Math.abs(x-cx)-1.1)<.32)) return true;
+      return false;
+    }
     const garden = [...gardenPools, ...gardenTrees, ...gardenSupports].some(
       (p) => Math.hypot(x - p.x, dz - p.z) < p.r + 0.3,
     );
@@ -57,12 +67,13 @@
       [15.3, 20.7].some((px) => Math.hypot(x - px, dz - 18) < 0.85);
     return (
       furniture ||
-      Math.hypot(x - deck.x, z - deck.z) > deck.r - 1.6 ||
+      (Math.hypot(x - deck.x, z - deck.z) > deck.r - 1.6 && !landing(x,z)) ||
       (!allowed && onStage({ x, y: deck.y, z }, 0.6)) ||
       (Math.abs(x - 14) < 3 && Math.abs(z - (deck.z - 13)) < 0.8)
     );
   }
   function ground(x, z, allowed) {
+    if (landing(x,z)) return deck.y - 2;
     if (allowed && onStage({ x, y: deck.y, z }, 0.3)) return deck.y + stage.h;
     if (Math.abs(x - 18) < 2.6 && z > deck.z + 8 && z < deck.z + 18)
       return (
@@ -73,7 +84,7 @@
   function position(p, previous, allowed) {
     if (!finite(p)) return finite(previous) ? { ...previous } : { ...spawn };
     if (onStage(p, 0.6) && !allowed) return { ...spawn };
-    if (region(p) && Math.hypot(p.x - deck.x, p.z - deck.z) > deck.r - 1.6)
+    if (region(p) && Math.hypot(p.x - deck.x, p.z - deck.z) > deck.r - 1.6 && !landing(p.x,p.z))
       return { ...spawn };
     return { x: p.x, y: p.y, z: p.z };
   }
@@ -87,6 +98,7 @@
     region,
     onStage,
     blocked,
+    landing,
     ground,
     position,
   };

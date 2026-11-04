@@ -8,7 +8,6 @@
     owner = null,
     allowed = false,
     connection = null,
-    flight = null,
     stagePending = false,
     priorWorld = false,
     restoreFog = null,
@@ -25,7 +24,7 @@
       P.region(localPlayer.mesh.position)
     );
   }
-  const busy = () => !!flight;
+  const busy = () => !!window.FZStory30?.locked() && FZStory30.info().kind === "ride";
   function notice(s) {
     showNotification(s, "info");
   }
@@ -101,6 +100,8 @@
       return o;
     };
     const ring = (r, t, y, m) => {
+      if(r>27){const points=[],start=Math.acos(8.6/r),end=Math.asin(17.5/r)+Math.PI*2;for(let i=0;i<=120;i++){const a=start+(end-start)*i/120;points.push(new THREE.Vector3(Math.cos(a)*r,y,Math.sin(a)*r));}return add(geometry(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),120,t,8,false)),m,0,0,0);}
+
       const o = add(
         geometry(new THREE.TorusGeometry(r, t, 8, 128)),
         m,
@@ -113,15 +114,13 @@
       return o;
     };
     // Exact deck and stair aperture; the physics/server policy remains in world coordinates.
-    const deck = new THREE.Shape();
-    deck.absarc(0, 0, D.r, 0, Math.PI * 2, false);
-    const hole = new THREE.Path();
-    hole.moveTo(15.25, -8);
-    hole.lineTo(15.25, -18);
-    hole.lineTo(20.75, -18);
-    hole.lineTo(20.75, -8);
-    hole.closePath();
-    deck.holes.push(hole);
+    // Open notch through the FULL 2.2 m deck slab: lobby cannot sit inside it.
+    const deck=new THREE.Shape(),a0=Math.asin(8.6/D.r),a1=Math.acos(17.5/D.r);
+    deck.moveTo(0,-D.r);
+    for(let i=1;i<=12;i++){const a=a0*i/12;deck.lineTo(Math.sin(a)*D.r,-Math.cos(a)*D.r);}
+    for(const [x,z] of [[8.6,17.5],[15.25,17.5],[15.25,8],[20.75,8],[20.75,17.5],[Math.sqrt(D.r*D.r-17.5*17.5),17.5]])deck.lineTo(x,-z);
+    for(let i=1;i<=160;i++){const a=a1+(Math.PI*2-a1)*i/160;deck.lineTo(Math.sin(a)*D.r,-Math.cos(a)*D.r);}
+    deck.closePath();
     const floor = add(
       geometry(
         new THREE.ExtrudeGeometry(deck, {
@@ -154,6 +153,7 @@
       const a = (i * Math.PI) / 24,
         x = Math.sin(a) * 30,
         z = Math.cos(a) * 30;
+      if(x>8 && x<28 && z>17)continue;
       rod([x, 0.08, z], [x, 1.55, z], 0.045, M.steel);
       box(x, 0.06, z, 0.28, 0.08, 0.28, M.steel);
       const g = box(
@@ -168,7 +168,7 @@
       g.rotation.y = a + Math.PI / 48;
       g.castShadow = false;
     }
-    ring(30, 0.047, 1.55, M.brass);
+    ring(30, 0.047, 1.55, M.brass); // notched at the public lobby
     // Pavilion keeps the same protected footprint. Layered base, teak floor and roof soffit.
     box(0, 0.6, -17, 14, 1.2, 10, M.dark);
     box(0, 1.23, -17, 14, 0.06, 10, M.wood);
@@ -259,8 +259,12 @@
       3.2,
       18,
     );
-    descentClouds = FZSkyDescent.create(root, resources, visual.maps);
-    sign("В ГОРОД ↓", 18, 5.8, 18, 6, 1);
+    // The stair opening now continues into five walk-in glass cabins.
+    window.FZStory30?.buildSky(root, resources);
+    for (const [i, x] of [11.2, 14.6, 18, 21.4, 24.8].entries()) interactables.push({
+      type: "sky_lift", name: "Стеклянный лифт " + (i + 1) + " — начать спуск",
+      position: { x, y: D.y - 2, z: D.z + 28.7 }, range: 1.5, sky: true,
+    });
     for (const z of [-5, 8]) {
       for (let i = 0; i < 7; i++)
         box(-20, 0.55, z - 0.42 + i * 0.14, 5, 0.13, 0.105, M.wood);
@@ -313,9 +317,9 @@
     interactables.push(
       {
         type: "sky_descent",
-        name: "Белый свет — спуститься в город",
+        name: "Лестница к стеклянным лифтам",
         position: { x: 18, y: D.y, z: D.z + 12 },
-        range: 6.5,
+        range: 2.5,
         sky: true,
       },
       {
@@ -427,94 +431,13 @@
     return true;
   }
   function descend(onArrival) {
-    if (!active() || window.cine || window._loadingGate) return false;
-    FZPlay.release();
-    FZGuide.close();
-    FZPlay.close();
-    FZTouch.close();
-    const previousMode = window.cameraMode;
-    window.cameraMode = "first";
-    localPlayer.currentAnimation = "walk";
-    localPlayer.mesh.position.set(18, D.y, D.z + 7.5);
-    localPlayer.mesh.rotation.y = 0;
-    flight = {
-      previousMode,
-      landed: false,
-      onArrival: typeof onArrival === "function" ? onArrival : null,
-    };
-    let white = document.getElementById("fzSkyWhite");
-    if (!white) {
-      white = document.createElement("div");
-      white.id = "fzSkyWhite";
-      white.innerHTML =
-        "<strong>FANTAZIA RP 3D</strong><span>Добро пожаловать в город</span>";
-      document.body.appendChild(white);
-    }
-    white.hidden = false;
-    document.body.classList.add("fz-sky-cine");
-    playCine(
-      [
-        {
-          fp: true,
-          look: () => {
-            const p = localPlayer.mesh.position;
-            return [p.x, p.y + 1.45, p.z + (flight?.landed ? -8 : 8)];
-          },
-          dur: 8.2,
-          cut: true,
-          shake: 0,
-        },
-      ],
-      () => finish(),
-    );
-    flight.cine = window.cine;
-    const skip = document.createElement("button");
-    skip.id = "cityIntroSkip";
-    skip.textContent = "Перейти в город";
-    skip.onclick = () => {
-      if (flight && window.cine === flight.cine) {
-        const c = window.cine;
-        c.t = c.steps[0].dur;
-        updateCine();
-      }
-    };
-    document.body.appendChild(skip);
-    return true;
-  }
-  function finish() {
-    if (!flight) return;
-    const previous = flight.previousMode,
-      onArrival = flight.onArrival;
-    flight = null;
-    window.cameraMode = previous;
-    localPlayer.mesh.position.set(SPAWN_POINT.x, 0, SPAWN_POINT.z);
-    localPlayer.mesh.visible = true;
-    localPlayer.currentAnimation = "idle";
-    Object.assign(velocity, { x: 0, y: 0, z: 0 });
-    isGrounded = true;
-    cameraAngleH = window.cameraMode === "first" ? Math.PI : 0;
-    cameraAngleV = -0.12;
-    document.body.classList.remove("fz-sky-cine");
-    const w = document.getElementById("fzSkyWhite");
-    if (w) {
-      w.hidden = true;
-      w.style.opacity = "0";
-    }
-    document.getElementById("cityIntroSkip")?.remove();
-    FZPlay.release();
-    leaveVisual();
-    FZPlay.apply(false);
-    if (onArrival && window.FZUI?.playing()) onArrival();
+    return window.FZStory30?.board(onArrival) || false;
   }
   function cancel() {
+    window.FZStory30?.cancel();
     leaveVisual();
-    if (flight) flight.onArrival = null;
     stagePending = false;
     allowed = false;
-    if (flight && localPlayer?.mesh && window.cine === flight.cine) {
-      window.cine.t = window.cine.steps[0].dur;
-      updateCine();
-    }
   }
   function update() {
     if (!root) return;
@@ -539,7 +462,7 @@
         scene.fog.far = 380;
       }
       if (
-        !flight &&
+        !busy() &&
         (P.blocked(
           localPlayer.mesh.position.x,
           localPlayer.mesh.position.z,
@@ -578,35 +501,6 @@
         });
       }
     }
-    if (!flight) return;
-    if (window.cine !== flight.cine) {
-      finish();
-      return;
-    }
-    const t = window.cine.t,
-      p = localPlayer.mesh.position;
-    if (t < 4.2) {
-      const k = Math.min(1, t / 3.6);
-      p.set(18, D.y - 2 * k, D.z + 7.5 + 9 * k);
-    } else {
-      flight.landed = true;
-      p.set(SPAWN_POINT.x, 0, SPAWN_POINT.z + Math.max(0, 8.2 - t) * 1.2);
-    }
-    Object.assign(velocity, { x: 0, y: 0, z: 0 });
-    const w = document.getElementById("fzSkyWhite"),
-      reduced = FZPlay.reducedMotion();
-    const opacity =
-      t < 2.8
-        ? 0
-        : t < 4.2
-          ? (t - 2.8) / 1.4
-          : t < 4.6
-            ? 1
-            : Math.max(0, 1 - (t - 4.6) / 2.4);
-    w.style.background = reduced ? "#dce4ea" : "#fff";
-    w.style.opacity = String(opacity);
-    w.querySelector("strong").style.opacity = t > 4.2 ? "1" : "0";
-    w.querySelector("span").style.opacity = t > 4.2 ? "1" : "0";
   }
   function leaveVisual() {
     visual?.release();
@@ -624,6 +518,7 @@
     const extras = [
       window._flash,
       window._flashSpill,
+      window._flashCore42,
       typeof ITEMS !== "undefined" ? ITEMS.vm : null,
     ];
     const q = visual.update(
@@ -683,7 +578,7 @@
   }
   function interact(e) {
     if (!e.sky) return false;
-    if (e.type === "sky_descent") descend();
+    if (e.type === "sky_descent" || e.type === "sky_lift") descend();
     if (e.type === "sky_news") openNewsModal();
     if (e.type === "sky_stage") openStage();
     return true;
@@ -698,6 +593,7 @@
     busy,
     update,
     beforeRender,
+    suspendVisual: leaveVisual,
     interact,
     openStage,
     collision: (x, z) => (active() ? P.blocked(x, z, allowed) : null),
@@ -712,7 +608,7 @@
     info: () => ({
       active: active(),
       stageAllowed: allowed,
-      flight: !!flight,
+      flight: busy(),
       spawn: { ...P.spawn },
       objects: root?.children.length || 0,
       look: visual?.info() || null,

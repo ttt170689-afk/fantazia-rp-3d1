@@ -2,7 +2,7 @@
 <html lang="ru" id="htmlRoot">
 <head>
 <script>window.FZ_CLASSIC_WORLD = true; window.FZ_METRO23 = true;</script>
-<link rel="stylesheet" href="styles/fz-ui.css?v=9.0">
+<link rel="stylesheet" href="styles/fz-ui.css?v=39">
 <link rel="stylesheet" href="styles/fz-v9.css?v=11.0">
 <link rel="stylesheet" href="styles/fz-play.css?v=15.0">
 <link rel="stylesheet" href="styles/fz-sky.css?v=18.0">
@@ -2084,9 +2084,12 @@ body.theme-cyber .fz-menu-logged{background:rgba(0,229,255,.08)!important;border
 @keyframes wPulse{0%,100%{opacity:.7;filter:blur(0)}50%{opacity:1;filter:blur(1px)}}
 </style>
 <link rel="stylesheet" href="styles/fz-opening.css?v=27.0">
+<link rel="stylesheet" href="styles/fz-intro35.css?v=35.1">
 <link rel="stylesheet" href="styles/fz-buildings.css?v=28.0">
+<link rel="stylesheet" href="styles/fz-deliveries.css?v=29.0">
 <link rel="stylesheet" href="styles/fz-lobby23.css?v=23.0">
 <link rel="stylesheet" href="styles/fz-sound.css?v=24.0">
+<link rel="stylesheet" href="styles/fz-story30.css?v=39">
 </head>
 <body>
 
@@ -2329,19 +2332,9 @@ body.theme-cyber .fz-menu-logged{background:rgba(0,229,255,.08)!important;border
     <button class="fz-menu-btn" onclick="FZFront.start()">Заставка ↗</button>
   </nav>
 
-  <aside class="fz-lobby-story"><small>ОБНОВЛЕНИЕ 24 / ГОРОД ЗВУЧИТ</small><h2>Твоя следующая<br>остановка.</h2><p>Неоновая площадь наверху. Новый маршрут — под городом. Пять станций, поезд и голосовые объявления. Теперь — музыка, атмосфера города и новые звуковые эффекты.</p><div class="fz-lobby-line"><span>Центральная</span><span>Заводская</span><span>Парковая</span><span>Портовая</span><span>Деловая</span></div><p>Сначала войди в город через белый спуск. Найди павильон M или открой схему метро в меню.</p></aside>
-  <div class="fz-menu-footer">FANTAZIA RP 3D / ОБНОВЛЕНИЕ 23</div>
+  <aside class="fz-lobby-story"><small>ОБНОВЛЕНИЕ 45 / ОСТАВЬТЕ СВЕТ</small><h2>Твоя следующая<br>остановка.</h2><p>Первое путешествие: небесная площадь, стеклянный лифт и ночной лес. Найди фонарь у обломков и тропу к старому метро. Автосохранение на аккаунте — продолжай с последнего места.</p><div class="fz-lobby-line"><span>Центральная</span><span>Заводская</span><span>Парковая</span><span>Портовая</span><span>Деловая</span></div><p>Лестница на небесной площади ведёт к стеклянным лифтам. Найди павильон M или открой схему метро в меню.</p></aside>
+  <div class="fz-menu-footer">FANTAZIA RP 3D / ОБНОВЛЕНИЕ 45</div>
 
-  <!-- ══════════ ЭКРАН ПРИВЕТСТВИЯ ══════════ -->
-  <div id="welcomeOverlay">
-    <canvas id="welcomeCanvas"></canvas>
-    <div class="welcome-center">
-      <span class="welcome-bolt">⚡</span>
-      <div class="welcome-title">ДОБРО <em>ПОЖАЛОВАТЬ</em></div>
-      <div class="welcome-hello">В FANTAZIA RP</div>
-      <div class="welcome-line"></div>
-    </div>
-  </div>
 
 </div>
 
@@ -2444,35 +2437,22 @@ function showPlayLoader() {
 }
 
 function startWelcomeAndPlay(){
-  var ss = document.getElementById('serverScreen'); if (ss.classList.contains('fz-leave')) return; ss.classList.add('fz-leave');
-  // приветствие показываем только 1 раз, дальше — сразу загрузка и игра
-  var seenW = false;
-  try { seenW = localStorage.getItem('fz_seen_welcome') === '1'; } catch (e) {}
-  if (seenW) {
-    setTimeout(function(){ try { STOP_MENU_BG(); } catch(e){} startGameDirect(); }, 600);
-    return;
-  }
-  try { localStorage.setItem('fz_seen_welcome', '1'); } catch (e) {}
-  var fl = document.getElementById('playFlash'); if (!fl) { fl = document.createElement('div'); fl.id = 'playFlash'; document.body.appendChild(fl); }
-  setTimeout(function(){ fl.style.opacity = '1'; }, 650);
-  setTimeout(function(){
+  const ss = document.getElementById('serverScreen');
+  if (_gameStarted || ss.classList.contains('fz-leave')) return;
+  ss.classList.add('fz-leave');
   try { STOP_MENU_BG(); } catch(e){}
-  var ov = document.getElementById('welcomeOverlay');
-  ov.style.display = 'flex'; ov.style.animation = 'cardIn .8s cubic-bezier(.22,1,.36,1) both';
-  fl.style.opacity = '0'; ss.classList.remove('fz-leave');
-  startWelcomeAnim(); }, 1000);
-  // Через ~3.5 сек — старт игры (без выбора сервера и без экрана создания)
-  setTimeout(startGameDirect, 4500);
+  startGameDirect();
 }
 
 /* Запуск игры напрямую: берём имя из аккаунта, внешность — дефолт */
 var _gameStarted = false;
-function startGameDirect(){
+async function startGameDirect(){
   if (_gameStarted) return;
   _gameStarted = true;
-  var ov = document.getElementById('welcomeOverlay');
-  if (ov) ov.style.display = 'none';
-  stopWelcomeAnim();
+  await window.FZSave41?.prepare();
+  if(!_gameStarted)return;
+  isInsideBuilding=false;currentBuildingType=null;document.getElementById("interiorHUD").style.display="none";
+  window.FZStory30?.arm();
   document.getElementById('serverScreen').style.display = 'none';
 
   // Заполняем скрытые поля createScreen значениями (внешность берётся отсюда)
@@ -2554,50 +2534,6 @@ function startGameDirect(){
   }, 50);
 }
 
-/* ── Анимация экрана приветствия: частицы + вспышки ── */
-var _welcomeRaf = null;
-function startWelcomeAnim(){
-  var cvs = document.getElementById('welcomeCanvas');
-  if (!cvs) return;
-  var ctx = cvs.getContext('2d');
-  var W = cvs.width = cvs.clientWidth, H = cvs.height = cvs.clientHeight;
-  var ps = [];
-  for (var i = 0; i < 90; i++){
-    ps.push({ x: Math.random()*W, y: Math.random()*H, r: Math.random()*2.2+0.6,
-              vx: (Math.random()-0.5)*0.6, vy: -Math.random()*1.1-0.3,
-              a: Math.random()*0.5+0.25, ph: Math.random()*6.28 });
-  }
-  var t0 = performance.now();
-  function draw(now){
-    var t = (now - t0) / 1000;
-    ctx.clearRect(0, 0, W, H);
-    // мягкий градиент фона
-    var g = ctx.createRadialGradient(W/2, H*0.42, 10, W/2, H*0.42, Math.max(W,H)*0.75);
-    g.addColorStop(0, '#221553');
-    g.addColorStop(0.55, '#0d0828');
-    g.addColorStop(1, '#050312');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    // частицы
-    for (var i = 0; i < ps.length; i++){
-      var p = ps[i];
-      p.x += p.vx; p.y += p.vy;
-      if (p.y < -10) { p.y = H + 10; p.x = Math.random()*W; }
-      if (p.x < -10) p.x = W + 10; if (p.x > W + 10) p.x = -10;
-      var tw = 0.5 + 0.5*Math.sin(t*2 + p.ph);
-      ctx.globalAlpha = p.a * tw;
-      ctx.fillStyle = (i % 3 === 0) ? '#a29bfe' : '#fff';
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-    _welcomeRaf = requestAnimationFrame(draw);
-  }
-  _welcomeRaf = requestAnimationFrame(draw);
-}
-function stopWelcomeAnim(){
-  if (_welcomeRaf) { cancelAnimationFrame(_welcomeRaf); _welcomeRaf = null; }
-  var cvs = document.getElementById('welcomeCanvas');
-  if (cvs) { var ctx = cvs.getContext('2d'); ctx && ctx.clearRect(0, 0, cvs.width, cvs.height); }
-}
 </script>
 
 <script>
@@ -8272,7 +8208,8 @@ function initThreeJS(cooperative = false) {
   groundTex.wrapS = groundTex.wrapT = THREE.RepeatWrapping;
   groundTex.repeat.set(160, 160);
   groundTex.anisotropy = 8;
-  const groundMat = new THREE.MeshLambertMaterial({ map: groundTex });
+  // Per-fragment lighting: a narrow flashlight must illuminate the interior of a two-triangle ground plane.
+  const groundMat = new THREE.MeshPhongMaterial({ map: groundTex, specular: 0x000000, shininess: 0 });
   const ground = new THREE.Mesh(groundGeo, groundMat);
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = !_isMob;
@@ -8683,8 +8620,8 @@ function createBuilding(x, z, w, h, d, color, name, type) {
   const isShopB = !!type && /^shop_/.test(type);
   // Магазины — с витриной-текстурой; остальные здания — однотонные светлые фасады (без повторяющейся сетки окон)
   const mat = isShopB
-    ? new THREE.MeshLambertMaterial({ color: _cityFacadeColor(color, tall), map: _facadeTexture(w, h, d) })
-    : new THREE.MeshLambertMaterial({ vertexColors: true });
+    ? new THREE.MeshPhongMaterial({ specular: 0x000000, shininess: 0, color: _cityFacadeColor(color, tall), map: _facadeTexture(w, h, d) })
+    : new THREE.MeshPhongMaterial({ specular: 0x000000, shininess: 0, vertexColors: true });
   // Верх здания (y, с которого начинается крыша-оборудование); для жилых домов считается ниже вместе с силуэтом
   let roofTopY = h + 0.5;
   const seed2 = ((name ? name.length : 0) + Math.round(w * 3) + Math.round(h)) % 5;
@@ -8841,9 +8778,9 @@ function createBuilding(x, z, w, h, d, color, name, type) {
     bounds: { minX:x-w/2-0.5, maxX:x+w/2+0.5, minZ:z-d/2-0.5, maxZ:z+d/2+0.5 }
   });
 
-  // Жилые дома и коттеджи — только декор, зайти нельзя (интерьеры остаются у церкви, мельницы, пещер и т.п.)
-  if (type && type !== 'apartment' && type !== 'house') {
-    interactables.push({ position:{x,y:0,z:z+d/2+2}, type, name, range:5 });
+  // v29: жилые фасады используют уже существующие интерьеры; вход перед дверью, вне коллайдера.
+  if (type) {
+    interactables.push({ position:{x,y:0,z:z+d/2+2}, type, name, range:5, deliveryKind: ['house','apartment'].includes(type) ? 'home' : null });
   }
   return group;
 }
@@ -8920,7 +8857,7 @@ function updateNavigation(delta) {
   const camYaw = Math.atan2(camDir.x, camDir.z), tgtYaw = Math.atan2(dx, dz);
   let rel = tgtYaw - camYaw; while (rel > Math.PI) rel -= Math.PI * 2; while (rel < -Math.PI) rel += Math.PI * 2;
   document.getElementById('navArrow').style.transform = `rotate(${-rel * 180 / Math.PI - 90}deg)`;
-  document.getElementById('navText').textContent = `🎯 ${nt.label}`;
+  document.getElementById('navText').textContent = nt.label;
   document.getElementById('navDist').textContent = dist < 4 ? '✅ вы на месте' : `${Math.round(dist)} м`;
   if (window._navBeacon && window._navBeacon.visible) { window._navBeacon.userData.ring.rotation.z += delta * 2; window._navBeacon.userData.arrow.position.y = 5 + Math.sin(animationTime * 3) * 0.6; window._navBeacon.userData.arrow.rotation.y += delta * 2; }
   if (dist < 4 && !nt.auto) { showNotification('✅ Вы прибыли: ' + nt.label, 'success'); clearNavTarget(); }
@@ -8965,9 +8902,9 @@ function buildRealBridge(cx, cz, width, span) {
 
 function buildRoads() {
   const S = CONFIG.WORLD_SIZE;
-  const asphalt = new THREE.MeshLambertMaterial({ color: 0x2f3136 }); // плоский асфальт (текстура откачена)
-  const curbMat = new THREE.MeshLambertMaterial({ color: 0xb9b9b9 });
-  const walkMat = new THREE.MeshLambertMaterial({ color: 0x9d9a94 });
+  const asphalt = new THREE.MeshPhongMaterial({ specular: 0x000000, shininess: 0, color: 0x2f3136 }); // плоский асфальт (текстура откачена)
+  const curbMat = new THREE.MeshPhongMaterial({ specular: 0x000000, shininess: 0, color: 0xb9b9b9 });
+  const walkMat = new THREE.MeshPhongMaterial({ specular: 0x000000, shininess: 0, color: 0x9d9a94 });
   const white = new THREE.MeshBasicMaterial({ color: 0xf2f2f2 });
   const yellow = new THREE.MeshBasicMaterial({ color: 0xf1c40f });
   const plane = (w, d, m, x, z, y = 0.01) => {
@@ -9291,20 +9228,20 @@ function _cv(v) { v = typeof v === 'function' ? v() : v; return Array.isArray(v)
 function updateCine() {
   const c = window.cine; if (!c) return;
   const now = performance.now(); let delta = Math.min(0.1, (now - c.last) / 1000) * (window._cineSpeed || 1); c.last = now; if (typeof keys !== 'undefined' && (keys['Space'] || keys[' ']) && c.t > 0.3) delta *= 3;
-  const s = c.steps[c.i]; c.t += delta;
+  const s = c.steps[c.i]; c.t += delta; c.motionTime=(c.motionTime||0)+delta;
   if (s.text) _cineSetText(s.text, c.t);
   updateDoorTween(delta);
   const k0 = Math.min(c.t / s.dur, 1), nxt = c.steps[c.i + 1], prv = c.steps[c.i - 1];
   const eIn = (!prv || prv.cut || s.cut) ? 1 : 0.45, eOut = (!nxt || nxt.cut) ? 1 : 0.45;
-  const sm = k0 * k0 * k0 * (k0 * (k0 * 6 - 15) + 10), k = k0 + (sm - k0) * (k0 < 0.5 ? eIn : eOut);
+  const sm = FZCinematic32.ease(k0), k = FZCinematic32.travel(k0,eIn,eOut);
   // Режим «от первого лица» (шаг с fp: true): камера на голове игрока, плавно следует за ним
   const fpOn = !!s.fp && !!(localPlayer && localPlayer.mesh);
   let P, L;
   if (fpOn) {
-    const mp = localPlayer.mesh.position, ry = localPlayer.mesh.rotation.y, T = performance.now() / 1000;
+    const mp = localPlayer.mesh.position, ry = localPlayer.mesh.rotation.y, T = c.motionTime;
     const runK = localPlayer.currentAnimation === 'run' ? 1 : (localPlayer.currentAnimation === 'walk' ? 0.5 : 0.15);
     // покачивание головы в такт шагам (синусоида по скорости бега), без рывков
-    P = new THREE.Vector3(mp.x, mp.y + 1.62 + Math.abs(Math.sin(T * 9)) * 0.045 * runK, mp.z);
+    P = new THREE.Vector3(mp.x, mp.y + 1.62 + (!window.FZPlay?.reducedMotion()?(1-Math.cos(T*18)) * 0.0225 * runK:0), mp.z);
     L = s.look ? _cv(s.look) : new THREE.Vector3(mp.x + Math.sin(ry) * 10, 1.4, mp.z + Math.cos(ry) * 10);
     // плавность: камера скользит от предыдущей позы к голове игрока и дальше отстаёт на долю секунды
     if (!c._fpSm) { c._fpSm = { p: c.from.pos.clone(), l: c.from.look.clone() }; }
@@ -9323,14 +9260,14 @@ function updateCine() {
   const pos = c.smPos.clone(), look = c.smLook.clone();
   // «живая» камера: микродрейф оператора + медленный наезд на длинных планах
   const reducedMotion = !!window.FZPlay?.reducedMotion();
-  if (!reducedMotion && !s.cut && !fpOn) { const T = performance.now() / 1000, amp = s.drift === undefined ? 1 : s.drift;
+  if (!reducedMotion && !s.cut && !fpOn) { const T = c.motionTime, amp = s.drift === undefined ? 1 : s.drift;
     pos.x += (Math.sin(T * 0.7) * 0.03 + Math.sin(T * 1.9 + 2) * 0.012) * amp; pos.y += (Math.sin(T * 0.9 + 1) * 0.022 + Math.sin(T * 2.3) * 0.008) * amp; pos.z += Math.cos(T * 0.6 + 0.5) * 0.03 * amp;
     look.x += Math.sin(T * 0.5 + 3) * 0.05 * amp; look.y += Math.sin(T * 0.8) * 0.035 * amp;
     if (s.dur > 2.2 && c.from.pos.distanceTo(P) < 0.5) { const dv = look.clone().sub(pos); dv.y = 0; if (dv.lengthSq() > 0.01) pos.addScaledVector(dv.normalize(), sm * Math.min(0.6, s.dur * 0.12)); }
     const fovT = c.fovBase ? c.fovBase - (s.dur > 2.2 ? sm * 2.5 : 0) : null; if (fovT && Math.abs(camera.fov - fovT) > 0.01) { camera.fov += (fovT - camera.fov) * Math.min(1, delta * 6); camera.updateProjectionMatrix(); } }
-  if (!reducedMotion && c.shake > 0) pos.add(new THREE.Vector3((Math.random() - 0.5) * c.shake, (Math.random() - 0.5) * c.shake, (Math.random() - 0.5) * c.shake));
-  const vg = document.getElementById('cineGrain'); if (vg) vg.style.opacity = (0.06 + c.shake * 0.8).toFixed(2);
-  camera.position.copy(pos); const rl = (s.cut || reducedMotion) ? 0 : Math.sin(performance.now() / 1000 * 0.45) * 0.006 + (c.shake > 0 ? (Math.random() - 0.5) * c.shake * 0.15 : 0); camera.up.set(Math.sin(rl), Math.cos(rl), 0); camera.lookAt(look); camera.up.set(0, 1, 0);
+  if (!reducedMotion && c.shake > 0) pos.add(new THREE.Vector3(...FZCinematic32.handheld(c.motionTime,c.shake)));
+  const vg = document.getElementById('cineGrain'); if (vg) vg.style.opacity = reducedMotion ? '0' : (0.06 + c.shake * 0.8).toFixed(2);
+  camera.position.copy(pos); const rl = (s.cut || reducedMotion) ? 0 : Math.sin(c.motionTime*.45)*.006 + (c.shake>0?FZCinematic32.handheld(c.motionTime,c.shake)[0]*.08:0); camera.up.set(Math.sin(rl), Math.cos(rl), 0); camera.lookAt(look); camera.up.set(0, 1, 0);
   if (!fpOn && localPlayer && localPlayer.mesh) localPlayer.mesh.visible = true;   // тело скрыто только в шагах «от первого лица»
   if (c.t >= s.dur) {
     c.from = { pos: P.clone(), look: L.clone() }; c.i++; c.t = 0;
@@ -9379,10 +9316,10 @@ function buildForest() {
   const dist2seg = (px, pz, ax, az, bx, bz) => { const dx = bx - ax, dz = bz - az; const t = Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / (dx * dx + dz * dz || 1))); return Math.hypot(px - (ax + dx * t), pz - (az + dz * t)); };
   const pathDist = (x, z) => { let m = 1e9; for (let i = 0; i < FOREST_PATH.length - 1; i++) m = Math.min(m, dist2seg(x, z, FOREST_PATH[i][0], FOREST_PATH[i][1], FOREST_PATH[i + 1][0], FOREST_PATH[i + 1][1])); return m; };
   // лесная подстилка
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(190, 240), new THREE.MeshLambertMaterial({ color: 0x2d5a22 }));
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(190, 240), new THREE.MeshPhongMaterial({ specular: 0x000000, shininess: 0, color: 0x2d5a22 }));
   floor.rotation.x = -Math.PI / 2; floor.position.set(FCX, 0.012, FCZ); scene.add(floor);
   // тропинка из утоптанной земли (полосы между точками маршрута)
-  const dirt = new THREE.MeshLambertMaterial({ color: 0x9c7a4f });
+  const dirt = new THREE.MeshPhongMaterial({ specular: 0x000000, shininess: 0, color: 0x9c7a4f });
   for (let i = 0; i < FOREST_PATH.length - 1; i++) {
     const [ax, az] = FOREST_PATH[i], [bx, bz] = FOREST_PATH[i + 1];
     const len = Math.hypot(bx - ax, bz - az) + 0.6;
@@ -11926,21 +11863,21 @@ function createTree(x, z) {
   const site = FZRoads.prop(x,z,6,6,'tree'); if (!site) return; x=site.x; z=site.z;
   const group = new THREE.Group();
   const kind = Math.floor(Math.abs(Math.sin(x * 12.9898 + z * 78.233)) * 1000) % 3;
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.42, 3.2, 7), new THREE.MeshLambertMaterial({ color: kind === 2 ? 0x7a5a3a : 0x5D4037 }));
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.42, 3.2, 7), new THREE.MeshPhongMaterial({ specular: 0x000000, shininess: 0, color: kind === 2 ? 0x7a5a3a : 0x5D4037 }));
   trunk.position.y = 1.6; trunk.castShadow = true; group.add(trunk);
   if (kind === 0) { // лиственное: 4 сферы кроны
-    const m = new THREE.MeshLambertMaterial({ color: 0x2f9e4f });
+    const m = new THREE.MeshPhongMaterial({ specular: 0x000000, shininess: 0, color: 0x2f9e4f });
     [[0, 4.6, 0, 2.1], [1.1, 4.0, 0.5, 1.4], [-1.0, 4.2, -0.4, 1.3], [0.2, 5.6, 0.6, 1.2]].forEach(([dx, dy, dz, r]) => { const s = new THREE.Mesh(new THREE.SphereGeometry(r, 9, 7), m); s.position.set(dx, dy, dz); s.castShadow = true; group.add(s); });
   } else if (kind === 1) { // ель: 3 конуса
-    const m = new THREE.MeshLambertMaterial({ color: 0x1f6f3a });
+    const m = new THREE.MeshPhongMaterial({ specular: 0x000000, shininess: 0, color: 0x1f6f3a });
     [[3.2, 2.2, 1.6], [4.6, 1.7, 1.4], [5.9, 1.1, 1.2]].forEach(([y, r, hh]) => { const s = new THREE.Mesh(new THREE.ConeGeometry(r, hh, 9), m); s.position.y = y; s.castShadow = true; group.add(s); });
   } else { // берёза: светлая крона
-    const m = new THREE.MeshLambertMaterial({ color: 0x7fc85a });
+    const m = new THREE.MeshPhongMaterial({ specular: 0x000000, shininess: 0, color: 0x7fc85a });
     [[0, 4.8, 0, 1.6], [0.8, 3.9, 0.6, 1.1], [-0.8, 4.1, -0.5, 1.0]].forEach(([dx, dy, dz, r]) => { const s = new THREE.Mesh(new THREE.SphereGeometry(r, 9, 7), m); s.position.set(dx, dy, dz); s.castShadow = true; group.add(s); });
-    for (let k = 0; k < 4; k++) { const st = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.3, 0.05), new THREE.MeshLambertMaterial({ color: 0xeeeeee })); st.position.set(0, 0.6 + k * 0.7, 0.36); group.add(st); }
+    for (let k = 0; k < 4; k++) { const st = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.3, 0.05), new THREE.MeshPhongMaterial({ specular: 0x000000, shininess: 0, color: 0xeeeeee })); st.position.set(0, 0.6 + k * 0.7, 0.36); group.add(st); }
   }
   // круг земли под деревом
-  const soil = new THREE.Mesh(new THREE.CircleGeometry(0.9, 10), new THREE.MeshLambertMaterial({ color: 0x4a3a2a })); soil.rotation.x = -Math.PI / 2; soil.position.y = 0.012; group.add(soil);
+  const soil = new THREE.Mesh(new THREE.CircleGeometry(0.9, 10), new THREE.MeshPhongMaterial({ specular: 0x000000, shininess: 0, color: 0x4a3a2a })); soil.rotation.x = -Math.PI / 2; soil.position.y = 0.012; group.add(soil);
   group.position.set(x, 0, z); group.rotation.y = kind * 1.3 + x * 0.1;
   scene.add(group);
   streetColliders.push({ x, z, r: 0.55 });
@@ -14259,6 +14196,7 @@ function _cineSetText(text, t) {
 
 // ───────── ФОНАРЬ: модель, подбор, F — вкл/выкл ─────────
 function makeFlashlightModel() {
+  if(window.FZFlash40)return FZFlash40.model();
   const g = new THREE.Group(); const m = (c, e = 0, ei = 0) => new THREE.MeshLambertMaterial({ color: c, emissive: e, emissiveIntensity: ei });
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.065, 0.42, 12), m(0x2b2f36)); g.add(body);
   for (let k = 0; k < 4; k++) { const rg = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.068, 0.02, 12), m(0x15171b)); rg.position.y = -0.14 + k * 0.08; g.add(rg); }
@@ -14281,6 +14219,7 @@ function placeFlashlightPickup(x, y, z, kind) {
   interactables.push({ position: { x, y: 0, z }, type: 'flashlight', name: '🔦 Взять фонарь [E]', range: 2.6, factory: isInFactory, basement: isInBasement, mesh: g });
 }
 function pickupFlashlight(inter) {
+  if(window.FZFlash40)return FZFlash40.take(inter);
   if (window.cine || DLC.hasFlashlight) return;
   const g = inter.mesh, m = localPlayer.mesh, gp = g.position.clone();
   interactables = interactables.filter(i => i !== inter);
@@ -14300,8 +14239,8 @@ function attachFlashlightToHand(fl) {
   hand.add(fl); fl.position.set(0, 0.02, 0.03); fl.rotation.set(Math.PI / 2, 0, 0); fl.scale.setScalar(1.0); DLC.flashMesh = fl;
 }
 function toggleFlashlight() {
-  if (!DLC.hasFlashlight) { showNotification('🔦 У вас нет фонаря. Он лежит в проходной фабрики и у входа в подвал ТЦ.', 'info'); return; }
-  DLC.flashOn = !DLC.flashOn; if(window.FZSound)FZSound.effect('flash');else SFX.tone(DLC.flashOn ? 1800 : 1200, 0.05, 'square', 0.08); updateFlashHUD();
+  if (!DLC.hasFlashlight) { showNotification('Фонарь лежит рядом с упавшим лифтом. Подойди и нажми E / кнопку действия.', 'info'); return; }
+  DLC.flashOn = !DLC.flashOn; window.FZFlash40?.clicked(); if(window.FZSound)FZSound.effect('flash');else SFX.tone(DLC.flashOn ? 1800 : 1200, 0.05, 'square', 0.08); updateFlashHUD();
 }
 function updateFlashHUD() {
   let h = document.getElementById('flashHUD'); if (!h) { h = document.createElement('div'); h.id = 'flashHUD'; h.style.cssText = 'position:fixed;left:14px;bottom:86px;z-index:900;font:700 13px Arial;color:#ffd76a;background:rgba(0,0,0,.55);border:1px solid rgba(255,215,106,.35);border-radius:10px;padding:6px 10px;pointer-events:none;display:none'; document.body.appendChild(h); }
@@ -14309,18 +14248,20 @@ function updateFlashHUD() {
 }
 function updateFlashlight() {
   window.FZFlash?.update();
+  window.FZFlash40?.update();
   if (window.FZUI && FZUI.playing()) FZUI.grantLight();
   const f = window._flash; if (!f || !localPlayer || !localPlayer.mesh) return;
   if (DLC.hasFlashlight && (!DLC.flashMesh || !DLC.flashMesh.parent || !localPlayer.mesh.getObjectById(DLC.flashMesh.id))) { if (DLC.flashMesh && DLC.flashMesh.parent) DLC.flashMesh.parent.remove(DLC.flashMesh); attachFlashlightToHand(makeFlashlightModel()); }
   const on = !!(DLC.hasFlashlight && DLC.flashOn) && !window.cine && !DLC.hidden;
-  f.visible = on; if (window._flashSpill) window._flashSpill.visible = on; if (DLC.flashMesh && DLC.flashMesh.userData.lens) DLC.flashMesh.userData.lens.material.color.setHex(DLC.hasFlashlight && DLC.flashOn ? 0xfff3c0 : 0x333333);
-  if (!on) return;
+  f.visible = on; if (window._flashSpill) window._flashSpill.visible = false; if (DLC.flashMesh && DLC.flashMesh.userData.lens) DLC.flashMesh.userData.lens.material.color.setHex(DLC.hasFlashlight && DLC.flashOn ? 0xfff3c0 : 0x333333);
+  if (!on) {window.FZFlash40?.light(false);return;}
   const dir = new THREE.Vector3(); camera.getWorldDirection(dir); const p = localPlayer.mesh.position;
   if (DLC.flashMesh && window.cameraMode !== 'first') { DLC.flashMesh.getWorldPosition(f.position); } else f.position.set(p.x, p.y + 1.6, p.z);
   f.target.position.set(f.position.x + dir.x * 12, f.position.y + dir.y * 12, f.position.z + dir.z * 12);
   window.FZFlash?.beam(f);
-  f.intensity = 2.8; f.angle = 0.34; f.penumbra = 0.65; f.distance = 60; f.decay = 0.7; f.color.setHex(0xfff4d6);
-  if (!window._flashSpill) { window._flashSpill = new THREE.PointLight(0xffe8c0, 0.22, 9, 1.0); scene.add(window._flashSpill); } window._flashSpill.visible = true; window._flashSpill.position.copy(f.position).addScaledVector(dir, 1.6);
+  f.intensity = 8; f.angle = 0.22; f.penumbra = 0.12; f.distance = 85; f.decay = 0; f.color.setHex(0xfff4d6);
+  if (!window._flashSpill) { window._flashSpill = new THREE.PointLight(0xffe8c0, 0.22, 9, 1.0); scene.add(window._flashSpill); } window._flashSpill.visible = false; window._flashSpill.position.copy(f.position).addScaledVector(dir, 1.6);
+  window.FZFlash40?.light(true,f);
   // пикапы фонаря пульсируют
   basementObjects.forEach(o => { if (o.userData.flashPickup && o.userData.pulse) { o.userData.pulse.scale.setScalar(1 + Math.sin(animationTime * 4) * 0.25); o.userData.fl.rotation.y += 0.01; } });
 }
@@ -15140,6 +15081,7 @@ function createPet3D(petData) {
 // ── Супер-эффекты: пыль от прыжка/приземления ──
 let landDust = []; // { mesh, vx, vy, vz, life, maxLife }
 function _fzGroundY() {
+  const loreGround=window.FZLore45?.ground();if(loreGround!==null&&loreGround!==undefined)return loreGround;
   if(window.FZBuildings?.active())return FZBuildings.ground();
   if(window.FZCranes?.active())return FZCranes.ground();
   if(window.FZMetro?.active()) return FZMetro.ground();
@@ -15259,6 +15201,9 @@ function computeCharacterPose(character, animation, time, delta) {
   const lean = (L, bob = 0) => { const sn = Math.sin(L), cs = 1 - Math.cos(L); body.rotation.x = L; body.position.z = sn * 0.7; body.position.y = 1.4 + bob - cs * 0.7; head.position.z = sn * 1.55; head.position.y = 2.35 + bob - cs * 1.55; leftArm.position.z = rightArm.position.z = sn * 1.1; leftArm.position.y = rightArm.position.y = 1.9 + bob - cs * 1.1; };
 
   switch(animation) {
+    case 'swim': {const ph=time*3.2;leftArm.rotation.set(-1.1+Math.sin(ph)*.65,0,.4);rightArm.rotation.set(-1.1+Math.sin(ph+Math.PI)*.65,0,-.4);lE.rotation.x=rE.rotation.x=-.45;leftLeg.rotation.x=Math.sin(ph*2)*.22;rightLeg.rotation.x=-leftLeg.rotation.x;lean(.25);break;}
+    case 'medicate': {leftArm.rotation.set(-.7,0,.2);rightArm.rotation.set(-1.5,-.15,-.2);lE.rotation.x=-.8;rE.rotation.x=-1.3;leftLeg.rotation.x=rightLeg.rotation.x=0;lean(.03);break;}
+
     case 'walk': {
       // ✨ Походка: фаза = время × скорость шага; тело выше всего, когда ноги сходятся (cos 2φ)
       const ph = time * 8.6, s = Math.sin(ph), c = Math.cos(ph), bob = Math.cos(ph * 2) * 0.035 - 0.01;
@@ -15665,7 +15610,8 @@ function initSocket(name) {
   if (socket && socket.removeAllListeners) { socket.removeAllListeners(); socket.disconnect(); }
   try { socket = io(); } catch(e) { socket = { emit:function(){}, on:function(){}, connected:false }; return; }
 
-  socket.on('connect', () => {
+  socket.on('closedBetaDenied',()=>location.replace('/closed/login'));
+socket.on('connect', () => {
     console.log('Подключено к серверу!');
     const _cu = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null;
     const adminName = _cu ? (_cu.displayName || _cu.username || '') : '';
@@ -16182,24 +16128,20 @@ function sendChatMessage() {
 }
 
 function addChatMessage(msg) {
-  const div = document.createElement('div');
-  div.className = 'chat-msg ' + (msg.type || '');
-
-  const time = new Date(msg.time);
-  const timeStr = `${time.getHours().toString().padStart(2,'0')}:${time.getMinutes().toString().padStart(2,'0')}`;
-
-  if (msg.type === 'system') {
-    div.innerHTML = `<span style="color:#888">[${timeStr}]</span> ${msg.text}`;
-  } else if (msg.type === 'private') {
-    div.innerHTML = `<span style="color:#888">[${timeStr}]</span> <span class="sender" style="color:#e056fd">[ЛС] ${msg.sender}:</span> ${msg.text}`;
-  } else {
-    const typeIcon = msg.type === 'local' ? '📍' : '🌍';
-    div.innerHTML = `<span style="color:#888">[${timeStr}]</span> ${typeIcon} <span class="sender" style="color:#a29bfe">${msg.sender}:</span> ${msg.text}`;
+  const container=document.getElementById('chatMessages');if(!container)return;
+  const stick=container.scrollHeight-container.scrollTop-container.clientHeight<40;
+  const type=['system','private','local','global'].includes(msg.type)?msg.type:'global';
+  const div=document.createElement('div');div.className='chat-msg '+type;
+  const time=new Date(msg.time),stamp=document.createElement('span');stamp.style.color='#888';
+  stamp.textContent=`[${String(time.getHours()).padStart(2,'0')}:${String(time.getMinutes()).padStart(2,'0')}] `;div.append(stamp);
+  if(type!=='system'){
+    const sender=document.createElement('span');sender.className='sender';sender.style.color=type==='private'?'#e056fd':'#a29bfe';
+    sender.textContent=(type==='private'?'[ЛС] ':type==='local'?'[Рядом] ':'')+String(msg.sender||'')+': ';div.append(sender);
   }
-
-  const container = document.getElementById('chatMessages');
-  container.appendChild(div);
-  container.scrollTop = container.scrollHeight;
+  // Chat is untrusted text, never HTML. Keep phone DOM growth bounded.
+  div.append(document.createTextNode(String(msg.text||'')));container.append(div);
+  let removed=0;while(container.children.length>100){removed+=container.firstElementChild.offsetHeight;container.firstElementChild.remove();}
+  if(stick)container.scrollTop=container.scrollHeight;else if(removed)container.scrollTop=Math.max(0,container.scrollTop-removed);
 }
 
 // =================== ТАНЦЫ ===================
@@ -18022,6 +17964,8 @@ function handleInteraction() {
   if (window.cine) return;
   if (!nearestInteractable) return;
   const inter = nearestInteractable;
+  if(window.FZLore45?.interact(inter))return;
+  if(window.FZVoyage43?.interact(inter))return;
   if(window.FZBuildings?.interact(inter))return;
   if(window.FZCranes?.interact(inter))return;
   if(window.FZMetro?.interact(inter)) return;
@@ -18144,6 +18088,7 @@ function checkInteractables() {
 
 // =================== СТОЛКНОВЕНИЯ ===================
 function checkCollision(newX, newZ) {
+  if(window.FZLore45?.blocked(newX,newZ))return true;
   if(window.FZBuildings?.active())return FZBuildings.collision(newX,newZ);
   if(window.FZCranes?.active())return FZCranes.collision(newX,newZ);
   if(window.FZMetro){const hit=FZMetro.collision(newX,newZ);if(hit!==null)return hit;}
@@ -18218,8 +18163,10 @@ function checkCollision(newX, newZ) {
     }
   }
 
+  if(window.FZForest40?.collision(newX,newZ,playerRadius))return true;
   // ── КОЛЛИЗИИ УЛИЧНЫХ ОБЪЕКТОВ (деревья, лавочки, фонари, урны, фонтан) ──
   for (const c of streetColliders) {
+    if(c.story38Wreck){if(window.FZLift38Wreck?.collision(newX,newZ,playerRadius))return true;continue;}
     const dx = newX - c.x, dz = newZ - c.z;
     if (dx*dx + dz*dz < (c.r + playerRadius) * (c.r + playerRadius)) return true;
   }
@@ -19698,6 +19645,11 @@ function animate(timestamp) {
     return;
   }
 
+  // v30 owns this frame before physics, legacy cinematics and world effects.
+  if (window.FZSurvival45?.frame(delta)) return;
+  if (window.FZVoyage43?.frame(delta)) return;
+  if (window.FZStory30?.frame(delta)) return;
+  if (window.FZMetro39Fall?.frame(delta)) return;
   const mesh = localPlayer.mesh;
   try { if (typeof updateShopFX === 'function') updateShopFX(delta, mesh); } catch (e) {}
   try { if (typeof updateDayNight === 'function') updateDayNight(delta); } catch (e) {}
@@ -19710,7 +19662,9 @@ function animate(timestamp) {
   try { if (typeof FZ8C2_update === 'function') FZ8C2_update(delta); } catch (e) {}
   try { if (typeof FZ8K_update === 'function') FZ8K_update(delta); } catch (e) {}
   try { if (typeof FZ8M_update === 'function') FZ8M_update(delta); } catch (e) {}
+  if (window.FZMetro39Fall?.active()) { FZMetro39Fall.frame(0); return; }
   if (window.FZ8B_update) window.FZ8B_update(delta);
+  window.FZLore45?.update(delta);
   window.FZVenues?.update(delta);
   window.FZBuildings?.update(delta);
   window.FZCranes?.update(delta);
@@ -19749,9 +19703,9 @@ function animate(timestamp) {
     isCrouching = false;
   }
 
-  if ((isPointerLocked || window.mobileReady || (localPlayer && localPlayer.isOffline)) && !currentDance && !sittingOn && !window.elevatorCut && !window.FZCranes?.locked() && !DLC.hidden && !window._loadingGate) {
+  if ((isPointerLocked || window.mobileReady || (localPlayer && localPlayer.isOffline)) && !currentDance && !sittingOn && !window.elevatorCut && !window.FZCranes?.locked() && !DLC.hidden && !window._loadingGate && !window.FZLore45?.modalOpen() && !window.FZSurvival45?.blocked()) {
     const isSprint = (keys['ShiftLeft'] || keys['ShiftRight'] || mobileSprintOn) && !isCrouching;
-    const speed = (isCrouching ? CONFIG.CROUCH_SPEED : (isSprint ? CONFIG.SPRINT_SPEED : CONFIG.MOVE_SPEED)) * (typeof FZ8_speedMul === 'function' ? FZ8_speedMul() : 1);
+    const speed = (isCrouching ? CONFIG.CROUCH_SPEED : (isSprint ? CONFIG.SPRINT_SPEED : CONFIG.MOVE_SPEED)) * (typeof FZ8_speedMul === 'function' ? FZ8_speedMul() : 1) * (window.FZSurvival45?.speed()||1);
 
 let forward = new THREE.Vector3();
 camera.getWorldDirection(forward);
@@ -19819,6 +19773,8 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
     velocity.y = 0; isGrounded = true;
   } else if (window._loadingGate) {
     velocity.y = 0; isGrounded = true;
+  } else if (window.FZSurvival45?.vertical(delta)) {
+    // Swimming and the short shore climb own vertical motion, not two integrators.
   } else if (!window.isAdminFly) {
     const vertical = FZMotion.integrate(mesh.position.y, velocity.y, delta, CONFIG.GRAVITY);
     velocity.y = vertical.v;
@@ -19829,10 +19785,14 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
       mesh.position.y = groundY;
       velocity.y = 0;
       isGrounded = true;
+    } else {
+      isGrounded = false; // Walking off a ledge is a fall, not a grounded glide.
     }
   } else {
     isGrounded = false;
   }
+
+  window.FZSurvival45?.afterPhysics(delta);
 
   // --- Анимация персонажа ---
   if (currentDance) {
@@ -19864,6 +19824,7 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
   if ((localPlayer._landSquashT || 0) > 0) { localPlayer._landSquashT -= delta; if (localPlayer._landSquashT < 0) localPlayer._landSquashT = 0; }
   if ((localPlayer._landDustT || 0) > 0) { localPlayer._landDustT -= delta; if (localPlayer._landDustT < 0) localPlayer._landDustT = 0; }
 
+  if(window.FZSurvival45?.pose())localPlayer.currentAnimation=FZSurvival45.pose();
   { const ov = localPlayer.animOverride; if (ov && performance.now() > ov.until) localPlayer.animOverride = null; animateCharacter(mesh, (localPlayer.animOverride ? localPlayer.animOverride.name : null) || localPlayer.currentAnimation || 'idle', animationTime, delta); }
 
   // ⚡ Супер-анимации: squash & stretch масштабом + эффект пыли при прыжке
@@ -20111,7 +20072,11 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
   window.FZSky?.beforeRender();
   window.FZMetro?.beforeRender();
   window.FZBuildings?.beforeRender();
-  renderer.render(scene, camera);
+  window.FZHands30?.gameplay(delta);
+  window.FZSurvival45?.hands(delta);
+  window.FZSurvival45?.beforeRender();
+  window.FZStory30Forest?.beforeRender();
+  try { renderer.render(scene, camera); } finally { window.FZStory30Forest?.afterRender(); window.FZSurvival45?.afterRender(); }
 }
 
 // =================== БРАУЗЕР СЕРВЕРОВ ===================
@@ -20153,6 +20118,10 @@ function joinByCode() {
 }
 
 function logoutUser() {
+  window.FZLore45?.close();
+  window.FZVoyage43?.finish();
+  window.FZSave41?.flush(true);
+  window.FZSurvival45?.reset();
   window.FZMetro?.exit();
   window.FZBuildingDirectory?.close();
   window.FZBuildings?.release();
@@ -20435,72 +20404,8 @@ async function linkServerAccount(username, password, action) {
   } catch (_) { return null; } finally { clearTimeout(timer); } // Local accounts can still play without server account access.
 }
 // ── Вход по нику + паролю ──
-async function doLogin() {
-  const err = document.getElementById('authError');
-  const username = (document.getElementById('loginUsername').value || '').trim();
-  const password = (document.getElementById('loginPassword').value || '');
-  err.textContent = '';
-  if (!username) { err.textContent = '⚠️ Введите никнейм'; return; }
-  if (!password) { err.textContent = '⚠️ Введите пароль'; return; }
-
-  const accounts = getAccounts();
-  const key = 'nick_' + username.toLowerCase();
-  const serverAccount = await linkServerAccount(username, password, 'login');
-  const hashed = await hashPassword(password);
-  if (!serverAccount && accounts[key]?.passwordHash !== hashed) { err.textContent = '❌ Аккаунт не найден или неверный пароль'; return; }
-  if (serverAccount) {
-    accounts[key] = {...accounts[key], displayName:serverAccount.username,passwordHash:hashed,provider:'nickname'};
-    saveAccounts(accounts);
-  }
-  currentUser = { username: key, displayName: accounts[key].displayName, email: '', token: serverAccount?.token || null, isAdmin: serverAccount?.isAdmin === true };
-  localStorage.setItem('fz_currentUser', JSON.stringify(currentUser));
-
-  document.getElementById('authSuccessName').textContent  = accounts[key].displayName;
-  document.getElementById('authSuccessEmail').textContent = '👤 ' + username;
-  document.getElementById('authSuccessOverlay').classList.add('show');
-  setTimeout(() => {
-    const msg = document.getElementById('authRedirectMsg');
-    if (msg) msg.style.display = 'block';
-  }, 900);
-  setTimeout(showAuthSuccess, 1800);
-}
-
-// ── Регистрация по нику + паролю ──
-async function doRegister() {
-  const err = document.getElementById('authError');
-  const username = (document.getElementById('regUsername').value || '').trim();
-  const password = (document.getElementById('regPassword').value || '');
-  const confirm  = (document.getElementById('regPasswordConfirm').value || '');
-  err.textContent = '';
-  if (!username) { err.textContent = '⚠️ Введите никнейм'; return; }
-  if (username.length < 3) { err.textContent = '⚠️ Никнейм минимум 3 символа'; return; }
-  if (!password) { err.textContent = '⚠️ Введите пароль'; return; }
-  if (password.length < 6) { err.textContent = '⚠️ Пароль минимум 6 символов'; return; }
-  if (password !== confirm) { err.textContent = '❌ Пароли не совпадают'; return; }
-
-  const accounts = getAccounts();
-  const key = 'nick_' + username.toLowerCase();
-  if (accounts[key]) { err.textContent = '⚠️ Никнейм уже занят — войдите или выберите другой'; return; }
-
-  const hashed = await hashPassword(password);
-  accounts[key] = {
-    displayName: username, passwordHash: hashed,
-    provider: 'nickname', createdAt: new Date().toISOString()
-  };
-  saveAccounts(accounts);
-  const serverAccount = await linkServerAccount(username, password, 'register');
-  currentUser = { username: key, displayName: username, email: '', token: serverAccount?.token || null, isAdmin: false };
-  localStorage.setItem('fz_currentUser', JSON.stringify(currentUser));
-
-  document.getElementById('authSuccessName').textContent  = username;
-  document.getElementById('authSuccessEmail').textContent = '🎉 Аккаунт создан!';
-  document.getElementById('authSuccessOverlay').classList.add('show');
-  setTimeout(() => {
-    const msg = document.getElementById('authRedirectMsg');
-    if (msg) msg.style.display = 'block';
-  }, 900);
-  setTimeout(showAuthSuccess, 1800);
-}
+function doLogin(){location.assign('/closed/login');}
+function doRegister(){document.getElementById('authError').textContent='Отдельная регистрация отключена. Используй основной аккаунт.';}
 
 function showAuthSuccess() {
   document.getElementById('authScreen').style.display = 'none';
@@ -20520,7 +20425,9 @@ function toggleChatPanel() {
   const panel = document.getElementById('chatPanel');
   const btn   = document.getElementById('chatToggleBtn');
   const hidden = panel.classList.toggle('chat-hidden');
-  btn.textContent = hidden ? '💬 ▲' : '💬 ✕';
+  btn.textContent = hidden ? 'Чат' : '−';
+  btn.setAttribute('aria-expanded',String(!hidden));
+  if(!hidden){const messages=document.getElementById('chatMessages');messages.scrollTop=messages.scrollHeight;}
   btn.title = hidden ? 'Показать чат' : 'Скрыть чат';
 }
 
@@ -20716,37 +20623,12 @@ function stopPortalAnimation() {
   if (portalAnimId) { cancelAnimationFrame(portalAnimId); portalAnimId = null; }
 }
 
-function initAuth() {
-  // Генерируем звёзды Fantazia
-  const sc = document.getElementById('authStars');
-  if (sc && !sc.childElementCount) {
-    for (let i = 0; i < 80; i++) {
-      const s = document.createElement('div');
-      s.className = 'auth-star';
-      const o = (Math.random()*0.6+0.1).toFixed(2);
-      s.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;--o:${o};--d:${(Math.random()*3+1.5).toFixed(1)}s;animation-delay:${(Math.random()*4).toFixed(1)}s;`;
-      sc.appendChild(s);
-    }
-  }
-  // Try auto-login from saved session
-  try {
-    const saved = localStorage.getItem('fz_currentUser');
-    if (saved) {
-      const u = JSON.parse(saved);
-      const accounts = getAccounts();
-      const key = u && (accounts[u.username] ? u.username : u.username && u.username.toLowerCase());
-      if (u && u.username && key && accounts[key]) {
-        currentUser = u;
-        showAuthSuccess();
-        return;
-      }
-    }
-  } catch(e) {}
-  document.getElementById('authScreen').style.display = 'flex';
-  document.getElementById('serverScreen').style.display = 'none';
-  // Google кнопки удалены (нарушение п.1.2 Яндекс)
+async function initAuth(){
+ document.getElementById('authScreen').style.display='none';document.getElementById('serverScreen').style.display='none';
+ try{const response=await fetch('/api/closed/me',{credentials:'same-origin',cache:'no-store'});if(!response.ok)throw Error('access denied');const account=await response.json();if(!account.ok||!account.token)throw Error('no account');
+ currentUser={username:'main_'+account.username,displayName:account.username,token:account.token,isAdmin:account.isAdmin===true};localStorage.setItem('fz_currentUser',JSON.stringify(currentUser));showAuthSuccess();
+ }catch{location.replace('/closed/login');}
 }
-
 // =================== МЕНЮ ПАУЗЫ ===================
 let gamePaused = false;
 
@@ -20772,6 +20654,11 @@ function openSettingsFromPause() {
 }
 
 function backToServers() {
+  window.FZLore45?.close();
+  window.FZVoyage43?.finish();
+  window.FZSave41?.flush(true);
+  window.FZSurvival45?.reset();
+  window.FZStory30?.cancel();
   window.FZSound?.close(); window.FZSound?.silence(); if(typeof _musicStop==="function")_musicStop();
   window.FZMetro?.exit();
   window.FZBuildingDirectory?.close();
@@ -23308,22 +23195,8 @@ window.addEventListener('load', () => { renderHudCfg(); window.applyHudVisibilit
 
 <script>
 // ── PWA Service Worker ──
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    var swContent = `
-const CACHE = 'fantazia-v1';
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./', './index.html'])));
-});
-self.addEventListener('fetch', e => {
-  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
-});
-`;
-    var blob = new Blob([swContent], {type: 'application/javascript'});
-    var swUrl = URL.createObjectURL(blob);
-    navigator.serviceWorker.register(swUrl).catch(function(){});
-  });
-}
+// Closed beta: no offline-cached authentication or public game shell.
+if('serviceWorker' in navigator)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});
 
 // ── Install Prompt ──
 var deferredPrompt = null;
@@ -23694,8 +23567,12 @@ document.addEventListener('selectstart', function(e) {
     if (fsDone) return;
     fsDone = true;
     var el = document.documentElement;
-    if (el.requestFullscreen) el.requestFullscreen();
-    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    // Embedded previews/mobile browsers may deny fullscreen. Touch controls
+    // must keep working without an unhandled permissions rejection.
+    try {
+      var attempt = el.requestFullscreen ? el.requestFullscreen() : el.webkitRequestFullscreen?.();
+      if (attempt && typeof attempt.catch === 'function') attempt.catch(function() {});
+    } catch (e) {}
   }, { once: false, passive: true });
 })();
 
@@ -24274,7 +24151,7 @@ function updateDayNight(delta) {
   if (!DN.init) { dnInit(); if (!DN.init) return; }
   const dt = Math.min(delta || 0.016, 0.1);
   // --- время ---
-  DN.hours = (DN.hours + dt * (24 / DN.dayLen)) % 24;
+  DN.hours = window.FZForest40?.night() || window.FZStory30?.night() ? 23 : (DN.hours + dt * (24 / DN.dayLen)) % 24;
   const ang = (DN.hours - 6) / 12 * Math.PI;
   const elev = Math.sin(ang);
   const dayF = smooth(-0.09, 0.28, elev);
@@ -25057,7 +24934,7 @@ window.FZV5_update = FZV5_update;
 </script>
 
 <!-- FANTAZIA: анимации игрока из пака SuperRig 3.2 (20 анимаций) -->
-<script src="assets/fz-road-layout.js?v=12.0"></script>
+<script src="assets/fz-road-layout.js?v=45"></script>
 <script src="assets/fz-landmarks.js?v=14.0"></script>
 <script src="assets/fz-city-refresh.js?v=14.0"></script>
 <script src="assets/fz-v7.js?v=11.1"></script>
@@ -25069,19 +24946,17 @@ window.FZV5_update = FZV5_update;
 <script src="assets/fz-v8combat.js?v=8.9"></script>
 <script src="assets/fz-v8metro.js?v=8.7.1"></script>
 <script src="assets/fz-v8home.js?v=28.0"></script>
-<script src="assets/fz-v8sea.js?v=14.0"></script>
+<script src="assets/fz-v8sea.js?v=45"></script>
 <script src="assets/superrig-player.js?v=anim-26"></script>
-<script src="assets/fz-ui.js?v=28.0"></script>
+<script src="assets/fz-ui.js?v=45"></script>
 <script src="assets/fz-classic-world.js?v=27.0"></script>
 <script src="assets/fz-city-spaces.js?v=8.9"></script>
 <script>window.FZ_CITY_ARRIVAL = false;</script>
 <script src="assets/fz-city-urban.js?v=10.0"></script>
 <script src="assets/fz-city-stream.js?v=11.0"></script>
 <script src="assets/fz-city-leisure.js?v=8.9"></script>
-<script src="assets/fz-opening-plan.js?v=27.0"></script>
-<script src="assets/fz-letter-portal.js?v=27.0"></script>
-<script src="assets/fz-opening-avatar.js?v=26.0"></script>
-<script src="assets/fz-opening-cast.js?v=26.0"></script>
+<script src="assets/fz-cinematic32.js?v=32"></script>
+<script src="assets/fz-impact35-policy.js?v=35"></script>
 <script src="assets/fz-loading-dancer.js?v=27.0"></script>
 <script src="assets/fz-venues.js?v=27.0"></script>
 <script src="assets/fz-building-policy.js?v=28.0"></script>
@@ -25093,25 +24968,52 @@ window.FZV5_update = FZV5_update;
 <script src="assets/fz-buildings.js?v=28.0"></script>
 <script src="assets/fz-cranes.js?v=28.0"></script>
 <script src="assets/fz-building-directory.js?v=28.0"></script>
-<script src="assets/fz-front.js?v=28.0"></script>
+<script src="assets/fz-delivery-policy.js?v=29.0"></script>
+<script src="assets/fz-deliveries.js?v=29.0"></script>
+<script src="assets/fz-front.js?v=39"></script>
 <script src="assets/fz-motion.js?v=15.0"></script>
 <script src="assets/fz-journey-policy.js?v=15.0"></script>
 <script src="assets/fz-touch.js?v=15.0"></script>
 <script src="assets/fz-play-policy.js?v=21.0"></script>
-<script src="assets/fz-city-guide.js?v=15.0"></script>
-<script src="assets/fz-play.js?v=21.0"></script>
+<script src="assets/fz-city-guide.js?v=45"></script>
+<script src="assets/fz-play.js?v=29.0"></script>
 <script src="assets/fz-photo.js?v=13.0"></script>
-<script src="assets/fz-sky-policy.js?v=23.0"></script>
+<script src="assets/fz-sky-policy.js?v=31.0"></script>
 <script src="assets/fz-sky-visual.js?v=23.0"></script>
-<script src="assets/fz-sky-garden.js?v=21.0"></script>
+<script src="assets/fz-sky-garden.js?v=31.0"></script>
 <script src="assets/fz-sky-neon.js?v=21.0"></script>
 <script src="assets/fz-sky-descent.js?v=26.0"></script>
-<script src="assets/fz-sky.js?v=26.0"></script>
-<script src="assets/fz-flash-grip.js?v=27.0"></script>
-<script src="assets/fz-metro-policy.js?v=27.0"></script>
-<script src="assets/fz-sound.js?v=24.0"></script>
+<script src="assets/fz-sky.js?v=31.0"></script>
+<script src="assets/fz-flash-grip.js?v=44"></script>
+<script src="assets/fz-progress40.js?v=41"></script>
+<script src="assets/fz-adventure45-policy.js?v=45"></script>
+<script src="assets/fz-save41-policy.js?v=45"></script>
+<script src="assets/fz-save41.js?v=45"></script>
+<script src="assets/fz-flash40.js?v=44"></script>
+<script src="assets/fz-forest40.js?v=40.0"></script>
+<script src="assets/fz-metro-policy.js?v=31.0"></script>
+<script src="assets/fz-escape42.js?v=42"></script>
+<script src="assets/fz-sound.js?v=39"></script>
+<script src="assets/fz-flight33-policy.js?v=33"></script>
+<script src="assets/fz-lift34-policy.js?v=38"></script>
+<script src="assets/fz-cabin38-policy.js?v=38"></script>
+<script src="assets/fz-lift38-wreck.js?v=38"></script>
+<script src="assets/fz-story30-policy.js?v=38"></script>
+<script src="assets/fz-hands30.js?v=45"></script>
+<script src="assets/fz-humans31.js?v=39"></script>
+<script src="assets/fz-story30-sets.js?v=39"></script>
+<script src="assets/fz-story30-forest.js?v=44"></script>
+<script src="assets/fz-neon36-title.js?v=36"></script>
+<script src="assets/fz-story30.js?v=39"></script>
 <script src="assets/fz-metro-audio.js?v=24.0"></script>
-<script src="assets/fz-metro.js?v=27.0"></script>
+<script src="assets/fz-metro36-motion.js?v=36"></script>
+<script src="assets/fz-metro39-fall.js?v=39"></script>
+<script src="assets/fz-metro.js?v=43"></script>
+<script src="assets/fz-voyage43.js?v=43"></script>
+<link rel="stylesheet" href="styles/fz-voyage43.css?v=43">
+<script src="assets/fz-lore45.js?v=45"></script>
+<script src="assets/fz-survival45.js?v=45"></script>
+<link rel="stylesheet" href="styles/fz-adventure45.css?v=45">
 <script src="assets/fz-journey.js?v=15.0"></script>
 
 

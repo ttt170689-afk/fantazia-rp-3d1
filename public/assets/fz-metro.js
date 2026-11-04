@@ -2,7 +2,7 @@
  * All movement uses the native loop/collision/input. No road-crossing surface rails. */
 (function () {
   "use strict";
-  const P = FZMetroPolicy,
+  const P = FZMetroPolicy, M = FZMetro36Motion,
     O = { ...P.origin, y: -8 };
   let owner = null,
     entrances = [],
@@ -16,8 +16,12 @@
     elapsed = 0,
     train = null,
     tunnel = null,
+    evacuation = null,
+    escapeSet = null,
     tunnelLights = [],
+    tunnelTravel = 0,
     doors = [],
+    doorSignals = [],
     board = null,
     boardContext = null,
     boardTexture = null,
@@ -45,18 +49,13 @@
   }
   function label(parent, text, w, h, x, y, z, color = "#cceaff") {
     const cv = document.createElement("canvas");
-    cv.width = 1024;
-    cv.height = 256;
+    const size=M.label(w,h);cv.width=size.width;cv.height=size.height;
     const c = cv.getContext("2d");
-    c.fillStyle = "#0c1425";
-    c.fillRect(0, 0, 1024, 256);
-    c.fillStyle = color;
-    c.font = "700 62px Arial";
-    while (c.measureText(text).width > 940)
-      c.font = "700 " + (parseInt(c.font.slice(4)) - 2) + "px Arial";
-    c.textAlign = "center";
-    c.textBaseline = "middle";
-    c.fillText(text, 512, 128);
+    c.fillStyle = "#070b16";c.fillRect(0,0,cv.width,cv.height);
+    c.fillStyle=color;let font=Math.floor(cv.height*.60);
+    c.font="600 "+font+"px Arial";
+    while(c.measureText(text).width>cv.width-48&&font>8)c.font="600 "+(--font)+"px Arial";
+    c.textAlign="center";c.textBaseline="middle";c.fillText(text,cv.width/2,cv.height/2);
     const tex = own(new THREE.CanvasTexture(cv)),
       m = new THREE.Mesh(
         own(new THREE.PlaneGeometry(w, h)),
@@ -68,6 +67,8 @@
           }),
         ),
       );
+    tex.encoding=THREE.sRGBEncoding;
+    m.name="Metro sign: "+text;m.userData.aspect=w/h;
     m.position.set(x, y, z);
     parent.add(m);
     return m;
@@ -88,9 +89,16 @@
     return (
       !!localPlayer?.mesh &&
       document.body.classList.contains("game-active") &&
-      !window.cine &&
+      (!window.cine || window.cine.metro39) &&
       !window._loadingGate
     );
+  }
+  function weathered(material) {
+    const cv=document.createElement('canvas');cv.width=cv.height=128;const c=cv.getContext('2d');c.fillStyle='#c7c3b6';c.fillRect(0,0,128,128);
+    let seed=40;const random=()=>((seed=Math.imul(seed,1664525)+1013904223>>>0)/4294967296);
+    for(let i=0;i<400;i++){c.fillStyle=i%3?'rgba(31,35,25,.17)':'rgba(91,48,27,.23)';c.fillRect(random()*128,random()*128,2+random()*13,2+random()*20);}
+    c.strokeStyle='#514c41';c.lineWidth=1.4;for(let i=0;i<5;i++){c.beginPath();let x=random()*128,y=random()*128;c.moveTo(x,y);for(let j=0;j<5;j++){x+=random()*12-6;y+=random()*14;c.lineTo(x,y);}c.stroke();}
+    const t=own(new THREE.CanvasTexture(cv));t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(5,2);material.map=t;material.needsUpdate=true;return material;
   }
   function buildEntrances() {
     if (!scene || !cityWorldReady()) return;
@@ -112,7 +120,9 @@
       g.name = "metro_entrance_" + s.id;
       g.position.set(p.x, 0, p.z);
       scene.add(g);
-      const light = makeMat(s.color, s.color);
+      const abandoned=s.id==='forest',stone=abandoned?weathered(makeMat(0x777362)):makeMat(0x18243c),metal=abandoned?weathered(makeMat(0x72523b)):makeMat(0x536b8d);
+      const light = makeMat(abandoned?0x555d4a:s.color, abandoned?0:s.color);
+      if(abandoned){for(const x of [-2.75,2.75]){const beam=box(g,.22,2.3,.16,x,1.9,3.2,metal);if(beam)beam.rotation.z=x>0?.13:-.15;}}
       box(g, 6, 0.12, 6, 0, 0.06, 0, stone);
       for (const x of [-3, 3]) {
         box(g, 0.3, 3.9, 6, x, 1.95, 0, metal);
@@ -125,7 +135,7 @@
         box(g, 4.8, 0.08, 0.6, 0, 0.1 + k * 0.018, 2.4 - k * 0.65, metal);
       label(
         g,
-        "M  /  " + s.name,
+        "M  /  " + (abandoned?"СТАРАЯ ":"") + s.name,
         6.2,
         1.1,
         0,
@@ -133,9 +143,13 @@
         3.38,
         "#" + s.color.toString(16),
       );
-      label(g, "КОЛЬЦЕВАЯ  •  СПУСК", 4, 0.55, 0, 2.2, -2.82);
+      label(g, abandoned?"СТАРОЕ МЕТРО · СПУСК":"КОЛЬЦЕВАЯ  •  СПУСК", 4, 0.55, 0, 2.2, -2.82);
       const entry = { ...s, x: p.x, z: p.z, group: g, index: i };
       entrances.push(entry);
+      if(s.id==='harbour'){
+        interactables.push({type:'sea43',name:'Морской район · лодки и паром',position:{x:p.x+3,y:0,z:p.z+4},range:2.2});
+        label(g,'МОРСКОЙ РАЙОН →',3,.45,3,2,3.4,'#9ee4ff');
+      }
       action(
         "enter",
         "Метро «" + s.name + "» — спуститься",
@@ -147,6 +161,7 @@
     }
   }
   function clearInterior() {
+    escapeSet?.dispose();escapeSet=null;
     if (root) {
       root.parent?.remove(root);
       const owned = new Set();
@@ -169,6 +184,7 @@
     root = null;
     train = null;
     doors = [];
+    doorSignals = [];
     interactables = interactables.filter((e) => !e.metroInside);
   }
   function buildInterior() {
@@ -184,6 +200,11 @@
       dark = makeMat(0x09101d),
       accent = makeMat(s.color, s.color),
       white = makeMat(0xdcecff, 0x8aaacb);
+    if(s.id==='forest'){
+      weathered(wall);weathered(floor);weathered(stone);wall.color.setHex(0x545a4b);floor.color.setHex(0x656156);stone.color.setHex(0x958d76);accent.color.setHex(0x817b49);accent.emissiveIntensity=.08;white.emissiveIntensity=.12;
+      const rust=weathered(makeMat(0x6b4933));for(const x of [-22,22]){box(root,.18,.18,17,x,5.4,1,rust);for(const z of [0,5,10])box(root,.24,1.8,.24,x,4.5,z,rust);}
+      label(root,'СТАРАЯ ЛИНИЯ · ЛЕСНАЯ',10,1,0,6.6,12.65,'#c2b68d');
+    }
     box(root, 48, 0.4, 23, 0, -0.22, 2, wall);
     box(root, 46, 0.12, 15, 0, -0.06, 5.5, floor);
     // Real opening into the same-coordinate staircase, not a teleport wall.
@@ -234,8 +255,8 @@
     label(root, "ВЫХОД В ГОРОД  ↑", 5, 0.7, 0, 2.7, 12.68);
     label(
       root,
-      P.stations
-        .map((v, i) => (i === index ? "● " : "○ ") + v.name)
+      [0,1,2,3,4].map(offset=>P.stations[(index+offset)%P.stations.length])
+        .map((v, i) => (i === 0 ? "● " : "○ ") + v.name)
         .join("  —  "),
       21,
       1.4,
@@ -280,59 +301,69 @@
     train.name = "metro_train";
     train.position.z = 2;
     root.add(train);
-    const shell = makeMat(0x7187a6),
-      seat = makeMat(0x376b8c);
-    box(train, 27, 0.25, 4.4, 0, -0.12, -6, shell);
-    box(train, 27, 0.22, 4.4, 0, 3.8, -6, shell);
-    box(train, 27, 3.6, 0.16, 0, 1.8, -8.1, shell);
-    for (const x of [-13.4, 13.4])
-      box(train, 0.18, 3.6, 4.1, x, 1.8, -6, shell);
-    const glass = own(
-      new THREE.MeshStandardMaterial({
-        color: 0x5494b2,
-        transparent: true,
-        opacity: 0.23,
-        roughness: 0.18,
-        metalness: 0.1,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-      }),
-    );
-    const pane = (parent, w, h, x, y, z) => {
-      const m = new THREE.Mesh(own(new THREE.PlaneGeometry(w, h)), glass);
-      m.position.set(x, y, z);
-      parent.add(m);
-    };
-    for (let x = -12; x <= 12; x += 4) {
-      if (x === 0 || Math.abs(x) === 8) continue;
-      box(train, 2.6, 1.1, 0.12, x, 0.55, -3.9, shell);
-      box(train, 2.6, 0.5, 0.12, x, 3.4, -3.9, shell);
-      box(train, 2.6, 0.18, 0.03, x, 0.4, -3.82, accent);
-      pane(train, 2.4, 1.85, x, 2.13, -3.87);
-      box(train, 0.1, 2.1, 0.12, x - 1.3, 2.1, -3.9, shell);
-    }
-    for (let x = -11; x < 12; x += 2) {
-      box(train, 1.6, 0.17, 0.65, x, 0.8, -7.5, seat);
-      box(train, 1.6, 0.8, 0.15, x, 1.15, -7.84, seat);
-    }
-    for (const x of [-10, 0, 10])
-      box(train, 0.055, 3.6, 0.055, x, 1.8, -6.8, white);
-    for (const x of [-8, 0, 8])
-      for (const sign of [-1, 1]) {
-        const d = new THREE.Group();
-        d.position.set(x + sign * 0.58, 1.7, -3.88);
-        train.add(d);
-        box(d, 1.15, 1.1, 0.1, 0, -1.15, 0, shell);
-        box(d, 1.15, 0.3, 0.1, 0, 1.55, 0, shell);
-        for (const edge of [-0.535, 0.535])
-          box(d, 0.08, 2, 0.1, edge, 0.4, 0, shell);
-        box(d, 1.15, 0.18, 0.03, 0, -1.3, 0.07, accent);
-        pane(d, 1, 2, 0, 0.4, 0.01);
-        box(d, 0.035, 0.6, 0.04, sign * 0.39, -0.25, 0.09, white);
-        doors.push({ mesh: d, base: x + sign * 0.58, sign });
+    const shell=makeMat(0x151d35),trim=makeMat(0x69778e),rubber=makeMat(0x080b12),
+      lining=makeMat(0x41485c),seat=makeMat(0x403663),neon=makeMat(0x241039,0x6633ff);
+    shell.metalness=.38;shell.roughness=.3;shell.emissive.setHex(0x060d20);shell.emissiveIntensity=.65;trim.metalness=.78;trim.roughness=.24;
+    neon.emissiveIntensity=.9;seat.roughness=.9;
+    box(train,27,.25,4.4,0,-.12,-6,floor);
+    box(train,27,.22,4.4,0,3.8,-6,shell);
+    box(train,27,3.6,.16,0,1.8,-8.1,lining);
+    for(const x of [-13.4,13.4])box(train,.18,3.6,4.1,x,1.8,-6,shell);
+    const glass=own(new THREE.MeshStandardMaterial({color:0x364b6a,transparent:true,opacity:.43,roughness:.12,metalness:.3,side:THREE.DoubleSide,depthWrite:false}));
+    const pane=(parent,w,h,x,y,z)=>{const m=new THREE.Mesh(own(new THREE.PlaneGeometry(w,h)),glass);m.name="Tinted metro window";m.position.set(x,y,z);parent.add(m);};
+    // Continuous side panels between the three real door apertures. No giant
+    // invisible wall and no open seams masquerading as glazing.
+    for(const [left,right] of [[-13.5,-9.16],[-6.84,-1.16],[1.16,6.84],[9.16,13.5]]){
+      const width=right-left,x=(left+right)/2;
+      box(train,width,1.05,.18,x,.525,-3.9,shell);
+      box(train,width,.72,.18,x,3.44,-3.9,shell);
+      box(train,width,.10,.05,x,.67,-3.77,neon);
+      box(train,width,.045,.05,x,1.04,-3.77,trim);
+      for(let i=0;i<2;i++){
+        const w=width/2-.22,cx=left+(i+.5)*width/2;
+        for(const edge of [-1,1])box(train,.10,2.05,.16,cx+edge*(w/2+.04),2.065,-3.88,rubber);
+        for(const y of [1.08,3.05])box(train,w+.12,.08,.17,cx,y,-3.88,rubber);
+        pane(train,w,1.90,cx,2.065,-3.81);
       }
-    label(train, "КОЛЬЦЕВАЯ / FANTAZIA", 9, 0.55, 0, 3.3, -3.8);
-    label(train, "ДЕРЖИТЕСЬ ЗА ПОРУЧНИ", 8, 0.5, 0, 2.5, -7.99);
+    }
+    for(let x=-11;x<12;x+=2){
+      box(train,1.66,.16,.72,x,.63,-7.5,rubber);
+      box(train,1.55,.20,.66,x,.80,-7.5,seat);
+      const back=box(train,1.55,.83,.15,x,1.25,-7.85,seat);back.rotation.x=-.07;
+      for(const side of [-1,1])box(train,.045,.28,.55,x+side*.8,.91,-7.48,trim);
+    }
+    for(const x of [-10,0,10])box(train,.055,3.3,.055,x,1.75,-6.8,trim);
+    for(const z of [-4.5,-7.4])box(train,24,.045,.055,0,2.95,z,trim);
+    const cabinLight=makeMat(0xe5defc,0xafa3e3);cabinLight.emissiveIntensity=1.5;
+    for(const z of [-4.7,-7.2])box(train,25,.035,.12,0,3.62,z,cabinLight);
+    for(const x of [-8,0,8]){
+      const light=new THREE.PointLight(0xc8baff,.8,7,2);light.position.set(x,3.35,-6);train.add(light);
+      for(const sign of [-1,1]){
+        const d=new THREE.Group();d.name="Metro sliding door";d.position.set(x+sign*.58,1.7,-3.88);train.add(d);
+        box(d,1.15,1.08,.14,0,-1.16,0,shell);
+        box(d,1.15,.55,.14,0,1.58,0,shell);
+        for(const edge of [-.535,.535])box(d,.08,1.95,.14,edge,.35,0,trim);
+        for(const y of [-.61,1.29])box(d,1.04,.075,.15,0,y,0,rubber);
+        pane(d,.96,1.82,0,.35,.085);
+        box(d,1.15,.1,.04,0,-1.03,.09,neon);
+        box(d,.035,.48,.06,sign*.40,-.25,.13,trim);
+        doors.push({mesh:d,base:x+sign*.58,sign});
+      }
+      box(train,2.4,.10,.26,x,3.06,-3.8,rubber);
+      box(train,2.4,.68,.18,x,3.46,-3.9,shell);
+      const led=makeMat(0xa28aff,0x8055ee);led.emissiveIntensity=1.4;
+      box(train,.5,.055,.03,x,3.10,-3.64,led);doorSignals.push(led);
+    }
+    for(const x of [-10.6,10.6]){
+      box(train,2.7,.4,2.8,x,-.4,-6,rubber);
+      for(const z of [-4.25,-7.75])for(const dx of [-.8,.8]){
+        const wheel=new THREE.Mesh(own(new THREE.CylinderGeometry(.35,.35,.18,16)),rubber);wheel.rotation.x=Math.PI/2;wheel.position.set(x+dx,-.4,z);train.add(wheel);
+      }
+    }
+    for(const x of [-11,11])box(train,1.5,.035,1.6,x,3.94,-6,trim);
+    label(train,"КОЛЬЦЕВАЯ · FANTAZIA",4.7,.40,0,3.48,-3.78,"#c5b8ff");
+    label(train,"01",.65,.3,-8,3.48,-3.78,"#c5b8ff");label(train,"03",.65,.3,8,3.48,-3.78,"#c5b8ff");
+    label(train,"ДЕРЖИТЕСЬ ЗА ПОРУЧНИ",4.3,.35,0,3.15,-7.99);
     // Single reusable texture for the live departure board.
     const cv = document.createElement("canvas");
     cv.width = 1024;
@@ -352,9 +383,9 @@
     board.position.set(0, 5.2, -2);
     root.add(board);
     lastBoard = -1;
-    const hemi = new THREE.HemisphereLight(0xc7dfff, 0x344155, 1.25);
+    const hemi = new THREE.HemisphereLight(0xc7c5ef, 0x171728, s.id==='forest'?.32:.85);
     root.add(hemi);
-    const sun = new THREE.DirectionalLight(0xffffff, 1.1);
+    const sun = new THREE.DirectionalLight(0xe4e7ff, s.id==='forest'?.3:1.0);
     sun.position.set(3, 7, 3);
     root.add(sun);
     root.add(sun.target);
@@ -363,7 +394,21 @@
     tunnel.position.z = 2;
     root.add(tunnel);
     tunnelLights = [];
-    for (const z of [-9, -3.3]) box(tunnel, 100, 6, 0.3, 0, 2, z, dark);
+    for (const z of [-9, -3.3]) {const wall=box(tunnel,100,6,.3,0,2,z,dark);wall.userData.evacWall=z===-3.3;}
+    evacuation=new THREE.Group();evacuation.name='Emergency walking route';root.add(evacuation);
+    const concrete=weathered(makeMat(0x59605b)),exitLight=makeMat(0x70dba5,0x409d75);
+    box(evacuation,70,.2,4.6,22,-.1,.7,concrete);
+    box(evacuation,70,4,.15,22,2,-6.7,concrete);
+    box(evacuation,65,4,.15,19.5,2,3.2,concrete);
+    box(evacuation,70,.12,10,22,4.1,-1.8,concrete);
+    box(evacuation,65,.025,.08,20,0.025,1.6,exitLight);
+    for(let i=0;i<32;i++){const h=(i+1)*.25;box(evacuation,4,h,.75,55,h/2,3+(i+.5)*.75,concrete);}
+    for(const x of [52.9,57.1]){const rail=box(evacuation,.12,1.15,26,x,4.8,15,concrete);rail.rotation.x=-Math.atan2(8,24);}
+    for(let i=0;i<10;i++){box(evacuation,.5,.07,.18,-8+i*6,3.3,2.9,exitLight);label(evacuation,'← ВЫХОД',2,.4,-8+i*6,1.8,3.08,'#8effb9').rotation.y=Math.PI;}
+    label(evacuation,'АВАРИЙНЫЙ ВЫХОД ↑',3,.5,55,8.6,27,'#8effb9').rotation.y=Math.PI;
+    escapeSet=window.FZEscape42?.create(evacuation)||null;
+    label(evacuation,'← ВЫХОД  •  ТЕХНИЧЕСКИЙ ТОННЕЛЬ',9,.55,16,2.9,3.06,'#d5d0ab').rotation.y=Math.PI;
+    evacuation.visible=false;
     for (let i = 0; i < 16; i++) {
       const strip = box(
         tunnel,
@@ -492,6 +537,7 @@
     }
   }
   function exit(walking = false) {
+    window.FZMetro39Fall?.cancel();
     if (!inside) {
       FZMetroAudio.activate(false);
       close();
@@ -508,6 +554,7 @@
     saved = null;
     clearInterior();
     close();
+    if(P.stations[index]?.id!=='forest'&&window.FZForest40?.required()){FZForest40.end();FZProgress40.mark('metro');}
     if (!walking) FZPlay.release();
     return true;
   }
@@ -524,7 +571,7 @@
     return true;
   }
   function alight() {
-    if (!inside || !riding || state !== "open") return false;
+    if (!inside || !riding || !doorsOpen()) return false;
     showNotification("Выходите пешком через открытые двери.", "info");
     return true;
   }
@@ -538,9 +585,9 @@
     );
     return false;
   }
-  const doorsOpen = () => state === "open" && elapsed > 0.65;
+  const doorsOpen = () => state === "open" && elapsed > 0.65 || state === "broken" && elapsed >= 4.8 && !window.FZMetro39Fall?.active();
   function collision(x, z) {
-    if (inside) return P.blocked(x - O.x, z - O.z, riding, doorsOpen());
+    if (inside) return state === "broken" ? P.escapeBlocked(x-O.x,z-O.z,doorsOpen()) : P.blocked(x - O.x, z - O.z, riding, doorsOpen());
     for (const e of entrances) {
       const dx = x - e.x,
         dz = z - e.z;
@@ -553,7 +600,7 @@
     return null;
   }
   function textBoard() {
-    const remaining = Math.ceil(P.duration[state] - elapsed);
+    const remaining = state === "broken" ? -2 : Math.ceil(P.duration[state] - elapsed);
     if (remaining === lastBoard) return;
     lastBoard = remaining;
     const c = boardContext;
@@ -567,6 +614,7 @@
     c.font = "700 47px Arial";
     c.fillText(
       {
+        broken: "НЕИСПРАВНОСТЬ · ВЫХОД СПРАВА",
         arriving: "Поезд прибывает",
         open: "Посадка открыта",
         closing: "Двери закрываются",
@@ -581,9 +629,8 @@
     c.fillStyle = "#c2b2ff";
     c.font = "32px Arial";
     c.fillText(
-      remaining +
-        " с   •   " +
-        (riding ? "E — выход только на остановке" : "Проезд бесплатный"),
+      (state === "broken" ? "Идите по зелёной разметке  •  " : remaining + " с   •   ") +
+        (state === "broken" ? "Двери разблокированы" : riding ? "E — выход только на остановке" : "Проезд бесплатный"),
       40,
       213,
     );
@@ -658,7 +705,7 @@
     elapsed = step.elapsed;
     if (step.changed) {
       lastBoard = -1;
-      if (state === "open") FZMetroAudio.say(P.stations[index].id);
+      if (state === "open" && P.stations[index].id !== "forest") FZMetroAudio.say(P.stations[index].id);
       if (state === "closing") FZMetroAudio.say("close");
       if (state === "arriving") {
         if (riding) {
@@ -671,9 +718,8 @@
       }
       if (state === "travel" && riding) {
         const next = entrances.find((e) => e.index === P.next(index));
-        trip = next
-          ? { from: { ...O }, to: { x: next.x, y: -8, z: next.z - 23 } }
-          : null;
+        const breakdown=P.storyTrip(index,window.FZStory30?.metroBreakPending());
+        trip = next ? {from:{...O},to:{x:next.x-(breakdown?55:0),y:-8,z:next.z-23},breakdown}:null;
       }
       if (state === "travel" && !riding) {
         state = "away";
@@ -681,34 +727,50 @@
       }
     }
     if (state === "travel" && riding && trip) {
-      const t = Math.min(1, elapsed / P.duration.travel),
+      const t = Math.min(1, elapsed / (trip.breakdown?10:P.duration.travel)),
         k = t * t * (3 - 2 * t);
       carry(
         trip.from.x + (trip.to.x - trip.from.x) * k,
         trip.from.z + (trip.to.z - trip.from.z) * k,
       );
     }
+    if(state === "travel"){
+      const t=trip?.breakdown?Math.min(10,elapsed):elapsed;
+      tunnelTravel=18*t-(trip?.breakdown?4.5*Math.max(0,t-8)**2:0);
+    }
+    if(state === "travel" && riding && trip?.breakdown && elapsed>=10){
+      state="broken";elapsed=0;lastBoard=-1;FZStory30.metroBreakTaken();
+      SFX.noise(.6,.08,500);FZMetroAudio.stop();window.FZMetro39Fall?.begin();
+      for(const e of interactables)if(e.metroInside&&["metro_board","metro_alight"].includes(e.type))e.name="Аварийный выход — следуйте по зелёной линии";
+      showNotification("Поезд резко затормозил. После остановки выйди по зелёной разметке к лестнице.","info");
+    }
     const open =
-      state === "open"
+      state === "broken" ? Math.min(1,Math.max(0,(elapsed-4.2)*1.7)) : state === "open"
         ? Math.min(1, elapsed * 1.7)
         : state === "closing"
           ? Math.max(0, 1 - elapsed / 2)
           : 0;
-    for (const d of doors) d.mesh.position.x = d.base + d.sign * 1.12 * open;
+    for(const d of doors){const pose=M.door(open,d.sign,d.base);d.mesh.position.x=pose.x;d.mesh.position.z=pose.z;}
+    for(const led of doorSignals){const closing=state==='closing';led.color.setHex(closing?0xffae55:0xa28aff);led.emissive.setHex(closing?0xdc6a20:0x8055ee);}
+
     train.visible = riding || state !== "away";
     train.position.x = riding
       ? 0
       : state === "arriving"
-        ? Math.pow(1 - elapsed / P.duration.arriving, 2) * 65
+        ? M.arrival(elapsed,P.duration.arriving)
         : 0;
-    const travelling = riding && state === "travel";
+    const travelling = riding && state === "travel" || state === "broken";
     for (const child of root.children) {
-      if (child === train || child.isLight || child === tunnel) continue;
+      if (child === train || child.isLight || child === tunnel || child === evacuation) continue;
       child.visible = !travelling;
     }
-    tunnel.visible = travelling;
+    tunnel.visible = travelling;evacuation.visible=state === "broken";
+    for(const child of tunnel.children)if(child.userData.evacWall)child.visible=state !== "broken";
     for (let i = 0; i < tunnelLights.length; i++)
-      tunnelLights[i].position.x = ((i * 6 + elapsed * 18) % 96) - 48;
+      tunnelLights[i].position.x = ((i * 6 + tunnelTravel) % 96) - 48;
+    train.rotation.z=state==='broken'&&!window.FZPlay?.reducedMotion()?(window.FZCinematic32?.impulse(elapsed,.008,2.8,9)||0):0;
+    train.position.y=state==='broken'&&!window.FZPlay?.reducedMotion()?(window.FZCinematic32?.impulse(elapsed,.035,3,10)||0):0;
+    if(state==='broken'&&elapsed>=4.8&&!document.hidden&&!FZPlay.paused())escapeSet?.update(dt,{x:player.x-O.x,z:player.z-O.z},FZPlay.reducedMotion());
     textBoard();
     const p = localPlayer.mesh.position;
     // Collision prevents leaving the station; never teleport a valid pedestrian.
@@ -719,7 +781,7 @@
     scene.background = underground;
     scene.fog = null;
     camera.layers.set(3);
-    if (window.cameraMode !== "first") {
+    if (window.cameraMode !== "first" && state !== "broken") {
       camera.position.x = Math.max(
         O.x -
           (riding ? 12 : localPlayer.mesh.position.z - O.z > 13 ? 2.15 : 22.5),
@@ -760,12 +822,12 @@
       if (!masks.has(o)) masks.set(o, o.layers.mask);
       o.layers.enable(3);
     });
-    if (ITEMS.vm)
-      ITEMS.vm.traverse((o) => {
+    for(const model of [ITEMS.vm,window.FZHands30?.view?.()])if(model)
+      model.traverse((o) => {
         if (!masks.has(o)) masks.set(o, o.layers.mask);
         o.layers.enable(3);
       });
-    for (const o of [window._flash, window._flashSpill])
+    for (const o of [window._flash, window._flashSpill, window._flashCore42])
       if (o) {
         if (!masks.has(o)) masks.set(o, o.layers.mask);
         o.layers.enable(3);
@@ -785,7 +847,7 @@
     panel.setAttribute("role", "dialog");
     panel.setAttribute("aria-modal", "true");
     panel.innerHTML =
-      '<article><header><div><small>FANTAZIA / METRO 23</small><h2>Кольцевая линия</h2></div><button data-close>Закрыть</button></header><p>Пять станций. Бесплатный проезд. Вход — через уличные павильоны с буквой M.</p><div class="metro-stations"></div><fieldset><legend>Объявления</legend><label><input type="checkbox" data-voice> Голос в метро</label><label>Громкость <input type="range" min="0" max="1" step="0.05" data-volume></label><button data-test>Послушать голос</button><p>Записанный голос, не системный синтез. Субтитры доступны и без звука.</p></fieldset></article>';
+      '<article><header><div><small>FANTAZIA / METRO 43</small><h2>Кольцевая линия</h2></div><button data-close>Закрыть</button></header><p>20 станций. Бесплатный проезд. Вход — через уличные павильоны с буквой M.</p><div class="metro-stations"></div><fieldset><legend>Объявления</legend><label><input type="checkbox" data-voice> Голос в метро</label><label>Громкость <input type="range" min="0" max="1" step="0.05" data-volume></label><button data-test>Послушать голос</button><p>Прежние записанные объявления сохранены. Новые названия станций — на табло и в субтитрах.</p></fieldset></article>';
     document.body.append(panel);
     const list = panel.querySelector(".metro-stations");
     for (const [i, s] of P.stations.entries()) {
@@ -874,7 +936,7 @@
     if (inside) exit();
     clearInterior();
     for (const e of entrances) e.group.parent?.remove(e.group);
-    interactables = interactables.filter((e) => !e.fzMetro || e.sky);
+    interactables = interactables.filter((e) => (!e.fzMetro || e.sky) && e.type!=='sea43');
     resources.forEach((r) => r.dispose?.());
     resources.clear();
     entrances = [];
@@ -899,7 +961,7 @@
     board: boardTrain,
     alight,
     collision,
-    ground: () => (inside ? P.ground(localPlayer.mesh.position.z - O.z) : null),
+    ground: () => (inside ? (state === "broken" ? P.escapeGround : P.ground)(localPlayer.mesh.position.z - O.z) : null),
     requestExit,
     interact,
     open,
@@ -908,6 +970,7 @@
     ride: () => riding,
     info: () => ({
       inside,
+      escape:escapeSet?.info()||null,
       origin: { ...O },
       riding,
       index,
