@@ -15610,7 +15610,8 @@ function initSocket(name) {
   if (socket && socket.removeAllListeners) { socket.removeAllListeners(); socket.disconnect(); }
   try { socket = io(); } catch(e) { socket = { emit:function(){}, on:function(){}, connected:false }; return; }
 
-  socket.on('connect', () => {
+  socket.on('closedBetaDenied',()=>location.replace('/closed/login'));
+socket.on('connect', () => {
     console.log('Подключено к серверу!');
     const _cu = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null;
     const adminName = _cu ? (_cu.displayName || _cu.username || '') : '';
@@ -20403,72 +20404,8 @@ async function linkServerAccount(username, password, action) {
   } catch (_) { return null; } finally { clearTimeout(timer); } // Local accounts can still play without server account access.
 }
 // ── Вход по нику + паролю ──
-async function doLogin() {
-  const err = document.getElementById('authError');
-  const username = (document.getElementById('loginUsername').value || '').trim();
-  const password = (document.getElementById('loginPassword').value || '');
-  err.textContent = '';
-  if (!username) { err.textContent = '⚠️ Введите никнейм'; return; }
-  if (!password) { err.textContent = '⚠️ Введите пароль'; return; }
-
-  const accounts = getAccounts();
-  const key = 'nick_' + username.toLowerCase();
-  const serverAccount = await linkServerAccount(username, password, 'login');
-  const hashed = await hashPassword(password);
-  if (!serverAccount && accounts[key]?.passwordHash !== hashed) { err.textContent = '❌ Аккаунт не найден или неверный пароль'; return; }
-  if (serverAccount) {
-    accounts[key] = {...accounts[key], displayName:serverAccount.username,passwordHash:hashed,provider:'nickname'};
-    saveAccounts(accounts);
-  }
-  currentUser = { username: key, displayName: accounts[key].displayName, email: '', token: serverAccount?.token || null, isAdmin: serverAccount?.isAdmin === true };
-  localStorage.setItem('fz_currentUser', JSON.stringify(currentUser));
-
-  document.getElementById('authSuccessName').textContent  = accounts[key].displayName;
-  document.getElementById('authSuccessEmail').textContent = '👤 ' + username;
-  document.getElementById('authSuccessOverlay').classList.add('show');
-  setTimeout(() => {
-    const msg = document.getElementById('authRedirectMsg');
-    if (msg) msg.style.display = 'block';
-  }, 900);
-  setTimeout(showAuthSuccess, 1800);
-}
-
-// ── Регистрация по нику + паролю ──
-async function doRegister() {
-  const err = document.getElementById('authError');
-  const username = (document.getElementById('regUsername').value || '').trim();
-  const password = (document.getElementById('regPassword').value || '');
-  const confirm  = (document.getElementById('regPasswordConfirm').value || '');
-  err.textContent = '';
-  if (!username) { err.textContent = '⚠️ Введите никнейм'; return; }
-  if (username.length < 3) { err.textContent = '⚠️ Никнейм минимум 3 символа'; return; }
-  if (!password) { err.textContent = '⚠️ Введите пароль'; return; }
-  if (password.length < 6) { err.textContent = '⚠️ Пароль минимум 6 символов'; return; }
-  if (password !== confirm) { err.textContent = '❌ Пароли не совпадают'; return; }
-
-  const accounts = getAccounts();
-  const key = 'nick_' + username.toLowerCase();
-  if (accounts[key]) { err.textContent = '⚠️ Никнейм уже занят — войдите или выберите другой'; return; }
-
-  const hashed = await hashPassword(password);
-  accounts[key] = {
-    displayName: username, passwordHash: hashed,
-    provider: 'nickname', createdAt: new Date().toISOString()
-  };
-  saveAccounts(accounts);
-  const serverAccount = await linkServerAccount(username, password, 'register');
-  currentUser = { username: key, displayName: username, email: '', token: serverAccount?.token || null, isAdmin: false };
-  localStorage.setItem('fz_currentUser', JSON.stringify(currentUser));
-
-  document.getElementById('authSuccessName').textContent  = username;
-  document.getElementById('authSuccessEmail').textContent = '🎉 Аккаунт создан!';
-  document.getElementById('authSuccessOverlay').classList.add('show');
-  setTimeout(() => {
-    const msg = document.getElementById('authRedirectMsg');
-    if (msg) msg.style.display = 'block';
-  }, 900);
-  setTimeout(showAuthSuccess, 1800);
-}
+function doLogin(){location.assign('/closed/login');}
+function doRegister(){document.getElementById('authError').textContent='Отдельная регистрация отключена. Используй основной аккаунт.';}
 
 function showAuthSuccess() {
   document.getElementById('authScreen').style.display = 'none';
@@ -20686,37 +20623,12 @@ function stopPortalAnimation() {
   if (portalAnimId) { cancelAnimationFrame(portalAnimId); portalAnimId = null; }
 }
 
-function initAuth() {
-  // Генерируем звёзды Fantazia
-  const sc = document.getElementById('authStars');
-  if (sc && !sc.childElementCount) {
-    for (let i = 0; i < 80; i++) {
-      const s = document.createElement('div');
-      s.className = 'auth-star';
-      const o = (Math.random()*0.6+0.1).toFixed(2);
-      s.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;--o:${o};--d:${(Math.random()*3+1.5).toFixed(1)}s;animation-delay:${(Math.random()*4).toFixed(1)}s;`;
-      sc.appendChild(s);
-    }
-  }
-  // Try auto-login from saved session
-  try {
-    const saved = localStorage.getItem('fz_currentUser');
-    if (saved) {
-      const u = JSON.parse(saved);
-      const accounts = getAccounts();
-      const key = u && (accounts[u.username] ? u.username : u.username && u.username.toLowerCase());
-      if (u && u.username && key && accounts[key]) {
-        currentUser = u;
-        showAuthSuccess();
-        return;
-      }
-    }
-  } catch(e) {}
-  document.getElementById('authScreen').style.display = 'flex';
-  document.getElementById('serverScreen').style.display = 'none';
-  // Google кнопки удалены (нарушение п.1.2 Яндекс)
+async function initAuth(){
+ document.getElementById('authScreen').style.display='none';document.getElementById('serverScreen').style.display='none';
+ try{const response=await fetch('/api/closed/me',{credentials:'same-origin',cache:'no-store'});if(!response.ok)throw Error('access denied');const account=await response.json();if(!account.ok||!account.token)throw Error('no account');
+ currentUser={username:'main_'+account.username,displayName:account.username,token:account.token,isAdmin:account.isAdmin===true};localStorage.setItem('fz_currentUser',JSON.stringify(currentUser));showAuthSuccess();
+ }catch{location.replace('/closed/login');}
 }
-
 // =================== МЕНЮ ПАУЗЫ ===================
 let gamePaused = false;
 
@@ -23283,22 +23195,8 @@ window.addEventListener('load', () => { renderHudCfg(); window.applyHudVisibilit
 
 <script>
 // ── PWA Service Worker ──
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    var swContent = `
-const CACHE = 'fantazia-v1';
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./', './index.html'])));
-});
-self.addEventListener('fetch', e => {
-  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
-});
-`;
-    var blob = new Blob([swContent], {type: 'application/javascript'});
-    var swUrl = URL.createObjectURL(blob);
-    navigator.serviceWorker.register(swUrl).catch(function(){});
-  });
-}
+// Closed beta: no offline-cached authentication or public game shell.
+if('serviceWorker' in navigator)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});
 
 // ── Install Prompt ──
 var deferredPrompt = null;

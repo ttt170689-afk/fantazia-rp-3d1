@@ -11,7 +11,12 @@ const { attachSkyAccess } = require('./server/sky-access');
 // FANTAZIA RP 3D SERVER
 // ======================================================
 
+const {RuntimeStore}=require('./server/closed-runtime.cjs');
+const {installClosedBeta}=require('./server/closed-beta.cjs');
+(async()=>{
+const store=new RuntimeStore(process.env.FANTAZIA_RUNTIME_SECRET);
 const app = express();
+app.set('trust proxy',1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 const server = http.createServer(app);
@@ -26,20 +31,10 @@ const io = new Server(server, {
 // ACCOUNTS SYSTEM
 // ======================================================
 
-const ACCOUNTS_FILE = path.join(__dirname, 'accounts.json');
+let accounts=await store.open();
+async function saveAccounts(){return store.save(accounts);}
+installClosedBeta({app,io,accounts,commit:saveAccounts,store,secret:process.env.FANTAZIA_RUNTIME_SECRET});
 
-function loadAccounts() {
-  try {
-    if (fs.existsSync(ACCOUNTS_FILE)) return JSON.parse(fs.readFileSync(ACCOUNTS_FILE, 'utf8'));
-  } catch(e) {}
-  return {};
-}
-
-function saveAccounts() {
-  try { fs.writeFileSync(ACCOUNTS_FILE + '.tmp', JSON.stringify(accounts, null, 2)); fs.renameSync(ACCOUNTS_FILE + '.tmp', ACCOUNTS_FILE); return true; } catch(e) { return false; }
-}
-
-let accounts = loadAccounts();
 require('./server/resume-save').attach(app,{accounts,commit:saveAccounts,players:()=>players,sockets:()=>io.sockets.sockets});
 
 function hashPassword(password) {
@@ -62,62 +57,8 @@ app.use(['/api/auth/login', '/api/auth/register'], (req, res, next) => {
   next();
 });
 
-// Регистрация
-app.post('/api/auth/register', (req, res) => {
-  const { username, password, email } = req.body || {};
-  if (typeof username !== 'string' || typeof password !== 'string' || !username.trim() || !password || username.length > 64 || password.length > 256) return res.json({ ok: false, error: 'Введи имя и пароль' });
-  if (username.length < 3) return res.json({ ok: false, error: 'Имя минимум 3 символа' });
-  if (password.length < 6) return res.json({ ok: false, error: 'Пароль минимум 6 символов' });
-  const key = username.trim().toLowerCase();
-  if (ADMIN_USERNAMES.includes(key)) return res.json({ok:false,error:'Это имя закреплено за администратором. Войди в существующий аккаунт.'});
-  if (accounts[key]) return res.json({ ok: false, error: 'Это имя уже занято' });
-  
-  const token = generateToken();
-  accounts[key] = {
-    username: username.trim(),
-    role: 'user',
-    email: email || '',
-    password: hashPassword(password),
-    token,
-    createdAt: Date.now(),
-    lastLogin: Date.now(),
-    // Сохранённый прогресс
-    money: 1000,
-    level: 1,
-    exp: 0,
-    inventory: [],
-    appearance: { skinColor: '#FFD1A4', shirtColor: '#3498DB', pantsColor: '#2C3E50', hairColor: '#4A2F1B', hairStyle: 0 }
-  };
-  saveAccounts();
-  res.json({ ok: true, token, username, message: 'Аккаунт создан!' });
-});
-
-// Вход
-app.post('/api/auth/login', (req, res) => {
-  const { username, password } = req.body || {};
-  if (typeof username !== 'string' || typeof password !== 'string' || !username.trim() || !password || username.length > 64 || password.length > 256) return res.json({ ok: false, error: 'Введи имя и пароль' });
-  const key = username.trim().toLowerCase();
-  const acc = accounts[key];
-  if (!acc) return res.json({ ok: false, error: 'Аккаунт не найден' });
-  if (acc.password !== hashPassword(password)) return res.json({ ok: false, error: 'Неверный пароль' });
-  
-  const token = generateToken();
-  acc.token = token;
-  acc.lastLogin = Date.now();
-  saveAccounts();
-  res.json({ ok: true, token, username: acc.username, isAdmin: accountIsAdmin(acc), data: { money: acc.money, level: acc.level, exp: acc.exp, inventory: acc.inventory, appearance: acc.appearance } });
-});
-
-// Проверка токена
-app.post('/api/auth/verify', (req, res) => {
-  const { token } = req.body;
-  const acc = typeof token === 'string' && token.length >= 32 ? Object.values(accounts).find(a => a.token === token) : null;
-  if (!acc) return res.json({ ok: false });
-  res.json({ ok: true, username: acc.username, data: { money: acc.money, level: acc.level, exp: acc.exp, inventory: acc.inventory, appearance: acc.appearance } });
-});
-
 // Сохранение прогресса
-app.post('/api/auth/save', (req, res) => {
+app.post('/api/auth/save', async (req, res) => {
   const { token, money, level, exp, inventory, appearance } = req.body;
   const acc = typeof token === 'string' && token.length >= 32 ? Object.values(accounts).find(a => a.token === token) : null;
   if (!acc) return res.json({ ok: false, error: 'Не авторизован' });
@@ -126,14 +67,12 @@ app.post('/api/auth/save', (req, res) => {
   if (exp !== undefined) acc.exp = exp;
   if (inventory !== undefined) acc.inventory = inventory;
   if (appearance !== undefined) acc.appearance = appearance;
-  saveAccounts();
-  res.json({ ok: true });
+  try{await saveAccounts();res.json({ok:true});}catch{res.status(503).json({ok:false,error:'Сохранение не подтверждено базой.'});}
 });
 
 // Список аккаунтов (только для админа)
 app.get('/api/admin/accounts', (req, res) => {
-  const pwd = req.query.adminPassword;
-  if (pwd !== 'fnfpoppy567765') return res.status(403).json({ error: 'Нет доступа' });
+  if(!req.fantaziaIdentity?.isOwner)return res.status(403).json({error:'owner_required'});
   const list = Object.values(accounts).map(a => ({ username: a.username, email: a.email, level: a.level, money: a.money, createdAt: a.createdAt, lastLogin: a.lastLogin }));
   res.json({ ok: true, total: list.length, accounts: list });
 });
@@ -187,22 +126,12 @@ app.get('/api/players', (req, res) => {
 // ADMIN API
 // ======================================================
 
-const ADMIN_PASSWORD   = 'fnfpoppy567765';
+
 const ADMIN_EMAIL      = 'ttt170689@gmail.com';
 const ADMIN_USERNAMES  = ['temka_play_official', 'ttt170689@gmail.com', 'ttt170689'];
 
-function accountIsAdmin(account) {
-  return !!account && (account.role === 'admin' || (account.role !== 'user' && ADMIN_USERNAMES.includes(String(account.username || '').toLowerCase())));
-}
-
-function checkAdmin(req, res) {
-  const pwd = req.body?.adminPassword || req.query?.adminPassword;
-  if (pwd !== ADMIN_PASSWORD) {
-    res.status(403).json({ error: 'Неверный пароль администратора' });
-    return false;
-  }
-  return true;
-}
+function accountIsAdmin(account){return !!account?.mainUid && account.role==='admin';}
+function checkAdmin(req,res){if(req.fantaziaIdentity?.isOwner)return true;res.status(403).json({error:'owner_required'});return false;}
 
 // Получить список банов
 app.get('/api/admin/bans', (req, res) => {
@@ -793,17 +722,11 @@ io.on('connection', (socket) => {
       let playerName = sanitizeText(data.name) || `Player_${socket.id.slice(0, 4)}`;
       let savedData = null;
 
-      // Загружаем сохранённый прогресс если есть токен
-      if (data.token) {
-        const acc = Object.values(accounts).find(a => a.token === data.token);
-        if (acc) {
-          playerName = acc.username;
-          savedData = acc;
-        }
-      }
-
-      socket.data.accountKey = savedData ? savedData.username.toLowerCase() : null;
-      socket.data.accountToken = savedData ? data.token : null;
+      savedData=socket.data.boundAccount;
+      if(!savedData){socket.disconnect(true);return;}
+      playerName=savedData.username;
+      socket.data.accountKey=savedData.mainUid;
+      socket.data.accountToken=savedData.token;
       // ── Проверка бана ──────────────────────────────
       const banRecord = bans[playerName.toLowerCase()];
       if (banRecord) {
@@ -1566,7 +1489,7 @@ io.on('connection', (socket) => {
     hsPush(rid);
   });
 
-  socket.on('disconnect', () => {
+  socket.on('disconnect', async () => {
     hsLeaveRoom(socket.id);
     const player = players[socket.id];
 
@@ -1582,7 +1505,7 @@ io.on('connection', (socket) => {
           accounts[key].exp = player.exp;
           accounts[key].inventory = player.inventory || [];
           accounts[key].appearance = player.appearance || accounts[key].appearance;
-          saveAccounts();
+          await saveAccounts().catch(()=>console.error('Durable save failed; server access will fail closed'));
         }
       }
 
@@ -1672,7 +1595,7 @@ app.get('/api/player/load', (req, res) => {
 // Портировано из fantazia-shop (server.js), префикс /shop/*
 // ======================================================
 const SHOP_DA_SECRET  = process.env.DA_SECRET  || '';
-const SHOP_ADMIN_PASS = process.env.ADMIN_PASS || 'admin123';
+
 const SHOP_DA_URL     = process.env.DA_URL     || '';
 const SHOP_DB_FILE    = path.join(__dirname, 'shop-users.json');
 
@@ -1841,7 +1764,7 @@ app.post('/shop/webhook/da', express.json(), (req, res) => {
 // Админ: ручная выдача
 app.post('/shop/api/admin/give', express.json(), (req, res) => {
   const { pass, nick, gems } = req.body || {};
-  if (pass !== SHOP_ADMIN_PASS) return res.status(403).json({ ok: false, error: 'forbidden' });
+  if(!req.fantaziaIdentity?.isOwner)return res.status(403).json({ok:false,error:'owner_required'});
   const { db, key } = shopUser(nick);
   db[key].pendingGems = (db[key].pendingGems || 0) + parseInt(gems);
   shopSaveDB(db);
@@ -1864,3 +1787,5 @@ server.listen(PORT, '0.0.0.0', () => {
 ╚══════════════════════════════════════════════╝
   `);
 });
+
+})().catch(error=>{console.error("Closed beta startup refused:",error.message);process.exitCode=1;});
