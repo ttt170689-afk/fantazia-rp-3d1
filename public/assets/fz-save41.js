@@ -18,7 +18,7 @@
    // A newer server revision always wins over a stale local cache.
    if(remote.revision!==revision||!dirty){record=remote.snapshot;revision=remote.revision;dirty=false;}canSync=true;state(remote.snapshot?'загружено с аккаунта':'новое сохранение');
   }catch(e){if(ticket!==epoch)return;state(e.status===401?'сеанс истёк — войди заново':'нет связи — локальная копия');}
-  else state('локально — нужен вход на сервер');
+  else state(user()?.isGuest?'гостевой режим — только этот браузер':'локально — нужен вход на сервер');
   if(ticket!==epoch||user()?.username!==name)return;
   if(record)FZProgress40.apply(record.story);
   if(localIntent){FZProgress40.apply(localIntent.story);if(record){record.story=localIntent.story;if(localIntent.replay)record.location=null;}dirty=true;}

@@ -2090,6 +2090,7 @@ body.theme-cyber .fz-menu-logged{background:rgba(0,229,255,.08)!important;border
 <link rel="stylesheet" href="styles/fz-lobby23.css?v=23.0">
 <link rel="stylesheet" href="styles/fz-sound.css?v=24.0">
 <link rel="stylesheet" href="styles/fz-story30.css?v=39">
+<style>#authScreen{display:none!important}</style>
 </head>
 <body>
 
@@ -15610,7 +15611,7 @@ function initSocket(name) {
   if (socket && socket.removeAllListeners) { socket.removeAllListeners(); socket.disconnect(); }
   try { socket = io(); } catch(e) { socket = { emit:function(){}, on:function(){}, connected:false }; return; }
 
-  socket.on('closedBetaDenied',()=>location.replace('/closed/login'));
+  socket.on('accountSessionExpired',()=>location.reload());
 socket.on('connect', () => {
     console.log('Подключено к серверу!');
     const _cu = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null;
@@ -20117,7 +20118,7 @@ function joinByCode() {
   }
 }
 
-function logoutUser() {
+async function logoutUser() {
   window.FZLore45?.close();
   window.FZVoyage43?.finish();
   window.FZSave41?.flush(true);
@@ -20137,11 +20138,8 @@ function logoutUser() {
   _gameStarted = false;
   document.getElementById('serverScreen').style.display = 'none';
   try { STOP_MENU_BG(); } catch(e) {}
-  document.getElementById('authScreen').style.display = 'flex';
-  document.getElementById('loginUsername').value = '';
-  document.getElementById('loginPassword').value = '';
-  document.getElementById('authError').textContent = '';
-  switchAuthTab('login');
+  try { await fetch('/account/logout',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:'{}'}); } catch {}
+  void initAuth();
 }
 
 function initServerBrowser() {
@@ -20404,8 +20402,8 @@ async function linkServerAccount(username, password, action) {
   } catch (_) { return null; } finally { clearTimeout(timer); } // Local accounts can still play without server account access.
 }
 // ── Вход по нику + паролю ──
-function doLogin(){location.assign('/closed/login');}
-function doRegister(){document.getElementById('authError').textContent='Отдельная регистрация отключена. Используй основной аккаунт.';}
+function doLogin(){location.assign('/account/login');}
+function doRegister(){void initAuth();}
 
 function showAuthSuccess() {
   document.getElementById('authScreen').style.display = 'none';
@@ -20625,9 +20623,18 @@ function stopPortalAnimation() {
 
 async function initAuth(){
  document.getElementById('authScreen').style.display='none';document.getElementById('serverScreen').style.display='none';
- try{const response=await fetch('/api/closed/me',{credentials:'same-origin',cache:'no-store'});if(!response.ok)throw Error('access denied');const account=await response.json();if(!account.ok||!account.token)throw Error('no account');
- currentUser={username:'main_'+account.username,displayName:account.username,token:account.token,isAdmin:account.isAdmin===true};localStorage.setItem('fz_currentUser',JSON.stringify(currentUser));showAuthSuccess();
- }catch{location.replace('/closed/login');}
+ try{
+  const response=await fetch('/api/session/me',{credentials:'same-origin',cache:'no-store'});
+  if(!response.ok)throw Error('session unavailable');const account=await response.json();
+  if(!account.ok||(!account.guest&&!account.token))throw Error('invalid session');
+  currentUser={username:(account.guest?'guest_':'main_')+account.username,displayName:account.username,token:account.guest?null:account.token,isGuest:account.guest===true,isAdmin:account.guest!==true&&account.isAdmin===true};
+  try{localStorage.setItem('fz_currentUser',JSON.stringify(currentUser));}catch{}
+  showAuthSuccess();
+  let note=document.getElementById('publicAccessNote');if(!note){note=document.createElement('div');note.id='publicAccessNote';note.style.cssText='position:fixed;bottom:12px;right:12px;max-width:min(340px,90vw);padding:10px 14px;background:#141b2e;color:#eee;border:1px solid #56617d;border-radius:12px;z-index:1000;font:13px system-ui';document.getElementById('serverScreen').appendChild(note);}
+  note.replaceChildren();if(account.guest){note.append('Гостевой режим · без регистрации. Перенос сохранений между устройствами недоступен. ');const link=document.createElement('a');link.href='/account/login';link.textContent='Войти в существующий аккаунт';link.style.color='#c6b5ff';note.appendChild(link);}else{note.textContent='Выполнен вход в аккаунт '+account.username;}
+ }catch{
+  const screen=document.getElementById('serverScreen');screen.style.display='flex';let error=document.getElementById('publicConnectionError');if(!error){error=document.createElement('div');error.id='publicConnectionError';error.style.cssText='position:fixed;inset:20%;z-index:20000;padding:24px;background:#141b2e;color:white;border-radius:16px';screen.appendChild(error);}error.replaceChildren('Не удалось связаться с сервером. Регистрация не нужна. ');const retry=document.createElement('button');retry.textContent='Повторить';retry.onclick=()=>{error.remove();void initAuth();};error.appendChild(retry);
+ }
 }
 // =================== МЕНЮ ПАУЗЫ ===================
 let gamePaused = false;

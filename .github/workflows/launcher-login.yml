@@ -1,4 +1,4 @@
-name: Launcher one-time login security
+name: Public guest access and owner security
 on:
   push:
     branches: [arena/95a3da60-fantazia-rp-3d1]
@@ -8,6 +8,9 @@ on:
       - backend/**
       - tests/closed-*
       - tests/launcher-login*
+      - tests/public-*
+      - public/index.html
+      - public/assets/fz-save41.js
       - package.json
       - package-lock.json
       - .github/workflows/launcher-login.yml
@@ -29,3 +32,5 @@ jobs:
       - run: npm run test:closed
       - run: npm run test:closed:db
       - run: npm run test:launcher-login
+      - run: npm run test:public
+      - run: npm run test:public:browser
