@@ -2,9 +2,9 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const {JSDOM}=require('jsdom'),P=require('../public/assets/fz-room48-policy');
 const root=path.resolve(__dirname,'..');
-for(const fps of [30,60,144]){
+for(const fps of [10,15,30,60,144]){
  const s=P.create();P.target(s,684,360);for(let i=0;i<fps*7;i++)P.step(s,1/fps);
- assert(Math.hypot(s.x-684,s.y-360)<8);assert.equal(P.interact(s),'computer');
+ assert(Math.hypot(s.x-684,s.y-360)<8);assert.equal(s.target,null,'auto-walk settles instead of oscillating around a waypoint');assert.equal(s.moving,false);assert.equal(P.interact(s),'computer');
  for(let i=0;i<fps*12;i++)P.step(s,1/fps);assert.equal(s.phase,'done');
 }
 const s=P.create();assert.equal(P.interact(s),false);assert.equal(s.phase,'room');
@@ -12,6 +12,15 @@ for(let i=0;i<200;i++)P.step(s,.1,{x:-1,y:1});assert.equal(s.x,P.bounds.left);as
 s.x=660;s.y=354;P.step(s,.1,{y:-1});assert(s.y>=345,'cannot walk through desk');
 assert.equal(P.interact(s),'computer');P.step(s,2);P.step(s,2);assert.equal(s.phase,'erase');assert(Math.abs(s.time-1)<1e-9,'cutscene time is not slowed down at low rendering frequency');
 const invalid=P.create();P.target(invalid,NaN,10);P.step(invalid,NaN);assert.equal(invalid.x,198);
+const lamp=P.create();lamp.x=735;lamp.y=365;
+assert.equal(P.near(lamp).id,'lamp','nearest object wins when ranges overlap');
+assert.equal(P.interact(lamp),'lamp');assert.equal(lamp.lampOn,false);assert.equal(lamp.phase,'room');
+P.step(lamp,.1);assert(lamp.light>0&&lamp.light<1,'light fades rather than flashing');
+assert.equal(P.interact(lamp,'computer'),'computer','explicit nearby object interaction is respected');
+const remote=P.create();assert.equal(P.interact(remote,'lamp'),false);assert.equal(remote.lampOn,true);
+assert.equal(P.hit(780,205).id,'lamp');assert.equal(P.hit(684,240).id,'computer');assert.equal(P.hit(462,370).id,'letter');assert.equal(P.hit(20,20),null);
+P.target(remote,778,365);assert.equal(remote.targetSpot,'lamp');for(let i=0;i<100;i++)P.step(remote,.1);assert.equal(P.near(remote).id,'lamp');assert.equal(remote.target,null);
+P.step(invalid,.1,{x:Infinity,y:NaN});assert.equal(invalid.x,198);
 (async()=>{
  const dom=new JSDOM('<body><button id="before">Play</button></body>',{url:'https://game.test',runScripts:'outside-only',pretendToBeVisual:true}),w=dom.window;
  const noop=()=>{},gradient={addColorStop:noop},ctx=new Proxy({createLinearGradient:()=>gradient,createRadialGradient:()=>gradient},{get:(o,k)=>k in o?o[k]:noop,set:(o,k,v)=>(o[k]=v,true)});
@@ -29,6 +38,12 @@ const invalid=P.create();P.target(invalid,NaN,10);P.step(invalid,NaN);assert.equ
  api.cancel();assert.equal(await pending,false);assert.equal(frames.size,0);assert(!api.active());assert.equal(w.document.querySelector('#fzRoom48'),null);assert.equal(w.document.activeElement.id,'before');
  let passed=false;w.document.addEventListener('keydown',()=>passed=true);w.document.body.dispatchEvent(new w.KeyboardEvent('keydown',{code:'KeyD',bubbles:true}));assert(passed,'input listeners removed on cancellation');
  const skipped=api.start();w.document.querySelector('[data-skip]').click();assert.equal(await skipped,true);assert.equal(frames.size,0);
+ const preferred=api.start(),checkbox=w.document.querySelector('[data-reduced]');checkbox.checked=true;checkbox.dispatchEvent(new w.Event('change'));
+ assert.equal(w.localStorage.getItem('fz_room49_reduced'),'1');api.cancel();await preferred;
+ const remembered=api.start();assert.equal(api.info().reduced,true);api.cancel();await remembered;
+ const storage=w.localStorage;Object.defineProperty(w,'localStorage',{configurable:true,get(){throw Error('storage disabled');}});
+ const blockedStorage=api.start(),fallback=w.document.querySelector('[data-reduced]');fallback.checked=true;assert.doesNotThrow(()=>fallback.dispatchEvent(new w.Event('change')));assert(api.info().reduced);api.cancel();await blockedStorage;
+ Object.defineProperty(w,'localStorage',{configurable:true,value:storage});
  const hidden=api.start();Object.defineProperty(w.document,'hidden',{configurable:true,value:true});w.document.dispatchEvent(new w.Event('visibilitychange'));tick(2000);assert.equal(api.info().x,198);api.cancel();await hidden;
  w.HTMLCanvasElement.prototype.getContext=()=>{throw Error('disabled canvas');};assert.equal(await api.start(),true);assert(!api.active());
  // Execute the actual launch function: late async completion must not revive a cancelled start.
@@ -42,5 +57,5 @@ const invalid=P.create();P.target(invalid,NaN,10);P.step(invalid,NaN);assert.equ
  game.window.FZSave41.prepare=async()=>{};
  const lateRoom=game.startGameDirect();await new Promise(r=>setImmediate(r));assert.equal(roomStarts,1);
  game._gameStartTicket++;game._gameStarted=true;releaseRoom(true);await lateRoom;assert.equal(game._gameStarted,true,'old launch must not alter a newer request');
- dom.window.close();console.log('PASS room48: playable path/collision, 30/60/144 Hz, bounded transition, resume/seen bypass, one RAF, pause/hidden/cancel/skip, input disposal and canvas fallback');
+ dom.window.close();console.log('PASS room48: playable path/collision, 10/15/30/60/144 Hz, nearest/tap targets, lamp fade, persistent/restricted-storage preferences, bounded transition, resume/seen bypass, one RAF, pause/hidden/cancel/skip, input disposal and canvas fallback');
 })().catch(e=>{console.error(e);process.exitCode=1;});

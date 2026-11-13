@@ -25,16 +25,32 @@ const {chromium}=require('playwright-core'),chrome=require('@sparticuz/chromium'
     await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:pad.x+pad.width/2,y:pad.y+pad.height/2}]});
     await page.waitForFunction(()=>FZRoom48.info().x>210);
     await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await touch.detach();
-    await page.setViewportSize({width:844,height:390});await fits();await page.setViewportSize({width:390,height:844});
+    await page.setViewportSize({width:844,height:390});await fits();
+    assert(await page.evaluate(()=>document.querySelector('.fz-room-caption').getBoundingClientRect().bottom<=document.querySelector('.fz-room-controls').getBoundingClientRect().top),'landscape caption must not overlap controls');
+    await page.setViewportSize({width:390,height:844});
     const box=await page.locator('#fzRoom48 canvas').boundingBox();
     await page.touchscreen.tap(box.x+box.width*684/960,box.y+box.height*240/540);
    }else{
     await page.keyboard.down('d');await page.waitForFunction(()=>FZRoom48.info().x>210);await page.keyboard.up('d');
     await page.locator('#fzRoom48 [data-walk]').click();
    }
+   await page.locator('#fzRoom48 [data-place]').selectOption('lamp');
+   await page.locator('#fzRoom48 [data-walk]').click();
+   await page.waitForFunction(()=>{const s=FZRoom48.info();return s&&Math.hypot(s.x-778,s.y-365)<8&&!s.moving;},{},{timeout:15000});
+   const lampBox=await page.locator('#fzRoom48 canvas').boundingBox(),lampPoint={x:lampBox.x+lampBox.width*780/960,y:lampBox.y+lampBox.height*205/540};
+   if(mobile)await page.touchscreen.tap(lampPoint.x,lampPoint.y);else await page.mouse.click(lampPoint.x,lampPoint.y);
+   assert.equal(await page.evaluate(()=>FZRoom48.info().lampOn),false);
+   assert.equal(await page.evaluate(()=>FZRoom48.info().phase),'room');
+   assert.match(await page.locator('.fz-room-caption').textContent(),/Лампа погасла/);
+   await page.locator('#fzRoom48 [data-act]').click();assert.equal(await page.evaluate(()=>FZRoom48.info().lampOn),true);
+   const still=await page.evaluate(()=>FZRoom48.info().x);
+   await page.locator('#fzRoom48 [data-place]').focus();await page.keyboard.press('ArrowUp');await page.waitForTimeout(150);
+   assert.equal(await page.evaluate(()=>FZRoom48.info().x),still,'selector keys must not move the player');
+   await page.locator('#fzRoom48 [data-reduced]').uncheck();
+   await page.locator('#fzRoom48 [data-place]').selectOption('computer');await page.locator('#fzRoom48 [data-walk]').click();
    await page.waitForFunction(()=>{const s=FZRoom48.info();return s&&Math.hypot(s.x-684,s.y-360)<8;},{},{timeout:15000});
    if(process.env.FZ_ROOM_SCREENSHOT)await page.screenshot({path:process.env.FZ_ROOM_SCREENSHOT.replace('.png',mobile?'-phone.png':'-desktop.png')});
-   if(mobile)await page.locator('#fzRoom48 [data-act]').click();else await page.keyboard.press('e');await page.waitForFunction(()=>FZRoom48.info().phase==='boot');
+   if(mobile){const b=await page.locator('#fzRoom48 canvas').boundingBox();await page.touchscreen.tap(b.x+b.width*684/960,b.y+b.height*240/540);}else await page.keyboard.press('e');await page.waitForFunction(()=>FZRoom48.info().phase==='boot');
    await page.keyboard.press('Escape');const paused=await page.evaluate(()=>FZRoom48.info());assert(paused.paused);
    await page.waitForTimeout(350);assert.equal(await page.evaluate(()=>FZRoom48.info().time),paused.time);
    await page.locator('#fzRoom48 [data-resume]').click();await page.waitForFunction(()=>FZRoom48.info().time>0);
@@ -42,11 +58,12 @@ const {chromium}=require('playwright-core'),chrome=require('@sparticuz/chromium'
    assert(await page.locator('#serverScreen').isVisible());assert.equal(await page.evaluate(()=>_gameStarted),false);
    assert.equal(await page.evaluate(()=>FZProgress40.has('opening')),false,'2D exit must not mark the 3D story seen');
    await page.locator('.fz-play').click();await page.waitForSelector('#fzRoom48');
+   assert.equal(await page.evaluate(()=>FZRoom48.info().reduced),false,'explicit effects choice survives reopening');
    await page.evaluate(()=>backToServers());await page.waitForSelector('#fzRoom48',{state:'detached'});
    assert.equal(await page.evaluate(()=>document.body.classList.contains('game-active')),false);
    assert.equal(await page.evaluate(()=>FZRoom48.active()),false);
    assert.deepEqual(errors,[]);await context.close();
-   console.log('PASS room '+(mobile?'mobile touch':'desktop keyboard')+': Play gate, computer path/interaction, reduced motion, portrait/landscape, pause, menu/re-entry and external cancellation');
+   console.log('PASS room '+(mobile?'mobile touch':'desktop keyboard')+': Play gate, computer/lamp tap interactions, native selector, saved effects, reduced motion, portrait/landscape, pause, menu/re-entry and external cancellation');
   }
  }finally{await browser?.close();child.kill('SIGTERM');await new Promise(resolve=>{if(child.exitCode!==null)return resolve();child.once('exit',resolve);});}
 })().catch(e=>{console.error(e);process.exitCode=1;});

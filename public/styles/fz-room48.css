@@ -20,6 +20,12 @@ body.fz-room-on>:not(#fzRoom48):not(script):not(style):not(link){visibility:hidd
 #fzRoom48 .fz-room-pause{position:absolute;inset:0;background:#050b14e8;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;border:1px solid #425663}
 #fzRoom48 [hidden]{display:none!important}
 @media(max-width:600px){#fzRoom48{padding:12px;gap:12px}#fzRoom48 .fz-room-view{flex:0 0 auto;margin:auto 0}#fzRoom48 canvas{width:100%}#fzRoom48 .fz-room-controls{flex-wrap:wrap;justify-content:center}#fzRoom48 .fz-room-actions{justify-content:center}#fzRoom48 .fz-room-caption{font-size:14px}#fzRoom48 footer{justify-content:center;gap:8px}}
-@media(max-height:500px) and (min-width:601px){#fzRoom48{display:grid;grid-template-columns:minmax(0,1fr) 240px;grid-template-rows:auto 1fr auto;gap:8px;padding:8px 12px}#fzRoom48 header{grid-column:1/-1}#fzRoom48 .fz-room-view{grid-column:1;grid-row:2}#fzRoom48 canvas{width:min(100%,calc((100dvh - 130px)*1.7778))}#fzRoom48 .fz-room-caption{grid-column:2;grid-row:2;align-self:start;font-size:13px}#fzRoom48 .fz-room-controls{grid-column:2;grid-row:2;align-self:end;flex-wrap:wrap;justify-content:center}#fzRoom48 footer{grid-column:1/-1;flex-wrap:nowrap}#fzRoom48 h2{font-size:18px}}
+@media(max-height:500px) and (min-width:601px){#fzRoom48{display:grid;grid-template-columns:minmax(0,1fr) 240px;grid-template-rows:auto auto minmax(min-content,1fr) auto;gap:8px;padding:8px 12px}#fzRoom48 header{grid-column:1/-1}#fzRoom48 .fz-room-view{grid-column:1;grid-row:2/4}#fzRoom48 canvas{width:min(100%,calc((100dvh - 130px)*1.7778))}#fzRoom48 .fz-room-caption{grid-column:2;grid-row:2;align-self:start;font-size:13px}#fzRoom48 .fz-room-controls{grid-column:2;grid-row:3;align-self:end;flex-wrap:wrap;justify-content:center}#fzRoom48 footer{grid-column:1/-1;flex-wrap:nowrap}#fzRoom48 h2{font-size:18px}}
 
 #fzRoom48 .fz-room-pad svg{display:block;margin:auto;pointer-events:none}
+
+/* Room 49: direct object selection also works without pointing at the canvas. */
+#fzRoom48 [data-place]{min-height:44px;min-width:125px;max-width:100%;padding:8px 12px;border:1px solid #5f7b83;border-radius:8px;background:#192d38;color:#e5ede5;font:16px system-ui}
+#fzRoom48 [data-place]:focus-visible{outline:3px solid #d0c5a2;outline-offset:3px}
+#fzRoom48 [data-place]:disabled{opacity:.4}
+@media(max-height:500px) and (min-width:601px){#fzRoom48 .fz-room-controls{gap:6px}#fzRoom48 .fz-room-actions{gap:4px}#fzRoom48 .fz-room-actions button{padding:6px 9px;font-size:13px}#fzRoom48 [data-place]{min-width:110px;font-size:14px}}
