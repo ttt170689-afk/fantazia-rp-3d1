@@ -11,6 +11,9 @@ on:
       - tests/public-*
       - public/index.html
       - public/assets/fz-save41.js
+      - public/assets/fz-release-ui.js
+      - public/styles/fz-release-ui.css
+      - public/assets/fz-ui.js
       - package.json
       - package-lock.json
       - .github/workflows/launcher-login.yml

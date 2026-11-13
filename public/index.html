@@ -2329,11 +2329,12 @@ body.theme-cyber .fz-menu-logged{background:rgba(0,229,255,.08)!important;border
   <nav class="fz-menu-nav">
     <button class="fz-menu-btn fz-play" onclick="startWelcomeAndPlay()"><span>▶</span> ИГРАТЬ</button>
     <button class="fz-menu-btn" onclick="openMainSettings()"><span>⚙️</span> НАСТРОЙКИ</button>
+    <button class="fz-menu-btn" onclick="FZReleaseUI.openHelp()">Как играть / фонарь</button>
     <button class="fz-menu-btn fz-exit" onclick="logoutUser()"><span>⏻</span> ВЫХОД</button>
     <button class="fz-menu-btn" onclick="FZFront.start()">Заставка ↗</button>
   </nav>
 
-  <aside class="fz-lobby-story"><small>ОБНОВЛЕНИЕ 45 / ОСТАВЬТЕ СВЕТ</small><h2>Твоя следующая<br>остановка.</h2><p>Первое путешествие: небесная площадь, стеклянный лифт и ночной лес. Найди фонарь у обломков и тропу к старому метро. Автосохранение на аккаунте — продолжай с последнего места.</p><div class="fz-lobby-line"><span>Центральная</span><span>Заводская</span><span>Парковая</span><span>Портовая</span><span>Деловая</span></div><p>Лестница на небесной площади ведёт к стеклянным лифтам. Найди павильон M или открой схему метро в меню.</p></aside>
+  <aside class="fz-lobby-story"><small>ОБНОВЛЕНИЕ 45 / ОСТАВЬТЕ СВЕТ</small><h2>Твоя следующая<br>остановка.</h2><p>Первое путешествие: небесная площадь, стеклянный лифт и ночной лес. Найди фонарь у обломков и тропу к старому метро. Гостевой прогресс хранится в этом браузере; после входа в аккаунт доступны серверные сохранения.</p><div class="fz-lobby-line"><span>Центральная</span><span>Заводская</span><span>Парковая</span><span>Портовая</span><span>Деловая</span></div><p>Лестница на небесной площади ведёт к стеклянным лифтам. Найди павильон M или открой схему метро в меню.</p></aside>
   <div class="fz-menu-footer">FANTAZIA RP 3D / ОБНОВЛЕНИЕ 45</div>
 
 
@@ -3338,6 +3339,7 @@ document.addEventListener('click', function(e){
     <h2>⏸ ПАУЗА</h2>
     <button class="pause-btn prim" onclick="resumeGame()">▶ Продолжить</button>
     <button class="pause-btn sec" onclick="resumeGame();togglePanel('players')">👥 Игроки онлайн</button>
+    <button class="pause-btn sec" onclick="FZReleaseUI.openHelp()">❔ Как играть / фонарь</button>
     <button class="pause-btn sec" onclick="openSettingsFromPause()">⚙️ Настройки</button>
     <button class="pause-btn sec" onclick="resumeGame();openRewardModal()">🎁 Ежедневная награда</button>
     <button class="pause-btn dng" onclick="backToServers()">🚪 Выйти на главную</button>
@@ -7895,6 +7897,7 @@ let ownedAccessories = new Set(['none']);
 let currentEditorCat = 'body';
 window.addEventListener('load', () => {
   loadSavedSettings();
+  void initAuth(); // Optional platform SDK must never block guest access.
 
   // ═══════════════════════════════════════════
   // ЯНДЕКС ИГРЫ SDK — инициализация
@@ -7902,10 +7905,9 @@ window.addEventListener('load', () => {
   (function initYandexSDK() {
     if (typeof YaGames === 'undefined') {
       // SDK недоступен (не на платформе Яндекс) — запускаем без него
-      initAuth();
       return;
     }
-    YaGames.init().then(function(ysdk) {
+    Promise.resolve().then(() => YaGames.init()).then(function(ysdk) {
       window.ysdk = ysdk;
 
       // 1. Определяем язык через SDK (п. 2.14 и п. 8.2.3)
@@ -7938,10 +7940,8 @@ window.addEventListener('load', () => {
         }
       });
 
-      initAuth();
     }).catch(function() {
-      // Если SDK упал — всё равно запускаем игру
-      initAuth();
+      // Guest startup is independent of the optional platform SDK.
     });
   })();
 
@@ -15607,10 +15607,16 @@ async function applyShopItems(playerName) {
   } catch(e) {}
 }
 
+let positionSyncTimer = null;
 function initSocket(name) {
+  clearInterval(positionSyncTimer);
+  window.FZReleaseUI?.stop();
+  let positionReady = false;
   if (socket && socket.removeAllListeners) { socket.removeAllListeners(); socket.disconnect(); }
-  try { socket = io(); } catch(e) { socket = { emit:function(){}, on:function(){}, connected:false }; return; }
+  try { socket = io(); } catch(e) { socket = { emit:function(){}, on:function(){}, connected:false }; showNotification('Не удалось загрузить подключение к серверу. Проверь сеть и обнови страницу.', 'error'); return; }
+  window.FZReleaseUI?.watch(socket);
 
+  socket.on('disconnect', () => { positionReady = false; });
   socket.on('accountSessionExpired',()=>location.reload());
 socket.on('connect', () => {
     console.log('Подключено к серверу!');
@@ -15664,6 +15670,7 @@ socket.on('connect', () => {
       showAdminHUD();
       showNotification('👑 ADMIN MODE АКТИВЕН', 'success');
     }
+    positionReady = true;
   });
 
   socket.on('playerList', (list) => {
@@ -15864,10 +15871,10 @@ socket.on('connect', () => {
     }
   });
 
-  // Отправка позиции
-  setInterval(() => {
-    if (localPlayer && localPlayer.mesh) {
-      socket.emit('updatePosition', {
+  // One sender per game session; stale coordinates must never queue while offline.
+  positionSyncTimer = setInterval(() => {
+    if (socket.connected && positionReady && localPlayer && localPlayer.mesh) {
+      socket.volatile.emit('updatePosition', {
         position: {
           x: localPlayer.mesh.position.x,
           y: localPlayer.mesh.position.y,
@@ -20119,6 +20126,8 @@ function joinByCode() {
 }
 
 async function logoutUser() {
+  clearInterval(positionSyncTimer);
+  window.FZReleaseUI?.stop();
   window.FZLore45?.close();
   window.FZVoyage43?.finish();
   window.FZSave41?.flush(true);
@@ -20621,20 +20630,30 @@ function stopPortalAnimation() {
   if (portalAnimId) { cancelAnimationFrame(portalAnimId); portalAnimId = null; }
 }
 
+let authInFlight = false;
 async function initAuth(){
- document.getElementById('authScreen').style.display='none';document.getElementById('serverScreen').style.display='none';
+ if(authInFlight)return;
+ authInFlight=true;
+ currentUser=null; // A stale client profile is never proof of a valid session.
+ document.getElementById('authScreen').style.display='none';
+ document.getElementById('serverScreen').style.display='none';
+ FZReleaseUI.launch('pending');
  try{
-  const response=await fetch('/api/session/me',{credentials:'same-origin',cache:'no-store'});
-  if(!response.ok)throw Error('session unavailable');const account=await response.json();
-  if(!account.ok||(!account.guest&&!account.token))throw Error('invalid session');
+  const account=await FZReleaseUI.session();
   currentUser={username:(account.guest?'guest_':'main_')+account.username,displayName:account.username,token:account.guest?null:account.token,isGuest:account.guest===true,isAdmin:account.guest!==true&&account.isAdmin===true};
   try{localStorage.setItem('fz_currentUser',JSON.stringify(currentUser));}catch{}
+  FZReleaseUI.launch('ready');
   showAuthSuccess();
-  let note=document.getElementById('publicAccessNote');if(!note){note=document.createElement('div');note.id='publicAccessNote';note.style.cssText='position:fixed;bottom:12px;right:12px;max-width:min(340px,90vw);padding:10px 14px;background:#141b2e;color:#eee;border:1px solid #56617d;border-radius:12px;z-index:1000;font:13px system-ui';document.getElementById('serverScreen').appendChild(note);}
-  note.replaceChildren();if(account.guest){note.append('Гостевой режим · без регистрации. Перенос сохранений между устройствами недоступен. ');const link=document.createElement('a');link.href='/account/login';link.textContent='Войти в существующий аккаунт';link.style.color='#c6b5ff';note.appendChild(link);}else{note.textContent='Выполнен вход в аккаунт '+account.username;}
+  let note=document.getElementById('publicAccessNote');
+  if(!note){note=document.createElement('div');note.id='publicAccessNote';document.getElementById('serverScreen').appendChild(note);}
+  note.replaceChildren();
+  if(account.guest){
+   note.append('Гостевой режим · без регистрации. Прогресс — только в этом браузере. Не очищай данные сайта. ');
+   const link=document.createElement('a');link.href='/account/login';link.textContent='Войти в существующий аккаунт';note.appendChild(link);
+  }else{note.textContent='Выполнен вход в аккаунт '+account.username;}
  }catch{
-  const screen=document.getElementById('serverScreen');screen.style.display='flex';let error=document.getElementById('publicConnectionError');if(!error){error=document.createElement('div');error.id='publicConnectionError';error.style.cssText='position:fixed;inset:20%;z-index:20000;padding:24px;background:#141b2e;color:white;border-radius:16px';screen.appendChild(error);}error.replaceChildren('Не удалось связаться с сервером. Регистрация не нужна. ');const retry=document.createElement('button');retry.textContent='Повторить';retry.onclick=()=>{error.remove();void initAuth();};error.appendChild(retry);
- }
+  FZReleaseUI.launch('error');
+ }finally{authInFlight=false;}
 }
 // =================== МЕНЮ ПАУЗЫ ===================
 let gamePaused = false;
@@ -20661,6 +20680,8 @@ function openSettingsFromPause() {
 }
 
 function backToServers() {
+  clearInterval(positionSyncTimer);
+  window.FZReleaseUI?.stop();
   window.FZLore45?.close();
   window.FZVoyage43?.finish();
   window.FZSave41?.flush(true);
@@ -24955,7 +24976,8 @@ window.FZV5_update = FZV5_update;
 <script src="assets/fz-v8home.js?v=28.0"></script>
 <script src="assets/fz-v8sea.js?v=45"></script>
 <script src="assets/superrig-player.js?v=anim-26"></script>
-<script src="assets/fz-ui.js?v=45"></script>
+<script src="assets/fz-ui.js?v=46"></script>
+<script src="assets/fz-release-ui.js?v=1"></script>
 <script src="assets/fz-classic-world.js?v=27.0"></script>
 <script src="assets/fz-city-spaces.js?v=8.9"></script>
 <script>window.FZ_CITY_ARRIVAL = false;</script>
@@ -25023,5 +25045,6 @@ window.FZV5_update = FZV5_update;
 <link rel="stylesheet" href="styles/fz-adventure45.css?v=45">
 <script src="assets/fz-journey.js?v=15.0"></script>
 
+<link rel="stylesheet" href="styles/fz-release-ui.css?v=1">
 
 </html>

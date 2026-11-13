@@ -21,7 +21,8 @@ test('actual public server: guest play, no signup or approval, private saves/adm
   assert.equal((await post('/shop/api/user/owner_fixture/spend',{amount:1},{Cookie:guestCookie})).status,401);
   assert.equal((await fetch(origin+'/closed/login',{redirect:'manual'})).headers.get('location'),'/');
   assert.equal((await post('/closed/launcher-login',{code:'FZ-FAKE'})).status,410);
-  const html=await(await fetch(origin+'/')).text();assert(html.includes("fetch('/api/session/me'"));assert(!html.includes("location.replace('/closed/login')"));
+  const html=await(await fetch(origin+'/')).text();assert(html.includes('FZReleaseUI.session()'));assert(html.includes('assets/fz-release-ui.js'));assert(!html.includes("location.replace('/closed/login')"));
+  const startup=await fetch(origin+'/assets/fz-release-ui.js');assert.equal(startup.status,200);assert((await startup.text()).includes("fetch('/api/session/me'"));
   const testerCookie=COOKIE+'='+cookieCodec(env.FANTAZIA_RUNTIME_SECRET).seal({access_token:'tester.jwt.token'});
   r=await fetch(origin+'/api/session/me',{headers:{Cookie:testerCookie}});const tester=await r.json();assert.equal(tester.guest,false);assert.equal(tester.isAdmin,false);assert.equal(tester.username,'tester_fixture');assert.equal((await fetch(origin+'/api/admin/accounts',{headers:{Cookie:testerCookie}})).status,403);
   const ownerCookie=COOKIE+'='+cookieCodec(env.FANTAZIA_RUNTIME_SECRET).seal({access_token:'owner.jwt.token'});

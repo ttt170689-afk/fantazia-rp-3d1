@@ -60,7 +60,7 @@
         label,
       )
         ? "city"
-        : /настрой|график|пауза|журнал|звук/i.test(label)
+        : /настрой|график|пауза|журнал|звук|справка/i.test(label)
           ? "settings"
           : /инвентарь|крафт|персонаж|одеж|скин|друз|игрок|телефон|чат|магазин|pass|навык|питом|танц|автомоб/i.test(
                 label,
@@ -113,6 +113,7 @@
       action("⚙ Настройки игры и телефона", () => window.FZPlay?.open()),
       action("Звук и озвучка", () => window.FZSound?.open()),
       action("Настройки управления", () => window.FZTouch?.open()),
+      action("Справка: управление и фонарь", () => window.FZReleaseUI?.openHelp()),
     ];
   }
 
@@ -319,6 +320,7 @@
       (e) => {
         if (
           !active ||
+          document.getElementById("fzQuickHelp")?.open ||
           !!document.querySelector(".fz-play-dialog:not([hidden])") ||
           !!document.getElementById("fzDeliveries") ||
           (window.FZLeisure && FZLeisure.modalOpen()) ||
