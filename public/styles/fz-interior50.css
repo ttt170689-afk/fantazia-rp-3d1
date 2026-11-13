@@ -1,0 +1,252 @@
+/* Interior-only controls. No login/menu UI and no replacement for touch movement. */
+.fz50-tools {
+  position: fixed;
+  top: 144px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 850;
+  pointer-events: auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  max-width: min(540px, calc(100vw - 24px));
+  color: #e0e7e7;
+  font:
+    13px/1.4 system-ui,
+    sans-serif;
+}
+.fz50-tools button {
+  min-height: 44px;
+  border: 1px solid #7c929e;
+  border-radius: 8px;
+  background: #1c3041;
+  color: #e9eee8;
+  padding: 8px 12px;
+  cursor: pointer;
+  font: inherit;
+}
+.fz50-location {
+  flex: 1 0 100%;
+  max-width: 440px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: #0c1722e8;
+  text-align: center;
+  font-size: 12px;
+}
+.fz50-tools [hidden] {
+  display: none;
+}
+.fz50-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 21000;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  padding: max(12px, env(safe-area-inset-top))
+    max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom))
+    max(12px, env(safe-area-inset-left));
+  background: #030b14c9;
+  overscroll-behavior: contain;
+  font:
+    15px/1.55 system-ui,
+    sans-serif;
+  color: #e5ece8;
+}
+.fz50-card {
+  box-sizing: border-box;
+  width: min(620px, 100%);
+  max-height: 92dvh;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid #728896;
+  border-radius: 14px;
+  background: #122333;
+  box-shadow: 0 20px 70px #0009;
+  padding: 24px;
+}
+.fz50-card h2 {
+  font-size: clamp(20px, 3vw, 28px);
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 0 0 12px;
+}
+.fz50-card h3 {
+  font-size: 15px;
+  margin: 0 0 6px;
+}
+.fz50-card p {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  margin: 0 0 14px;
+  color: #c5d6d8;
+}
+.fz50-card button {
+  box-sizing: border-box;
+  min-height: 44px;
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid #64808e;
+  border-radius: 8px;
+  color: #e8efea;
+  background: #243e50;
+  font:
+    500 14px/1.4 system-ui,
+    sans-serif;
+  cursor: pointer;
+  text-align: left;
+  touch-action: manipulation;
+}
+.fz50-card button:hover:not(:disabled) {
+  background: #345264;
+}
+.fz50-card button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.fz50-card button:focus-visible,
+.fz50-card input:focus-visible,
+.fz50-card select:focus-visible,
+.fz50-tools button:focus-visible {
+  outline: 3px solid #e5d0a1;
+  outline-offset: 3px;
+}
+.fz50-choices {
+  display: grid;
+  gap: 8px;
+}
+.fz50-card footer {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #345061;
+}
+.fz50-card .fz50-close {
+  text-align: center;
+  background: #293445;
+}
+.fz50-status {
+  border-left: 3px solid #cdbb8d;
+  padding: 10px 14px;
+  background: #203747;
+}
+.fz50-map-card {
+  width: min(1060px, 100%);
+}
+.fz50-toolbar {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.fz50-toolbar label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  font-size: 13px;
+}
+.fz50-toolbar input,
+.fz50-toolbar select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid #6f8995;
+  border-radius: 7px;
+  padding: 9px 10px;
+  background: #0c1a28;
+  color: #edf0e8;
+  font:
+    16px system-ui,
+    sans-serif;
+}
+.fz50-map-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(250px, 1fr);
+  gap: 18px;
+}
+.fz50-map-layout figure {
+  min-width: 0;
+  margin: 0;
+}
+.fz50-map-layout canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid #425f70;
+}
+.fz50-map-layout figcaption {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #b5c9ce;
+}
+.fz50-room-list {
+  max-height: 53dvh;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 3px 7px 3px 3px;
+}
+.fz50-room-row {
+  padding: 12px 0;
+  border-bottom: 1px solid #375261;
+}
+.fz50-room-row p {
+  font-size: 13px;
+  margin-bottom: 9px;
+}
+.fz50-map-details {
+  padding: 14px 0;
+}
+body:not(.game-active) .fz50-tools,
+body.fz-room-on .fz50-tools {
+  display: none;
+}
+@media (max-width: 650px) {
+  .fz50-card {
+    padding: 16px;
+    max-height: 94dvh;
+  }
+  .fz50-map-layout {
+    grid-template-columns: 1fr;
+  }
+  .fz50-map-layout figure {
+    width: min(330px, 100%);
+    margin: 0 auto;
+  }
+  .fz50-room-list {
+    max-height: 33dvh;
+  }
+  .fz50-toolbar {
+    grid-template-columns: 100px minmax(0, 1fr);
+  }
+  .fz50-tools {
+    top: 260px;
+    max-width: calc(100vw - 24px);
+  }
+  .fz50-location {
+    max-width: 320px;
+    font-size: 11px;
+  }
+}
+@media (max-height: 500px) and (min-width: 651px) {
+  .fz50-card {
+    max-height: 94dvh;
+    padding: 14px 20px;
+  }
+  .fz50-room-list {
+    max-height: 50dvh;
+  }
+  .fz50-map-layout canvas {
+    max-height: 55dvh;
+    width: auto;
+    max-width: 100%;
+  }
+}
+
+body.cine-on .fz50-tools {
+  display: none;
+}

@@ -151,6 +151,8 @@
     k.floor(k.floors - 1);
     k.box(52, 0.18, 50, 0, k.FH, 0, C.wall);
     FZBuildingDetails.decorate(k);
+    window.FZInterior50Civic?.decorate(k);
+    window.FZInterior50Layouts?.residential(k);
     return k.finish();
   }
   function hall(k, side, title, film) {
@@ -216,9 +218,11 @@
     k.plant(2, 9);
     k.action("Мои снеки и билеты", 0, 22, "bag");
     FZBuildingDetails.decorate(k);
+    window.FZInterior50Civic?.decorate(k);
     return k.finish();
   }
   function bank(type) {
+    if (window.FZInterior50Layouts) return FZInterior50Layouts.bank(type);
     const k = new Kit(type, 1);
     perimeter(k);
     fullSlab(k);
@@ -268,6 +272,7 @@
     k.bin(12, 22);
     k.plant(-3, 10);
     FZBuildingDetails.decorate(k);
+    window.FZInterior50Civic?.decorate(k);
     return k.finish();
   }
   function courtroom(k, x, title, judge) {
@@ -310,6 +315,7 @@
     k.plant(-23, 10);
     k.plant(23, 10);
     FZBuildingDetails.decorate(k);
+    window.FZInterior50Civic?.decorate(k);
     return k.finish();
   }
   function service(type) {
@@ -382,6 +388,7 @@
     k.floor(1);
     k.box(52, 0.18, 50, 0, k.FH, 0, C.wall);
     FZBuildingDetails.decorate(k);
+    window.FZInterior50Civic?.decorate(k);
     return k.finish();
   }
   window.FZBuildingLayouts = {

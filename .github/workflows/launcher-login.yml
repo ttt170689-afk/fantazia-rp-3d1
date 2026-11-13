@@ -12,6 +12,10 @@ on:
       - tests/quality46*
       - tests/journal47*
       - tests/room48*
+      - tests/interior50*
+      - public/assets/fz-building*
+      - public/assets/fz-interior50*
+      - public/styles/fz-interior50.css
       - tests/sound24.test.cjs
       - tests/play-*.test.cjs
       - public/index.html
@@ -61,3 +65,18 @@ jobs:
       - run: npm run test:quality:browser
       - run: npm run test:journal:browser
       - run: npm run test:room:browser
+
+  interiors:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+      - run: npm ci --prefix tests --no-audit --no-fund
+      - run: npm run test:interiors
+      - run: npm run test:interiors:browser
