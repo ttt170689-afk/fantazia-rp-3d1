@@ -2334,7 +2334,7 @@ body.theme-cyber .fz-menu-logged{background:rgba(0,229,255,.08)!important;border
     <button class="fz-menu-btn" onclick="FZFront.start()">Заставка ↗</button>
   </nav>
 
-  <aside class="fz-lobby-story"><small>НОВЫЕ НАХОДКИ / ПУТЕВОЙ ДНЕВНИК</small><h2>Твоя следующая<br>остановка.</h2><p>Первое путешествие: небесная площадь, стеклянный лифт и ночной лес. Найди фонарь у обломков и тропу к старому метро. Гостевой прогресс хранится в этом браузере; после входа в аккаунт доступны серверные сохранения.</p><div class="fz-lobby-line"><span>Центральная</span><span>Заводская</span><span>Парковая</span><span>Портовая</span><span>Деловая</span></div><p>Лестница на небесной площади ведёт к стеклянным лифтам. Найди павильон M или открой схему метро в меню. В дневнике теперь есть поиск по найденным записям и крупный текст.</p></aside>
+  <aside class="fz-lobby-story"><small>НОВЫЙ ПРОЛОГ / ПОСЛЕДНИЙ СЕАНС</small><h2>Твоя следующая<br>остановка.</h2><p>Сначала — тихая 2D-комната и странный компьютер. Затем — дождь, небесная площадь, стеклянный лифт и ночной лес. Найди фонарь у обломков и тропу к старому метро. Гостевой прогресс хранится в этом браузере; после входа в аккаунт доступны серверные сохранения.</p><div class="fz-lobby-line"><span>Центральная</span><span>Заводская</span><span>Парковая</span><span>Портовая</span><span>Деловая</span></div><p>Лестница на небесной площади ведёт к стеклянным лифтам. Найди павильон M или открой схему метро в меню. В дневнике теперь есть поиск по найденным записям и крупный текст.</p></aside>
   <div class="fz-menu-footer">FANTAZIA RP 3D / ОБНОВЛЕНИЕ 45</div>
 
 
@@ -2447,12 +2447,22 @@ function startWelcomeAndPlay(){
 }
 
 /* Запуск игры напрямую: берём имя из аккаунта, внешность — дефолт */
-var _gameStarted = false;
+var _gameStarted = false, _gameStartTicket = 0;
 async function startGameDirect(){
   if (_gameStarted) return;
   _gameStarted = true;
+  const ticket = ++_gameStartTicket;
   await window.FZSave41?.prepare();
-  if(!_gameStarted)return;
+  if(!_gameStarted || ticket !== _gameStartTicket)return;
+  if(window.FZRoom48?.needed()) {
+    const proceed = await FZRoom48.start();
+    if(!_gameStarted || ticket !== _gameStartTicket)return;
+    if(!proceed){
+      _gameStarted=false;
+      const menu=document.getElementById('serverScreen');menu.classList.remove('fz-leave');menu.style.display='flex';
+      try{START_MENU_BG();}catch{}menu.querySelector('.fz-play')?.focus();return;
+    }
+  }
   isInsideBuilding=false;currentBuildingType=null;document.getElementById("interiorHUD").style.display="none";
   window.FZStory30?.arm();
   document.getElementById('serverScreen').style.display = 'none';
@@ -2474,13 +2484,15 @@ async function startGameDirect(){
 
   if (typeof showPlayLoader === 'function') showPlayLoader();
   setTimeout(async function () {
+  if(!_gameStarted || ticket !== _gameStartTicket)return;
   try { await window.FZFront?.prepareGame(); } catch (error) {
+    if(!_gameStarted || ticket !== _gameStartTicket)return;
     window._loadingGate = false; window._playLoadDanceStop = true; window.FZLoadingDancer?.stop();
     if (window._playLoadIv) clearInterval(window._playLoadIv);
     const loader = document.getElementById("playLoadOv"); if (loader) loader.style.display = "none";
     backToServers(); showNotification("Не удалось подготовить 3D. Перезагрузи страницу или проверь поддержку WebGL.", "error"); return;
   }
-  if (!_gameStarted) return;
+  if (!_gameStarted || ticket !== _gameStartTicket) return;
   var reuseWorld = typeof renderer !== 'undefined' && renderer && cityWorldReady();
   if (!reuseWorld && typeof initThreeJS === 'function') initThreeJS();
   if (!window.FZ_CLASSIC_WORLD && typeof loadNewCity === 'function') loadNewCity(function(){ try {
@@ -2503,7 +2515,7 @@ async function startGameDirect(){
 
   // Офлайн fallback: если сервер недоступен — создаём игрока локально
   setTimeout(function(){
-    if (localPlayer) return;
+    if (!_gameStarted || ticket !== _gameStartTicket || localPlayer) return;
     console.warn('[FANTAZIA] Сервер недоступен — офлайн режим');
     if (typeof showNotification === 'function') showNotification('⚡ Офлайн режим — сервер недоступен', 'info');
     var appearance = {
@@ -20145,6 +20157,8 @@ function joinByCode() {
 }
 
 async function logoutUser() {
+  ++_gameStartTicket;
+  window.FZRoom48?.cancel();
   clearInterval(positionSyncTimer);
   window.FZReleaseUI?.stop();
   window.FZLore45?.close();
@@ -20699,6 +20713,8 @@ function openSettingsFromPause() {
 }
 
 function backToServers() {
+  ++_gameStartTicket;
+  window.FZRoom48?.cancel();
   clearInterval(positionSyncTimer);
   window.FZReleaseUI?.stop();
   window.FZLore45?.close();
@@ -25011,6 +25027,9 @@ window.FZV5_update = FZV5_update;
 <script src="assets/superrig-player.js?v=anim-46"></script>
 <script src="assets/fz-ui.js?v=47"></script>
 <script src="assets/fz-release-ui.js?v=1"></script>
+<script src="assets/fz-room48-policy.js?v=48"></script>
+<script src="assets/fz-room48.js?v=48"></script>
+<link rel="stylesheet" href="styles/fz-room48.css?v=48">
 <script src="assets/fz-classic-world.js?v=27.0"></script>
 <script src="assets/fz-city-spaces.js?v=8.9"></script>
 <script>window.FZ_CITY_ARRIVAL = false;</script>
@@ -25032,7 +25051,7 @@ window.FZV5_update = FZV5_update;
 <script src="assets/fz-building-directory.js?v=28.0"></script>
 <script src="assets/fz-delivery-policy.js?v=29.0"></script>
 <script src="assets/fz-deliveries.js?v=29.0"></script>
-<script src="assets/fz-front.js?v=39"></script>
+<script src="assets/fz-front.js?v=48"></script>
 <script src="assets/fz-motion.js?v=46"></script>
 <script src="assets/fz-journey-policy.js?v=15.0"></script>
 <script src="assets/fz-touch.js?v=15.0"></script>
@@ -25055,7 +25074,7 @@ window.FZV5_update = FZV5_update;
 <script src="assets/fz-forest40.js?v=40.0"></script>
 <script src="assets/fz-metro-policy.js?v=31.0"></script>
 <script src="assets/fz-escape42.js?v=42"></script>
-<script src="assets/fz-sound.js?v=46"></script>
+<script src="assets/fz-sound.js?v=48"></script>
 <script src="assets/fz-flight33-policy.js?v=33"></script>
 <script src="assets/fz-lift34-policy.js?v=38"></script>
 <script src="assets/fz-cabin38-policy.js?v=38"></script>

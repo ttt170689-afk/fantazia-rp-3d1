@@ -10,6 +10,8 @@
     "test:closed:db": "node tests/closed-db-check.cjs",
     "test:launcher-login": "node --test tests/launcher-login*.test.cjs",
     "test:public": "node --test tests/public-*.test.cjs tests/closed-process.test.cjs",
+    "test:room": "node tests/room48.test.cjs",
+    "test:room:browser": "node tests/room48.browser.cjs",
     "test:journal": "node tests/journal47.test.cjs",
     "test:journal:browser": "node tests/journal47.browser.cjs",
     "test:quality:browser": "node tests/quality46.browser.cjs",

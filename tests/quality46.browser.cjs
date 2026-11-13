@@ -14,6 +14,14 @@ const {chromium}=require('playwright-core'),chrome=require('@sparticuz/chromium'
   await page.waitForFunction(()=>currentUser?.isGuest===true);
   await page.waitForSelector('#fzIntro',{state:'detached',timeout:16000});
   await page.locator('.fz-menu-btn.fz-play').click();
+  await page.waitForSelector('#fzRoom48');
+  await page.locator('#fzRoom48 [data-reduced]').uncheck();
+  assert.equal(await page.evaluate(()=>FZRoom48.info().reduced),false);
+  assert.equal(await page.evaluate(()=>document.body.classList.contains('game-active')),false);
+  await page.locator('#fzRoom48 [data-walk]').click();
+  await page.waitForFunction(()=>{const s=FZRoom48.info();return s&&Math.hypot(s.x-684,s.y-360)<8;},{},{timeout:12000});
+  await page.locator('#fzRoom48 [data-act]').click();
+  await page.waitForSelector('#fzRoom48',{state:'detached',timeout:20000});
   await page.waitForFunction(()=>localPlayer?.mesh && renderer?.info.render.frame>30 && !window._loadingGate,{},{timeout:120000});
   await page.waitForSelector('#playLoadOv',{state:'hidden',timeout:30000});
   await page.waitForFunction(()=>FZStory30.info().active,{},{timeout:30000});

@@ -17,7 +17,7 @@
  const root=()=>document.getElementById('fzIntro');
  const startMenu=window.START_MENU_BG,stopMenu=window.STOP_MENU_BG;
  function syncMenu(){const el=document.getElementById('serverScreen');
-  if(!intro&&!document.hidden&&el&&getComputedStyle(el).display!=='none'&&!document.body.classList.contains('game-active')&&!window._loadingGate)startMenu?.();else stopMenu?.();
+  if(!intro&&!window.FZRoom48?.active()&&!document.hidden&&el&&getComputedStyle(el).display!=='none'&&!document.body.classList.contains('game-active')&&!window._loadingGate)startMenu?.();else stopMenu?.();
  }
  function ensureWorld(){
   if(!bootPromise)bootPromise=Promise.resolve().then(()=>{if(renderer&&cityWorldReady())return;return initThreeJS(true);}).catch(e=>{bootPromise=null;throw e;});
@@ -41,7 +41,7 @@
   if(oldFocus?.isConnected)oldFocus.focus();oldFocus=null;syncMenu();
  }
  function start(){
-  if(document.body.classList.contains('game-active')||window._loadingGate)return false;if(intro)return true;
+  if(document.body.classList.contains('game-active')||window._loadingGate||window.FZRoom48?.active())return false;if(intro)return true;
   const el=root()||document.createElement('section');el.id='fzIntro';el.dataset.build='35';el.dataset.phase='credit';el.dataset.ready='true';
   el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');el.setAttribute('aria-label','Заставка Fantazia RP 3D');
   el.innerHTML='<div class="fz35-credit">создано temka_play_official</div><div class="fz35-original"><img alt="FANTAZIA RP — 3D ONLINE" width="927" height="273" draggable="false"><p hidden>FANTAZIA RP 3D</p></div><div class="fz35-progress" aria-hidden="true"><i></i></div>';

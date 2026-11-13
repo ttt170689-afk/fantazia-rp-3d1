@@ -276,6 +276,16 @@
     } else if (name === "flash") {
       air(0.055, 0.15, 4200, 1400);
       tone(280, 0.07, 0.04, 190);
+    } else if (name === "pc-start48") {
+      tone(220,.3,.025,440);tone(660,.18,.018,880,.32);air(.24,.018,800,1600,.16);
+    } else if (name === "pc-glitch48") {
+      tone(180,.22,.022,105);tone(240,.17,.016,110,.35);air(.3,.025,1600,350,.1);
+    } else if (name === "pc-off48") {
+      tone(160,1.1,.035,30);air(.8,.025,900,180);
+    } else if (name === "paper48") {
+      air(.24,.025,1800,700);
+    } else if (name === "room-step48") {
+      air(.075,.022,800,220);tone(88,.08,.012,48);
     } else if (name === "drip42") {
       tone(1450,.1,.025,620);air(.08,.025,1700,700);
     } else if (name === "rat42") {
@@ -523,6 +533,7 @@
     );
   }
   function detectZone() {
+    if (window.FZRoom48?.active()) return "room48";
     if (window.FZFront?.active()) return "intro";
     if (visible("authScreen") || visible("createScreen")) return "auth";
     if (visible("serverScreen")) return "lobby";

@@ -194,6 +194,7 @@ function harness(saved = "null", broken = false) {
   assert.equal(h.api.say("../secret"), false);
   h.api.effect("doors");
   h.api.effect("chime");
+  for(const name of ["pc-start48","pc-glitch48","pc-off48","paper48","room-step48"])assert(h.api.effect(name));
   assert(h.api.info().sources <= 40);
   h.api.set({voice:0});
   assert(h.api.say('sky'));
