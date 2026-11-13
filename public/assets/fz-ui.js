@@ -321,6 +321,7 @@
         if (
           !active ||
           document.getElementById("fzQuickHelp")?.open ||
+          window.FZLore45?.modalOpen() ||
           !!document.querySelector(".fz-play-dialog:not([hidden])") ||
           !!document.getElementById("fzDeliveries") ||
           (window.FZLeisure && FZLeisure.modalOpen()) ||

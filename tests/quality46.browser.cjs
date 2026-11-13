@@ -24,6 +24,8 @@ const {chromium}=require('playwright-core'),chrome=require('@sparticuz/chromium'
   assert(await page.evaluate(()=>localPlayer.health===beforeReconnect.health));
   assert(await page.evaluate(()=>FZStory30.info().elapsed===beforeReconnect.elapsed));
   assert(await page.evaluate(()=>localPlayer.mesh.position.toArray().every((v,i)=>Math.abs(v-beforeReconnect.position[i])<.001)));
+  const placedNotes=await page.evaluate(()=>{FZLore45.build();return interactables.filter(e=>e.lore45&&e.action==='note').map(e=>e.id).sort();});
+  assert.deepEqual(placedNotes,[...require('../public/assets/fz-adventure45-policy').ids].sort(),'every journal entry must have a physical note in the generated world');
   if(process.env.FZ_SCREENSHOT_PATH)await page.screenshot({path:process.env.FZ_SCREENSHOT_PATH});
   console.log('PASS real WebGL launch, loaded animated GLB, first story scene and Socket.IO reconnect preserving mesh/position/health/story time');
   console.log('PAGE_ERRORS',JSON.stringify(errors));

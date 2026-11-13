@@ -1,3 +1,27 @@
 #fzLore45{position:fixed;inset:0;z-index:12500;display:grid;place-items:center;padding:14px;background:#030912c9;color:#ece6d4;font:16px/1.65 system-ui}#fzLore45 article{width:min(680px,100%);max-height:86vh;overflow:auto;box-sizing:border-box;background:#172027;border:1px solid #77868d;border-radius:16px;padding:24px;box-shadow:0 12px 60px #0008}#fzLore45 h2{font-size:25px;line-height:1.2;margin:0 0 20px}#fzLore45 button,#fzSurvival45 button{min-height:44px;margin:5px;padding:9px 13px;border:1px solid #77868d;border-radius:8px;background:#2a404e;color:#fff;font:inherit}#fzLore45 button:focus-visible,#fzSurvival45 button:focus-visible{outline:3px solid #cddba9}#fzSurvival45{position:fixed;z-index:850;left:16px;bottom:16px;width:min(320px,calc(100vw - 32px));box-sizing:border-box;padding:12px;border:1px solid #759ba8;border-radius:14px;background:#0b1b29ed;color:#eef5ef;font:13px/1.4 system-ui}#fzSurvival45[hidden],#fzSurvival45 [hidden]{display:none}#fzSurvival45 strong{font-size:16px}#fzSurvival45 p{margin:7px 0}#fzSurvival45 progress{width:100%;accent-color:#8ebdcd}#fzSurvival45 [data-dive]{touch-action:none}body.fz-underwater45:after{content:'';position:fixed;inset:0;background:#004c6b44;pointer-events:none;z-index:160}#fzRecovery45{--shade:0;position:fixed;inset:0;z-index:16000;background:rgba(2,5,10,var(--shade));display:grid;place-items:center;padding:24px;color:#fff;font:18px/1.6 system-ui;text-align:center}#fzRecovery45 p{max-width:550px;background:#101824d9;padding:20px;border-radius:12px}.fz-recovery45 #fzSurvival45{display:none}@media(max-width:600px){#fzSurvival45{left:10px;bottom:200px;width:230px;font-size:12px;padding:9px}#fzLore45 article{padding:18px}#fzLore45 h2{font-size:21px}}
 
 body.game-active #fzSeaHud{top:310px} @media(max-width:600px){body.game-active #fzSeaHud{top:300px;right:8px;width:170px;font-size:11px}}
+
+/* Optional journal: readable cards, no HUD tracker or auto-open behavior. */
+#fzLore45 article{max-height:calc(100dvh - 32px);overscroll-behavior:contain;min-width:0}
+#fzLore45 .fz-lore-head{display:flex;align-items:flex-start;gap:12px;position:sticky;top:-24px;z-index:1;background:#172027;padding:12px 0}
+#fzLore45 .fz-lore-head h2{flex:1;margin:6px 0;overflow-wrap:anywhere}
+#fzLore45 .fz-lore-head button{flex-shrink:0;margin:0}
+#fzLore45 .fz-lore-body{white-space:pre-line;line-height:1.85;overflow-wrap:anywhere}
+#fzLore45 [data-reader-size="large"] .fz-lore-body{font-size:21px;line-height:1.9}
+#fzLore45 button[aria-pressed="true"]{background:#45636a;border-color:#cddba9}
+#fzLore45 button:disabled{opacity:.45;cursor:default}
+#fzLore45 .fz-journal{border-top:1px solid #627075;margin-top:20px;padding-top:8px}
+#fzLore45 .fz-journal-tools{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.7fr);gap:12px}
+#fzLore45 .fz-journal-tools label{display:grid;gap:6px;font-size:13px;color:#c4d0d3}
+#fzLore45 .fz-journal-tools input,#fzLore45 .fz-journal-tools select{width:100%;min-width:0;min-height:44px;box-sizing:border-box;border:1px solid #819599;border-radius:8px;background:#101b22;color:#f4f4ec;padding:10px;font:16px system-ui}
+#fzLore45 input:focus-visible,#fzLore45 select:focus-visible{outline:3px solid #cddba9;outline-offset:2px}
+#fzLore45 .fz-journal-tools button{justify-self:start;margin:0}
+#fzLore45 .fz-journal-count{font-size:13px;color:#b8c9ca}
+#fzLore45 .fz-journal-entry{border:1px solid #53686b;border-radius:12px;padding:14px;margin:12px 0;background:#1b2b32}
+#fzLore45 .fz-journal-entry small{display:block;color:#c1d4c8;font-size:12px;letter-spacing:.05em}
+#fzLore45 .fz-journal-entry button{display:block;text-align:left;background:transparent;border:0;padding:4px 0;margin:4px 0;font-weight:700;font-size:18px;overflow-wrap:anywhere}
+#fzLore45 .fz-journal-entry p{margin:6px 0 0;font-size:14px;color:#c8d0ce}
+#fzLore45 .fz-journal-pager{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;margin-top:18px}
+#fzLore45 .fz-journal-pager button{margin:0}
+@media(max-width:600px){#fzLore45 .fz-lore-head{top:-18px}#fzLore45 .fz-journal-tools{grid-template-columns:1fr}#fzLore45 .fz-journal-pager button{font-size:14px}}

@@ -10,6 +10,7 @@ on:
       - tests/launcher-login*
       - tests/public-*
       - tests/quality46*
+      - tests/journal47*
       - tests/sound24.test.cjs
       - tests/play-*.test.cjs
       - public/index.html
@@ -17,6 +18,10 @@ on:
       - public/assets/fz-release-ui.js
       - public/styles/fz-release-ui.css
       - public/assets/fz-ui.js
+      - public/assets/fz-journal47.js
+      - public/assets/fz-lore45.js
+      - public/assets/fz-adventure45-policy.js
+      - public/styles/fz-adventure45.css
       - public/assets/fz-motion.js
       - public/assets/superrig-player.js
       - public/assets/fz-play-policy.js
@@ -46,5 +51,7 @@ jobs:
       - run: npm run test:public
       - run: npm ci --prefix tests --no-audit --no-fund
       - run: npm run test:quality
+      - run: npm run test:journal
       - run: npm run test:public:browser
       - run: npm run test:quality:browser
+      - run: npm run test:journal:browser
