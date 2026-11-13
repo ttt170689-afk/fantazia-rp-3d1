@@ -8,7 +8,8 @@
     audio = null,
     subtitle = null,
     blocked = false,
-    generation = 0;
+    generation = 0,
+    subtitleTimer;
   try {
     const p = JSON.parse(localStorage.getItem("fz_metro_audio23"));
     if (typeof p?.enabled === "boolean") enabled = p.enabled;
@@ -25,8 +26,13 @@
       ]),
     ),
   };
+  function expireSubtitle(delay) {
+    clearTimeout(subtitleTimer);
+    subtitleTimer = setTimeout(() => { if (subtitle) subtitle.hidden = true; }, delay);
+  }
   function stop() {
     generation++;
+    clearTimeout(subtitleTimer);
     if (audio) {
       audio.pause();
       audio.currentTime = 0;
@@ -46,6 +52,9 @@
     }
     subtitle.textContent = captions[id];
     subtitle.hidden = false;
+    blocked = false;
+    const readingTime = () => Math.max(4000, Math.min(20000, subtitle.textContent.length * 65 + 2000));
+    expireSubtitle(readingTime());
     const mix = window.FZSound?.info();
     if (
       !enabled ||
@@ -61,9 +70,10 @@
       audio = new Audio();
       audio.preload = "none";
       window.FZSound?.pipeVoice(audio);
-      audio.onended = () => {
-        if (subtitle) subtitle.hidden = true;
-      };
+      audio.onplaying = () => { clearTimeout(subtitleTimer); if (active && last && subtitle) subtitle.hidden = false; };
+      audio.onwaiting = () => expireSubtitle(readingTime());
+      audio.onended = () => expireSubtitle(1500);
+      audio.onerror = () => { blocked = true; expireSubtitle(readingTime()); };
     }
     const recorded=["arrival","close","center","factory","park","port","business"];
     if(!recorded.includes(id))return; // New station names have honest text announcements, no missing audio requests.
@@ -76,14 +86,14 @@
         if (token === generation) blocked = false;
       })
       .catch(() => {
-        if (token === generation) blocked = true;
+        if (token === generation) { blocked = true; expireSubtitle(readingTime()); }
       });
   }
   function set(v, on = enabled) {
     volume = Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : volume;
     enabled = !!on;
     if (audio) audio.volume = volume;
-    if (!enabled && audio) audio.pause();
+    if (!enabled && audio) { audio.pause(); expireSubtitle(6000); }
     try {
       localStorage.setItem(
         "fz_metro_audio23",

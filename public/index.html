@@ -14545,14 +14545,29 @@ document.addEventListener('keydown', (e) => {
 });
 document.addEventListener('mousedown', (e) => { if (!isPointerLocked || !localPlayer) return; if (e.button === 0) useItemPrimary(); else if (e.button === 2) useItemSecondary(); });
 // динамическое разрешение: держим FPS, снижая/повышая масштаб рендера
-let _dynScale = null, _dynT = 0;
-function updateDynamicRes(fps) {
-  if (document.hidden || !document.body.classList.contains('game-active') || (window.FZPlay && FZPlay.managed())) return;
-  if (!SETTINGS.dynRes || typeof renderer === 'undefined' || !renderer) { if (_dynScale !== null) { renderer && renderer.setPixelRatio(SETTINGS.renderScale); _dynScale = null; } return; }
-  if (_dynScale === null) _dynScale = SETTINGS.renderScale;
+let _dynScale = null, _dynT = 0, _dynSampler = null;
+function updateDynamicRes(frames) {
+  const now = performance.now(), elapsed = _dynT ? (now - _dynT) / 1000 : 0;
+  _dynT = now;
+  if (typeof renderer === 'undefined' || !renderer) return;
+  if (window.FZPlay?.managed()) { _dynSampler = null; _dynScale = null; return; }
+  if (!SETTINGS.dynRes) {
+    if (_dynScale !== null) renderer.setPixelRatio(SETTINGS.renderScale);
+    _dynScale = null; _dynSampler = null; return;
+  }
   const target = Math.min(60, SETTINGS.fpsCap || 60);
-  if (fps < target * 0.78 && _dynScale > 0.5) { _dynScale = Math.max(0.5, _dynScale - 0.25); renderer.setPixelRatio(_dynScale); }
-  else if (fps > target * 0.96 && _dynScale < SETTINGS.renderScale) { _dynScale = Math.min(SETTINGS.renderScale, _dynScale + 0.25); renderer.setPixelRatio(_dynScale); }
+  if (!_dynSampler || _dynSampler.max !== SETTINGS.renderScale || _dynSampler.target !== target) {
+    _dynSampler = new FZPlayPolicy.Resolution(SETTINGS.renderScale, target);
+    _dynScale = _dynSampler.ratio;
+    renderer.setPixelRatio(_dynScale);
+    return;
+  }
+  if (document.hidden || !document.body.classList.contains('game-active') ||
+      gamePaused || window._loadingGate || window.cine || elapsed <= 0 || elapsed > 1.5) {
+    _dynSampler.pause(); return;
+  }
+  const scale = _dynSampler.observeFPS(frames / elapsed, elapsed);
+  if (scale !== null) { _dynScale = scale; renderer.setPixelRatio(scale); }
 }
 
 // ───────── ШАГИ ИГРОКА ─────────
@@ -19939,15 +19954,19 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
   // --- Удалённые игроки: интерполяция ---
   Object.values(remotePlayers).forEach(rp => {
     if (!rp.mesh || !rp.targetPos) return;
-    rp.mesh.position.x += (rp.targetPos.x - rp.mesh.position.x) * 0.15;
-    rp.mesh.position.y += (rp.targetPos.y - rp.mesh.position.y) * 0.15;
-    rp.mesh.position.z += (rp.targetPos.z - rp.mesh.position.z) * 0.15;
+    const blend = FZMotion.blend(0.15, delta);
+    // Teleports snap instead of visibly flying across the entire map.
+    if (Math.hypot(rp.targetPos.x-rp.mesh.position.x, rp.targetPos.y-rp.mesh.position.y, rp.targetPos.z-rp.mesh.position.z) > 30)
+      rp.mesh.position.set(rp.targetPos.x, rp.targetPos.y, rp.targetPos.z);
+    rp.mesh.position.x += (rp.targetPos.x - rp.mesh.position.x) * blend;
+    rp.mesh.position.y += (rp.targetPos.y - rp.mesh.position.y) * blend;
+    rp.mesh.position.z += (rp.targetPos.z - rp.mesh.position.z) * blend;
 
     // Плавный поворот
     let angleDiff = rp.targetRot - rp.mesh.rotation.y;
     while (angleDiff > Math.PI) angleDiff -= Math.PI*2;
     while (angleDiff < -Math.PI) angleDiff += Math.PI*2;
-    rp.mesh.rotation.y += angleDiff * 0.15;
+    rp.mesh.rotation.y += angleDiff * blend;
 
     if (!localPlayer || !localPlayer.mesh || rp.mesh.position.distanceToSquared(localPlayer.mesh.position) < (SETTINGS.perf ? 3600 : 14400)) animateRemoteCharacter(rp.mesh, rp.animation || 'idle', rp.dance, animationTime);
   });
@@ -19957,8 +19976,8 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
     const petOffset = 2;
     const targetX = mesh.position.x - Math.sin(mesh.rotation.y) * petOffset + Math.sin(animationTime) * 0.5;
     const targetZ = mesh.position.z - Math.cos(mesh.rotation.y) * petOffset + Math.cos(animationTime) * 0.5;
-    localPet3D.position.x += (targetX - localPet3D.position.x) * 0.05;
-    localPet3D.position.z += (targetZ - localPet3D.position.z) * 0.05;
+    localPet3D.position.x += (targetX - localPet3D.position.x) * FZMotion.blend(0.05, delta);
+    localPet3D.position.z += (targetZ - localPet3D.position.z) * FZMotion.blend(0.05, delta);
     localPet3D.position.y = (window.FZSky?.active() ? mesh.position.y : 0) + Math.sin(animationTime * 3) * 0.05;
     // Питомец смотрит на игрока
     localPet3D.lookAt(mesh.position.x, 0, mesh.position.z);
@@ -20795,7 +20814,21 @@ function applySetting(key, val) {
   if (key === 'exposure') renderer.toneMappingExposure = SETTINGS.exposure / 10;
   if (key === 'shaderQuality') { SETTINGS.maxLights = { low: 4, medium: 8, high: 12, ultra: 20 }[SETTINGS.shaderQuality] || 12; }
   if (key === 'toneMap') { renderer.toneMapping = { aces: THREE.ACESFilmicToneMapping, reinhard: THREE.ReinhardToneMapping, cineon: THREE.CineonToneMapping, linear: THREE.LinearToneMapping, none: THREE.NoToneMapping }[SETTINGS.toneMap]; scene.traverse(o => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.needsUpdate = true); }); }
-  if (key === 'aniso' || key === 'texFilter') { const an = Math.min(SETTINGS.aniso, renderer.capabilities.getMaxAnisotropy()); scene.traverse(o => { if (o.material && o.material.map) { const t = o.material.map; t.anisotropy = an; t.magFilter = SETTINGS.texFilter === 'nearest' ? THREE.NearestFilter : THREE.LinearFilter; t.minFilter = SETTINGS.texFilter === 'nearest' ? THREE.NearestMipmapLinearFilter : THREE.LinearMipmapLinearFilter; t.needsUpdate = true; } }); }
+  if (key === 'aniso' || key === 'texFilter') {
+    const an = Math.min(SETTINGS.aniso, renderer.capabilities.getMaxAnisotropy()), textures = new Set();
+    scene.traverse(o => {
+      for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+        if (!m) continue;
+        for (const key of ['map','normalMap','roughnessMap','metalnessMap','emissiveMap','aoMap','bumpMap','alphaMap']) {
+          const t = m[key]; if (!t?.isTexture || textures.has(t)) continue;
+          textures.add(t); t.anisotropy = an;
+          t.magFilter = SETTINGS.texFilter === 'nearest' ? THREE.NearestFilter : THREE.LinearFilter;
+          t.minFilter = SETTINGS.texFilter === 'nearest' ? THREE.NearestMipmapLinearFilter : THREE.LinearMipmapLinearFilter;
+          t.needsUpdate = true;
+        }
+      }
+    });
+  }
   if (key === 'colorGrade' || key === 'sharp') applyPostFX();
 }
 function applyPostFX() {
@@ -20840,7 +20873,7 @@ function applyAntialiasing() {
   renderer.shadowMap.enabled = (SETTINGS.shadowQuality !== 'off');
   if (SETTINGS.shadowQuality === 'high') renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   else if (SETTINGS.shadowQuality === 'low') renderer.shadowMap.type = THREE.PCFShadowMap;
-  renderer.toneMapping = { aces: THREE.ACESFilmicToneMapping, reinhard: THREE.ReinhardToneMapping, cineon: THREE.CineonToneMapping, linear: THREE.LinearToneMapping, none: THREE.NoToneMapping }[SETTINGS.toneMap] || THREE.ACESFilmicToneMapping;
+  renderer.toneMapping = { aces: THREE.ACESFilmicToneMapping, reinhard: THREE.ReinhardToneMapping, cineon: THREE.CineonToneMapping, linear: THREE.LinearToneMapping, none: THREE.NoToneMapping }[SETTINGS.toneMap] ?? THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = (SETTINGS.exposure || 9) / 10;
   if (typeof applyPostFX === 'function') applyPostFX();
   renderer.domElement.style.cssText = 'display:block;position:fixed;top:0;left:0;z-index:0;';
@@ -24975,7 +25008,7 @@ window.FZV5_update = FZV5_update;
 <script src="assets/fz-v8metro.js?v=8.7.1"></script>
 <script src="assets/fz-v8home.js?v=28.0"></script>
 <script src="assets/fz-v8sea.js?v=45"></script>
-<script src="assets/superrig-player.js?v=anim-26"></script>
+<script src="assets/superrig-player.js?v=anim-46"></script>
 <script src="assets/fz-ui.js?v=46"></script>
 <script src="assets/fz-release-ui.js?v=1"></script>
 <script src="assets/fz-classic-world.js?v=27.0"></script>
@@ -25000,10 +25033,10 @@ window.FZV5_update = FZV5_update;
 <script src="assets/fz-delivery-policy.js?v=29.0"></script>
 <script src="assets/fz-deliveries.js?v=29.0"></script>
 <script src="assets/fz-front.js?v=39"></script>
-<script src="assets/fz-motion.js?v=15.0"></script>
+<script src="assets/fz-motion.js?v=46"></script>
 <script src="assets/fz-journey-policy.js?v=15.0"></script>
 <script src="assets/fz-touch.js?v=15.0"></script>
-<script src="assets/fz-play-policy.js?v=21.0"></script>
+<script src="assets/fz-play-policy.js?v=46"></script>
 <script src="assets/fz-city-guide.js?v=45"></script>
 <script src="assets/fz-play.js?v=29.0"></script>
 <script src="assets/fz-photo.js?v=13.0"></script>
@@ -25022,7 +25055,7 @@ window.FZV5_update = FZV5_update;
 <script src="assets/fz-forest40.js?v=40.0"></script>
 <script src="assets/fz-metro-policy.js?v=31.0"></script>
 <script src="assets/fz-escape42.js?v=42"></script>
-<script src="assets/fz-sound.js?v=39"></script>
+<script src="assets/fz-sound.js?v=46"></script>
 <script src="assets/fz-flight33-policy.js?v=33"></script>
 <script src="assets/fz-lift34-policy.js?v=38"></script>
 <script src="assets/fz-cabin38-policy.js?v=38"></script>
@@ -25034,7 +25067,7 @@ window.FZV5_update = FZV5_update;
 <script src="assets/fz-story30-forest.js?v=44"></script>
 <script src="assets/fz-neon36-title.js?v=36"></script>
 <script src="assets/fz-story30.js?v=39"></script>
-<script src="assets/fz-metro-audio.js?v=24.0"></script>
+<script src="assets/fz-metro-audio.js?v=46"></script>
 <script src="assets/fz-metro36-motion.js?v=36"></script>
 <script src="assets/fz-metro39-fall.js?v=39"></script>
 <script src="assets/fz-metro.js?v=43"></script>

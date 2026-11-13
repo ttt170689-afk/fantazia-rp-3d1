@@ -30,6 +30,32 @@ const {chromium}=require('playwright-core'),chrome=require('@sparticuz/chromium'
    assert(await helpButton.evaluate(el=>el===document.activeElement));
    await page.locator('.fz-menu-btn.fz-play').click({trial:true});
    await checkWidth('#publicAccessNote');
+   // Real WebAudio decoding/output, not an Audio mock; keep the selected recorded voices.
+   await page.evaluate(()=>FZSound.open());
+   await page.locator('[data-track="above-clouds"]').click();
+   await page.waitForFunction(()=>FZSound.info().track==='above-clouds'&&FZSound.info().playing);
+   await page.evaluate(()=>{
+    window.qualityAnalyser=getAudioCtx().createAnalyser();qualityAnalyser.fftSize=2048;
+    FZSound.bus('music').connect(qualityAnalyser);
+   });
+   await page.waitForFunction(()=>{
+    const samples=new Float32Array(2048);qualityAnalyser.getFloatTimeDomainData(samples);
+    return samples.some(x=>Math.abs(x)>.0001);
+   });
+   await page.locator('[data-voice="welcome"]').click();
+   await page.waitForFunction(()=>FZSound.info().voice==='welcome'&&FZSound.info().ducked);
+   assert(await page.locator('#fzSoundCaption').isVisible());
+   await page.evaluate(()=>{FZSound.set({voice:0});FZSound.say('sky');});
+   assert(await page.locator('#fzSoundCaption').isVisible());
+   assert.equal(await page.evaluate(()=>FZSound.info().voice),'');
+   assert.equal(await page.evaluate(()=>FZSound.info().ducked),false);
+   await page.route('**/audio/city/city.mp3',r=>r.abort());
+   await page.evaluate(()=>{FZSound.set({voice:.9});FZSound.say('city');});
+   await page.waitForFunction(()=>FZSound.info().blocked);
+   assert(await page.locator('#fzSoundCaption').isVisible(),'missing voice still provides the subtitle');
+   await page.unroute('**/audio/city/city.mp3');
+   await page.locator('#fzSoundPanel [data-close]').click();
+   await page.evaluate(()=>{FZSound.bus('music').disconnect(qualityAnalyser);qualityAnalyser.disconnect();});
    assert.equal(await page.evaluate(()=>currentUser.token),null);assert.equal(await page.evaluate(()=>currentUser.isAdmin),false);
    await page.evaluate(()=>logoutUser());await page.waitForFunction(()=>currentUser?.isGuest===true);assert.equal(await page.locator('#authScreen').isVisible(),false);
    // Session outage, bounded waiting (including the response body), retry and stale identity clearing.
@@ -84,7 +110,7 @@ const {chromium}=require('playwright-core'),chrome=require('@sparticuz/chromium'
    await page.evaluate(()=>{FZReleaseUI.stop();testSocket.fire('disconnect');});
    assert.equal(await page.evaluate(()=>testSocket.count('disconnect')),0);
    assert.equal(await page.locator('#fzConnectionStatus').isVisible(),false);
-   assert.deepEqual(errors,[]);await ctx.close();console.log('PASS '+(mobile?'mobile':'desktop')+': guest menu/logout, hung SDK, help, offline/reconnect feedback, 12s session timeout and retry');
+   assert.deepEqual(errors,[]);await ctx.close();console.log('PASS '+(mobile?'mobile':'desktop')+': guest menu/logout, hung SDK, help, real music/voice/mute/failure captions, offline/reconnect feedback, 12s session timeout and retry');
   }
  }finally{await browser?.close();child.kill('SIGTERM');await new Promise(resolve=>{if(child.exitCode!==null)return resolve();child.once('exit',resolve);});}
 })().catch(e=>{console.error(e);process.exitCode=1;});

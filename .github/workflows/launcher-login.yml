@@ -9,11 +9,19 @@ on:
       - tests/closed-*
       - tests/launcher-login*
       - tests/public-*
+      - tests/quality46*
+      - tests/sound24.test.cjs
+      - tests/play-*.test.cjs
       - public/index.html
       - public/assets/fz-save41.js
       - public/assets/fz-release-ui.js
       - public/styles/fz-release-ui.css
       - public/assets/fz-ui.js
+      - public/assets/fz-motion.js
+      - public/assets/superrig-player.js
+      - public/assets/fz-play-policy.js
+      - public/assets/fz-sound.js
+      - public/assets/fz-metro-audio.js
       - package.json
       - package-lock.json
       - .github/workflows/launcher-login.yml
@@ -36,4 +44,7 @@ jobs:
       - run: npm run test:closed:db
       - run: npm run test:launcher-login
       - run: npm run test:public
+      - run: npm ci --prefix tests --no-audit --no-fund
+      - run: npm run test:quality
       - run: npm run test:public:browser
+      - run: npm run test:quality:browser

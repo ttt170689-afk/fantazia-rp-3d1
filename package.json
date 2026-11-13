@@ -10,6 +10,8 @@
     "test:closed:db": "node tests/closed-db-check.cjs",
     "test:launcher-login": "node --test tests/launcher-login*.test.cjs",
     "test:public": "node --test tests/public-*.test.cjs tests/closed-process.test.cjs",
+    "test:quality:browser": "node tests/quality46.browser.cjs",
+    "test:quality": "node tests/quality46.test.cjs && node tests/sound24.test.cjs && node tests/play-policy.test.cjs && node tests/play-integration.test.cjs",
     "test:public:browser": "node tests/public-guest.browser.cjs"
   },
   "dependencies": {
