@@ -20,7 +20,9 @@
     "test:journal:browser": "node tests/journal47.browser.cjs",
     "test:quality:browser": "node tests/quality46.browser.cjs",
     "test:quality": "node tests/quality46.test.cjs && node tests/sound24.test.cjs && node tests/play-policy.test.cjs && node tests/play-integration.test.cjs",
-    "test:public:browser": "node tests/public-guest.browser.cjs"
+    "test:public:browser": "node tests/public-guest.browser.cjs",
+    "test:expeditions": "node --test tests/expedition52.test.cjs tests/expedition52-socket.test.cjs",
+    "test:expeditions:browser": "node tests/expedition52-world.browser.cjs && node tests/expedition52.browser.cjs"
   },
   "dependencies": {
     "express": "^4.22.1",

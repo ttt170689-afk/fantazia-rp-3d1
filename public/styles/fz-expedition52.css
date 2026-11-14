@@ -1,0 +1,406 @@
+.fz-exp52-panel,
+.exp52-hud {
+  font:
+    14px/1.5 system-ui,
+    sans-serif;
+  color: #eef1f5;
+  box-sizing: border-box;
+}
+.fz-exp52-panel *,
+.exp52-hud * {
+  box-sizing: border-box;
+}
+.fz-exp52-panel {
+  position: fixed;
+  z-index: 4100;
+  inset: 4vh max(16px, calc((100vw - 1060px) / 2));
+  background: #111a27f5;
+  border: 1px solid #526376;
+  border-radius: 20px;
+  padding: 28px;
+  overflow: auto;
+  box-shadow: 0 30px 120px #000b;
+}
+.fz-exp52-panel header {
+  position: relative;
+  padding-right: 90px;
+}
+.fz-exp52-panel header button {
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+.fz-exp52-panel small {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: #a6bccd;
+}
+.fz-exp52-panel h2 {
+  font-size: 34px;
+  margin: 6px 0 12px;
+}
+.exp52-lead {
+  max-width: 780px;
+  color: #c4ccd9;
+}
+.exp52-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.fz-exp52-panel button,
+.exp52-hud button,
+.fz-exp52-panel select {
+  color: #f1f5f8;
+  background: #26374c;
+  border: 1px solid #60758c;
+  border-radius: 9px;
+  padding: 11px 14px;
+  min-height: 44px;
+  font: inherit;
+  cursor: pointer;
+  touch-action: none;
+}
+.fz-exp52-panel button:hover,
+.exp52-hud button:hover {
+  background: #36536c;
+}
+.fz-exp52-panel button:focus-visible,
+.exp52-hud button:focus-visible,
+.fz-exp52-panel select:focus-visible {
+  outline: 3px solid #c7e3b8;
+  outline-offset: 3px;
+}
+.exp52-cards button {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  background: linear-gradient(145deg, #243442, #192433);
+  padding: 20px;
+  min-height: 240px;
+}
+.exp52-cards button[aria-pressed="true"] {
+  border: 2px solid #b6d496;
+  background: linear-gradient(145deg, #34473c, #1e2a32);
+}
+.exp52-cards strong {
+  font-size: 20px;
+  line-height: 1.25;
+}
+.exp52-cards span {
+  color: #b7c3d0;
+  font-size: 13px;
+}
+.exp52-cards em {
+  font-style: normal;
+  color: #c6d5a4;
+  font-size: 12px;
+  margin-top: auto;
+}
+.exp52-options {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+.exp52-options label {
+  min-width: 210px;
+}
+.exp52-options select {
+  display: block;
+  width: 100%;
+  margin-top: 5px;
+}
+.exp52-options p {
+  color: #bdc9d6;
+}
+.exp52-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 20px 0;
+}
+.exp52-modes button:first-child {
+  background: #496548;
+}
+.fz-exp52-panel details {
+  border-top: 1px solid #39465b;
+  padding-top: 16px;
+}
+.fz-exp52-panel summary {
+  cursor: pointer;
+  min-height: 44px;
+}
+.exp52-hud {
+  position: fixed;
+  z-index: 3000;
+  inset: 0;
+  pointer-events: none;
+}
+.exp52-hud [hidden] {
+  display: none !important;
+}
+.exp52-top {
+  position: absolute;
+  left: 16px;
+  top: max(16px, env(safe-area-inset-top));
+  padding: 14px 18px;
+  background: #111c2be8;
+  border: 1px solid #536477;
+  border-radius: 12px;
+  max-width: calc(100vw - 240px);
+  pointer-events: auto;
+}
+.exp52-top strong {
+  font-size: 17px;
+}
+.exp52-top p {
+  margin: 6px 0;
+  color: #bde2c8;
+  font-variant-numeric: tabular-nums;
+}
+.exp52-top button {
+  padding: 6px 12px;
+  margin-right: 8px;
+}
+.exp52-minimap {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  width: 160px;
+  height: 160px;
+  border: 1px solid #8ba298;
+  border-radius: 12px;
+  opacity: 0.92;
+}
+.exp52-cross {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 26px;
+  color: #e4f6e9;
+  text-shadow: 0 1px 3px #000;
+}
+.exp52-caption {
+  position: absolute;
+  bottom: 142px;
+  left: 20%;
+  width: 60%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: #101c2bdc;
+  color: #e3e9e9;
+  text-align: center;
+  text-wrap: pretty;
+}
+.exp52-look {
+  position: absolute;
+  inset: 170px 0 140px 35%;
+  pointer-events: auto;
+  touch-action: none;
+}
+.exp52-pad {
+  position: absolute;
+  left: 18px;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: repeat(3, 52px);
+  gap: 5px;
+  pointer-events: auto;
+}
+.exp52-pad button {
+  font-size: 22px;
+  height: 50px;
+  background: #213447df;
+}
+.exp52-pad button:first-child {
+  grid-column: 2;
+}
+.exp52-pad button:nth-child(2) {
+  grid-column: 1;
+}
+.exp52-actions {
+  position: absolute;
+  right: 18px;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  display: flex;
+  max-width: 50%;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  pointer-events: auto;
+}
+.exp52-actions button {
+  background: #213447ef;
+}
+.exp52-score,
+.exp52-reader {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(560px, calc(100vw - 28px));
+  max-height: 80vh;
+  overflow: auto;
+  padding: 24px;
+  background: #132131f5;
+  border: 1px solid #70869a;
+  border-radius: 16px;
+  pointer-events: auto;
+}
+.exp52-reader p {
+  font-size: 17px;
+  line-height: 1.65;
+}
+.fz-expedition52 #hud,
+.fz-expedition52 #fzTouch,
+.fz-expedition52 #mobileControls,
+.fz-expedition52 #fzUIBar,
+.fz-expedition52 #interactHint,
+.fz-expedition52 #crosshair,
+.fz-expedition52 #chatPanel,
+.fz-expedition52 #fzUIOpen,
+.fz-expedition52 #fzUIFlash {
+  display: none !important;
+}
+@media (max-width: 650px) {
+  .fz-exp52-panel {
+    inset: 8px;
+    padding: 18px;
+  }
+  .exp52-cards {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin: 14px 0;
+  }
+  .exp52-cards button {
+    min-height: 0;
+    gap: 6px;
+    padding: 15px;
+  }
+  .exp52-cards strong {
+    font-size: 17px;
+  }
+  .exp52-cards span {
+    display: none;
+  }
+  .exp52-options {
+    display: block;
+  }
+  .exp52-modes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .exp52-top {
+    left: 8px;
+    top: 8px;
+    padding: 9px;
+    max-width: calc(100vw - 116px);
+  }
+  .exp52-top strong {
+    font-size: 13px;
+  }
+  .exp52-top p {
+    font-size: 12px;
+  }
+  .exp52-top button {
+    font-size: 12px;
+    padding: 4px 8px;
+    margin-right: 4px;
+  }
+  .exp52-minimap {
+    right: 8px;
+    top: 8px;
+    width: 100px;
+    height: 100px;
+  }
+  .exp52-caption {
+    left: 8px;
+    width: calc(100% - 16px);
+    bottom: 132px;
+    font-size: 12px;
+    padding: 8px;
+  }
+  .exp52-pad {
+    left: 8px;
+    bottom: 10px;
+    grid-template-columns: repeat(3, 44px);
+  }
+  .exp52-pad button {
+    height: 44px;
+    padding: 5px;
+  }
+  .exp52-actions {
+    right: 8px;
+    bottom: 12px;
+    max-width: 53%;
+    gap: 5px;
+  }
+  .exp52-actions button {
+    padding: 8px;
+    font-size: 12px;
+  }
+  .exp52-look {
+    top: 160px;
+    bottom: 155px;
+    left: 20%;
+  }
+  .exp52-reader p {
+    font-size: 15px;
+  }
+}
+@media (max-height: 470px) {
+  .exp52-minimap {
+    width: 92px;
+    height: 92px;
+  }
+  .exp52-top {
+    padding: 7px;
+    max-width: 70%;
+  }
+  .exp52-top p {
+    margin: 3px 0;
+  }
+  .exp52-look {
+    top: 100px;
+    bottom: 110px;
+  }
+  .exp52-caption {
+    bottom: 105px;
+    margin: 0;
+    padding: 5px;
+    font-size: 11px;
+  }
+  .exp52-pad {
+    grid-template-columns: repeat(3, 44px);
+  }
+  .exp52-pad button {
+    height: 42px;
+  }
+  .exp52-reader {
+    max-height: 90vh;
+  }
+}
+
+/* Exclusive scene overlays: legacy HUD rules use #htmlRoot + !important.
+   Keep the renderer, hide only body-level city UI; removing the class restores it. */
+#htmlRoot
+  body.fz-expedition52
+  > :not(#gameCanvas):not(#fzExpedition52):not(script):not(style):not(link),
+#htmlRoot
+  body.fz-expedition52-menu
+  > :not(#gameCanvas):not(#fzExpedition52Menu):not(script):not(style):not(
+    link
+  ) {
+  display: none !important;
+}
+#htmlRoot #fzExpedition52,
+#htmlRoot #fzExpedition52Menu {
+  z-index: 24000;
+}
+#htmlRoot #fzExpedition52 button {
+  color: #f1f5f8;
+  -webkit-text-fill-color: #f1f5f8;
+}

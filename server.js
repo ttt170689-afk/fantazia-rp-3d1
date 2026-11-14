@@ -369,6 +369,7 @@ app.post('/api/admin/message', (req, res) => {
 // ======================================================
 
 const players = {};
+require('./server/expedition52.cjs').installExpedition52({io,players,server});
 const skyAccess = attachSkyAccess(io, players, {isAdmin: socket => {
   const account = accounts[socket.data.accountKey];
   return !!socket.data.accountToken && account?.token === socket.data.accountToken && accountIsAdmin(account);

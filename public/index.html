@@ -19681,6 +19681,8 @@ function animate(timestamp) {
     return;
   }
 
+  // Optional expedition owns a separate scene; the RP player never moves.
+  if (window.FZExpedition52?.frame(delta)) return;
   // v30 owns this frame before physics, legacy cinematics and world effects.
   if (window.FZSurvival45?.frame(delta)) return;
   if (window.FZVoyage43?.frame(delta)) return;
@@ -19739,7 +19741,7 @@ function animate(timestamp) {
     isCrouching = false;
   }
 
-  if ((isPointerLocked || window.mobileReady || (localPlayer && localPlayer.isOffline)) && !currentDance && !sittingOn && !window.elevatorCut && !window.FZCranes?.locked() && !DLC.hidden && !window._loadingGate && !window.FZLore45?.modalOpen() && !window.FZSurvival45?.blocked()) {
+  if ((isPointerLocked || window.mobileReady || (localPlayer && localPlayer.isOffline)) && !currentDance && !sittingOn && !window.elevatorCut && !window.FZCranes?.locked() && !DLC.hidden && !window._loadingGate && !window.FZLore45?.modalOpen() && !window.FZExpedition52?.modalOpen() && !window.FZSurvival45?.blocked()) {
     const isSprint = (keys['ShiftLeft'] || keys['ShiftRight'] || mobileSprintOn) && !isCrouching;
     const speed = (isCrouching ? CONFIG.CROUCH_SPEED : (isSprint ? CONFIG.SPRINT_SPEED : CONFIG.MOVE_SPEED)) * (typeof FZ8_speedMul === 'function' ? FZ8_speedMul() : 1) * (window.FZSurvival45?.speed()||1);
 
@@ -20159,6 +20161,7 @@ function joinByCode() {
 
 async function logoutUser() {
   ++_gameStartTicket;
+  window.FZExpedition52?.finish();
   window.FZRoom48?.cancel();
   clearInterval(positionSyncTimer);
   window.FZReleaseUI?.stop();
@@ -20715,6 +20718,7 @@ function openSettingsFromPause() {
 
 function backToServers() {
   ++_gameStartTicket;
+  window.FZExpedition52?.finish();
   window.FZRoom48?.cancel();
   clearInterval(positionSyncTimer);
   window.FZReleaseUI?.stop();
@@ -25104,6 +25108,10 @@ window.FZV5_update = FZV5_update;
 <script src="assets/fz-journal47.js?v=47"></script>
 <script src="assets/fz-lore45.js?v=47"></script>
 <script src="assets/fz-survival45.js?v=45"></script>
+<script src="assets/fz-expedition52-policy.js?v=52"></script>
+<script src="assets/fz-expedition52-world.js?v=52"></script>
+<script src="assets/fz-expedition52.js?v=52"></script>
+<link rel="stylesheet" href="styles/fz-expedition52.css?v=52">
 <link rel="stylesheet" href="styles/fz-adventure45.css?v=47">
 <script src="assets/fz-journey.js?v=15.0"></script>
 

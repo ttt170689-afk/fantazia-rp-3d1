@@ -13,6 +13,9 @@ on:
       - tests/journal47*
       - tests/room48*
       - tests/interior50*
+      - tests/expedition52*
+      - public/assets/fz-expedition52*
+      - public/styles/fz-expedition52.css
       - tests/funeral51*
       - tests/cinematic3*.test.cjs
       - tests/intro35.test.cjs
@@ -106,3 +109,17 @@ jobs:
       - run: npm run test:funeral
       - run: npm run test:funeral:browser
       - run: cd tests && node cinematic31.test.cjs && node cinematic32.test.cjs && node intro35.test.cjs && node story30.test.cjs
+
+  expeditions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+      - run: npm run test:expeditions
+      - run: npm run test:expeditions:browser

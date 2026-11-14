@@ -106,6 +106,7 @@
       action("🚇 Станции метро", () => window.FZMetro?.open()),
       action("📷 Сделать фото", () => takePhoto()),
       action("🎒 Инвентарь и дневник", () => window.FZLore45?.openBag()),
+      action("Экспедиции · PvP, машины и заброшки", () => window.FZExpedition52?.open()),
       action("🚗 Автомобили", () => togglePanel("cars")),
       action("📱 Телефон", () => togglePhone()),
       action("💼 Работа", () => togglePanel("jobs")),
@@ -322,6 +323,7 @@
           !active ||
           document.getElementById("fzQuickHelp")?.open ||
           window.FZLore45?.modalOpen() ||
+          window.FZExpedition52?.modalOpen() ||
           !!document.querySelector(".fz-play-dialog:not([hidden])") ||
           !!document.getElementById("fzDeliveries") ||
           (window.FZLeisure && FZLeisure.modalOpen()) ||
