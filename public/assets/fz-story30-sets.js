@@ -139,8 +139,26 @@
     const sprayGeometry=own(new THREE.BufferGeometry()),sprayPositions=new Float32Array(96*3);sprayGeometry.setAttribute('position',new THREE.BufferAttribute(sprayPositions,3));
     const spray=new THREE.Points(sprayGeometry,own(new THREE.PointsMaterial({color:0xa4c5da,size:.065,transparent:true,opacity:.45,depthWrite:false})));spray.frustumCulled=false;street.add(spray);
 
-    const fk=kit(funeral,resources),soil=fk.mat(0x242c2b),stone=fk.mat(0x667078),wood=fk.mat(0x30232b,{roughness:.4}),white=fk.mat(0xe8e0df);
+    const fk=kit(funeral,resources),soil=fk.mat(0x0b100e,{roughness:1}),stone=fk.mat(0x343d42),wood=fk.mat(0x160c0a,{roughness:.34}),white=fk.mat(0xd6d1c5);
+    // Small deterministic surface maps: no external image requests or per-frame work.
+    function surfaceMap(kind){
+      const c=document.createElement('canvas');c.width=c.height=256;const ctx=c.getContext('2d');
+      ctx.fillStyle=kind==='wood'?'#735248':'#62695a';ctx.fillRect(0,0,256,256);
+      let seed=51;const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+      for(let i=0;i<3500;i++){
+        const v=Math.floor(35+random()*75);ctx.fillStyle='rgba('+v+','+(v+5)+','+v+','+(.1+random()*.3)+')';
+        const x=random()*256,y=random()*256;ctx.fillRect(x,y,kind==='wood'?.5:1+random()*3,kind==='wood'?20+random()*70:1+random()*3);
+      }
+      const map=own(new THREE.CanvasTexture(c));map.encoding=THREE.sRGBEncoding;map.wrapS=map.wrapT=THREE.RepeatWrapping;map.repeat.set(kind==='wood'?2:32,kind==='wood'?2:32);return map;
+    }
+    soil.map=surfaceMap('soil');wood.map=surfaceMap('wood');
     fk.box(160,.15,160,0,-.13,0,soil);fk.box(1.55,.18,2.9,0,.02,0,stone);
+    // Contact shadows keep shoes/casket grounded even when mobile shadow maps are off.
+    const shadeCanvas=document.createElement('canvas');shadeCanvas.width=shadeCanvas.height=64;const sc=shadeCanvas.getContext('2d'),gradient=sc.createRadialGradient(32,32,2,32,32,32);
+    gradient.addColorStop(0,'rgba(0,0,0,.65)');gradient.addColorStop(1,'rgba(0,0,0,0)');sc.fillStyle=gradient;sc.fillRect(0,0,64,64);
+    const shadeMap=own(new THREE.CanvasTexture(shadeCanvas)),shadeMat=own(new THREE.MeshBasicMaterial({map:shadeMap,transparent:true,depthWrite:false,opacity:.65})),shadeGeo=own(new THREE.PlaneGeometry(1,1));
+    function contact(x,z,w,d){const m=new THREE.Mesh(shadeGeo,shadeMat);m.rotation.x=-Math.PI/2;m.position.set(x,-.049,z);m.scale.set(w,d,1);funeral.add(m);}
+    contact(0,0,2.6,4);
     const outline=new THREE.Shape();[[-.34,-1.1],[.34,-1.1],[.5,-.65],[.40,1.1],[-.40,1.1],[-.5,-.65]].forEach(([x,y],i)=>i?outline.lineTo(x,y):outline.moveTo(x,y));outline.closePath();
     for(const [depth,y] of [[.42,.12],[.055,.56]]){const casket=new THREE.Mesh(own(new THREE.ExtrudeGeometry(outline,{depth,bevelEnabled:true,bevelThickness:.018,bevelSize:.018,bevelSegments:2,steps:1})),wood);casket.rotation.x=-Math.PI/2;casket.position.y=y;funeral.add(casket);}
     const faceLight=new THREE.DirectionalLight(0xd2dae0,.8);faceLight.position.set(3,5,6);funeral.add(faceLight);
@@ -149,14 +167,25 @@
       const trunk=new THREE.Mesh(own(new THREE.CylinderGeometry(.16,.28,h,7)),treeBark);trunk.position.set(x,h/2,z);funeral.add(trunk);
       for(let k=0;k<3;k++){const crown=new THREE.Mesh(own(new THREE.ConeGeometry(2.1-k*.4,4,9)),treeLeaves);crown.position.set(x,h-2+k*1.2,z);funeral.add(crown);}
     }
-    for(const z of [-.65,.65])for(const x of [-.47,.47])fk.box(.04,.04,.3,x,.34,z,glow);
-    for(let i=0;i<13;i++){const flower=new THREE.Mesh(own(new THREE.SphereGeometry(.065,6,5)),i%3?white:fk.mat(0xa9495b));flower.position.set(Math.sin(i*2.4)*.27,.68,Math.cos(i*2.4)*.65);funeral.add(flower);}
+    const brass=fk.mat(0x66503b,{metalness:.7,roughness:.32}),foliage=fk.mat(0x13291b),rose=fk.mat(0x541d29);
+    for(const z of [-.65,.65])for(const x of [-.47,.47]){
+      fk.box(.025,.035,.32,x,.34,z,brass);
+      for(const dz of [-.13,.13])fk.box(.055,.075,.04,x,.36,z+dz,brass);
+    }
+    const petalGeo=own(new THREE.SphereGeometry(1,8,6));
+    for(let i=0;i<11;i++){
+      const x=Math.sin(i*2.4)*.22,z=Math.cos(i*2.4)*.57,flower=new THREE.Group();flower.position.set(x,.64,z);funeral.add(flower);
+      const stem=new THREE.Mesh(petalGeo,foliage);stem.scale.set(.009,.009,.24);stem.rotation.y=x*2;flower.add(stem);
+      for(let p=0;p<5;p++){const a=p*Math.PI*2/5,petal=new THREE.Mesh(petalGeo,i%4?white:rose);petal.position.set(Math.cos(a)*.028,.025,Math.sin(a)*.028);petal.scale.set(.033,.016,.045);petal.rotation.y=-a;flower.add(petal);}
+      const leaf=new THREE.Mesh(petalGeo,foliage);leaf.position.set(.045,0,.10);leaf.scale.set(.035,.008,.08);leaf.rotation.y=.6;flower.add(leaf);
+    }
     for(let i=0;i<9;i++){const x=(i%3-1)*5,z=5+Math.floor(i/3)*5;fk.box(.9,1.25,.2,x,.6,z,stone);fk.box(1.3,.12,.65,x,.02,z,stone);}
     const actors=[];
     for(let i=0;i<5;i++){
       const actor=FZHumans31.create(resources,i);
       actor.position.set(i<3?-2.1:2.1,0,(i%3-1)*1.6);
       actor.rotation.y=i<3?Math.PI/2:i===3?-1.25:-Math.PI/2;actor.userData.restYaw=actor.rotation.y;
+      contact(actor.position.x,actor.position.z,.85,.65);
       funeral.add(actor);actors.push(actor);
     }
     const count=matchMedia('(pointer:coarse)').matches?280:550,positions=new Float32Array(count*6);
@@ -164,5 +193,13 @@
     const rg=own(new THREE.BufferGeometry());rg.setAttribute('position',new THREE.BufferAttribute(positions,3));const rain=new THREE.LineSegments(rg,own(new THREE.LineBasicMaterial({color:0xa5c4e3,transparent:true,opacity:.32})));world.add(rain);
     return {world,street,funeral,car,rain,hemi,moon,actors,wheels,spray};
   }
-  window.FZStory30Sets={sky,ride,prologue,cabin};
+  function renderFuneral(renderer,world,camera){
+    // GLTF base-color maps are sRGB. The legacy world uses linear output, which
+    // otherwise crushes the new dark suits/skin into black. Scope the correct
+    // transfer function to this shot and restore the world's renderer state.
+    const encoding=renderer.outputEncoding;
+    try{renderer.outputEncoding=THREE.sRGBEncoding;renderer.render(world,camera);}
+    finally{renderer.outputEncoding=encoding;}
+  }
+  window.FZStory30Sets={sky,ride,prologue,cabin,renderFuneral};
 })();

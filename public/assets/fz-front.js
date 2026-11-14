@@ -51,7 +51,14 @@
   for(const id of ['authScreen','serverScreen']){const node=document.getElementById(id);if(node)node.inert=true;}
   intro=true;elapsed=0;last=null;phase='credit';paint(el);document.body.classList.add('fz-intro-active');el.focus({preventScroll:true});sync();return true;
  }
- async function prepareGame(){finish();await ensureWorld();if(!renderer||!cityWorldReady()||renderer.getContext().isContextLost())throw Error('Native world did not finish or WebGL is unavailable');}
+ async function prepareGame(){
+  finish();
+  // Finish the bounded cast preload BEFORE synchronous city construction can
+  // starve GLB image decode callbacks and incorrectly trip their deadline.
+  // This is after Play, never on the logo/menu; seen/resumed stories skip it.
+  if(window.FZStory30?.info().pending)await window.FZHumans31?.load();
+  await ensureWorld();if(!renderer||!cityWorldReady()||renderer.getContext().isContextLost())throw Error('Native world did not finish or WebGL is unavailable');
+ }
  window.fzIntroEnd=finish;window.fziClick=finish;
  window.FZFront={start,finish,prepareGame,active:()=>intro,info:()=>({phase,build:'35.1',citySource:'original-logo-transparent',credit:'создано temka_play_official',autoplay:'page-load',duration,elapsed,renderer:false,ready:intro,failed:imageFailed,actors:0,cast:[],portal:null,sceneUUID:typeof scene!=='undefined'?scene?.uuid:null,image})};
  document.addEventListener('visibilitychange',sync);

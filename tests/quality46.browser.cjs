@@ -25,6 +25,19 @@ const {chromium}=require('playwright-core'),chrome=require('@sparticuz/chromium'
   await page.waitForFunction(()=>localPlayer?.mesh && renderer?.info.render.frame>30 && !window._loadingGate,{},{timeout:120000});
   await page.waitForSelector('#playLoadOv',{state:'hidden',timeout:30000});
   await page.waitForFunction(()=>FZStory30.info().active,{},{timeout:30000});
+  // The native timeline caps dt at .05; reduce only software-render resolution,
+  // not story timing, so the 160 real frames before the funeral remain practical.
+  await page.evaluate(()=>{SETTINGS.renderScale=.35;SETTINGS.dynRes=false;renderer.setPixelRatio(.35);});
+  await page.waitForFunction(()=>FZStory30.info().phase==='funeral'&&FZStory30.info().elapsed>8.5,{},{timeout:90000}).catch(async e=>{console.error('NATIVE_STORY',await page.evaluate(()=>({story:FZStory30.info(),cast:FZHumans31.info(),frames:renderer.info.render.frame})));throw e;});
+  const cast=await page.evaluate(()=>FZHumans31.info());
+  assert.equal(cast.loadedCount,5,'all five dressed funeral GLBs loaded in the real game: '+JSON.stringify(cast));
+  await page.evaluate(()=>FZStory30.pause(true));
+  if(process.env.FZ_FUNERAL_SCREENSHOT_PATH){
+    const frame=await page.evaluate(()=>{SETTINGS.renderScale=1;renderer.setPixelRatio(1);return renderer.info.render.frame;});
+    await page.waitForFunction(frame=>renderer.info.render.frame>frame,frame);
+    await page.screenshot({path:process.env.FZ_FUNERAL_SCREENSHOT_PATH});
+    await page.evaluate(()=>{SETTINGS.renderScale=.35;renderer.setPixelRatio(.35);});
+  }
   console.log(JSON.stringify(await page.evaluate(()=>({player:!!localPlayer?.mesh,rig:!!localPlayer?.mesh?.userData?.isSuperRig,frames:renderer.info.render.frame,drawCalls:renderer.info.render.calls,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,story:FZStory30.info(),connection:socket?.connected})),null,2));
   await page.evaluate(()=>{FZStory30.pause(true);window.beforeReconnect={mesh:localPlayer.mesh.uuid,position:localPlayer.mesh.position.toArray(),health:localPlayer.health,elapsed:FZStory30.info().elapsed,id:socket.id};socket.io.engine.close();});
   await page.waitForFunction(()=>socket.connected&&socket.id!==beforeReconnect.id&&document.getElementById('fzConnectionStatus').hidden,{},{timeout:20000});
@@ -35,7 +48,7 @@ const {chromium}=require('playwright-core'),chrome=require('@sparticuz/chromium'
   const placedNotes=await page.evaluate(()=>{FZLore45.build();return interactables.filter(e=>e.lore45&&e.action==='note').map(e=>e.id).sort();});
   assert.deepEqual(placedNotes,[...require('../public/assets/fz-adventure45-policy').ids].sort(),'every journal entry must have a physical note in the generated world');
   if(process.env.FZ_SCREENSHOT_PATH)await page.screenshot({path:process.env.FZ_SCREENSHOT_PATH});
-  console.log('PASS real WebGL launch, loaded animated GLB, first story scene and Socket.IO reconnect preserving mesh/position/health/story time');
+  console.log('PASS real WebGL launch, loaded gameplay GLB, five dressed funeral GLBs in the native timeline and Socket.IO reconnect preserving mesh/position/health/story time');
   console.log('PAGE_ERRORS',JSON.stringify(errors));
   assert.deepEqual(errors,[]);
  }finally{await browser?.close();child.kill('SIGTERM');await new Promise(resolve=>{if(child.exitCode!==null)return resolve();child.once('exit',resolve);});}

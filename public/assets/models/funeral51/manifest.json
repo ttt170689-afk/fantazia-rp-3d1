@@ -1,0 +1,45 @@
+{
+  "version": 51,
+  "cast": [
+    {
+      "id": "father",
+      "file": "father.glb",
+      "height": 1.79,
+      "bytes": 2717564,
+      "triangles": 37474,
+      "bones": 163
+    },
+    {
+      "id": "mother",
+      "file": "mother.glb",
+      "height": 1.66,
+      "bytes": 2266524,
+      "triangles": 29276,
+      "bones": 163
+    },
+    {
+      "id": "friend",
+      "file": "friend.glb",
+      "height": 1.86,
+      "bytes": 2922180,
+      "triangles": 39230,
+      "bones": 163
+    },
+    {
+      "id": "brother",
+      "file": "brother.glb",
+      "height": 1.76,
+      "bytes": 2947004,
+      "triangles": 39230,
+      "bones": 163
+    },
+    {
+      "id": "sister",
+      "file": "sister.glb",
+      "height": 1.7,
+      "bytes": 2592232,
+      "triangles": 32404,
+      "bones": 163
+    }
+  ]
+}

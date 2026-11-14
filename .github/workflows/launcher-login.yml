@@ -13,6 +13,13 @@ on:
       - tests/journal47*
       - tests/room48*
       - tests/interior50*
+      - tests/funeral51*
+      - public/assets/fz-humans31.js
+      - public/assets/fz-story30-sets.js
+      - public/assets/fz-story30.js
+      - public/assets/licenses/funeral51*
+      - public/assets/models/funeral51/**
+      - tools/build-funeral51.py
       - public/assets/fz-building*
       - public/assets/fz-interior50*
       - public/styles/fz-interior50.css
@@ -80,3 +87,19 @@ jobs:
       - run: npm ci --prefix tests --no-audit --no-fund
       - run: npm run test:interiors
       - run: npm run test:interiors:browser
+
+  funeral:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+      - run: npm ci --prefix tests --no-audit --no-fund
+      - run: npm run test:funeral
+      - run: npm run test:funeral:browser
+      - run: cd tests && node cinematic31.test.cjs && node cinematic32.test.cjs && node intro35.test.cjs && node story30.test.cjs

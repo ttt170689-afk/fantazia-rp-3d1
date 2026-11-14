@@ -10,6 +10,8 @@
     "test:closed:db": "node tests/closed-db-check.cjs",
     "test:launcher-login": "node --test tests/launcher-login*.test.cjs",
     "test:public": "node --test tests/public-*.test.cjs tests/closed-process.test.cjs",
+    "test:funeral": "node --test tests/funeral51.test.cjs",
+    "test:funeral:browser": "node tests/funeral51.browser.cjs",
     "test:interiors": "node --test tests/interior50.test.cjs",
     "test:interiors:browser": "node tests/interior50.browser.cjs",
     "test:room": "node tests/room48.test.cjs",
