@@ -60,7 +60,7 @@
         label,
       )
         ? "city"
-        : /настрой|график|пауза|журнал|звук/i.test(label)
+        : /настрой|график|пауза|журнал|звук|справка/i.test(label)
           ? "settings"
           : /инвентарь|крафт|персонаж|одеж|скин|друз|игрок|телефон|чат|магазин|pass|навык|питом|танц|автомоб/i.test(
                 label,
@@ -106,6 +106,7 @@
       action("🚇 Станции метро", () => window.FZMetro?.open()),
       action("📷 Сделать фото", () => takePhoto()),
       action("🎒 Инвентарь и дневник", () => window.FZLore45?.openBag()),
+      action("Экспедиции · PvP, машины и заброшки", () => window.FZExpedition52?.open()),
       action("🚗 Автомобили", () => togglePanel("cars")),
       action("📱 Телефон", () => togglePhone()),
       action("💼 Работа", () => togglePanel("jobs")),
@@ -113,6 +114,7 @@
       action("⚙ Настройки игры и телефона", () => window.FZPlay?.open()),
       action("Звук и озвучка", () => window.FZSound?.open()),
       action("Настройки управления", () => window.FZTouch?.open()),
+      action("Справка: управление и фонарь", () => window.FZReleaseUI?.openHelp()),
     ];
   }
 
@@ -319,6 +321,9 @@
       (e) => {
         if (
           !active ||
+          document.getElementById("fzQuickHelp")?.open ||
+          window.FZLore45?.modalOpen() ||
+          window.FZExpedition52?.modalOpen() ||
           !!document.querySelector(".fz-play-dialog:not([hidden])") ||
           !!document.getElementById("fzDeliveries") ||
           (window.FZLeisure && FZLeisure.modalOpen()) ||

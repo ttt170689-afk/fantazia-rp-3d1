@@ -1,0 +1,284 @@
+[
+  {
+    "path": "assets/LICENSE",
+    "sha256": "76a97c878c9c7a8321bb395c2b44d3fe2f8d81314d219b20138ed0e2dddd5182",
+    "bytes": 34520,
+    "upstream": "https://github.com/dmaugis/makehuman-py3-assets/blob/2f4033a364a7e97479e17ed630ccb999395730c6/LICENSE"
+  },
+  {
+    "path": "assets/base/clothes/female_elegantsuit01/female_elegantsuit01.mhclo",
+    "sha256": "10f10fba16ac092912405b513a6a94b40f4a74c581da507ce430e3dc29a980bd",
+    "bytes": 151558,
+    "upstream": "https://github.com/dmaugis/makehuman-py3-assets/blob/2f4033a364a7e97479e17ed630ccb999395730c6/base/clothes/female_elegantsuit01/female_elegantsuit01.mhclo"
+  },
+  {
+    "path": "assets/base/clothes/female_elegantsuit01/female_elegantsuit01.obj",
+    "sha256": "b6e8896cb3b2da7dd020985ee280a19b9997fd41a17aba14a9edd60a8b1e0ec5",
+    "bytes": 175492,
+    "upstream": "https://github.com/dmaugis/makehuman-py3-assets/blob/2f4033a364a7e97479e17ed630ccb999395730c6/base/clothes/female_elegantsuit01/female_elegantsuit01.obj"
+  },
+  {
+    "path": "assets/base/clothes/male_elegantsuit01/male_elegantsuit01.mhclo",
+    "sha256": "a81065ce4a3fca8b6fa082980f3a58e972000f780dd5cf624aa13abb17e05671",
+    "bytes": 516360,
+    "upstream": "https://github.com/dmaugis/makehuman-py3-assets/blob/2f4033a364a7e97479e17ed630ccb999395730c6/base/clothes/male_elegantsuit01/male_elegantsuit01.mhclo"
+  },
+  {
+    "path": "assets/base/clothes/male_elegantsuit01/male_elegantsuit01.obj",
+    "sha256": "fd6f55e5cb77840ac425d5ab27dc87486e0f26efb6b6d7a7d03bf68942b949a4",
+    "bytes": 633898,
+    "upstream": "https://github.com/dmaugis/makehuman-py3-assets/blob/2f4033a364a7e97479e17ed630ccb999395730c6/base/clothes/male_elegantsuit01/male_elegantsuit01.obj"
+  },
+  {
+    "path": "assets/base/clothes/shoes01/shoes01.mhclo",
+    "sha256": "eb30da32d5890389cb90c5c28f36d645c74ceae7822d63583e30d3b35925eb4b",
+    "bytes": 119599,
+    "upstream": "https://github.com/dmaugis/makehuman-py3-assets/blob/2f4033a364a7e97479e17ed630ccb999395730c6/base/clothes/shoes01/shoes01.mhclo"
+  },
+  {
+    "path": "assets/base/clothes/shoes01/shoes01.obj",
+    "sha256": "8b7772f9978c3f53c4dc3896a0934c589ac97f8c954bdc489306a4f50d6d7c17",
+    "bytes": 137478,
+    "upstream": "https://github.com/dmaugis/makehuman-py3-assets/blob/2f4033a364a7e97479e17ed630ccb999395730c6/base/clothes/shoes01/shoes01.obj"
+  },
+  {
+    "path": "assets/base/clothes/shoes03/shoes03.mhclo",
+    "sha256": "ad353aa4193d4e9300e771f0f2726f9401d8296b071024a7d2948d2a93f191a5",
+    "bytes": 153423,
+    "upstream": "https://github.com/dmaugis/makehuman-py3-assets/blob/2f4033a364a7e97479e17ed630ccb999395730c6/base/clothes/shoes03/shoes03.mhclo"
+  },
+  {
+    "path": "assets/base/clothes/shoes03/shoes03.obj",
+    "sha256": "dbb9fe753791b3a732345c3e32b098b9bfde5f6a34af7a91300ec333316e8bd8",
+    "bytes": 177988,
+    "upstream": "https://github.com/dmaugis/makehuman-py3-assets/blob/2f4033a364a7e97479e17ed630ccb999395730c6/base/clothes/shoes03/shoes03.obj"
+  },
+  {
+    "path": "assets/base/hair/bob02/bob02.mhclo",
+    "sha256": "5142ba1bd04d7f4059c2d2aa34cfc441394bcca284e714e54bf99fb401548fb0",
+    "bytes": 112876,
+    "upstream": "https://github.com/dmaugis/makehuman-py3-assets/blob/2f4033a364a7e97479e17ed630ccb999395730c6/base/hair/bob02/bob02.mhclo"
+  },
+  {
+    "path": "assets/base/hair/bob02/bob02.obj",
+    "sha256": "1d75b597591db5f9ef91f15bad2fd3c715f3cee65f99957a4e62e76e53ab2cc5",
+    "bytes": 110066,
+    "upstream": "https://github.com/dmaugis/makehuman-py3-assets/blob/2f4033a364a7e97479e17ed630ccb999395730c6/base/hair/bob02/bob02.obj"
+  },
+  {
+    "path": "assets/base/hair/ponytail01/ponytail01.mhclo",
+    "sha256": "3b911fa4cc4fbb357d4e7500e33c1caed4fcb43bbd21670d3bcb366e769f18ef",
+    "bytes": 252630,
+    "upstream": "https://github.com/dmaugis/makehuman-py3-assets/blob/2f4033a364a7e97479e17ed630ccb999395730c6/base/hair/ponytail01/ponytail01.mhclo"
+  },
+  {
+    "path": "assets/base/hair/ponytail01/ponytail01.obj",
+    "sha256": "301d4bc80b60244a41fc99c052e329b8e183649815f002a119c963c04ad676cf",
+    "bytes": 264952,
+    "upstream": "https://github.com/dmaugis/makehuman-py3-assets/blob/2f4033a364a7e97479e17ed630ccb999395730c6/base/hair/ponytail01/ponytail01.obj"
+  },
+  {
+    "path": "assets/base/hair/short01/short01.mhclo",
+    "sha256": "389c2e84f5daa4d5fab19e55edf7f6e7d92207eadb3864c5b32ecaf6d8c7c325",
+    "bytes": 202138,
+    "upstream": "https://github.com/dmaugis/makehuman-py3-assets/blob/2f4033a364a7e97479e17ed630ccb999395730c6/base/hair/short01/short01.mhclo"
+  },
+  {
+    "path": "assets/base/hair/short01/short01.obj",
+    "sha256": "b9971c2e1901f32e17902d1b08697610e5623f84b46f82ff56a2d2773af04304",
+    "bytes": 195018,
+    "upstream": "https://github.com/dmaugis/makehuman-py3-assets/blob/2f4033a364a7e97479e17ed630ccb999395730c6/base/hair/short01/short01.obj"
+  },
+  {
+    "path": "assets/base/hair/short03/short03.mhclo",
+    "sha256": "4c618b130e2f045e4144a386d84d1195c77cd7814fc98b953c2865cfba89dde8",
+    "bytes": 69598,
+    "upstream": "https://github.com/dmaugis/makehuman-py3-assets/blob/2f4033a364a7e97479e17ed630ccb999395730c6/base/hair/short03/short03.mhclo"
+  },
+  {
+    "path": "assets/base/hair/short03/short03.obj",
+    "sha256": "5774cdaa318cc075ab088ff3517e8658593e1365ea289858ca00fdbf17b6af46",
+    "bytes": 75334,
+    "upstream": "https://github.com/dmaugis/makehuman-py3-assets/blob/2f4033a364a7e97479e17ed630ccb999395730c6/base/hair/short03/short03.obj"
+  },
+  {
+    "path": "core/LICENSE.ASSETS.md",
+    "sha256": "f6089cba01cb570a24712b41ab8a586ccd3cc5ef53dc266ca50b95c288956d2c",
+    "bytes": 6962,
+    "upstream": "https://github.com/makehumancommunity/makehuman/blob/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/LICENSE.ASSETS.md"
+  },
+  {
+    "path": "core/makehuman/data/3dobjs/base.obj",
+    "sha256": "8e761e6624b8f54536409135d1636da63b32486a90d4897f84e121d144f6fb4c",
+    "bytes": 1749303,
+    "upstream": "https://github.com/makehumancommunity/makehuman/blob/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/3dobjs/base.obj"
+  },
+  {
+    "path": "core/makehuman/data/eyes/high-poly/high-poly.mhclo",
+    "sha256": "b183cfe37120ab726f9b3f2ea6cd3a64c44ce7b4bd91a77c841cf70c04f83a0d",
+    "bytes": 72490,
+    "upstream": "https://github.com/makehumancommunity/makehuman/blob/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/eyes/high-poly/high-poly.mhclo"
+  },
+  {
+    "path": "core/makehuman/data/eyes/high-poly/high-poly.obj",
+    "sha256": "da2493215b708a344c33dc72f2a9a5b8fa985dcc5a70ad3b208995cf871da8e1",
+    "bytes": 100882,
+    "upstream": "https://github.com/makehumancommunity/makehuman/blob/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/eyes/high-poly/high-poly.obj"
+  },
+  {
+    "path": "core/makehuman/data/eyes/materials/brown_eye.png",
+    "sha256": "4659691c7295ad6206c78b003e5fd0e5f91dcd53032fa914a229bb48cabe424b",
+    "bytes": 610817,
+    "upstream": "https://github.com/makehumancommunity/makehuman/blob/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/eyes/materials/brown_eye.png"
+  },
+  {
+    "path": "core/makehuman/data/rigs/default.mhskel",
+    "sha256": "99f179bce0aa850b45d4191a1d0d234c5851f881c057439470ded3bddf729a24",
+    "bytes": 117790,
+    "upstream": "https://github.com/makehumancommunity/makehuman/blob/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/rigs/default.mhskel"
+  },
+  {
+    "path": "core/makehuman/data/rigs/default_weights.mhw",
+    "sha256": "0f3641d651ae3d00ad6b4ccee43142edb109d3bd909d27d9e4139ef1beed8625",
+    "bytes": 897521,
+    "upstream": "https://github.com/makehumancommunity/makehuman/blob/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/rigs/default_weights.mhw"
+  },
+  {
+    "path": "core/makehuman/data/targets/macrodetails/african-male-young.target",
+    "sha256": "894abc1fbb3d28543a51fef16f89d5d4bdf9aa2e1534413339811a3d47818b7d",
+    "bytes": 406170,
+    "upstream": "https://github.com/makehumancommunity/makehuman/blob/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/macrodetails/african-male-young.target"
+  },
+  {
+    "path": "core/makehuman/data/targets/macrodetails/asian-female-young.target",
+    "sha256": "095fe79694fa19e1fe98d93009ec116199bd524e081c640351a10eccf2cca1eb",
+    "bytes": 435553,
+    "upstream": "https://github.com/makehumancommunity/makehuman/blob/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/macrodetails/asian-female-young.target"
+  },
+  {
+    "path": "core/makehuman/data/targets/macrodetails/caucasian-female-old.target",
+    "sha256": "6560982486c4b1a7a0b1d82b0ad3f09770c16b4f87c8f949537dc9cfc941a0b0",
+    "bytes": 408930,
+    "upstream": "https://github.com/makehumancommunity/makehuman/blob/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/macrodetails/caucasian-female-old.target"
+  },
+  {
+    "path": "core/makehuman/data/targets/macrodetails/caucasian-male-old.target",
+    "sha256": "b0d2b1d58cba0358af59833740e70229265f7da1c20a11240f4123b7192cfd6d",
+    "bytes": 400125,
+    "upstream": "https://github.com/makehumancommunity/makehuman/blob/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/macrodetails/caucasian-male-old.target"
+  },
+  {
+    "path": "core/makehuman/data/targets/macrodetails/caucasian-male-young.target",
+    "sha256": "70e228ba7164737dae664454394536fc5935fa48d333c1a97d77e2dc6eacc5f5",
+    "bytes": 396479,
+    "upstream": "https://github.com/makehumancommunity/makehuman/blob/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/macrodetails/caucasian-male-young.target"
+  },
+  {
+    "path": "core/makehuman/data/targets/macrodetails/universal-female-old-averagemuscle-averageweight.target",
+    "sha256": "4ba5396ddabda448ece15650a566fbebfbb10239256ccb201e8f883429e12249",
+    "bytes": 604,
+    "upstream": "https://github.com/makehumancommunity/makehuman/blob/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/macrodetails/universal-female-old-averagemuscle-averageweight.target"
+  },
+  {
+    "path": "core/makehuman/data/targets/macrodetails/universal-female-young-averagemuscle-averageweight.target",
+    "sha256": "4ba5396ddabda448ece15650a566fbebfbb10239256ccb201e8f883429e12249",
+    "bytes": 604,
+    "upstream": "https://github.com/makehumancommunity/makehuman/blob/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/macrodetails/universal-female-young-averagemuscle-averageweight.target"
+  },
+  {
+    "path": "core/makehuman/data/targets/macrodetails/universal-male-old-averagemuscle-averageweight.target",
+    "sha256": "4ba5396ddabda448ece15650a566fbebfbb10239256ccb201e8f883429e12249",
+    "bytes": 604,
+    "upstream": "https://github.com/makehumancommunity/makehuman/blob/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/macrodetails/universal-male-old-averagemuscle-averageweight.target"
+  },
+  {
+    "path": "core/makehuman/data/targets/macrodetails/universal-male-young-averagemuscle-averageweight.target",
+    "sha256": "4ba5396ddabda448ece15650a566fbebfbb10239256ccb201e8f883429e12249",
+    "bytes": 604,
+    "upstream": "https://github.com/makehumancommunity/makehuman/blob/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/macrodetails/universal-male-young-averagemuscle-averageweight.target"
+  },
+  {
+    "path": "js/public/data/proxies/clothes/female_elegantsuit01/textures/female_elegantsuit01_diffuse.png",
+    "sha256": "b8f938d27a21a4cf4ffe92d691db23832716d4592fab901ab19adae8649e378d",
+    "bytes": 230895,
+    "upstream": "https://github.com/makehuman-js/makehuman-data/blob/e5d1a42cb469025a6d2b3ecea3e0252e6feccc1f/public/data/proxies/clothes/female_elegantsuit01/textures/female_elegantsuit01_diffuse.png"
+  },
+  {
+    "path": "js/public/data/proxies/clothes/male_elegantsuit01/textures/male_elegantsuit01_diffuse.png",
+    "sha256": "6dae7d224fb33ffff95d5db7e303a40631a7f222b2ebc0982456eebfaebaa8b9",
+    "bytes": 160798,
+    "upstream": "https://github.com/makehuman-js/makehuman-data/blob/e5d1a42cb469025a6d2b3ecea3e0252e6feccc1f/public/data/proxies/clothes/male_elegantsuit01/textures/male_elegantsuit01_diffuse.png"
+  },
+  {
+    "path": "js/public/data/proxies/clothes/shoes01/textures/shoes01_diffuse.png",
+    "sha256": "aadb64a22bb4e64055370049cf37c33d72f2c354637d950953d0d58b22db7583",
+    "bytes": 326415,
+    "upstream": "https://github.com/makehuman-js/makehuman-data/blob/e5d1a42cb469025a6d2b3ecea3e0252e6feccc1f/public/data/proxies/clothes/shoes01/textures/shoes01_diffuse.png"
+  },
+  {
+    "path": "js/public/data/proxies/clothes/shoes03/textures/shoes03_diffuse.png",
+    "sha256": "0cfec644a0e44e3a935c7fcda5173209d8ed86fd76d73b926c3ee3ff3f521099",
+    "bytes": 126457,
+    "upstream": "https://github.com/makehuman-js/makehuman-data/blob/e5d1a42cb469025a6d2b3ecea3e0252e6feccc1f/public/data/proxies/clothes/shoes03/textures/shoes03_diffuse.png"
+  },
+  {
+    "path": "js/public/data/proxies/hair/bob02/textures/bob02_diffuse.png",
+    "sha256": "102cbf70c2e7e3ee1c9c64b6a56484085f5e0362b405cff37f1887c86ed3cdee",
+    "bytes": 240033,
+    "upstream": "https://github.com/makehuman-js/makehuman-data/blob/e5d1a42cb469025a6d2b3ecea3e0252e6feccc1f/public/data/proxies/hair/bob02/textures/bob02_diffuse.png"
+  },
+  {
+    "path": "js/public/data/proxies/hair/ponytail01/textures/ponytail01_diffuse.png",
+    "sha256": "71f83fb7a4f668b5f79172cf4fb7ae71875cc9194e996af26f53efe807122d02",
+    "bytes": 375980,
+    "upstream": "https://github.com/makehuman-js/makehuman-data/blob/e5d1a42cb469025a6d2b3ecea3e0252e6feccc1f/public/data/proxies/hair/ponytail01/textures/ponytail01_diffuse.png"
+  },
+  {
+    "path": "js/public/data/proxies/hair/short01/textures/short01_diffuse.png",
+    "sha256": "068310998065b067a82994200df7082fb05830fb3cd02b6343e65fd51d319811",
+    "bytes": 329248,
+    "upstream": "https://github.com/makehuman-js/makehuman-data/blob/e5d1a42cb469025a6d2b3ecea3e0252e6feccc1f/public/data/proxies/hair/short01/textures/short01_diffuse.png"
+  },
+  {
+    "path": "js/public/data/proxies/hair/short03/textures/short03_diffuse.png",
+    "sha256": "4f778fe2cb1cba7ccde0e5441a821c96fa8501c242eaeddb9352d28200ecbe05",
+    "bytes": 241086,
+    "upstream": "https://github.com/makehuman-js/makehuman-data/blob/e5d1a42cb469025a6d2b3ecea3e0252e6feccc1f/public/data/proxies/hair/short03/textures/short03_diffuse.png"
+  },
+  {
+    "path": "js/public/data/skins/old_caucasian_female/textures/old_lightskinned_female_diffuse.png",
+    "sha256": "bc2db71b0fb164ead9944cbec3638e600ac2b6dc4792cca7ebafb4b9dfe3d0c1",
+    "bytes": 289959,
+    "upstream": "https://github.com/makehuman-js/makehuman-data/blob/e5d1a42cb469025a6d2b3ecea3e0252e6feccc1f/public/data/skins/old_caucasian_female/textures/old_lightskinned_female_diffuse.png"
+  },
+  {
+    "path": "js/public/data/skins/old_caucasian_male/textures/old_lightskinned_male_diffuse.png",
+    "sha256": "911a6c5d30e1a6f7170afd7fd2c9749f522f77fc6a3b2ca125cec97c6283fe06",
+    "bytes": 304026,
+    "upstream": "https://github.com/makehuman-js/makehuman-data/blob/e5d1a42cb469025a6d2b3ecea3e0252e6feccc1f/public/data/skins/old_caucasian_male/textures/old_lightskinned_male_diffuse.png"
+  },
+  {
+    "path": "js/public/data/skins/young_african_male/textures/young_darkskinned_male_diffuse.png",
+    "sha256": "5f9bfcb85661a2ad9408ae0563f81606f68611b01443ad978f4ad6f2080ee860",
+    "bytes": 240489,
+    "upstream": "https://github.com/makehuman-js/makehuman-data/blob/e5d1a42cb469025a6d2b3ecea3e0252e6feccc1f/public/data/skins/young_african_male/textures/young_darkskinned_male_diffuse.png"
+  },
+  {
+    "path": "js/public/data/skins/young_asian_female/textures/young_lightskinned_female_diffuse3.png",
+    "sha256": "bb1ea05705ef852af39895006ee47bcb877c30d5599304b1d3f14138770bf44d",
+    "bytes": 276459,
+    "upstream": "https://github.com/makehuman-js/makehuman-data/blob/e5d1a42cb469025a6d2b3ecea3e0252e6feccc1f/public/data/skins/young_asian_female/textures/young_lightskinned_female_diffuse3.png"
+  },
+  {
+    "path": "js/public/data/skins/young_caucasian_male/textures/young_lightskinned_male_diffuse2.png",
+    "sha256": "e1c07434c3bf50d667f891fcd6246fa34d15fd1eff9ece44a4dab94d1fcd6067",
+    "bytes": 263408,
+    "upstream": "https://github.com/makehuman-js/makehuman-data/blob/e5d1a42cb469025a6d2b3ecea3e0252e6feccc1f/public/data/skins/young_caucasian_male/textures/young_lightskinned_male_diffuse2.png"
+  },
+  {
+    "path": "js/readme.md",
+    "sha256": "c6116bf60b5ceb6d7cbeecef43a1a3afa37ccb0faad6730c1c81162b2d1c6048",
+    "bytes": 605,
+    "upstream": "https://github.com/makehuman-js/makehuman-data/blob/e5d1a42cb469025a6d2b3ecea3e0252e6feccc1f/readme.md"
+  }
+]

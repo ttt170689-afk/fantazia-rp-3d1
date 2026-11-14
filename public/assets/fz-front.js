@@ -17,7 +17,7 @@
  const root=()=>document.getElementById('fzIntro');
  const startMenu=window.START_MENU_BG,stopMenu=window.STOP_MENU_BG;
  function syncMenu(){const el=document.getElementById('serverScreen');
-  if(!intro&&!document.hidden&&el&&getComputedStyle(el).display!=='none'&&!document.body.classList.contains('game-active')&&!window._loadingGate)startMenu?.();else stopMenu?.();
+  if(!intro&&!window.FZRoom48?.active()&&!document.hidden&&el&&getComputedStyle(el).display!=='none'&&!document.body.classList.contains('game-active')&&!window._loadingGate)startMenu?.();else stopMenu?.();
  }
  function ensureWorld(){
   if(!bootPromise)bootPromise=Promise.resolve().then(()=>{if(renderer&&cityWorldReady())return;return initThreeJS(true);}).catch(e=>{bootPromise=null;throw e;});
@@ -41,7 +41,7 @@
   if(oldFocus?.isConnected)oldFocus.focus();oldFocus=null;syncMenu();
  }
  function start(){
-  if(document.body.classList.contains('game-active')||window._loadingGate)return false;if(intro)return true;
+  if(document.body.classList.contains('game-active')||window._loadingGate||window.FZRoom48?.active())return false;if(intro)return true;
   const el=root()||document.createElement('section');el.id='fzIntro';el.dataset.build='35';el.dataset.phase='credit';el.dataset.ready='true';
   el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');el.setAttribute('aria-label','Заставка Fantazia RP 3D');
   el.innerHTML='<div class="fz35-credit">создано temka_play_official</div><div class="fz35-original"><img alt="FANTAZIA RP — 3D ONLINE" width="927" height="273" draggable="false"><p hidden>FANTAZIA RP 3D</p></div><div class="fz35-progress" aria-hidden="true"><i></i></div>';
@@ -51,7 +51,14 @@
   for(const id of ['authScreen','serverScreen']){const node=document.getElementById(id);if(node)node.inert=true;}
   intro=true;elapsed=0;last=null;phase='credit';paint(el);document.body.classList.add('fz-intro-active');el.focus({preventScroll:true});sync();return true;
  }
- async function prepareGame(){finish();await ensureWorld();if(!renderer||!cityWorldReady()||renderer.getContext().isContextLost())throw Error('Native world did not finish or WebGL is unavailable');}
+ async function prepareGame(){
+  finish();
+  // Finish the bounded cast preload BEFORE synchronous city construction can
+  // starve GLB image decode callbacks and incorrectly trip their deadline.
+  // This is after Play, never on the logo/menu; seen/resumed stories skip it.
+  if(window.FZStory30?.info().pending)await window.FZHumans31?.load();
+  await ensureWorld();if(!renderer||!cityWorldReady()||renderer.getContext().isContextLost())throw Error('Native world did not finish or WebGL is unavailable');
+ }
  window.fzIntroEnd=finish;window.fziClick=finish;
  window.FZFront={start,finish,prepareGame,active:()=>intro,info:()=>({phase,build:'35.1',citySource:'original-logo-transparent',credit:'создано temka_play_official',autoplay:'page-load',duration,elapsed,renderer:false,ready:intro,failed:imageFailed,actors:0,cast:[],portal:null,sceneUUID:typeof scene!=='undefined'?scene?.uuid:null,image})};
  document.addEventListener('visibilitychange',sync);

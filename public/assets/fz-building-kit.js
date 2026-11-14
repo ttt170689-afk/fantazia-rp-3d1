@@ -432,8 +432,11 @@
       for (const dx of [-0.28, 0.28])
         for (const dz of [-0.22, 0.22])
           this.cyl(0.17, 0.025, x + 1.35 + dx, 1.25, z + dz, C.dark);
-      this.box(1.25, 2.8, 1.25, x + 4.4, 1.4, z, 0xdbe0e1, true);
-      this.box(0.07, 0.7, 0.08, x + 4.9, 1.8, z + 0.67, C.metal);
+      if (window.FZInterior50Props) FZInterior50Props.fridgeBody(this, x + 4.4, z);
+      else {
+        this.box(1.25, 2.8, 1.25, x + 4.4, 1.4, z, 0xdbe0e1, true);
+        this.box(0.07, 0.7, 0.08, x + 4.9, 1.8, z + 0.67, C.metal);
+      }
       this.action("Кухня — приготовить чай", x + 1.3, z + 1.8, "tea");
       this.action("Холодильник — продукты", x + 4.4, z + 1.8, "cupboard");
     }
@@ -470,8 +473,8 @@
     }
     television(x, z) {
       this.box(3.5, 1.9, 0.18, x, 2, z, C.dark, true);
-      this.box(3.2, 1.65, 0.03, x, 2, z + 0.11, C.blue);
-      this.sign("FANTAZIA · ГОРОДСКОЙ КАНАЛ", x, 2, z + 0.14, 3, 0.5);
+      this.box(3.2, 1.65, 0.03, x, 2, z + 0.11, window.FZInterior50Props ? C.dark : C.blue);
+      if (!window.FZInterior50Props) this.sign("FANTAZIA · ГОРОДСКОЙ КАНАЛ", x, 2, z + 0.14, 3, 0.5);
       this.action("Телевизор — новости", x, z + 2, "news");
     }
     wardrobe(x, z) {

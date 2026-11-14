@@ -17,6 +17,7 @@
     return { x: p.x - INTERIOR_BASE.x, y: p.y, z: p.z - INTERIOR_BASE.z };
   }
   function close() {
+    window.FZInterior50?.close();
     if (panel) {
       panel.remove();
       panel = null;
@@ -362,6 +363,7 @@
       Math.abs(p.y - e.position.y) > 2.5
     )
       return true;
+    if (window.FZInterior50?.interact(e)) return true;
     const d = store.data;
     switch (e.kind) {
       case "curtain":
@@ -769,6 +771,7 @@
       window.FZOpeningAvatar?.pose(g.userData);
     }
     for (const s of k.screens) if (!s.paused) s.time += d;
+    window.FZInterior50?.update(k, d);
     updateQueue();
     FZResidenceTasks.updateUI(taskContext());
   }
@@ -872,6 +875,7 @@
     return true;
   }
   function release() {
+    window.FZInterior50?.release();
     FZResidenceTasks.release();
     close();
     if (!active) return;
@@ -938,6 +942,7 @@
         Math.round(entry.position.z)
       : type + ":directory:" + String(currentBuildingName).slice(0, 100);
     store = new P.Store(storage, identity, buildingKey);
+    window.FZInterior50?.start(active, identity, buildingKey, storage);
     localPlayer.mesh.position.set(INTERIOR_BASE.x, 0.01, INTERIOR_BASE.z + 21);
     cameraAngleH = window.cameraMode === "first" ? Math.PI : 0;
     for (const c of active.curtains || []) {

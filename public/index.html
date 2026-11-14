@@ -2086,10 +2086,12 @@ body.theme-cyber .fz-menu-logged{background:rgba(0,229,255,.08)!important;border
 <link rel="stylesheet" href="styles/fz-opening.css?v=27.0">
 <link rel="stylesheet" href="styles/fz-intro35.css?v=35.1">
 <link rel="stylesheet" href="styles/fz-buildings.css?v=28.0">
+<link rel="stylesheet" href="styles/fz-interior50.css?v=50">
 <link rel="stylesheet" href="styles/fz-deliveries.css?v=29.0">
 <link rel="stylesheet" href="styles/fz-lobby23.css?v=23.0">
 <link rel="stylesheet" href="styles/fz-sound.css?v=24.0">
 <link rel="stylesheet" href="styles/fz-story30.css?v=39">
+<style>#authScreen{display:none!important}</style>
 </head>
 <body>
 
@@ -2328,11 +2330,12 @@ body.theme-cyber .fz-menu-logged{background:rgba(0,229,255,.08)!important;border
   <nav class="fz-menu-nav">
     <button class="fz-menu-btn fz-play" onclick="startWelcomeAndPlay()"><span>▶</span> ИГРАТЬ</button>
     <button class="fz-menu-btn" onclick="openMainSettings()"><span>⚙️</span> НАСТРОЙКИ</button>
+    <button class="fz-menu-btn" onclick="FZReleaseUI.openHelp()">Как играть / фонарь</button>
     <button class="fz-menu-btn fz-exit" onclick="logoutUser()"><span>⏻</span> ВЫХОД</button>
     <button class="fz-menu-btn" onclick="FZFront.start()">Заставка ↗</button>
   </nav>
 
-  <aside class="fz-lobby-story"><small>ОБНОВЛЕНИЕ 45 / ОСТАВЬТЕ СВЕТ</small><h2>Твоя следующая<br>остановка.</h2><p>Первое путешествие: небесная площадь, стеклянный лифт и ночной лес. Найди фонарь у обломков и тропу к старому метро. Автосохранение на аккаунте — продолжай с последнего места.</p><div class="fz-lobby-line"><span>Центральная</span><span>Заводская</span><span>Парковая</span><span>Портовая</span><span>Деловая</span></div><p>Лестница на небесной площади ведёт к стеклянным лифтам. Найди павильон M или открой схему метро в меню.</p></aside>
+  <aside class="fz-lobby-story"><small>НОВЫЙ ПРОЛОГ / ПОСЛЕДНИЙ СЕАНС</small><h2>Твоя следующая<br>остановка.</h2><p>Сначала — тихая 2D-комната и странный компьютер. Затем — дождь, небесная площадь, стеклянный лифт и ночной лес. Найди фонарь у обломков и тропу к старому метро. Гостевой прогресс хранится в этом браузере; после входа в аккаунт доступны серверные сохранения.</p><div class="fz-lobby-line"><span>Центральная</span><span>Заводская</span><span>Парковая</span><span>Портовая</span><span>Деловая</span></div><p>Лестница на небесной площади ведёт к стеклянным лифтам. Найди павильон M или открой схему метро в меню. В дневнике теперь есть поиск по найденным записям и крупный текст.</p></aside>
   <div class="fz-menu-footer">FANTAZIA RP 3D / ОБНОВЛЕНИЕ 45</div>
 
 
@@ -2445,12 +2448,22 @@ function startWelcomeAndPlay(){
 }
 
 /* Запуск игры напрямую: берём имя из аккаунта, внешность — дефолт */
-var _gameStarted = false;
+var _gameStarted = false, _gameStartTicket = 0;
 async function startGameDirect(){
   if (_gameStarted) return;
   _gameStarted = true;
+  const ticket = ++_gameStartTicket;
   await window.FZSave41?.prepare();
-  if(!_gameStarted)return;
+  if(!_gameStarted || ticket !== _gameStartTicket)return;
+  if(window.FZRoom48?.needed()) {
+    const proceed = await FZRoom48.start();
+    if(!_gameStarted || ticket !== _gameStartTicket)return;
+    if(!proceed){
+      _gameStarted=false;
+      const menu=document.getElementById('serverScreen');menu.classList.remove('fz-leave');menu.style.display='flex';
+      try{START_MENU_BG();}catch{}menu.querySelector('.fz-play')?.focus();return;
+    }
+  }
   isInsideBuilding=false;currentBuildingType=null;document.getElementById("interiorHUD").style.display="none";
   window.FZStory30?.arm();
   document.getElementById('serverScreen').style.display = 'none';
@@ -2472,13 +2485,15 @@ async function startGameDirect(){
 
   if (typeof showPlayLoader === 'function') showPlayLoader();
   setTimeout(async function () {
+  if(!_gameStarted || ticket !== _gameStartTicket)return;
   try { await window.FZFront?.prepareGame(); } catch (error) {
+    if(!_gameStarted || ticket !== _gameStartTicket)return;
     window._loadingGate = false; window._playLoadDanceStop = true; window.FZLoadingDancer?.stop();
     if (window._playLoadIv) clearInterval(window._playLoadIv);
     const loader = document.getElementById("playLoadOv"); if (loader) loader.style.display = "none";
     backToServers(); showNotification("Не удалось подготовить 3D. Перезагрузи страницу или проверь поддержку WebGL.", "error"); return;
   }
-  if (!_gameStarted) return;
+  if (!_gameStarted || ticket !== _gameStartTicket) return;
   var reuseWorld = typeof renderer !== 'undefined' && renderer && cityWorldReady();
   if (!reuseWorld && typeof initThreeJS === 'function') initThreeJS();
   if (!window.FZ_CLASSIC_WORLD && typeof loadNewCity === 'function') loadNewCity(function(){ try {
@@ -2501,7 +2516,7 @@ async function startGameDirect(){
 
   // Офлайн fallback: если сервер недоступен — создаём игрока локально
   setTimeout(function(){
-    if (localPlayer) return;
+    if (!_gameStarted || ticket !== _gameStartTicket || localPlayer) return;
     console.warn('[FANTAZIA] Сервер недоступен — офлайн режим');
     if (typeof showNotification === 'function') showNotification('⚡ Офлайн режим — сервер недоступен', 'info');
     var appearance = {
@@ -3337,6 +3352,7 @@ document.addEventListener('click', function(e){
     <h2>⏸ ПАУЗА</h2>
     <button class="pause-btn prim" onclick="resumeGame()">▶ Продолжить</button>
     <button class="pause-btn sec" onclick="resumeGame();togglePanel('players')">👥 Игроки онлайн</button>
+    <button class="pause-btn sec" onclick="FZReleaseUI.openHelp()">❔ Как играть / фонарь</button>
     <button class="pause-btn sec" onclick="openSettingsFromPause()">⚙️ Настройки</button>
     <button class="pause-btn sec" onclick="resumeGame();openRewardModal()">🎁 Ежедневная награда</button>
     <button class="pause-btn dng" onclick="backToServers()">🚪 Выйти на главную</button>
@@ -7894,6 +7910,7 @@ let ownedAccessories = new Set(['none']);
 let currentEditorCat = 'body';
 window.addEventListener('load', () => {
   loadSavedSettings();
+  void initAuth(); // Optional platform SDK must never block guest access.
 
   // ═══════════════════════════════════════════
   // ЯНДЕКС ИГРЫ SDK — инициализация
@@ -7901,10 +7918,9 @@ window.addEventListener('load', () => {
   (function initYandexSDK() {
     if (typeof YaGames === 'undefined') {
       // SDK недоступен (не на платформе Яндекс) — запускаем без него
-      initAuth();
       return;
     }
-    YaGames.init().then(function(ysdk) {
+    Promise.resolve().then(() => YaGames.init()).then(function(ysdk) {
       window.ysdk = ysdk;
 
       // 1. Определяем язык через SDK (п. 2.14 и п. 8.2.3)
@@ -7937,10 +7953,8 @@ window.addEventListener('load', () => {
         }
       });
 
-      initAuth();
     }).catch(function() {
-      // Если SDK упал — всё равно запускаем игру
-      initAuth();
+      // Guest startup is independent of the optional platform SDK.
     });
   })();
 
@@ -14544,14 +14558,29 @@ document.addEventListener('keydown', (e) => {
 });
 document.addEventListener('mousedown', (e) => { if (!isPointerLocked || !localPlayer) return; if (e.button === 0) useItemPrimary(); else if (e.button === 2) useItemSecondary(); });
 // динамическое разрешение: держим FPS, снижая/повышая масштаб рендера
-let _dynScale = null, _dynT = 0;
-function updateDynamicRes(fps) {
-  if (document.hidden || !document.body.classList.contains('game-active') || (window.FZPlay && FZPlay.managed())) return;
-  if (!SETTINGS.dynRes || typeof renderer === 'undefined' || !renderer) { if (_dynScale !== null) { renderer && renderer.setPixelRatio(SETTINGS.renderScale); _dynScale = null; } return; }
-  if (_dynScale === null) _dynScale = SETTINGS.renderScale;
+let _dynScale = null, _dynT = 0, _dynSampler = null;
+function updateDynamicRes(frames) {
+  const now = performance.now(), elapsed = _dynT ? (now - _dynT) / 1000 : 0;
+  _dynT = now;
+  if (typeof renderer === 'undefined' || !renderer) return;
+  if (window.FZPlay?.managed()) { _dynSampler = null; _dynScale = null; return; }
+  if (!SETTINGS.dynRes) {
+    if (_dynScale !== null) renderer.setPixelRatio(SETTINGS.renderScale);
+    _dynScale = null; _dynSampler = null; return;
+  }
   const target = Math.min(60, SETTINGS.fpsCap || 60);
-  if (fps < target * 0.78 && _dynScale > 0.5) { _dynScale = Math.max(0.5, _dynScale - 0.25); renderer.setPixelRatio(_dynScale); }
-  else if (fps > target * 0.96 && _dynScale < SETTINGS.renderScale) { _dynScale = Math.min(SETTINGS.renderScale, _dynScale + 0.25); renderer.setPixelRatio(_dynScale); }
+  if (!_dynSampler || _dynSampler.max !== SETTINGS.renderScale || _dynSampler.target !== target) {
+    _dynSampler = new FZPlayPolicy.Resolution(SETTINGS.renderScale, target);
+    _dynScale = _dynSampler.ratio;
+    renderer.setPixelRatio(_dynScale);
+    return;
+  }
+  if (document.hidden || !document.body.classList.contains('game-active') ||
+      gamePaused || window._loadingGate || window.cine || elapsed <= 0 || elapsed > 1.5) {
+    _dynSampler.pause(); return;
+  }
+  const scale = _dynSampler.observeFPS(frames / elapsed, elapsed);
+  if (scale !== null) { _dynScale = scale; renderer.setPixelRatio(scale); }
 }
 
 // ───────── ШАГИ ИГРОКА ─────────
@@ -15606,11 +15635,17 @@ async function applyShopItems(playerName) {
   } catch(e) {}
 }
 
+let positionSyncTimer = null;
 function initSocket(name) {
+  clearInterval(positionSyncTimer);
+  window.FZReleaseUI?.stop();
+  let positionReady = false;
   if (socket && socket.removeAllListeners) { socket.removeAllListeners(); socket.disconnect(); }
-  try { socket = io(); } catch(e) { socket = { emit:function(){}, on:function(){}, connected:false }; return; }
+  try { socket = io(); } catch(e) { socket = { emit:function(){}, on:function(){}, connected:false }; showNotification('Не удалось загрузить подключение к серверу. Проверь сеть и обнови страницу.', 'error'); return; }
+  window.FZReleaseUI?.watch(socket);
 
-  socket.on('closedBetaDenied',()=>location.replace('/closed/login'));
+  socket.on('disconnect', () => { positionReady = false; });
+  socket.on('accountSessionExpired',()=>location.reload());
 socket.on('connect', () => {
     console.log('Подключено к серверу!');
     const _cu = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null;
@@ -15663,6 +15698,7 @@ socket.on('connect', () => {
       showAdminHUD();
       showNotification('👑 ADMIN MODE АКТИВЕН', 'success');
     }
+    positionReady = true;
   });
 
   socket.on('playerList', (list) => {
@@ -15863,10 +15899,10 @@ socket.on('connect', () => {
     }
   });
 
-  // Отправка позиции
-  setInterval(() => {
-    if (localPlayer && localPlayer.mesh) {
-      socket.emit('updatePosition', {
+  // One sender per game session; stale coordinates must never queue while offline.
+  positionSyncTimer = setInterval(() => {
+    if (socket.connected && positionReady && localPlayer && localPlayer.mesh) {
+      socket.volatile.emit('updatePosition', {
         position: {
           x: localPlayer.mesh.position.x,
           y: localPlayer.mesh.position.y,
@@ -19645,6 +19681,8 @@ function animate(timestamp) {
     return;
   }
 
+  // Optional expedition owns a separate scene; the RP player never moves.
+  if (window.FZExpedition52?.frame(delta)) return;
   // v30 owns this frame before physics, legacy cinematics and world effects.
   if (window.FZSurvival45?.frame(delta)) return;
   if (window.FZVoyage43?.frame(delta)) return;
@@ -19703,7 +19741,7 @@ function animate(timestamp) {
     isCrouching = false;
   }
 
-  if ((isPointerLocked || window.mobileReady || (localPlayer && localPlayer.isOffline)) && !currentDance && !sittingOn && !window.elevatorCut && !window.FZCranes?.locked() && !DLC.hidden && !window._loadingGate && !window.FZLore45?.modalOpen() && !window.FZSurvival45?.blocked()) {
+  if ((isPointerLocked || window.mobileReady || (localPlayer && localPlayer.isOffline)) && !currentDance && !sittingOn && !window.elevatorCut && !window.FZCranes?.locked() && !DLC.hidden && !window._loadingGate && !window.FZLore45?.modalOpen() && !window.FZExpedition52?.modalOpen() && !window.FZSurvival45?.blocked()) {
     const isSprint = (keys['ShiftLeft'] || keys['ShiftRight'] || mobileSprintOn) && !isCrouching;
     const speed = (isCrouching ? CONFIG.CROUCH_SPEED : (isSprint ? CONFIG.SPRINT_SPEED : CONFIG.MOVE_SPEED)) * (typeof FZ8_speedMul === 'function' ? FZ8_speedMul() : 1) * (window.FZSurvival45?.speed()||1);
 
@@ -19931,15 +19969,19 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
   // --- Удалённые игроки: интерполяция ---
   Object.values(remotePlayers).forEach(rp => {
     if (!rp.mesh || !rp.targetPos) return;
-    rp.mesh.position.x += (rp.targetPos.x - rp.mesh.position.x) * 0.15;
-    rp.mesh.position.y += (rp.targetPos.y - rp.mesh.position.y) * 0.15;
-    rp.mesh.position.z += (rp.targetPos.z - rp.mesh.position.z) * 0.15;
+    const blend = FZMotion.blend(0.15, delta);
+    // Teleports snap instead of visibly flying across the entire map.
+    if (Math.hypot(rp.targetPos.x-rp.mesh.position.x, rp.targetPos.y-rp.mesh.position.y, rp.targetPos.z-rp.mesh.position.z) > 30)
+      rp.mesh.position.set(rp.targetPos.x, rp.targetPos.y, rp.targetPos.z);
+    rp.mesh.position.x += (rp.targetPos.x - rp.mesh.position.x) * blend;
+    rp.mesh.position.y += (rp.targetPos.y - rp.mesh.position.y) * blend;
+    rp.mesh.position.z += (rp.targetPos.z - rp.mesh.position.z) * blend;
 
     // Плавный поворот
     let angleDiff = rp.targetRot - rp.mesh.rotation.y;
     while (angleDiff > Math.PI) angleDiff -= Math.PI*2;
     while (angleDiff < -Math.PI) angleDiff += Math.PI*2;
-    rp.mesh.rotation.y += angleDiff * 0.15;
+    rp.mesh.rotation.y += angleDiff * blend;
 
     if (!localPlayer || !localPlayer.mesh || rp.mesh.position.distanceToSquared(localPlayer.mesh.position) < (SETTINGS.perf ? 3600 : 14400)) animateRemoteCharacter(rp.mesh, rp.animation || 'idle', rp.dance, animationTime);
   });
@@ -19949,8 +19991,8 @@ right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
     const petOffset = 2;
     const targetX = mesh.position.x - Math.sin(mesh.rotation.y) * petOffset + Math.sin(animationTime) * 0.5;
     const targetZ = mesh.position.z - Math.cos(mesh.rotation.y) * petOffset + Math.cos(animationTime) * 0.5;
-    localPet3D.position.x += (targetX - localPet3D.position.x) * 0.05;
-    localPet3D.position.z += (targetZ - localPet3D.position.z) * 0.05;
+    localPet3D.position.x += (targetX - localPet3D.position.x) * FZMotion.blend(0.05, delta);
+    localPet3D.position.z += (targetZ - localPet3D.position.z) * FZMotion.blend(0.05, delta);
     localPet3D.position.y = (window.FZSky?.active() ? mesh.position.y : 0) + Math.sin(animationTime * 3) * 0.05;
     // Питомец смотрит на игрока
     localPet3D.lookAt(mesh.position.x, 0, mesh.position.z);
@@ -20117,7 +20159,12 @@ function joinByCode() {
   }
 }
 
-function logoutUser() {
+async function logoutUser() {
+  ++_gameStartTicket;
+  window.FZExpedition52?.finish();
+  window.FZRoom48?.cancel();
+  clearInterval(positionSyncTimer);
+  window.FZReleaseUI?.stop();
   window.FZLore45?.close();
   window.FZVoyage43?.finish();
   window.FZSave41?.flush(true);
@@ -20137,11 +20184,8 @@ function logoutUser() {
   _gameStarted = false;
   document.getElementById('serverScreen').style.display = 'none';
   try { STOP_MENU_BG(); } catch(e) {}
-  document.getElementById('authScreen').style.display = 'flex';
-  document.getElementById('loginUsername').value = '';
-  document.getElementById('loginPassword').value = '';
-  document.getElementById('authError').textContent = '';
-  switchAuthTab('login');
+  try { await fetch('/account/logout',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:'{}'}); } catch {}
+  void initAuth();
 }
 
 function initServerBrowser() {
@@ -20404,8 +20448,8 @@ async function linkServerAccount(username, password, action) {
   } catch (_) { return null; } finally { clearTimeout(timer); } // Local accounts can still play without server account access.
 }
 // ── Вход по нику + паролю ──
-function doLogin(){location.assign('/closed/login');}
-function doRegister(){document.getElementById('authError').textContent='Отдельная регистрация отключена. Используй основной аккаунт.';}
+function doLogin(){location.assign('/account/login');}
+function doRegister(){void initAuth();}
 
 function showAuthSuccess() {
   document.getElementById('authScreen').style.display = 'none';
@@ -20623,11 +20667,30 @@ function stopPortalAnimation() {
   if (portalAnimId) { cancelAnimationFrame(portalAnimId); portalAnimId = null; }
 }
 
+let authInFlight = false;
 async function initAuth(){
- document.getElementById('authScreen').style.display='none';document.getElementById('serverScreen').style.display='none';
- try{const response=await fetch('/api/closed/me',{credentials:'same-origin',cache:'no-store'});if(!response.ok)throw Error('access denied');const account=await response.json();if(!account.ok||!account.token)throw Error('no account');
- currentUser={username:'main_'+account.username,displayName:account.username,token:account.token,isAdmin:account.isAdmin===true};localStorage.setItem('fz_currentUser',JSON.stringify(currentUser));showAuthSuccess();
- }catch{location.replace('/closed/login');}
+ if(authInFlight)return;
+ authInFlight=true;
+ currentUser=null; // A stale client profile is never proof of a valid session.
+ document.getElementById('authScreen').style.display='none';
+ document.getElementById('serverScreen').style.display='none';
+ FZReleaseUI.launch('pending');
+ try{
+  const account=await FZReleaseUI.session();
+  currentUser={username:(account.guest?'guest_':'main_')+account.username,displayName:account.username,token:account.guest?null:account.token,isGuest:account.guest===true,isAdmin:account.guest!==true&&account.isAdmin===true};
+  try{localStorage.setItem('fz_currentUser',JSON.stringify(currentUser));}catch{}
+  FZReleaseUI.launch('ready');
+  showAuthSuccess();
+  let note=document.getElementById('publicAccessNote');
+  if(!note){note=document.createElement('div');note.id='publicAccessNote';document.getElementById('serverScreen').appendChild(note);}
+  note.replaceChildren();
+  if(account.guest){
+   note.append('Гостевой режим · без регистрации. Прогресс — только в этом браузере. Не очищай данные сайта. ');
+   const link=document.createElement('a');link.href='/account/login';link.textContent='Войти в существующий аккаунт';note.appendChild(link);
+  }else{note.textContent='Выполнен вход в аккаунт '+account.username;}
+ }catch{
+  FZReleaseUI.launch('error');
+ }finally{authInFlight=false;}
 }
 // =================== МЕНЮ ПАУЗЫ ===================
 let gamePaused = false;
@@ -20654,6 +20717,11 @@ function openSettingsFromPause() {
 }
 
 function backToServers() {
+  ++_gameStartTicket;
+  window.FZExpedition52?.finish();
+  window.FZRoom48?.cancel();
+  clearInterval(positionSyncTimer);
+  window.FZReleaseUI?.stop();
   window.FZLore45?.close();
   window.FZVoyage43?.finish();
   window.FZSave41?.flush(true);
@@ -20767,7 +20835,21 @@ function applySetting(key, val) {
   if (key === 'exposure') renderer.toneMappingExposure = SETTINGS.exposure / 10;
   if (key === 'shaderQuality') { SETTINGS.maxLights = { low: 4, medium: 8, high: 12, ultra: 20 }[SETTINGS.shaderQuality] || 12; }
   if (key === 'toneMap') { renderer.toneMapping = { aces: THREE.ACESFilmicToneMapping, reinhard: THREE.ReinhardToneMapping, cineon: THREE.CineonToneMapping, linear: THREE.LinearToneMapping, none: THREE.NoToneMapping }[SETTINGS.toneMap]; scene.traverse(o => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.needsUpdate = true); }); }
-  if (key === 'aniso' || key === 'texFilter') { const an = Math.min(SETTINGS.aniso, renderer.capabilities.getMaxAnisotropy()); scene.traverse(o => { if (o.material && o.material.map) { const t = o.material.map; t.anisotropy = an; t.magFilter = SETTINGS.texFilter === 'nearest' ? THREE.NearestFilter : THREE.LinearFilter; t.minFilter = SETTINGS.texFilter === 'nearest' ? THREE.NearestMipmapLinearFilter : THREE.LinearMipmapLinearFilter; t.needsUpdate = true; } }); }
+  if (key === 'aniso' || key === 'texFilter') {
+    const an = Math.min(SETTINGS.aniso, renderer.capabilities.getMaxAnisotropy()), textures = new Set();
+    scene.traverse(o => {
+      for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+        if (!m) continue;
+        for (const key of ['map','normalMap','roughnessMap','metalnessMap','emissiveMap','aoMap','bumpMap','alphaMap']) {
+          const t = m[key]; if (!t?.isTexture || textures.has(t)) continue;
+          textures.add(t); t.anisotropy = an;
+          t.magFilter = SETTINGS.texFilter === 'nearest' ? THREE.NearestFilter : THREE.LinearFilter;
+          t.minFilter = SETTINGS.texFilter === 'nearest' ? THREE.NearestMipmapLinearFilter : THREE.LinearMipmapLinearFilter;
+          t.needsUpdate = true;
+        }
+      }
+    });
+  }
   if (key === 'colorGrade' || key === 'sharp') applyPostFX();
 }
 function applyPostFX() {
@@ -20812,7 +20894,7 @@ function applyAntialiasing() {
   renderer.shadowMap.enabled = (SETTINGS.shadowQuality !== 'off');
   if (SETTINGS.shadowQuality === 'high') renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   else if (SETTINGS.shadowQuality === 'low') renderer.shadowMap.type = THREE.PCFShadowMap;
-  renderer.toneMapping = { aces: THREE.ACESFilmicToneMapping, reinhard: THREE.ReinhardToneMapping, cineon: THREE.CineonToneMapping, linear: THREE.LinearToneMapping, none: THREE.NoToneMapping }[SETTINGS.toneMap] || THREE.ACESFilmicToneMapping;
+  renderer.toneMapping = { aces: THREE.ACESFilmicToneMapping, reinhard: THREE.ReinhardToneMapping, cineon: THREE.CineonToneMapping, linear: THREE.LinearToneMapping, none: THREE.NoToneMapping }[SETTINGS.toneMap] ?? THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = (SETTINGS.exposure || 9) / 10;
   if (typeof applyPostFX === 'function') applyPostFX();
   renderer.domElement.style.cssText = 'display:block;position:fixed;top:0;left:0;z-index:0;';
@@ -24947,8 +25029,12 @@ window.FZV5_update = FZV5_update;
 <script src="assets/fz-v8metro.js?v=8.7.1"></script>
 <script src="assets/fz-v8home.js?v=28.0"></script>
 <script src="assets/fz-v8sea.js?v=45"></script>
-<script src="assets/superrig-player.js?v=anim-26"></script>
-<script src="assets/fz-ui.js?v=45"></script>
+<script src="assets/superrig-player.js?v=anim-46"></script>
+<script src="assets/fz-ui.js?v=47"></script>
+<script src="assets/fz-release-ui.js?v=1"></script>
+<script src="assets/fz-room48-policy.js?v=49"></script>
+<script src="assets/fz-room48.js?v=49"></script>
+<link rel="stylesheet" href="styles/fz-room48.css?v=49">
 <script src="assets/fz-classic-world.js?v=27.0"></script>
 <script src="assets/fz-city-spaces.js?v=8.9"></script>
 <script>window.FZ_CITY_ARRIVAL = false;</script>
@@ -24961,20 +25047,28 @@ window.FZV5_update = FZV5_update;
 <script src="assets/fz-venues.js?v=27.0"></script>
 <script src="assets/fz-building-policy.js?v=28.0"></script>
 <script src="assets/fz-residence-tasks.js?v=28.0"></script>
-<script src="assets/fz-building-kit.js?v=28.0"></script>
-<script src="assets/fz-building-details.js?v=28.0"></script>
-<script src="assets/fz-building-layouts.js?v=28.0"></script>
+<script src="assets/fz-building-kit.js?v=50"></script>
+<script src="assets/fz-building-details.js?v=50"></script>
+<script src="assets/fz-interior50-policy.js?v=50"></script>
+<script src="assets/fz-interior50-catalog.js?v=50"></script>
+<script src="assets/fz-interior50-props.js?v=50"></script>
+<script src="assets/fz-interior50-layouts.js?v=50"></script>
+<script src="assets/fz-interior50-civic.js?v=50"></script>
+<script src="assets/fz-interior50-route.js?v=50"></script>
+<script src="assets/fz-interior50-ui.js?v=50"></script>
+<script src="assets/fz-interior50.js?v=50"></script>
+<script src="assets/fz-building-layouts.js?v=50"></script>
 <script src="assets/fz-cinema-film.js?v=28.0"></script>
-<script src="assets/fz-buildings.js?v=28.0"></script>
+<script src="assets/fz-buildings.js?v=50"></script>
 <script src="assets/fz-cranes.js?v=28.0"></script>
 <script src="assets/fz-building-directory.js?v=28.0"></script>
 <script src="assets/fz-delivery-policy.js?v=29.0"></script>
 <script src="assets/fz-deliveries.js?v=29.0"></script>
-<script src="assets/fz-front.js?v=39"></script>
-<script src="assets/fz-motion.js?v=15.0"></script>
+<script src="assets/fz-front.js?v=48"></script>
+<script src="assets/fz-motion.js?v=46"></script>
 <script src="assets/fz-journey-policy.js?v=15.0"></script>
 <script src="assets/fz-touch.js?v=15.0"></script>
-<script src="assets/fz-play-policy.js?v=21.0"></script>
+<script src="assets/fz-play-policy.js?v=46"></script>
 <script src="assets/fz-city-guide.js?v=45"></script>
 <script src="assets/fz-play.js?v=29.0"></script>
 <script src="assets/fz-photo.js?v=13.0"></script>
@@ -24986,14 +25080,14 @@ window.FZV5_update = FZV5_update;
 <script src="assets/fz-sky.js?v=31.0"></script>
 <script src="assets/fz-flash-grip.js?v=44"></script>
 <script src="assets/fz-progress40.js?v=41"></script>
-<script src="assets/fz-adventure45-policy.js?v=45"></script>
+<script src="assets/fz-adventure45-policy.js?v=47"></script>
 <script src="assets/fz-save41-policy.js?v=45"></script>
 <script src="assets/fz-save41.js?v=45"></script>
 <script src="assets/fz-flash40.js?v=44"></script>
 <script src="assets/fz-forest40.js?v=40.0"></script>
 <script src="assets/fz-metro-policy.js?v=31.0"></script>
 <script src="assets/fz-escape42.js?v=42"></script>
-<script src="assets/fz-sound.js?v=39"></script>
+<script src="assets/fz-sound.js?v=48"></script>
 <script src="assets/fz-flight33-policy.js?v=33"></script>
 <script src="assets/fz-lift34-policy.js?v=38"></script>
 <script src="assets/fz-cabin38-policy.js?v=38"></script>
@@ -25005,16 +25099,22 @@ window.FZV5_update = FZV5_update;
 <script src="assets/fz-story30-forest.js?v=44"></script>
 <script src="assets/fz-neon36-title.js?v=36"></script>
 <script src="assets/fz-story30.js?v=39"></script>
-<script src="assets/fz-metro-audio.js?v=24.0"></script>
+<script src="assets/fz-metro-audio.js?v=46"></script>
 <script src="assets/fz-metro36-motion.js?v=36"></script>
 <script src="assets/fz-metro39-fall.js?v=39"></script>
 <script src="assets/fz-metro.js?v=43"></script>
 <script src="assets/fz-voyage43.js?v=43"></script>
 <link rel="stylesheet" href="styles/fz-voyage43.css?v=43">
-<script src="assets/fz-lore45.js?v=45"></script>
+<script src="assets/fz-journal47.js?v=47"></script>
+<script src="assets/fz-lore45.js?v=47"></script>
 <script src="assets/fz-survival45.js?v=45"></script>
-<link rel="stylesheet" href="styles/fz-adventure45.css?v=45">
+<script src="assets/fz-expedition52-policy.js?v=52"></script>
+<script src="assets/fz-expedition52-world.js?v=52"></script>
+<script src="assets/fz-expedition52.js?v=52"></script>
+<link rel="stylesheet" href="styles/fz-expedition52.css?v=52">
+<link rel="stylesheet" href="styles/fz-adventure45.css?v=47">
 <script src="assets/fz-journey.js?v=15.0"></script>
 
+<link rel="stylesheet" href="styles/fz-release-ui.css?v=1">
 
 </html>

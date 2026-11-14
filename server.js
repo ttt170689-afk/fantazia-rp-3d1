@@ -12,7 +12,7 @@ const { attachSkyAccess } = require('./server/sky-access');
 // ======================================================
 
 const {RuntimeStore}=require('./server/closed-runtime.cjs');
-const {installClosedBeta}=require('./server/closed-beta.cjs');
+const {installPublicAccess}=require('./server/public-access.cjs');
 (async()=>{
 const store=new RuntimeStore(process.env.FANTAZIA_RUNTIME_SECRET);
 const app = express();
@@ -33,7 +33,7 @@ const io = new Server(server, {
 
 let accounts=await store.open();
 async function saveAccounts(){return store.save(accounts);}
-installClosedBeta({app,io,accounts,commit:saveAccounts,store,secret:process.env.FANTAZIA_RUNTIME_SECRET});
+installPublicAccess({app,io,accounts,commit:saveAccounts,store,secret:process.env.FANTAZIA_RUNTIME_SECRET});
 
 require('./server/resume-save').attach(app,{accounts,commit:saveAccounts,players:()=>players,sockets:()=>io.sockets.sockets});
 
@@ -369,6 +369,7 @@ app.post('/api/admin/message', (req, res) => {
 // ======================================================
 
 const players = {};
+require('./server/expedition52.cjs').installExpedition52({io,players,server});
 const skyAccess = attachSkyAccess(io, players, {isAdmin: socket => {
   const account = accounts[socket.data.accountKey];
   return !!socket.data.accountToken && account?.token === socket.data.accountToken && accountIsAdmin(account);
@@ -779,7 +780,7 @@ io.on('connection', (socket) => {
         joinedAt: Date.now(),
         isAdmin: accountIsAdmin(savedData),
         email: data.email || '',
-        hasAccount: !!savedData
+        hasAccount: !!savedData?.mainUid
       };
 
       players[socket.id] = player;
@@ -1498,7 +1499,7 @@ io.on('connection', (socket) => {
 
       // Автосохранение прогресса если есть аккаунт
       if (player.hasAccount) {
-        const key = player.name.toLowerCase();
+        const key = socket.data.accountKey;
         if (accounts[key] && accounts[key].token === socket.data.accountToken) {
           accounts[key].money = player.money;
           accounts[key].level = player.level;

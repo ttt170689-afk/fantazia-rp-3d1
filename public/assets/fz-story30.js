@@ -9,7 +9,7 @@
   const path=FZStory30Forest.route;
   const lerp=(a,b,t)=>a+(b-a)*P.smooth(t);
   const V=(x,y,z)=>new THREE.Vector3(x,y,z);
-  function arm(){cancel();const saved=window.FZProgress40?.arm()||{};completedOpening=!!saved.opening;completedRide=!!saved.ride;pending=!completedOpening&&!completedRide;FZHands30.load();FZHumans31.load();}
+  function arm(){cancel();const saved=window.FZProgress40?.arm()||{};completedOpening=!!saved.opening;completedRide=!!saved.ride;pending=!completedOpening&&!completedRide;FZHands30.load();if(pending)FZHumans31.load();}
   function locked(){return !!run;}
   function reduced(){return !!window.FZPlay?.reducedMotion();}
   function controls(){
@@ -133,7 +133,8 @@
     const pos=set.rain.geometry.attributes.position;
     for(let i=0;i<pos.count;i+=2){const y=((i/2%97)/97*11-t*12+240)%12-1;pos.setY(i,y);pos.setY(i+1,y-.32);}pos.needsUpdate=true;
     set.rain.position.copy(camera.position);set.rain.position.y=0;
-    renderer.render(set.world,camera);
+    if(phase==='funeral')FZStory30Sets.renderFuneral(renderer,set.world,camera);
+    else renderer.render(set.world,camera);
   }
   function landPosition(){
     const p=localPlayer.mesh.position;p.set(P.forest.x,P.forest.y,P.forest.z);

@@ -10,7 +10,7 @@ function attach(app,{accounts,commit,players,sockets}){
   const revision=a.resume41?.revision||0;if(req.body.revision!==revision)return res.status(409).json({ok:false,error:'Сохранение изменено другим сеансом. Перезайди в игру.',revision});
   const before={...a};a.resume41={revision:revision+1,snapshot,savedAt:Date.now()};
   // Economy remains authoritative in the connected server player, not the POST body.
-  const active=Object.values(players()).find(p=>{const sock=sockets().get(p.id);return sock?.data.accountToken===req.body.token&&sock.data.accountKey===a.username.toLowerCase();});
+  const active=Object.values(players()).find(p=>{const sock=sockets().get(p.id);return sock?.data.accountToken===req.body.token&&sock.data.accountKey===(a.mainUid||a.username.toLowerCase());});
   if(active)for(const k of ['money','level','exp','inventory','appearance','job'])a[k]=active[k];
   let committed=false;try{committed=await commit();}catch{}
   if(!committed){Object.keys(a).forEach(k=>delete a[k]);Object.assign(a,before);return res.status(503).json({ok:false,error:'Сервер не смог записать сохранение'});}

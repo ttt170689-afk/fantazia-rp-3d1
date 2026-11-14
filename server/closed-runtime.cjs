@@ -13,15 +13,15 @@ function cookieCodec(secret){const key=crypto.createHash('sha256').update('fanta
  read(value){try{if(typeof value!=='string'||value.length>6000)return null;const b=Buffer.from(value,'base64url');const d=crypto.createDecipheriv('aes-256-gcm',key,b.subarray(0,12));d.setAuthTag(b.subarray(12,28));return JSON.parse(Buffer.concat([d.update(b.subarray(28)),d.final()]).toString());}catch{return null;}}
 };}
 class MainAccess {
- constructor({fetchImpl=fetch,now=Date.now}={}){this.fetch=fetchImpl;this.now=now;this.cache=new Map();}
+ constructor({fetchImpl=fetch,now=Date.now,requireApproval=true}={}){this.fetch=fetchImpl;this.now=now;this.requireApproval=requireApproval;this.cache=new Map();}
  async call(route,token,body){const r=await this.fetch(MAIN+route,{method:body===undefined?'GET':'POST',headers:{apikey:API_KEY,Authorization:'Bearer '+token,'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)}),redirect:'error',signal:AbortSignal.timeout(8000)});if(!r.ok)throw Object.assign(Error('MAIN authorization unavailable'),{status:r.status});return r.json();}
- async check(session){if(!session||typeof session.access_token!=='string'||session.access_token.length>5000)throw Error('login_required');const key=crypto.createHash('sha256').update(session.access_token).digest('hex'),cached=this.cache.get(key);if(cached&&cached.until>this.now())return cached.identity;
+ async check(session,{fresh=false}={}){if(!session||typeof session.access_token!=='string'||session.access_token.length>5000)throw Error('login_required');const key=crypto.createHash('sha256').update(session.access_token).digest('hex'),cached=this.cache.get(key);if(!fresh&&cached&&cached.until>this.now())return cached.identity;
  const user=await this.call('/auth/v1/user',session.access_token);if(!user.id||!user.email_confirmed_at)throw Error('confirmed_main_required');
  const rows=await this.call('/rest/v1/rpc/my_profile',session.access_token,{}),profile=Array.isArray(rows)?rows[0]:rows;
  if(!profile||profile.id!==user.id||typeof profile.username!=='string')throw Error('profile_required');
- const beta=await this.call('/rest/v1/rpc/beta_status',session.access_token,{p_game:'fantazia'});
+ const beta=this.requireApproval?await this.call('/rest/v1/rpc/beta_status',session.access_token,{p_game:'fantazia'}):null;
  const owner=await this.call('/rest/v1/rpc/fantazia_owner_status',session.access_token,{})===true;
- if(!owner&&!(beta.game_id==='fantazia'&&beta.state==='approved'&&/^[0-9a-f-]{36}$/i.test(beta.request_id||'')&&Number.isFinite(Date.parse(beta.updated_at||''))))throw Error('approval_required');
+ if(this.requireApproval&&!owner&&!(beta.game_id==='fantazia'&&beta.state==='approved'&&/^[0-9a-f-]{36}$/i.test(beta.request_id||'')&&Number.isFinite(Date.parse(beta.updated_at||''))))throw Error('approval_required');
  const identity={id:user.id,username:profile.username,isOwner:owner};
  if(this.cache.size>500)this.cache.clear();this.cache.set(key,{until:this.now()+10000,identity});return identity;
  }

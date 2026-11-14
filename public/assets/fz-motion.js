@@ -28,6 +28,9 @@
   const buffer = new JumpBuffer();
   const api = {
     integrate,
+    // Preserve the original 60 Hz feel at every refresh rate.
+    blend: (alpha, dt) => 1 - Math.pow(1 - Math.max(0, Math.min(1, alpha)),
+      60 * Math.max(0, Math.min(0.05, Number.isFinite(dt) ? dt : 0))),
     JumpBuffer,
     press: () => buffer.press(performance.now()),
     clear: () => buffer.clear(),

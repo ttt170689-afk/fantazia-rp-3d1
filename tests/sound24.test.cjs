@@ -19,6 +19,9 @@ function harness(saved = "null", broken = false) {
   const w = dom.window;
   w.localStorage.setItem("fz_sound24", saved);
   w.setInterval = () => 0;
+  const timers = new Map(), voices = []; let timerID = 0;
+  w.setTimeout = (fn, delay) => { timers.set(++timerID, {fn, delay}); return timerID; };
+  w.clearTimeout = id => timers.delete(id);
   const param = () => ({
     value: 0,
     cancelScheduledValues() {},
@@ -87,14 +90,16 @@ function harness(saved = "null", broken = false) {
     if (broken) throw Error("no audio hardware");
     return ctx;
   };
-  w.fetch = () => {
+  w.fetch = (url, options) => {
     fetchCount++;
-    return new Promise((r) => {
+    return new Promise((r, reject) => {
+      options?.signal.addEventListener("abort", () => reject(Error("timeout")));
       resolveFetch = () =>
         r({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) });
     });
   };
   w.Audio = class extends w.EventTarget {
+    constructor(){ super(); voices.push(this); }
     paused = true;
     currentTime = 0;
     play() {
@@ -114,6 +119,7 @@ function harness(saved = "null", broken = false) {
     dom,
     ctx,
     api: w.FZSound,
+    timers, voices,
     counts: () => ({ getCount, fetchCount }),
     resolve: () => resolveFetch?.(),
   };
@@ -188,7 +194,26 @@ function harness(saved = "null", broken = false) {
   assert.equal(h.api.say("../secret"), false);
   h.api.effect("doors");
   h.api.effect("chime");
+  for(const name of ["pc-start48","pc-glitch48","pc-off48","paper48","room-step48"])assert(h.api.effect(name));
   assert(h.api.info().sources <= 40);
+  h.api.set({voice:0});
+  assert(h.api.say('sky'));
+  const cap=h.w.document.getElementById('fzSoundCaption');
+  assert.equal(cap.hidden,false,'muted narration still has captions');
+  assert.equal(h.api.info().voice,'');
+  h.api.set({voice:.9});h.api.say('city');
+  assert.equal(h.timers.size,0,'playing narration is not cut off by a fixed caption timer');
+  h.voices[0].dispatchEvent(new h.w.Event('error'));
+  assert.equal(cap.hidden,false,'missing recording keeps readable text');
+  assert.equal(h.api.info().ducked,false);
+  for(const {fn} of [...h.timers.values()])fn();h.timers.clear();
+  assert.equal(cap.hidden,true,'text fallback eventually expires');
+  h.w.FZMetroPolicy={stations:[{id:'new_station',name:'Новая',exit:'Выход в город'}]};
+  h.w.eval(fs.readFileSync(path.join(root,'public/assets/fz-metro-audio.js'),'utf8'));
+  h.w.FZMetroAudio.activate(true);h.w.FZMetroAudio.set(.7,false);h.w.FZMetroAudio.say('new_station');
+  const metro=h.w.document.getElementById('fzMetroSubtitle');assert.equal(metro.hidden,false);
+  for(const {fn} of [...h.timers.values()])fn();h.timers.clear();
+  assert.equal(metro.hidden,true,'text-only station subtitle cannot stick forever');
   Object.defineProperty(h.w.document, "hidden", {
     configurable: true,
     get: () => true,
@@ -199,6 +224,11 @@ function harness(saved = "null", broken = false) {
   assert.equal(h.ctx.state, "suspended");
   assert.equal(h.api.info().masterGain, 0);
   h.dom.window.close();
+  const timeout = harness();timeout.api.unlock();
+  const deadline=[...timeout.timers.values()].find(t=>t.delay===15000);assert(deadline);
+  deadline.fn();await new Promise(r=>setImmediate(r));
+  assert.match(timeout.api.info().musicError,/Повторить звук/);
+  assert.equal(timeout.api.info().playing,false);timeout.dom.window.close();
   const bad = harness("{broken", true);
   assert.equal(bad.api.info().prefs.music, 0.38);
   assert.doesNotThrow(() => {

@@ -1,0 +1,125 @@
+name: Public guest access and owner security
+on:
+  push:
+    branches: [arena/95a3da60-fantazia-rp-3d1]
+    paths:
+      - server/**
+      - server.js
+      - backend/**
+      - tests/closed-*
+      - tests/launcher-login*
+      - tests/public-*
+      - tests/quality46*
+      - tests/journal47*
+      - tests/room48*
+      - tests/interior50*
+      - tests/expedition52*
+      - public/assets/fz-expedition52*
+      - public/styles/fz-expedition52.css
+      - tests/funeral51*
+      - tests/cinematic3*.test.cjs
+      - tests/intro35.test.cjs
+      - tests/story30.test.cjs
+      - public/assets/fz-humans31.js
+      - public/assets/fz-story30-sets.js
+      - public/assets/fz-story30.js
+      - public/assets/licenses/funeral51*
+      - public/assets/models/funeral51/**
+      - tools/build-funeral51.py
+      - public/assets/fz-building*
+      - public/assets/fz-interior50*
+      - public/styles/fz-interior50.css
+      - tests/sound24.test.cjs
+      - tests/play-*.test.cjs
+      - public/index.html
+      - public/assets/fz-save41.js
+      - public/assets/fz-release-ui.js
+      - public/styles/fz-release-ui.css
+      - public/assets/fz-ui.js
+      - public/assets/fz-journal47.js
+      - public/assets/fz-room48*
+      - public/styles/fz-room48.css
+      - public/assets/fz-front.js
+      - public/assets/fz-lore45.js
+      - public/assets/fz-adventure45-policy.js
+      - public/styles/fz-adventure45.css
+      - public/assets/fz-motion.js
+      - public/assets/superrig-player.js
+      - public/assets/fz-play-policy.js
+      - public/assets/fz-sound.js
+      - public/assets/fz-metro-audio.js
+      - package.json
+      - package-lock.json
+      - .github/workflows/launcher-login.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  auth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+      - run: npm run test:closed
+      - run: npm run test:closed:db
+      - run: npm run test:launcher-login
+      - run: npm run test:public
+      - run: npm ci --prefix tests --no-audit --no-fund
+      - run: npm run test:quality
+      - run: npm run test:journal
+      - run: npm run test:room
+      - run: npm run test:public:browser
+      - run: npm run test:quality:browser
+      - run: npm run test:journal:browser
+      - run: npm run test:room:browser
+
+  interiors:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+      - run: npm ci --prefix tests --no-audit --no-fund
+      - run: npm run test:interiors
+      - run: npm run test:interiors:browser
+
+  funeral:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+      - run: npm ci --prefix tests --no-audit --no-fund
+      - run: npm run test:funeral
+      - run: npm run test:funeral:browser
+      - run: cd tests && node cinematic31.test.cjs && node cinematic32.test.cjs && node intro35.test.cjs && node story30.test.cjs
+
+  expeditions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+      - run: npm run test:expeditions
+      - run: npm run test:expeditions:browser

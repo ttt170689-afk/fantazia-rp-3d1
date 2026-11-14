@@ -276,6 +276,16 @@
     } else if (name === "flash") {
       air(0.055, 0.15, 4200, 1400);
       tone(280, 0.07, 0.04, 190);
+    } else if (name === "pc-start48") {
+      tone(220,.3,.025,440);tone(660,.18,.018,880,.32);air(.24,.018,800,1600,.16);
+    } else if (name === "pc-glitch48") {
+      tone(180,.22,.022,105);tone(240,.17,.016,110,.35);air(.3,.025,1600,350,.1);
+    } else if (name === "pc-off48") {
+      tone(160,1.1,.035,30);air(.8,.025,900,180);
+    } else if (name === "paper48") {
+      air(.24,.025,1800,700);
+    } else if (name === "room-step48") {
+      air(.075,.022,800,220);tone(88,.08,.012,48);
     } else if (name === "drip42") {
       tone(1450,.1,.025,620);air(.08,.025,1700,700);
     } else if (name === "rat42") {
@@ -317,21 +327,24 @@
     return true;
   }
   async function load(name) {
-    if (!buffers.has(name))
-      buffers.set(
-        name,
-        fetch("audio/music/" + name + ".wav")
-          .then((r) => {
-            if (!r.ok) throw Error("HTTP " + r.status);
-            return r.arrayBuffer();
-          })
-          .then((b) => ctx.decodeAudioData(b))
-          .catch(() => {
+    if (!buffers.has(name)) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15000);
+      const task = fetch("audio/music/" + name + ".wav", { signal: controller.signal })
+        .then(r => {
+          if (!r.ok) throw Error("HTTP " + r.status);
+          return r.arrayBuffer();
+        })
+        .then(b => ctx.decodeAudioData(b))
+        .catch(() => {
+          if (buffers.get(name) === task) {
             musicError = "Не удалось загрузить музыку. Нажми «Повторить звук».";
             syncPanel();
-            return null;
-          }),
-      );
+          }
+          return null;
+        }).finally(() => clearTimeout(timer));
+      buffers.set(name, task);
+    }
     return buffers.get(name);
   }
   function stopTrack(item, fade = 0) {
@@ -460,23 +473,14 @@
     }
     if (caption) caption.hidden = true;
   }
+  function expireCaption(delay) {
+    clearTimeout(captionTimer);
+    captionTimer = setTimeout(() => { if (caption) caption.hidden = true; }, delay);
+  }
   function say(id) {
-    if (!lines[id] || !allowed() || !prefs.master || !prefs.voice) return false;
+    if (!lines[id] || document.hidden) return false;
     stopVoice();
     window.FZMetroAudio?.stop();
-    if (!voice) {
-      voice = new Audio();
-      voice.preload = "none";
-      pipeVoice(voice);
-      voice.addEventListener("ended", stopVoice);
-      voice.addEventListener("error", () => {
-        blocked = true;
-        stopVoice();
-        syncPanel();
-      });
-    }
-    const token = ++voiceToken;
-    voiceID = id;
     if (!caption) {
       caption = document.createElement("div");
       caption.id = "fzSoundCaption";
@@ -485,22 +489,38 @@
     }
     caption.textContent = lines[id];
     caption.hidden = false;
-    captionTimer = setTimeout(() => {
-      if (caption) caption.hidden = true;
-    }, 16000);
-    voice.src = "audio/city/" + id + ".mp3";
-    voice
-      .play()
-      .then(() => {
-        if (token === voiceToken) blocked = false;
-      })
-      .catch(() => {
-        if (token === voiceToken) {
-          blocked = true;
-          speaking(voice, false);
-          syncPanel();
-        }
+    const readingTime = () => Math.max(4000, Math.min(20000, (caption.textContent.length * 65) + 2000));
+    expireCaption(readingTime());
+    // Captions are useful even with voice/master muted or playback blocked by the browser.
+    if (!allowed() || !prefs.voice) return true;
+    if (!voice) {
+      voice = new Audio();
+      voice.preload = "none";
+      pipeVoice(voice);
+      voice.addEventListener("playing", () => { clearTimeout(captionTimer); if (voiceID && caption) caption.hidden = false; });
+      voice.addEventListener("waiting", () => expireCaption(readingTime()));
+      voice.addEventListener("ended", () => { voiceID = ""; expireCaption(1500); });
+      voice.addEventListener("error", () => {
+        blocked = true;
+        voiceID = "";
+        expireCaption(readingTime());
+        syncPanel();
       });
+    }
+    const token = ++voiceToken;
+    voiceID = id;
+    voice.src = "audio/city/" + id + ".mp3";
+    voice.play().then(() => {
+      if (token === voiceToken) blocked = false;
+    }).catch(() => {
+      if (token === voiceToken) {
+        blocked = true;
+        voiceID = "";
+        speaking(voice, false);
+        expireCaption(readingTime());
+        syncPanel();
+      }
+    });
     return true;
   }
   function visible(id) {
@@ -513,6 +533,7 @@
     );
   }
   function detectZone() {
+    if (window.FZRoom48?.active()) return "room48";
     if (window.FZFront?.active()) return "intro";
     if (visible("authScreen") || visible("createScreen")) return "auth";
     if (visible("serverScreen")) return "lobby";

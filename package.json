@@ -7,7 +7,22 @@
     "start": "node server.js",
     "dev": "node server.js",
     "test:closed": "node --test tests/closed-*.test.cjs",
-    "test:closed:db": "node tests/closed-db-check.cjs"
+    "test:closed:db": "node tests/closed-db-check.cjs",
+    "test:launcher-login": "node --test tests/launcher-login*.test.cjs",
+    "test:public": "node --test tests/public-*.test.cjs tests/closed-process.test.cjs",
+    "test:funeral": "node --test tests/funeral51.test.cjs",
+    "test:funeral:browser": "node tests/funeral51.browser.cjs",
+    "test:interiors": "node --test tests/interior50.test.cjs",
+    "test:interiors:browser": "node tests/interior50.browser.cjs",
+    "test:room": "node tests/room48.test.cjs",
+    "test:room:browser": "node tests/room48.browser.cjs",
+    "test:journal": "node tests/journal47.test.cjs",
+    "test:journal:browser": "node tests/journal47.browser.cjs",
+    "test:quality:browser": "node tests/quality46.browser.cjs",
+    "test:quality": "node tests/quality46.test.cjs && node tests/sound24.test.cjs && node tests/play-policy.test.cjs && node tests/play-integration.test.cjs",
+    "test:public:browser": "node tests/public-guest.browser.cjs",
+    "test:expeditions": "node --test tests/expedition52.test.cjs tests/expedition52-socket.test.cjs",
+    "test:expeditions:browser": "node tests/expedition52-world.browser.cjs && node tests/expedition52.browser.cjs"
   },
   "dependencies": {
     "express": "^4.22.1",
@@ -18,6 +33,8 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.15",
+    "@sparticuz/chromium": "153.0.0",
+    "playwright-core": "1.65.0",
     "socket.io-client": "^4.8.4"
   }
 }

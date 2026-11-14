@@ -167,7 +167,7 @@ function playClip(ud, clipName, once, fade) {
   var a = ud.actions[clipName];
   if (!a) return;
   if (ud.curAnim === a) {
-    if (once && !a.isRunning()) { a.reset(); a.play(); }
+    // Completed one-shots hold their final pose until the requested clip changes.
     return;
   }
   a.reset();
@@ -295,9 +295,10 @@ SR.animate = function (ch, animation, delta, emote) {
 
   // remote-игроки зовут animateCharacter с delta = 0 — считаем сами
   var now = performance.now();
-  if (!delta || delta <= 0) {
+  if (!Number.isFinite(delta) || delta <= 0) {
     delta = ud._srLast ? Math.min(0.05, (now - ud._srLast) / 1000) : 0.016;
   }
+  delta = Math.max(0, Math.min(0.05, delta));
   ud._srLast = now;
 
   var name = animation || 'idle';
@@ -331,8 +332,11 @@ SR.animate = function (ch, animation, delta, emote) {
   if (ud._srPos) moved = Math.sqrt((pos.x - ud._srPos.x) * (pos.x - ud._srPos.x) +
                                    (pos.z - ud._srPos.z) * (pos.z - ud._srPos.z));
   ud._srPos = { x: pos.x, z: pos.z };
-  var inst = delta > 0 ? moved / delta : 0;
-  ud._srSpeed = (ud._srSpeed || 0) * 0.75 + inst * 0.25;   // сглаженная скорость
+  // A teleport is not running speed; discard it rather than poisoning stride calibration.
+  var inst = delta > 0 && moved < 4 ? moved / delta : 0;
+  var blend = 1 - Math.pow(0.75, delta * 60);
+  if (moved >= 4) ud._srSpeed = 0;
+  ud._srSpeed = (ud._srSpeed || 0) * (1 - blend) + inst * blend;   // сглаженная скорость
   var spd = ud._srSpeed;
 
   // присед: стоим на месте — статичная поза, идём — ходьба в присяде
@@ -385,7 +389,7 @@ SR.animate = function (ch, animation, delta, emote) {
       // при замедлении (подъём, упор в стену) ноги перебирают медленнее.
       var key = (name === 'run' || name === 'sprint') ? '_refRun' : (name === 'walk' ? '_refWalk' : '_refSlow');
       var ref = ud[key] || 0.01;
-      if (spd > ref) ref = spd; else ref *= 0.9995;   // медленно «забывает» рекорд
+      if (spd > ref) ref = spd; else ref *= Math.pow(0.9995, delta * 60);   // медленно «забывает» рекорд
       ud[key] = ref;
       ts = ref > 0.02 ? spd / ref : 1;
       ts = Math.max(0.55, Math.min(1.45, ts));
@@ -519,8 +523,8 @@ SR.badge = function () {
 };
 addEventListener('keydown', function (e) {
   if (e.code === 'F9') {
-    var el = SR.badge();
-    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    var existed = !!SR._badgeEl, el = SR.badge();
+    el.style.display = !existed || el.style.display === 'none' ? 'block' : 'none';
   }
 });
 
@@ -668,9 +672,7 @@ else load();
 
 // Индикатор по умолчанию СКРЫТ. Показать/скрыть — клавиша F9
 // (или вручную из консоли: SuperRig.badge()).
-// ВРЕМЕННО: индикатор показан сразу, чтобы видеть, какой риг реально загрузился.
-// Когда причина найдена — убрать строку ниже (F9 всё равно переключает).
-setTimeout(function () { try { SR.badge(); } catch (e) {} }, 1500);
+// Diagnostic badge is opt-in through F9 / SuperRig.badge(), not a release overlay.
 
 // Если модель SUPER так и не загрузилась — показать причину ПРЯМО В ИГРЕ,
 // а не только в консоль (иначе игрок видит коробку и не понимает почему).

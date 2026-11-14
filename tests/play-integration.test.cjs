@@ -4,7 +4,7 @@ const assert = require("node:assert/strict"),
   vm = require("node:vm");
 const acorn = require("acorn"),
   { JSDOM } = require("jsdom");
-const html = fs.readFileSync("../public/index.html", "utf8"),
+const html = fs.readFileSync(require("node:path").join(__dirname,"../public/index.html"), "utf8"),
   nodes = new Map();
 for (const m of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) {
   if (!m[1].trim()) continue;
@@ -63,29 +63,30 @@ assert(!("admin" in s));
 assert.equal(s.menuHidden.join(","), "jobs");
 assert.equal(settings("{bad json").fpsCap, defaults.fpsCap);
 assert.equal(settings('{"fpsCap":null}').fpsCap, defaults.fpsCap);
-let ratio = 1.5;
+let ratio = 1.5, now = 1000;
 const c = {
   SETTINGS: { dynRes: true, renderScale: 1.5, fpsCap: 30 },
   document: { hidden: false, body: { classList: { contains: () => true } } },
   window: {},
   renderer: { setPixelRatio: (r) => (ratio = r) },
-  _dynScale: null,
+  _dynScale: null, _dynT: 0, _dynSampler: null, gamePaused: false,
+  FZPlayPolicy: require("../public/assets/fz-play-policy"),
+  performance: { now: () => now },
 };
 vm.createContext(c);
 vm.runInContext(nodes.get("updateDynamicRes"), c);
-c.updateDynamicRes(30);
-assert.equal(ratio, 1.5);
-c.updateDynamicRes(10);
-assert.equal(ratio, 1.25);
-c.updateDynamicRes(30);
-assert.equal(ratio, 1.5);
-c.document.hidden = true;
-c.updateDynamicRes(1);
-assert.equal(ratio, 1.5);
-c.document.hidden = false;
-c.FZPlay = c.window.FZPlay = { managed: () => true };
-c.updateDynamicRes(1);
-assert.equal(ratio, 1.5);
+const step = fps => { now += 1000; c.updateDynamicRes(fps); };
+step(30);assert.equal(ratio,1.5);
+step(10);assert.equal(ratio,1.5,'one slow sample must not blur the scene');
+for(let i=0;i<5;i++)step(10);
+assert.equal(ratio,1.4,'sustained slow rendering changes gently');
+for(let i=0;i<12;i++)step(30);
+assert.equal(ratio,1.45,'recovery needs sustained headroom at the 30 FPS target');
+c.document.hidden=true;for(let i=0;i<20;i++)step(1);
+assert.equal(ratio,1.45);
+c.document.hidden=false;c.gamePaused=true;for(let i=0;i<20;i++)step(1);
+assert.equal(ratio,1.45);c.gamePaused=false;
+c.FZPlay=c.window.FZPlay={managed:()=>true};step(1);assert.equal(ratio,1.45);
 const loop = nodes.get("animate");
 assert.equal((loop.match(/updateDayNight\(delta\)/g) || []).length, 1);
 assert(!loop.includes("Math.floor(animationTime * 60) % 5"));

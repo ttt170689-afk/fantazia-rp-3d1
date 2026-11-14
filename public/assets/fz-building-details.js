@@ -22,7 +22,7 @@
           24.62,
           0xb4cad3,
         );
-    k.sign("ДОМОФОН", 2.3, 2.4, 24.6, 1.6, 0.3, Math.PI);
+    k.sign(["house", "apartment"].includes(k.type) ? "ДОМОФОН" : "ВХОД", 2.3, 2.4, 24.6, 1.6, 0.3, Math.PI);
     k.box(4, 0.025, 1.8, 0, 0.02, 22.7, 0x394350);
     // A patterned stone entry strip leaves every interaction path unobstructed.
     for (let i = 0; i < 20; i++)

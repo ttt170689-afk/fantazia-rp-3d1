@@ -80,9 +80,10 @@
       this.reset(max, target);
     }
     reset(max, target) {
-      this.max = clamp(max, 0.65, 2);
+      this.max = Number.isFinite(max) ? clamp(max, 0.5, 2) : 1;
+      this.min = Math.min(0.65, this.max);
       this.ratio = this.max;
-      this.target = target || 60;
+      this.target = Number.isFinite(target) && target > 0 ? clamp(target, 15, 144) : 60;
       this.last = null;
       this.ms = 0;
       this.frames = 0;
@@ -112,8 +113,19 @@
         this.pause();
         return null;
       }
-      this.ms += dt;
-      this.frames++;
+      return this.accumulate(dt, 1);
+    }
+    // The desktop counter reports rendered frames once per second, not individual frames.
+    observeFPS(fps, seconds = 1) {
+      if (!Number.isFinite(fps) || fps < 0 || !Number.isFinite(seconds) || seconds <= 0 || seconds > 1.5) {
+        this.pause();
+        return null;
+      }
+      return this.accumulate(seconds * 1000, fps * seconds);
+    }
+    accumulate(ms, frames) {
+      this.ms += ms;
+      this.frames += frames;
       if (this.ms < 3000) return null;
       this.fps = (this.frames * 1000) / this.ms;
       this.ms = 0;
@@ -122,7 +134,7 @@
       this.good = this.fps > this.target * 0.96 ? this.good + 1 : 0;
       let next = this.ratio;
       if (this.bad >= 2) {
-        next = Math.max(0.65, this.ratio - 0.1);
+        next = Math.max(this.min, this.ratio - 0.1);
         this.bad = 0;
         this.good = 0;
       } else if (this.good >= 4) {

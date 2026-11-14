@@ -1,0 +1,52 @@
+plugins { id 'com.android.application' version '8.13.0' }
+
+def hasSigning = System.getenv('FANTAZIA_ANDROID_STORE') && System.getenv('FANTAZIA_ANDROID_STORE_PASSWORD') && System.getenv('FANTAZIA_ANDROID_KEY_PASSWORD')
+android {
+    namespace 'org.fantazia.rp3d'
+    compileSdk 36
+    buildToolsVersion '36.0.0'
+    defaultConfig {
+        applicationId 'org.fantazia.rp3d'
+        minSdk 26
+        targetSdk 36
+        versionCode 10002
+        versionName '1.0.2'
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+    }
+    buildFeatures { buildConfig true }
+    signingConfigs {
+        if (hasSigning) {
+            release {
+                storeFile file(System.getenv('FANTAZIA_ANDROID_STORE'))
+                storePassword System.getenv('FANTAZIA_ANDROID_STORE_PASSWORD')
+                keyAlias System.getenv('FANTAZIA_ANDROID_KEY_ALIAS') ?: 'fantazia'
+                keyPassword System.getenv('FANTAZIA_ANDROID_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        debug {
+            applicationIdSuffix '.preview'
+            versionNameSuffix '-test'
+            resValue 'string', 'app_name', 'Fantazia TEST'
+        }
+        release {
+            minifyEnabled false
+            resValue 'string', 'app_name', 'Fantazia RP'
+            if (hasSigning) signingConfig signingConfigs.release
+        }
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    lint { abortOnError true }
+}
+dependencies {
+    implementation 'androidx.activity:activity:1.10.1'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test:core:1.6.1'
+}
+tasks.register('verifyReleaseSigning') {
+    doLast { if (!hasSigning) throw new GradleException('Release signing is not configured. Do not distribute the TEST APK as a production release.') }
+}
+tasks.matching { it.name == 'preReleaseBuild' }.configureEach { dependsOn 'verifyReleaseSigning' }
