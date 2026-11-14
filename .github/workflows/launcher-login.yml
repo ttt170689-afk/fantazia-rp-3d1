@@ -14,6 +14,9 @@ on:
       - tests/room48*
       - tests/interior50*
       - tests/funeral51*
+      - tests/cinematic3*.test.cjs
+      - tests/intro35.test.cjs
+      - tests/story30.test.cjs
       - public/assets/fz-humans31.js
       - public/assets/fz-story30-sets.js
       - public/assets/fz-story30.js
